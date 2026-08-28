@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  :root {
+    --background: 40 30% 98%;
+    --foreground: 30 15% 12%;
+
+    --card: 40 30% 99%;
+    --card-foreground: 30 15% 12%;
+
+    --popover: 40 30% 99%;
+    --popover-foreground: 30 15% 12%;
+
+    --primary: 349 60% 28%;
+    --primary-foreground: 40 30% 98%;
+
+    --secondary: 30 20% 94%;
+    --secondary-foreground: 30 15% 20%;
+
+    --muted: 30 15% 93%;
+    --muted-foreground: 30 10% 42%;
+
+    --accent: 349 55% 38%;
+    --accent-foreground: 40 30% 98%;
+
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 40 30% 98%;
+
+    --success: 142 50% 35%;
+    --success-foreground: 40 30% 98%;
+
+    --warning: 38 80% 50%;
+    --warning-foreground: 30 15% 12%;
+
+    --border: 30 15% 88%;
+    --input: 30 15% 86%;
+    --ring: 349 60% 28%;
+
+    --chart-1: 349 60% 45%;
+    --chart-2: 30 40% 55%;
+    --chart-3: 142 30% 40%;
+    --chart-4: 38 70% 60%;
+    --chart-5: 280 30% 50%;
+
+    --radius: 0.625rem;
+
+    --wine-50: 349 60% 96%;
+    --wine-100: 349 55% 90%;
+    --wine-200: 349 55% 80%;
+    --wine-300: 349 55% 68%;
+    --wine-400: 349 58% 52%;
+    --wine-500: 349 60% 42%;
+    --wine-600: 349 62% 34%;
+    --wine-700: 349 65% 28%;
+    --wine-800: 349 68% 22%;
+    --wine-900: 349 70% 16%;
+    --wine-950: 350 75% 10%;
+  }
+
+  .dark {
+    --background: 350 40% 6%;
+    --foreground: 40 30% 95%;
+
+    --card: 350 38% 9%;
+    --card-foreground: 40 30% 95%;
+
+    --popover: 350 38% 9%;
+    --popover-foreground: 40 30% 95%;
+
+    --primary: 349 55% 48%;
+    --primary-foreground: 40 30% 98%;
+
+    --secondary: 350 25% 16%;
+    --secondary-foreground: 40 30% 92%;
+
+    --muted: 350 22% 18%;
+    --muted-foreground: 30 12% 62%;
+
+    --accent: 349 50% 40%;
+    --accent-foreground: 40 30% 98%;
+
+    --destructive: 0 62% 42%;
+    --destructive-foreground: 40 30% 98%;
+
+    --success: 142 45% 42%;
+    --success-foreground: 40 30% 98%;
+
+    --warning: 38 75% 52%;
+    --warning-foreground: 30 15% 12%;
+
+    --border: 350 22% 20%;
+    --input: 350 22% 22%;
+    --ring: 349 55% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .font-serif {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+  .font-sans {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .glass-dark {
+    background: rgba(20, 8, 12, 0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .wine-gradient {
+    background: linear-gradient(135deg, hsl(var(--wine-700)) 0%, hsl(var(--wine-900)) 100%);
+  }
+  .wine-gradient-soft {
+    background: linear-gradient(135deg, hsl(var(--wine-100)) 0%, hsl(var(--wine-200)) 100%);
+  }
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.15) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+.animate-fade-up {
+  animation: fade-up 0.6s ease-out both;
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out both;
+}
+.animate-scale-in {
+  animation: scale-in 0.4s ease-out both;
+}
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out both;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--wine-400));
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--wine-600));
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection */
+::selection {
+  background: hsl(var(--wine-200));
+  color: hsl(var(--wine-900));
+}
