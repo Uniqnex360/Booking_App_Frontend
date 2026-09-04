@@ -21,11 +21,11 @@ import {
   X,
 } from 'lucide-react';
 
-const navLinks = [
-  { href: '/movies', label: 'Movies' },
-  { href: '/events', label: 'Events' },
-  { href: '/restaurants', label: 'Restaurants' },
-];
+// const navLinks = [
+//   // { href: '/movies', label: 'Movies' },
+//   // { href: '/events', label: 'Events' },
+//   // { href: '/restaurants', label: 'Restaurants' },
+// ];
 
 export function Header() {
   const navigate = useNavigate();
@@ -76,7 +76,7 @@ export function Header() {
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-8 lg:flex">
-          {navLinks.map((link) => (
+          {/* {navLinks.map((link) => (
             <Link
               key={link.href}
               to={link.href}
@@ -89,7 +89,7 @@ export function Header() {
               {link.label}
               <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-wine-600 transition-all duration-300 group-hover:w-full" />
             </Link>
-          ))}
+          ))} */}
         </div>
 
         {/* Right side */}
@@ -206,7 +206,7 @@ export function Header() {
                 </Button>
               </div>
               <div className="flex flex-col gap-1 px-4 py-4">
-                {navLinks.map((link) => (
+                {/* {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     to={link.href}
@@ -215,7 +215,7 @@ export function Header() {
                   >
                     {link.label}
                   </Link>
-                ))}
+                ))} */}
                 <div className="mt-4 border-t border-border pt-4">
                   {user ? (
                     <>
