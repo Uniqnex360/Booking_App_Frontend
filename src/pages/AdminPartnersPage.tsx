@@ -39,7 +39,6 @@ import type {
   Partner,
   PartnerStatus,
   PartnerType,
-  PaginatedResponse,
 } from '@/types/partner.types';
 
 import {
@@ -55,6 +54,7 @@ import {
   Search,
 } from 'lucide-react';
 import { getAdminPartners, updatePartnerStatus } from '@/api/admin.api';
+import { PaginatedResponse } from '@/types';
 
 const partnerTypeMeta: Record<
   PartnerType,
@@ -95,7 +95,6 @@ export default function AdminPartnersPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
 
-  // Approve state
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const fetchPartners = useCallback(async () => {
@@ -107,8 +106,8 @@ export default function AdminPartnersPage() {
         page,
         limit: 10,
       });
-      setPartners(res.partners||[]);
-      setMeta(res.pagination);
+      setPartners(res.data || []);
+setMeta(res.meta);
     } catch {
       toast.error('Failed to load partners');
     } finally {

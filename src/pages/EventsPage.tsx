@@ -75,7 +75,7 @@ export default function EventsPage() {
     (async () => {
       try {
         const res = await getEvents();
-        if (!cancelled) setEvents(res.data);
+        if (!cancelled) setEvents(res);
       } catch {
         if (!cancelled) toast.error('Failed to load events');
       } finally {

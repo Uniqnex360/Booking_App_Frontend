@@ -1,3 +1,5 @@
+import { PaginationMeta } from ".";
+
 export type PartnerType = 'restaurant' | 'cinema' | 'event_organiser';
 export type PartnerStatus =
   | 'PENDING_APPROVAL'
@@ -31,12 +33,13 @@ export interface PartnerRegisterPayload {
   pan_number?: string;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    total_pages: number;
-  };
+
+export interface PaginatedPartners {
+  partners: any[]; 
+  pagination: PaginationMeta;
+}
+
+export interface PaginatedEvents {
+  items: any[]; 
+  total: number;
 }

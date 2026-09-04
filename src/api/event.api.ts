@@ -6,8 +6,8 @@ export async function getMyEvents() {
   const response = await api.get<ApiResponse<{ items: EventItem[]; total: number }>>('/events/me');
   return response.data.data;
 }
-export async function getEvents(): Promise<Event[]> {
-  const response = await api.get<ApiResponse<{ items: Event[]; total: number }>>('/events');
+export async function getEvents(): Promise<EventItem[]> {
+  const response = await api.get<ApiResponse<{ items: EventItem[]; total: number }>>('/events');
   return response.data.data.items;
 }
 

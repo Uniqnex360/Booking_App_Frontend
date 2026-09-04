@@ -12,9 +12,13 @@
 //   rating: number;
 //   reviews_count: number;
 //   tags: string[];
+
+import { EventStatus } from "./event.types";
+
 // }
 export interface Event {
   id: string;
+  description?:string
   title: string;
   slug: string;
   category: EventCategory;
@@ -22,6 +26,7 @@ export interface Event {
   city: string;            
   starts_at: string;       
   ends_at: string;
+  status: EventStatus;                 
   poster_image_url?: string;
   rating?: number;
   reviews_count?: number;

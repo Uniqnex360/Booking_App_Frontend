@@ -1,5 +1,5 @@
+import { ApiResponse, PaginatedResponse } from '@/types';
 import api from './client';
-import { ApiResponse, PaginatedResponse } from '@/types/api.types';
 import { Event } from '@/types/api.types';
 import { AdminContentStatusPayload, Envelope, EventItem } from '@/types/event.types';
 import { Partner, PartnerStatus } from '@/types/partner.types';

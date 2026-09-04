@@ -143,7 +143,7 @@ export default function BookingPage() {
                 {details.title}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {details.venu}
+                {details.venue}
               </p>
               <div className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">

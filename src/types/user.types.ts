@@ -21,7 +21,7 @@ export interface UserResponse {
 export interface RegisterPayload {
   full_name: string;
   email: string;
-  userId:string;
+  userId?:string;
   password: string;
   phone?: string;
 }

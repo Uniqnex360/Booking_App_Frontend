@@ -32,7 +32,7 @@ interface AuthContextValue {
   isAdmin: boolean;
   signIn: (payload: LoginPayload) => Promise<{ error: string | null }>;
   signUp: (payload: RegisterPayload) => Promise<{ error: string | null }>;
-  initiateSignUp: (payload: RegisterPayload) => Promise<{ token: string | null; error: string | null }>;
+initiateSignUp: (payload: RegisterPayload) => Promise<{ userId: string | null; error: string | null }>;
   verifySignUp: (userId: string, code: string) => Promise<{ error: string | null }>;
   signInWithFirebase: (payload: FirebaseLoginPayload) => Promise<{ error: string | null }>;
   signInWithPhoneEmail: (payload: { url: string }) => Promise<{ error: string | null }>;

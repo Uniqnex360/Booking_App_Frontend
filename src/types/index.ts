@@ -4,15 +4,19 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
 }
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
 
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
 export interface ApiErrorResponse {
   detail: string;
   status: number;
 }
 
-export type PaginatedResponse<T> = {
-  items: T[];
-  total: number;
-  page: number;
-  page_size: number;
-};

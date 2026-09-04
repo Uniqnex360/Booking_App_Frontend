@@ -1,6 +1,7 @@
 export interface Movie {
   id: string;
   title: string;
+  theater?:string
   description: string;
   poster_url: string;
   backdrop_url: string;

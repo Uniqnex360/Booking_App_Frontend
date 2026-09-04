@@ -4,7 +4,6 @@ import { Event } from '@/types/api.types';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Check, X, Eye, AlertCircle } from 'lucide-react';
-import { formatCurrency } from '@/utils/currencyFormatter';
 
 export default function ContentModeration() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -17,7 +16,7 @@ export default function ContentModeration() {
   const fetchPending = async () => {
     try {
       const data = await getPendingEvents();
-      setEvents(data.items);
+      setEvents(data);
     } catch (err) {
       toast.error("Failed to load pending events");
     } finally {

@@ -20,6 +20,7 @@ export interface EventItem {
   id: string;
   title: string;
   slug: string;
+  items?:string
   category: EventCategory;
   venue_name: string;
   city: string;

@@ -3,8 +3,6 @@ import api from './client';
 import type {
   Partner,
   PartnerRegisterPayload,
-  PaginatedResponse,
-  PartnerStatus,
 } from '@/types/partner.types';
 
 export const registerPartner = (data: PartnerRegisterPayload) =>

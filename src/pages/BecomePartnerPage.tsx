@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getMyPartnerProfile, registerPartner } from '@/api/partner.api';
-import type { PartnerType } from '@/types/partner.types';
+import type { Partner, PartnerType } from '@/types/partner.types';
 
 import {
   ArrowLeft,
