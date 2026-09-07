@@ -36,7 +36,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("email");
   const [phoneLoading, setPhoneLoading] = useState(false);
-  const clientId = import.meta.env.PHONE_WITH_EMAIL_CLIENT_ID;
+  const clientId = import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID;
   console.log("CLIENT)D", clientId);
   const handleGoogleAction = async () => {
     setLoading(true);
