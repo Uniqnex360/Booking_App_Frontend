@@ -1,24 +1,24 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
-import { Header } from '@/components/Header';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Header } from "@/components/Header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -26,9 +26,9 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog';
-import { Loader } from '@/components/common/Loader';
-import { useAuth } from '@/hooks/useAuth';
+} from "@/components/ui/dialog";
+import { Loader } from "@/components/common/Loader";
+import { useAuth } from "@/hooks/useAuth";
 import {
   getExtendedProfile,
   updateProfile,
@@ -36,8 +36,8 @@ import {
   createAddress,
   updateAddress,
   deleteAddress,
-} from '@/api/profile.api';
-import type { ExtendedProfile, Address, Gender } from '@/types/profile.types';
+} from "@/api/profile.api";
+import type { ExtendedProfile, Address, Gender } from "@/types/profile.types";
 
 import {
   ArrowLeft,
@@ -54,13 +54,17 @@ import {
   Home,
   Building2,
   CheckCircle2,
-} from 'lucide-react';
-import { toast } from 'sonner';
+  Settings,
+} from "lucide-react";
+import { toast } from "sonner";
 
-  
 const profileSchema = z.object({
-  bio: z.string().max(500, 'Bio must be under 500 characters').optional().or(z.literal('')),
-  gender: z.enum(['Male', 'Female', 'Other', 'Prefer not to say']).optional(),
+  bio: z
+    .string()
+    .max(500, "Bio must be under 500 characters")
+    .optional()
+    .or(z.literal("")),
+  gender: z.enum(["Male", "Female", "Other", "Prefer not to say"]).optional(),
   date_of_birth: z.string().optional(),
   preferred_language: z.string().optional(),
 });
@@ -68,17 +72,16 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 const addressSchema = z.object({
-  label: z.string().min(1, 'Label is required'),
-  line1: z.string().min(1, 'Address line 1 is required'),
-  line2: z.string().optional().or(z.literal('')),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  pincode: z.string().min(1, 'Pincode is required'),
+  label: z.string().min(1, "Label is required"),
+  line1: z.string().min(1, "Address line 1 is required"),
+  line2: z.string().optional().or(z.literal("")),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  pincode: z.string().min(1, "Pincode is required"),
   is_default: z.boolean().optional(),
 });
 
 type AddressFormData = z.infer<typeof addressSchema>;
-
 
 export default function EditProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -110,12 +113,12 @@ export default function EditProfilePage() {
     control: addressControl,
     handleSubmit: handleAddressSubmit,
     reset: resetAddress,
-    watch: watchAddress, 
+    watch: watchAddress,
     formState: { errors: addressErrors },
   } = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
   });
-const detectLocation = () => {
+  const detectLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Geolocation not supported");
       return;
@@ -128,7 +131,7 @@ const detectLocation = () => {
         const { latitude, longitude } = position.coords;
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
           );
           const data = await response.json();
           const addr = data.address;
@@ -142,7 +145,7 @@ const detectLocation = () => {
             pincode: addr.postcode || "",
             // latitude and longitude are optional in your schema
           });
-          
+
           toast.success("Location detected!");
         } catch (error) {
           toast.error("Failed to resolve address details");
@@ -150,10 +153,10 @@ const detectLocation = () => {
       },
       (error) => {
         toast.error("Location access denied");
-      }
+      },
     );
   };
-  const bioValue = watchProfile('bio') || '';
+  const bioValue = watchProfile("bio") || "";
   const bioCount = bioValue.length;
 
   const fetchAll = useCallback(async () => {
@@ -165,21 +168,21 @@ const detectLocation = () => {
         getAddresses(),
       ]);
 
-      if (profileData.status === 'fulfilled') {
+      if (profileData.status === "fulfilled") {
         setProfile(profileData.value);
         resetProfile({
-          bio: profileData.value.bio || '',
+          bio: profileData.value.bio || "",
           gender: profileData.value.gender || undefined,
-          date_of_birth: profileData.value.date_of_birth || '',
-          preferred_language: profileData.value.preferred_language || 'en',
+          date_of_birth: profileData.value.date_of_birth || "",
+          preferred_language: profileData.value.preferred_language || "en",
         });
       }
 
-      if (addressData.status === 'fulfilled') {
+      if (addressData.status === "fulfilled") {
         setAddresses(addressData.value);
       }
     } catch {
-      setError('Failed to load profile data. Please try again.');
+      setError("Failed to load profile data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -206,7 +209,7 @@ const detectLocation = () => {
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch {
-      setError('Failed to save profile. Please try again.');
+      setError("Failed to save profile. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -217,12 +220,12 @@ const detectLocation = () => {
   const openAddAddress = () => {
     setEditingAddress(null);
     resetAddress({
-      label: '',
-      line1: '',
-      line2: '',
-      city: '',
-      state: '',
-      pincode: '',
+      label: "",
+      line1: "",
+      line2: "",
+      city: "",
+      state: "",
+      pincode: "",
       is_default: false,
     });
     setAddressError(null);
@@ -234,7 +237,7 @@ const detectLocation = () => {
     resetAddress({
       label: addr.label,
       line1: addr.line1,
-      line2: addr.line2 || '',
+      line2: addr.line2 || "",
       city: addr.city,
       state: addr.state,
       pincode: addr.pincode,
@@ -263,7 +266,7 @@ const detectLocation = () => {
             if (a.id === updated.id) return updated;
             if (data.is_default) return { ...a, is_default: false };
             return a;
-          })
+          }),
         );
       } else {
         const created = await createAddress({
@@ -277,14 +280,16 @@ const detectLocation = () => {
         });
         setAddresses((prev) => {
           if (data.is_default) {
-            return prev.map((a) => ({ ...a, is_default: false })).concat(created);
+            return prev
+              .map((a) => ({ ...a, is_default: false }))
+              .concat(created);
           }
           return [...prev, created];
         });
       }
       setAddressDialogOpen(false);
     } catch {
-      setAddressError('Failed to save address. Please try again.');
+      setAddressError("Failed to save address. Please try again.");
     } finally {
       setAddressSaving(false);
     }
@@ -295,7 +300,7 @@ const detectLocation = () => {
       await deleteAddress(id);
       setAddresses((prev) => prev.filter((a) => a.id !== id));
     } catch {
-      setError('Failed to delete address.');
+      setError("Failed to delete address.");
     }
   };
 
@@ -306,10 +311,10 @@ const detectLocation = () => {
         prev.map((a) => {
           if (a.id === updated.id) return updated;
           return { ...a, is_default: false };
-        })
+        }),
       );
     } catch {
-      setError('Failed to set default address.');
+      setError("Failed to set default address.");
     }
   };
 
@@ -326,11 +331,11 @@ const detectLocation = () => {
     );
   }
 
-  const initials = (user?.full_name || user?.email || 'U')
-    .split(' ')
+  const initials = (user?.full_name || user?.email || "U")
+    .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   return (
@@ -354,7 +359,11 @@ const detectLocation = () => {
               </AvatarFallback>
             </Avatar>
             <div className="pb-2">
+             
               <h1 className="font-serif text-3xl font-semibold text-wine-950">
+                 <Link to="/profile/edit">
+                <Settings className="mr-2 h-4 w-4" />
+              </Link>
                 Edit Profile
               </h1>
               <p className="text-sm text-muted-foreground">
@@ -408,7 +417,7 @@ const detectLocation = () => {
                   </div>
                   <div>
                     <p className="font-serif text-xl font-semibold text-wine-950">
-                      {user?.full_name || 'Member'}
+                      {user?.full_name || "Member"}
                     </p>
                     <p className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Mail className="h-3.5 w-3.5" />
@@ -420,7 +429,7 @@ const detectLocation = () => {
                   variant="outline"
                   className="w-fit border-wine-200 bg-wine-50 text-wine-700"
                 >
-                  {user?.role || 'USER'}
+                  {user?.role || "USER"}
                 </Badge>
               </div>
 
@@ -436,7 +445,7 @@ const detectLocation = () => {
                   </Label>
                   <Textarea
                     id="bio"
-                    {...registerProfile('bio')}
+                    {...registerProfile("bio")}
                     placeholder="Tell us a little about yourself..."
                     className="min-h-[100px] rounded-xl"
                     maxLength={500}
@@ -484,13 +493,16 @@ const detectLocation = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="date_of_birth" className="text-sm font-medium">
+                    <Label
+                      htmlFor="date_of_birth"
+                      className="text-sm font-medium"
+                    >
                       Date of Birth
                     </Label>
                     <Input
                       id="date_of_birth"
                       type="date"
-                      {...registerProfile('date_of_birth')}
+                      {...registerProfile("date_of_birth")}
                       className="h-11 rounded-xl"
                     />
                   </div>
@@ -600,7 +612,7 @@ const detectLocation = () => {
                     >
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-wine-50">
-                          {addr.label.toLowerCase().includes('office') ? (
+                          {addr.label.toLowerCase().includes("office") ? (
                             <Building2 className="h-5 w-5 text-wine-600" />
                           ) : (
                             <Home className="h-5 w-5 text-wine-600" />
@@ -620,7 +632,7 @@ const detectLocation = () => {
                           </div>
                           <p className="mt-1 text-sm text-foreground/70">
                             {addr.line1}
-                            {addr.line2 ? `, ${addr.line2}` : ''}
+                            {addr.line2 ? `, ${addr.line2}` : ""}
                           </p>
                           <p className="text-sm text-foreground/70">
                             {addr.city}, {addr.state} — {addr.pincode}
@@ -675,12 +687,12 @@ const detectLocation = () => {
         <DialogContent className="max-w-md rounded-2xl border-border/60 shadow-soft-lg">
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl font-semibold text-wine-950">
-              {editingAddress ? 'Edit Address' : 'Add New Address'}
+              {editingAddress ? "Edit Address" : "Add New Address"}
             </DialogTitle>
             <DialogDescription>
               {editingAddress
-                ? 'Update the details for this address.'
-                : 'Enter the details for your new address.'}
+                ? "Update the details for this address."
+                : "Enter the details for your new address."}
             </DialogDescription>
           </DialogHeader>
 
@@ -694,20 +706,26 @@ const detectLocation = () => {
             onSubmit={handleAddressSubmit(onAddressSubmit)}
             className="space-y-4"
           >
-              <Button 
-        type="button" 
-        variant="outline" 
-        className="w-full border-dashed border-wine-300 text-wine-700 hover:bg-wine-50 hover:border-wine-500 transition-all"
-        onClick={detectLocation}
-      >
-        <MapPin className="mr-2 h-4 w-4" />
-        Auto-detect current location
-      </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full border-dashed border-wine-300 text-wine-700 hover:bg-wine-50 hover:border-wine-500 transition-all"
+              onClick={detectLocation}
+            >
+              <MapPin className="mr-2 h-4 w-4" />
+              Auto-detect current location
+            </Button>
 
-      <div className="relative py-2">
-        <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-        <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground font-medium">Or enter manually</span></div>
-      </div>
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground font-medium">
+                  Or enter manually
+                </span>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="addr-label" className="text-sm font-medium">
                 Label
@@ -715,7 +733,7 @@ const detectLocation = () => {
               <Input
                 id="addr-label"
                 placeholder="e.g. Home, Office"
-                {...registerAddress('label')}
+                {...registerAddress("label")}
                 className="h-11 rounded-xl"
               />
               {addressErrors.label && (
@@ -732,7 +750,7 @@ const detectLocation = () => {
               <Input
                 id="addr-line1"
                 placeholder="House no, Building, Street"
-                {...registerAddress('line1')}
+                {...registerAddress("line1")}
                 className="h-11 rounded-xl"
               />
               {addressErrors.line1 && (
@@ -744,12 +762,13 @@ const detectLocation = () => {
 
             <div className="space-y-2">
               <Label htmlFor="addr-line2" className="text-sm font-medium">
-                Address Line 2 <span className="text-muted-foreground">(optional)</span>
+                Address Line 2{" "}
+                <span className="text-muted-foreground">(optional)</span>
               </Label>
               <Input
                 id="addr-line2"
                 placeholder="Area, Landmark"
-                {...registerAddress('line2')}
+                {...registerAddress("line2")}
                 className="h-11 rounded-xl"
               />
             </div>
@@ -762,7 +781,7 @@ const detectLocation = () => {
                 <Input
                   id="addr-city"
                   placeholder="City"
-                  {...registerAddress('city')}
+                  {...registerAddress("city")}
                   className="h-11 rounded-xl"
                 />
                 {addressErrors.city && (
@@ -779,7 +798,7 @@ const detectLocation = () => {
                 <Input
                   id="addr-state"
                   placeholder="State"
-                  {...registerAddress('state')}
+                  {...registerAddress("state")}
                   className="h-11 rounded-xl"
                 />
                 {addressErrors.state && (
@@ -797,7 +816,7 @@ const detectLocation = () => {
               <Input
                 id="addr-pincode"
                 placeholder="Postal code"
-                {...registerAddress('pincode')}
+                {...registerAddress("pincode")}
                 className="h-11 rounded-xl"
               />
               {addressErrors.pincode && (
@@ -846,9 +865,9 @@ const detectLocation = () => {
                 {addressSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : editingAddress ? (
-                  'Save changes'
+                  "Save changes"
                 ) : (
-                  'Add address'
+                  "Add address"
                 )}
               </Button>
             </DialogFooter>

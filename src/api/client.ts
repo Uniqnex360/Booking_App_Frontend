@@ -124,3 +124,48 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+// --- Phase C: API Unwrap & Error Handling ---
+
+export class ApiError extends Error {
+  code: string;
+  status: string;
+  statusCode: number;
+
+  constructor(code: string, message: string, status: string, statusCode: number = 400) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
+    this.statusCode = statusCode;
+  }
+}
+
+export async function unwrap<T>(promise: Promise<any>): Promise<T> {
+  try {
+    const response = await promise;
+    const body = response.data;
+    if (body && body.status === 'error') {
+      throw new ApiError(body.code, body.message, body.status, response.status);
+    }
+    // Unwrap the standard "data" envelope
+    return (body && body.data !== undefined ? body.data : body) as T;
+  } catch (error: any) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    if (axios.isAxiosError(error) && error.response) {
+      const body = error.response.data;
+      if (body && body.code) {
+        throw new ApiError(body.code, body.message || 'An error occurred', body.status || 'error', error.response.status);
+      }
+      throw new ApiError(
+        error.response.statusText || 'SERVER_ERROR',
+        error.message,
+        'error',
+        error.response.status
+      );
+    }
+    throw new ApiError('NETWORK_ERROR', error.message || 'Network error', 'error', 0);
+  }
+}

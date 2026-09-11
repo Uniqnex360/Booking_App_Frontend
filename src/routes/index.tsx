@@ -1,3 +1,4 @@
+import SeatMapPage from "@/pages/SeatMapPage";
 import { Routes, Route } from 'react-router-dom';
 import { PrivateRoute } from '@/components/PrivateRoute';
 import HomePage from '@/pages/HomePage';
@@ -24,6 +25,7 @@ export function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movies/:id" element={<MovieDetailPage />} />
+      <Route path="/showtimes/:id/seat-map" element={<PrivateRoute><SeatMapPage /></PrivateRoute>} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/restaurants" element={<RestaurantsPage />} />
       <Route
