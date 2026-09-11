@@ -10,105 +10,105 @@ import { getRestaurants } from '@/api/restaurant.api';
 import type { Restaurant } from '@/types/api.types';
 import { Search, Star, MapPin, Clock } from 'lucide-react';
 
-const mockRestaurants: Restaurant[] = [
-  {
-    id: '1',
-    name: 'Maison Noir',
-    description: 'An intimate fine dining experience with a seasonal tasting menu.',
-    image_url: 'https://images.pexels.com/photos/8856555/pexels-photo-8856555.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
-    cuisine: 'French',
-    location: 'Downtown, NYC',
-    price_range: '$$$',
-    rating: 5.0,
-    reviews_count: 89,
-    available_times: ['6:00 PM', '8:30 PM'],
-    tags: ['Exclusive', 'Tasting Menu'],
-  },
-  {
-    id: '2',
-    name: 'The Vineyard Table',
-    description: 'Farm-to-table dining with wine pairings in a rustic vineyard setting.',
-    image_url: 'https://images.pexels.com/photos/32568165/pexels-photo-32568165.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
-    cuisine: 'Mediterranean',
-    location: 'Napa Valley, CA',
-    price_range: '$$',
-    rating: 4.8,
-    reviews_count: 234,
-    available_times: ['5:30 PM', '7:00 PM', '9:00 PM'],
-    tags: ['Outdoor', 'Wine Pairing'],
-  },
-  {
-    id: '3',
-    name: 'Sakura Omakase',
-    description: 'A 15-course omakase experience at the chef\'s counter.',
-    image_url: 'https://images.pexels.com/photos/1422385/pexels-photo-1422385.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
-    cuisine: 'Japanese',
-    location: 'Midtown, NYC',
-    price_range: '$$$$',
-    rating: 4.9,
-    reviews_count: 156,
-    available_times: ['6:00 PM', '8:00 PM'],
-    tags: ['Omakase', 'Chef\'s Counter'],
-  },
-  {
-    id: '4',
-    name: 'Rooftide Bar & Grill',
-    description: 'Rooftop dining with panoramic city views and a charcoal grill menu.',
-    image_url: 'https://images.pexels.com/photos/36729891/pexels-photo-36729891.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
-    cuisine: 'American',
-    location: 'Downtown, NYC',
-    price_range: '$$',
-    rating: 4.6,
-    reviews_count: 312,
-    available_times: ['5:00 PM', '6:30 PM', '8:00 PM', '9:30 PM'],
-    tags: ['Rooftop', 'City Views'],
-  },
-  {
-    id: '5',
-    name: 'Cantina della Vita',
-    description: 'Authentic Italian trattoria with handmade pasta and an extensive wine cellar.',
-    image_url: 'https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
-    cuisine: 'Italian',
-    location: 'West Village, NYC',
-    price_range: '$$$',
-    rating: 4.7,
-    reviews_count: 198,
-    available_times: ['5:30 PM', '7:30 PM', '9:30 PM'],
-    tags: ['Pasta', 'Wine Cellar'],
-  },
-  {
-    id: '6',
-    name: 'The Velvet Lounge',
-    description: 'A speakeasy-style dining room with live jazz and craft cocktails.',
-    image_url: 'https://images.pexels.com/photos/12181763/pexels-photo-12181763.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
-    cuisine: 'Contemporary',
-    location: 'Soho, NYC',
-    price_range: '$$$',
-    rating: 4.8,
-    reviews_count: 145,
-    available_times: ['6:00 PM', '8:30 PM'],
-    tags: ['Speakeasy', 'Live Jazz'],
-  },
-];
+// const mockRestaurants: Restaurant[] = [
+//   {
+//     id: '1',
+//     name: 'Maison Noir',
+//     description: 'An intimate fine dining experience with a seasonal tasting menu.',
+//     image_url: 'https://images.pexels.com/photos/8856555/pexels-photo-8856555.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
+//     cuisine: 'French',
+//     location: 'Downtown, NYC',
+//     price_range: '$$$',
+//     rating: 5.0,
+//     reviews_count: 89,
+//     available_times: ['6:00 PM', '8:30 PM'],
+//     tags: ['Exclusive', 'Tasting Menu'],
+//   },
+//   {
+//     id: '2',
+//     name: 'The Vineyard Table',
+//     description: 'Farm-to-table dining with wine pairings in a rustic vineyard setting.',
+//     image_url: 'https://images.pexels.com/photos/32568165/pexels-photo-32568165.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
+//     cuisine: 'Mediterranean',
+//     location: 'Napa Valley, CA',
+//     price_range: '$$',
+//     rating: 4.8,
+//     reviews_count: 234,
+//     available_times: ['5:30 PM', '7:00 PM', '9:00 PM'],
+//     tags: ['Outdoor', 'Wine Pairing'],
+//   },
+//   {
+//     id: '3',
+//     name: 'Sakura Omakase',
+//     description: 'A 15-course omakase experience at the chef\'s counter.',
+//     image_url: 'https://images.pexels.com/photos/1422385/pexels-photo-1422385.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
+//     cuisine: 'Japanese',
+//     location: 'Midtown, NYC',
+//     price_range: '$$$$',
+//     rating: 4.9,
+//     reviews_count: 156,
+//     available_times: ['6:00 PM', '8:00 PM'],
+//     tags: ['Omakase', 'Chef\'s Counter'],
+//   },
+//   {
+//     id: '4',
+//     name: 'Rooftide Bar & Grill',
+//     description: 'Rooftop dining with panoramic city views and a charcoal grill menu.',
+//     image_url: 'https://images.pexels.com/photos/36729891/pexels-photo-36729891.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
+//     cuisine: 'American',
+//     location: 'Downtown, NYC',
+//     price_range: '$$',
+//     rating: 4.6,
+//     reviews_count: 312,
+//     available_times: ['5:00 PM', '6:30 PM', '8:00 PM', '9:30 PM'],
+//     tags: ['Rooftop', 'City Views'],
+//   },
+//   {
+//     id: '5',
+//     name: 'Cantina della Vita',
+//     description: 'Authentic Italian trattoria with handmade pasta and an extensive wine cellar.',
+//     image_url: 'https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
+//     cuisine: 'Italian',
+//     location: 'West Village, NYC',
+//     price_range: '$$$',
+//     rating: 4.7,
+//     reviews_count: 198,
+//     available_times: ['5:30 PM', '7:30 PM', '9:30 PM'],
+//     tags: ['Pasta', 'Wine Cellar'],
+//   },
+//   {
+//     id: '6',
+//     name: 'The Velvet Lounge',
+//     description: 'A speakeasy-style dining room with live jazz and craft cocktails.',
+//     image_url: 'https://images.pexels.com/photos/12181763/pexels-photo-12181763.jpeg?auto=compress&cs=tinysrgb&h=600&w=800',
+//     cuisine: 'Contemporary',
+//     location: 'Soho, NYC',
+//     price_range: '$$$',
+//     rating: 4.8,
+//     reviews_count: 145,
+//     available_times: ['6:00 PM', '8:30 PM'],
+//     tags: ['Speakeasy', 'Live Jazz'],
+//   },
+// ];
 
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    const fetchRestaurants = async () => {
-      try {
-        const data = await getRestaurants();
-        setRestaurants(data);
-      } catch {
-        setRestaurants(mockRestaurants);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRestaurants();
-  }, []);
+  // useEffect(() => {
+  //   const fetchRestaurants = async () => {
+  //     try {
+  //       const data = await getRestaurants();
+  //       setRestaurants(data);
+  //     } catch {
+  //       setRestaurants(mockRestaurants);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchRestaurants();
+  // }, []);
 
   const filtered = restaurants.filter(
     (r) =>
