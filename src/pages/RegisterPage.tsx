@@ -71,7 +71,7 @@
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
                 <Wine className="h-5 w-5 text-white" strokeWidth={2.2} />
               </div>
-              <span className="font-serif text-2xl font-semibold">Vignette</span>
+              <span className="font-serif text-2xl font-semibold">Vyhbz App</span>
             </Link> */}
             {/* <div>
               <h2 className="font-serif text-5xl font-semibold leading-tight">
@@ -99,7 +99,7 @@
               </div>
             </div> */}
             {/* <p className="text-sm text-wine-100/50">
-              Join 50,000+ guests who book with Vignette
+              Join 50,000+ guests who book with Vyhbz App
             </p> */}
           </div>
         </div>
@@ -121,7 +121,7 @@
                   <Wine className="h-5 w-5 text-white" strokeWidth={2.2} />
                 </div>
                 <span className="font-serif text-2xl font-semibold text-wine-900">
-                  Vignette
+                  Vyhbz App
                 </span>
               </Link>
             </div>

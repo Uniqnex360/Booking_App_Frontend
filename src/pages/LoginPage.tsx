@@ -150,7 +150,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
               <Wine className="h-5 w-5 text-white" strokeWidth={2.2} />
             </div>
-            <span className="font-serif text-2xl font-semibold">Vignette</span>
+            <span className="font-serif text-2xl font-semibold">Vyhbz App</span>
           </Link>
           <div>
             <h2 className="font-serif text-5xl font-semibold leading-tight">
@@ -193,7 +193,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             Sign in
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {/* New to Vignette?{' '} */}
+            {/* New to Vyhbz App?{' '} */}
             <Link
               to="/register"
               className="font-medium text-wine-700 hover:text-wine-900"

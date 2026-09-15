@@ -27,7 +27,7 @@ export function Footer() {
                 <Wine className="h-4 w-4 text-white" strokeWidth={2.2} />
               </div>
               <span className="font-serif text-xl font-semibold text-wine-900">
-                Vignette
+                Vyhbz App
               </span>
             </Link>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">
@@ -57,7 +57,7 @@ export function Footer() {
         </div>
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/50 pt-6 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            © 2026 Vignette. All rights reserved.
+            © 2026 Vyhbz App. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground">
             Crafted with care for memorable moments.

@@ -157,7 +157,7 @@ export default function PartnerDashboard() {
               Become a Partner
             </h1>
             <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-              You haven't applied to the Vignette partner program yet. Join us
+              You haven't applied to the Vyhbz App partner program yet. Join us
               to list your business and reach thousands of guests.
             </p>
             <Button

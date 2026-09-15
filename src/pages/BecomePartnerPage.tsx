@@ -183,7 +183,7 @@ export default function BecomePartnerPage() {
             Become a Partner
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-wine-100/70">
-            Join Vignette and reach thousands of guests. List your business,
+            Join Vyhbz App and reach thousands of guests. List your business,
             manage bookings, and grow with us.
           </p>
         </div>

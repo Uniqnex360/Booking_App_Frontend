@@ -70,7 +70,7 @@ export function Header() {
               transparent ? 'text-white' : 'text-wine-900'
             }`}
           >
-            Vignette
+            Vyhbz App
           </span>
         </Link> */}
 
