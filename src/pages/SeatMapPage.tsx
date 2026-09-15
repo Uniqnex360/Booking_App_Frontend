@@ -21,10 +21,12 @@ interface SeatMapDetail {
   showtime_id: string;
   movie_title: string;
   screen_name: string;
-  cinema_name: string;
+  cinema_name?: string;
+  venue_name?: string;
   starts_at: string;
-  fetched_at: string;
-  seats: SeatItem[];
+  fetched_at?: string;
+  seats?: SeatItem[];
+  rows?: any[];
   code?: string;
 }
 
@@ -89,7 +91,28 @@ export default function SeatMapPage() {
   }
 
   const isSourceUnavailable = mapData?.code === "SOURCE_UNAVAILABLE" || !mapData;
-  const isStale = mapData && (Date.now() - new Date(mapData.fetched_at).getTime()) > 60000;
+  const isStale = mapData?.fetched_at && (Date.now() - new Date(mapData.fetched_at).getTime()) > 60000;
+
+  // Flatten seats across both provider format and self-hosted nested rows format
+  const allSeats: SeatItem[] = [];
+  if (mapData?.seats && Array.isArray(mapData.seats) && mapData.seats.length > 0) {
+    allSeats.push(...mapData.seats);
+  } else if (mapData?.rows && Array.isArray(mapData.rows)) {
+    mapData.rows.forEach((r: any) => {
+      if (r.seats && Array.isArray(r.seats)) {
+        r.seats.forEach((s: any) => {
+          allSeats.push({
+            seat_ref: s.seat_id || s.id,
+            row_label: r.label,
+            number: s.number,
+            code: s.code,
+            price_paise: s.price_paise || r.price_paise || 25000,
+            is_available: s.status === "AVAILABLE",
+          });
+        });
+      }
+    });
+  }
 
   const handleSeatClick = (seat: SeatItem) => {
     if (!seat.is_available || holdId) return;
@@ -154,11 +177,14 @@ export default function SeatMapPage() {
     }
   };
 
+  // Group seats by row labels
   const rows: Record<string, SeatItem[]> = {};
-  mapData?.seats?.forEach((seat) => {
+  allSeats.forEach((seat) => {
     if (!rows[seat.row_label]) rows[seat.row_label] = [];
     rows[seat.row_label].push(seat);
   });
+
+  const totalPricePaise = selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
@@ -193,7 +219,7 @@ export default function SeatMapPage() {
                 Cinema Screen
               </div>
 
-              <div className="space-y-3 w-full flex flex-col items-center">
+              <div className="space-y-3 w-full flex flex-col items-center overflow-x-auto max-w-full pb-4">
                 {Object.entries(rows).map(([label, seatList]) => (
                   <div key={label} className="flex items-center gap-4">
                     <span className="w-6 text-right text-xs font-bold text-neutral-500">{label}</span>
@@ -225,7 +251,7 @@ export default function SeatMapPage() {
             <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
               <h2 className="text-xl font-bold border-b border-neutral-800 pb-4 mb-4">{mapData.movie_title}</h2>
               <div className="text-neutral-400 text-sm space-y-1 mb-6">
-                <p>{mapData.cinema_name} • {mapData.screen_name}</p>
+                <p>{mapData.cinema_name || mapData.venue_name} • {mapData.screen_name}</p>
                 <p>{new Date(mapData.starts_at).toLocaleString()}</p>
               </div>
 
@@ -243,7 +269,7 @@ export default function SeatMapPage() {
                 <div className="flex justify-between text-sm text-neutral-400">
                   <span>Price total:</span>
                   <span className="font-bold text-amber-500 text-lg">
-                    {formatRupees(selectedSeats.reduce((acc, s) => acc + s.price_paise, 0))}
+                    {formatRupees(totalPricePaise)}
                   </span>
                 </div>
 
