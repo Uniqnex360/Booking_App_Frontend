@@ -82,9 +82,7 @@ const statusLabel: Record<PartnerStatus, string> = {
 
 export default function AdminPartnersPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
-  const [meta, setMeta] = useState<PaginatedResponse<Partner>['meta'] | null>(
-    null
-  );
+  const [meta, setMeta] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -106,8 +104,10 @@ export default function AdminPartnersPage() {
         page,
         limit: 10,
       });
-      setPartners(res.data || []);
-setMeta(res.meta);
+      // Map backend keys "partners" and "pagination" correctly
+      const raw: any = res;
+      setPartners(raw.partners || raw.data || []);
+      setMeta(raw.pagination || raw.meta || null);
     } catch {
       toast.error('Failed to load partners');
     } finally {
