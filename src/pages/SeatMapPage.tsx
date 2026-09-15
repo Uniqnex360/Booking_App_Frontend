@@ -214,16 +214,17 @@ export default function SeatMapPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2 bg-neutral-900 border border-neutral-800 rounded-xl p-8 flex flex-col items-center">
-              <div className="w-full max-w-md h-3 border-t-2 border-neutral-600 rounded-b-full text-center text-xs text-neutral-500 uppercase tracking-widest mb-16">
+            <div className="lg:col-span-2 bg-neutral-900 border border-neutral-800 rounded-xl p-6 md:p-8 flex flex-col items-center">
+              <div className="w-full max-w-md h-3 border-t-2 border-neutral-600 rounded-b-full text-center text-xs text-neutral-500 uppercase tracking-widest mb-10">
                 Cinema Screen
               </div>
 
-              <div className="space-y-3 w-full flex flex-col items-center overflow-x-auto max-w-full pb-4">
+              {/* Removed overflow-x-auto and reduced spacing/sizes to fit layout without scroll */}
+              <div className="space-y-2 w-full flex flex-col items-center pb-4">
                 {Object.entries(rows).map(([label, seatList]) => (
-                  <div key={label} className="flex items-center gap-4">
-                    <span className="w-6 text-right text-xs font-bold text-neutral-500">{label}</span>
-                    <div className="flex items-center gap-1.5">
+                  <div key={label} className="flex items-center gap-2">
+                    <span className="w-4 text-right text-[10px] font-bold text-neutral-500">{label}</span>
+                    <div className="flex items-center gap-1">
                       {seatList.map((seat) => {
                         const isSelected = selectedSeats.some((s) => s.seat_ref === seat.seat_ref);
                         let bg = "bg-neutral-800 hover:bg-neutral-700 border-neutral-700";
@@ -236,7 +237,7 @@ export default function SeatMapPage() {
                             disabled={!seat.is_available}
                             onClick={() => handleSeatClick(seat)}
                             title={seat.is_available ? `Seat ${seat.code} (${formatRupees(seat.price_paise)})` : `Seat ${seat.code} (Unavailable)`}
-                            className={`w-7 h-7 rounded border text-[10px] font-bold flex items-center justify-center transition ${bg}`}
+                            className={`w-5 h-5 rounded border text-[8px] font-bold flex items-center justify-center transition ${bg}`}
                           >
                             {seat.number}
                           </button>
@@ -262,12 +263,25 @@ export default function SeatMapPage() {
               )}
 
               <div className="space-y-4">
-                <div className="flex justify-between text-sm text-neutral-400">
-                  <span>Selected Seats:</span>
-                  <span className="font-bold text-white">{selectedSeats.map((s) => s.code).join(", ") || "None"}</span>
+                {/* Updated Selected Seats to list out individual prices */}
+                <div className="text-sm text-neutral-400">
+                  <span className="block mb-2 font-semibold">Selected Seats:</span>
+                  {selectedSeats.length === 0 ? (
+                    <span className="text-neutral-500">None</span>
+                  ) : (
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-2">
+                      {selectedSeats.map((s) => (
+                        <div key={s.seat_ref} className="flex justify-between items-center">
+                          <span className="font-bold text-white">{s.code}</span>
+                          <span className="font-medium text-amber-400">{formatRupees(s.price_paise)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm text-neutral-400">
-                  <span>Price total:</span>
+
+                <div className="flex justify-between text-sm text-neutral-400 pt-2 border-t border-neutral-800">
+                  <span className="font-semibold">Price total:</span>
                   <span className="font-bold text-amber-500 text-lg">
                     {formatRupees(totalPricePaise)}
                   </span>
