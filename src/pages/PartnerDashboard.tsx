@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 
@@ -7,9 +7,12 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader } from '@/components/common/Loader';
 import { getMyPartnerProfile } from '@/api/partner.api';
-import { getMyEvents, cancelOrDeleteEvent } from '@/api/event.api';
+import { getMyEvents, updateEvent, cancelOrDeleteEvent } from '@/api/event.api';
 import type { Partner, PartnerType } from '@/types/partner.types';
 import type { EventItem } from '@/types/event.types';
 
@@ -20,15 +23,16 @@ import {
   Phone,
   MapPin,
   Clock,
-  AlertCircle,
   CheckCircle2,
   Calendar,
   Plus,
   Ticket,
   ImageOff,
   Trash2,
+  Edit3,
   CalendarCheck,
   CalendarX,
+  Loader2,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -41,6 +45,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
 const partnerTypeMeta: Record<
   PartnerType,
@@ -57,7 +68,17 @@ export default function PartnerDashboard() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING' | 'PAST'>('ACTIVE');
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  // Edit Modal State
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    venue_name: '',
+    city: '',
+    poster_image_url: '',
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -79,16 +100,41 @@ export default function PartnerDashboard() {
     fetchData();
   }, []);
 
+  const openEditModal = (event: EventItem) => {
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title,
+      description: event.description || '',
+      venue_name: event.venue_name,
+      city: event.city,
+      poster_image_url: event.poster_image_url || '',
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+    setSavingEdit(true);
+
+    try {
+      await updateEvent(editingEvent.id, editForm);
+      toast.success('Event updated successfully');
+      setEditingEvent(null);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update event');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const handleCancelEvent = async (id: string) => {
-    setCancellingId(id);
     try {
       await cancelOrDeleteEvent(id, 'Cancelled by organizer');
       toast.success('Event cancelled successfully');
       fetchData();
     } catch {
       toast.error('Failed to cancel event');
-    } finally {
-      setCancellingId(null);
     }
   };
 
@@ -106,7 +152,6 @@ export default function PartnerDashboard() {
 
   const now = new Date();
 
-  // Categorize events dynamically
   const activeEvents = events.filter(
     (e) => e.status === 'PUBLISHED' && new Date(e.ends_at) >= now
   );
@@ -250,40 +295,137 @@ export default function PartnerDashboard() {
                       {e.ticket_categories?.length || 1} Ticket Tier(s)
                     </div>
 
-                    {e.status !== 'CANCELLED' && !isPast && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="ghost" className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10">
-                            <Trash2 className="h-4 w-4 mr-1" /> Cancel
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="bg-neutral-900 border-neutral-800 text-white rounded-2xl">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Cancel Event?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-neutral-400">
-                              Are you sure you want to cancel <strong className="text-white">{e.title}</strong>? This will notify ticket holders and cancel pending sales.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="bg-neutral-800 text-white border-0 hover:bg-neutral-700 rounded-xl">
-                              Close
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleCancelEvent(e.id)}
-                              className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
-                            >
-                              Confirm Cancellation
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {e.status !== 'CANCELLED' && !isPast && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openEditModal(e)}
+                          className="text-neutral-300 hover:text-white hover:bg-neutral-800"
+                        >
+                          <Edit3 className="h-4 w-4 mr-1" /> Edit
+                        </Button>
+                      )}
+
+                      {e.status !== 'CANCELLED' && !isPast && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-neutral-900 border-neutral-800 text-white rounded-2xl">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel Event?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-neutral-400">
+                                Are you sure you want to cancel <strong className="text-white">{e.title}</strong>? This will notify ticket holders and cancel pending sales.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-neutral-800 text-white border-0 hover:bg-neutral-700 rounded-xl">
+                                Close
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleCancelEvent(e.id)}
+                                className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl"
+                              >
+                                Confirm Cancellation
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
         )}
+
+        {/* EDIT EVENT MODAL */}
+        <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+          <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-lg rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">Edit Event Details</DialogTitle>
+            </DialogHeader>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
+              <div>
+                <Label htmlFor="edit-title" className="text-xs text-neutral-400">Event Title</Label>
+                <Input
+                  id="edit-title"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="bg-neutral-950 border-neutral-800 mt-1"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-desc" className="text-xs text-neutral-400">Description</Label>
+                <Textarea
+                  id="edit-desc"
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="bg-neutral-950 border-neutral-800 mt-1 min-h-[80px]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="edit-venue" className="text-xs text-neutral-400">Venue Name</Label>
+                  <Input
+                    id="edit-venue"
+                    value={editForm.venue_name}
+                    onChange={(e) => setEditForm({ ...editForm, venue_name: e.target.value })}
+                    className="bg-neutral-950 border-neutral-800 mt-1"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-city" className="text-xs text-neutral-400">City</Label>
+                  <Input
+                    id="edit-city"
+                    value={editForm.city}
+                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                    className="bg-neutral-950 border-neutral-800 mt-1"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-image" className="text-xs text-neutral-400">Poster Image URL</Label>
+                <Input
+                  id="edit-image"
+                  value={editForm.poster_image_url}
+                  onChange={(e) => setEditForm({ ...editForm, poster_image_url: e.target.value })}
+                  className="bg-neutral-950 border-neutral-800 mt-1"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <DialogFooter className="gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setEditingEvent(null)}
+                  className="bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl"
+                >
+                  {savingEdit ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
       <Footer />
     </div>
