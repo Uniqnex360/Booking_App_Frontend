@@ -18,6 +18,8 @@ import {
   LogOut,
   Calendar,
   LayoutDashboard,
+  ShieldCheck,
+  Users,
   Sparkles,
   X,
 } from 'lucide-react';
@@ -133,36 +135,44 @@ export function Header() {
                 </div>
                 <DropdownMenuSeparator className="bg-neutral-800" />
                 
-                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-800">
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-800 cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-800">
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-800 cursor-pointer">
                   <Calendar className="mr-2 h-4 w-4" />
                   My Bookings
                 </DropdownMenuItem>
 
-                {/* Conditional Partner Option */}
-                {user.role === 'PARTNER' ? (
-                  <DropdownMenuItem onClick={() => navigate('/partner/dashboard')} className="hover:bg-neutral-800 text-amber-500 focus:text-amber-500">
+                {/* Partner Option */}
+                {user.role === 'PARTNER' && (
+                  <DropdownMenuItem onClick={() => navigate('/partner/dashboard')} className="hover:bg-neutral-800 text-amber-500 focus:text-amber-500 cursor-pointer">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Partner Dashboard
                   </DropdownMenuItem>
-                ) : (
-                  user.role !== 'ADMIN' && (
-                    <DropdownMenuItem onClick={() => navigate('/partner/become')} className="hover:bg-neutral-800 text-amber-500 focus:text-amber-500">
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      Become a Partner
-                    </DropdownMenuItem>
-                  )
                 )}
 
-                {user.role === 'ADMIN' && (
-                  <DropdownMenuItem onClick={() => navigate('/admin/partners')} className="hover:bg-neutral-800">
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Admin Dashboard
+                {user.role !== 'PARTNER' && user.role !== 'ADMIN' && (
+                  <DropdownMenuItem onClick={() => navigate('/partner/become')} className="hover:bg-neutral-800 text-amber-500 focus:text-amber-500 cursor-pointer">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Become a Partner
                   </DropdownMenuItem>
+                )}
+
+                {/* Admin Options */}
+                {user.role === 'ADMIN' && (
+                  <>
+                    <DropdownMenuSeparator className="bg-neutral-800" />
+                    <DropdownMenuItem onClick={() => navigate('/admin/partners')} className="hover:bg-neutral-800 cursor-pointer">
+                      <Users className="mr-2 h-4 w-4 text-amber-500" />
+                      Partner Verification
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/admin/moderation')} className="hover:bg-neutral-800 cursor-pointer">
+                      <ShieldCheck className="mr-2 h-4 w-4 text-amber-500" />
+                      Event Moderation
+                    </DropdownMenuItem>
+                  </>
                 )}
                 
                 <DropdownMenuSeparator className="bg-neutral-800" />
@@ -249,7 +259,7 @@ export function Header() {
                         Profile
                       </Link>
                       
-                      {user.role === 'PARTNER' ? (
+                      {user.role === 'PARTNER' && (
                         <Link
                           to="/partner/dashboard"
                           onClick={() => setMobileOpen(false)}
@@ -257,16 +267,35 @@ export function Header() {
                         >
                           Partner Dashboard
                         </Link>
-                      ) : (
-                        user.role !== 'ADMIN' && (
+                      )}
+
+                      {user.role === 'ADMIN' && (
+                        <>
                           <Link
-                            to="/partner/become"
+                            to="/admin/partners"
                             onClick={() => setMobileOpen(false)}
                             className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-neutral-900"
                           >
-                            Become a Partner
+                            Partner Verification
                           </Link>
-                        )
+                          <Link
+                            to="/admin/moderation"
+                            onClick={() => setMobileOpen(false)}
+                            className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-neutral-900"
+                          >
+                            Event Moderation
+                          </Link>
+                        </>
+                      )}
+
+                      {user.role !== 'PARTNER' && user.role !== 'ADMIN' && (
+                        <Link
+                          to="/partner/become"
+                          onClick={() => setMobileOpen(false)}
+                          className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-neutral-900"
+                        >
+                          Become a Partner
+                        </Link>
                       )}
 
                       <button

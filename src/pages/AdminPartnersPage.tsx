@@ -165,6 +165,23 @@ export default function AdminPartnersPage() {
       <Header />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+                {/* Admin Navigation Tabs */}
+        <div className="flex border-b border-border/60 gap-4 mb-6 pt-2">
+          <button
+            onClick={() => {}}
+            className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-wine-950 flex items-center gap-2"
+          >
+            <Users className="h-4 w-4 text-wine-700" />
+            Partner Verification
+          </button>
+          <a
+            href="/admin/moderation"
+            className="pb-3 text-sm font-medium text-muted-foreground hover:text-wine-900 flex items-center gap-2"
+          >
+            <Film className="h-4 w-4" />
+            Event Moderation
+          </a>
+        </div>
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wine-50">

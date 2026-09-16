@@ -134,6 +134,23 @@ export default function AdminModerationPage() {
       </div>
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Admin Navigation Tabs */}
+        <div className="flex border-b border-border/60 gap-4 mb-6">
+          <a
+            href="/admin/partners"
+            className="pb-3 text-sm font-medium text-muted-foreground hover:text-wine-900 flex items-center gap-2"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Partner Verification
+          </a>
+          <button
+            onClick={() => {}}
+            className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-wine-950 flex items-center gap-2"
+          >
+            <CalendarClock className="h-4 w-4 text-wine-700" />
+            Event Moderation
+          </button>
+        </div>
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader className="h-8 w-8" />
