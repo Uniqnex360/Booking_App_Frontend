@@ -247,6 +247,9 @@ export default function PartnerDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentList.map((e) => {
               const isPast = new Date(e.ends_at) < now;
+              const hoursUntilStart = (new Date(e.starts_at).getTime() - now.getTime()) / (1000 * 60 * 60);
+              const isEditLocked = e.status === 'PUBLISHED' && hoursUntilStart < 24;
+
               return (
                 <div
                   key={e.id}
@@ -296,29 +299,23 @@ export default function PartnerDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-2">
-                      {e.status !== "CANCELLED" && !isPast && (() => {
-                        const hoursUntilStart = (new Date(e.starts_at).getTime() - now.getTime()) / (1000 * 60 * 60);
-                        const isEditLocked = e.status === "PUBLISHED" && hoursUntilStart < 24;
-
-                        return (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={isEditLocked}
-                            onClick={() => openEditModal(e)}
-                            title={isEditLocked ? "Editing is locked within 24 hours of event start time" : "Edit event details"}
-                            className={
-                              isEditLocked
-                                ? "text-neutral-600 cursor-not-allowed hover:bg-transparent hover:text-neutral-600"
-                                : "text-neutral-300 hover:text-white hover:bg-neutral-800"
-                            }
-                          >
-                            <Edit3 className="h-4 w-4 mr-1" />
-                            {isEditLocked ? "Locked (<24h)" : "Edit"}
-                          </Button>
-                        );
-                      })()}
+                      {e.status !== 'CANCELLED' && !isPast && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={isEditLocked}
+                          onClick={() => openEditModal(e)}
+                          title={isEditLocked ? "Editing is locked within 24 hours of event start" : "Edit event details"}
+                          className={
+                            isEditLocked
+                              ? "text-neutral-600 cursor-not-allowed hover:bg-transparent"
+                              : "text-neutral-300 hover:text-white hover:bg-neutral-800"
+                          }
+                        >
+                          <Edit3 className="h-4 w-4 mr-1" />
+                          {isEditLocked ? "Locked (<24h)" : "Edit"}
+                        </Button>
+                      )}
 
                       {e.status !== 'CANCELLED' && !isPast && (
                         <AlertDialog>
