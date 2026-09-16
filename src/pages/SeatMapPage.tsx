@@ -407,9 +407,7 @@ export default function SeatMapPage() {
                             })}
                           </div>
 
-                          <span className="w-5 text-left text-xs font-bold text-neutral-500 select-none">
-                            {rowLabel}
-                          </span>
+                         
                         </div>
                       );
                     })}
