@@ -124,11 +124,20 @@ const verifySignUp = async (userId: string, code: string) => {
   const continueWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
       const result = await signInWithPopup(auth, provider);
       const token = await result.user.getIdToken();
       return await signInWithFirebase({ token });
-    } catch (err: unknown) {
-       return { error: getErrorMessage(err) }; 
+    } catch (err: any) {
+      // If user closed popup intentionally, return cancelled without error
+      if (
+        err?.code === "auth/popup-closed-by-user" || 
+        err?.code === "auth/cancelled-popup-request" ||
+        err?.message?.includes("closed-by-user")
+      ) {
+        return { error: null, cancelled: true };
+      }
+      return { error: getErrorMessage(err) }; 
     }
   };
 

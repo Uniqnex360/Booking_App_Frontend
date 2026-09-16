@@ -30,12 +30,23 @@
     const { checks } = validatePassword(password);
 
   const handleGoogleAction = async () => {
+    setError(null);
     setLoading(true);
-    const { error } = await continueWithGoogle();
-    setLoading(false);
-    
-    if (error) setError(error);
-    else navigate('/profile');
+    try {
+      const res: any = await continueWithGoogle();
+      if (res?.cancelled) {
+        return; // User closed popup; reset spinner cleanly
+      }
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        navigate("/profile");
+      }
+    } catch (err: any) {
+      setError(err?.message || "Google sign-in failed.");
+    } finally {
+      setLoading(false);
+    }
   };
    const handleRegister = async (e: React.FormEvent) => {
   e.preventDefault();

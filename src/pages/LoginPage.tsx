@@ -39,12 +39,28 @@ export default function LoginPage() {
   const clientId = import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID;
   console.log("CLIENT)D", clientId);
   const handleGoogleAction = async () => {
+    setError(null);
     setLoading(true);
-    const { error } = await continueWithGoogle();
-    setLoading(false);
-
-    if (error) setError(error);
-    else navigate("/profile");
+    try {
+      const res: any = await continueWithGoogle();
+      if (res?.cancelled) {
+        return; // User closed popup; reset spinner cleanly
+      }
+      if (res?.error) {
+        setError(res.error);
+      } else {
+        const currentUser = await getCurrentUser().catch(() => null);
+        if (currentUser?.role === "ADMIN") {
+          navigate("/admin/partners");
+        } else {
+          navigate("/profile");
+        }
+      }
+    } catch (err: any) {
+      setError(err?.message || "Google sign-in failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
