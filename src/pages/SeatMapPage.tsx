@@ -5,7 +5,16 @@ import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
-import { ArrowLeft, RefreshCw, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  AlertCircle,
+  ShieldCheck,
+  Clock,
+  ChevronRight,
+  Ticket,
+  Tv,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface SeatItem {
@@ -28,6 +37,18 @@ interface SeatMapDetail {
   seats?: SeatItem[];
   rows?: any[];
   code?: string;
+  format?: string;
+  language?: string;
+}
+
+function loadScript(src: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 }
 
 export default function SeatMapPage() {
@@ -131,6 +152,56 @@ export default function SeatMapPage() {
     }
   };
 
+  const startRazorpayPayment = async (booking: any) => {
+    const isLoaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    if (!isLoaded) {
+      toast.error("Failed to load payment gateway. Check your connection.");
+      setIsCommitLoading(false);
+      return;
+    }
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY || "rzp_test_VyBhZExTMTk5",
+      amount: booking.total_paise,
+      currency: booking.currency || "INR",
+      name: "Vyhbz Cinemas",
+      description: `${mapData?.movie_title} (${selectedSeats.length} Seats)`,
+      handler: async function (response: any) {
+        toast.info("Payment verified! Confirming seats...");
+        try {
+          const commitRes = await unwrap<any>(
+            api.post(`/bookings/${booking.id}/commit`, {
+              payment_ref: response.razorpay_payment_id,
+            })
+          );
+          toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
+          navigate(`/profile`);
+        } catch (err: any) {
+          toast.error(err.message || "Commitment failed after payment.");
+        } finally {
+          setIsCommitLoading(false);
+        }
+      },
+      prefill: {
+        name: "Customer",
+        email: "customer@vybhz.com",
+        contact: "9876543210",
+      },
+      theme: {
+        color: "#f59e0b",
+      },
+      modal: {
+        ondismiss: function () {
+          toast.warning("Payment cancelled.");
+          setIsCommitLoading(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  };
+
   const handleCheckout = async () => {
     if (selectedSeats.length === 0) return;
     setIsCommitLoading(true);
@@ -154,17 +225,14 @@ export default function SeatMapPage() {
       if (res.status === "HELD") {
         setHoldId(res.id);
         setHeldUntil(new Date(res.held_until));
-        toast.success(`Seats held! Confirming ticket...`);
-        const commitRes = await unwrap<any>(api.post(`/bookings/${res.id}/commit`, {}));
-        toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
-        navigate(`/profile`);
+        await startRazorpayPayment(res);
       } else {
         toast.success(`Booking confirmed successfully!`);
         navigate(`/profile`);
       }
     } catch (err: any) {
       if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
-        toast.error("One or more selected seats are unavailable. Refreshing...");
+        toast.error("One or more selected seats were just taken. Refreshing...");
         fetchSeatMap();
       } else if (err.code === "HOLD_EXPIRED") {
         toast.error("Hold expired. Please select seats again.");
@@ -172,133 +240,239 @@ export default function SeatMapPage() {
       } else {
         toast.error(err.message || "Booking failed.");
       }
-    } finally {
       setIsCommitLoading(false);
     }
   };
 
-  // Group seats by row labels
-  const rows: Record<string, SeatItem[]> = {};
+  // Organize seats into BookMyShow-style Price Tiers
+  const tiers: { name: string; price_paise: number; rows: Record<string, SeatItem[]> }[] = [];
+  
+  // Group rows
+  const rawRows: Record<string, { price_paise: number; seats: SeatItem[] }> = {};
   allSeats.forEach((seat) => {
-    if (!rows[seat.row_label]) rows[seat.row_label] = [];
-    rows[seat.row_label].push(seat);
+    if (!rawRows[seat.row_label]) {
+      rawRows[seat.row_label] = { price_paise: seat.price_paise, seats: [] };
+    }
+    rawRows[seat.row_label].seats.push(seat);
   });
+
+  // Group into tiers based on price
+  Object.entries(rawRows).forEach(([rowLabel, rowData]) => {
+    let tierName = "CLASSIC";
+    const priceRupees = rowData.price_paise / 100;
+    if (priceRupees >= 350) tierName = "RECLINER / VIP";
+    else if (priceRupees >= 250) tierName = "PRIME PLUS";
+    else if (priceRupees >= 200) tierName = "PREMIUM";
+
+    let existingTier = tiers.find((t) => t.price_paise === rowData.price_paise);
+    if (!existingTier) {
+      existingTier = { name: tierName, price_paise: rowData.price_paise, rows: {} };
+      tiers.push(existingTier);
+    }
+    existingTier.rows[rowLabel] = rowData.seats.sort((a, b) => a.number - b.number);
+  });
+
+  // Sort tiers descending by price (VIP on top)
+  tiers.sort((a, b) => b.price_paise - a.price_paise);
 
   const totalPricePaise = selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen bg-neutral-950 text-white flex flex-col font-sans select-none pb-28">
       <Header />
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <button onClick={() => navigate(-1)} className="text-sm text-neutral-400 hover:text-white flex items-center gap-1">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </button>
-          {isStale && !isSourceUnavailable && (
-            <button onClick={fetchSeatMap} className="text-amber-500 flex items-center gap-1.5 text-sm font-semibold">
-              <RefreshCw className="h-4 w-4 animate-spin" /> Seat Map is stale (click to refresh)
-            </button>
-          )}
-        </div>
 
+      {/* TOP BMS SUB-HEADER BAR */}
+      <div className="bg-neutral-900 border-b border-neutral-800 pt-20 pb-4 sticky top-0 z-20 backdrop-blur-md bg-neutral-900/90 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-neutral-800 rounded-full text-neutral-400 hover:text-white transition"
+              title="Back"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white leading-tight flex items-center gap-2">
+                {mapData.movie_title}
+                <span className="text-[10px] bg-neutral-800 text-neutral-400 font-bold px-2 py-0.5 rounded border border-neutral-700">
+                  {mapData.format || "2D"}
+                </span>
+              </h1>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                {mapData.cinema_name || mapData.venue_name} • {mapData.screen_name} |{" "}
+                <span className="text-amber-400 font-semibold">
+                  {new Date(mapData.starts_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                {", "}
+                {new Date(mapData.starts_at).toLocaleDateString([], { month: "short", day: "numeric" })}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isStale && !isSourceUnavailable && (
+              <button
+                onClick={fetchSeatMap}
+                className="text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-amber-500/20 transition"
+              >
+                <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Stale (Refresh)
+              </button>
+            )}
+            {holdId && countdown > 0 && (
+              <div className="bg-amber-500 text-black px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-lg animate-pulse">
+                <Clock className="h-3.5 w-3.5" /> {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8 flex flex-col items-center">
         {isSourceUnavailable ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-neutral-900 border border-neutral-800 rounded-xl max-w-2xl mx-auto">
-            <AlertCircle className="h-12 w-12 text-neutral-500 mb-4" />
+          <div className="flex flex-col items-center justify-center py-20 bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg mx-auto text-center px-6 mt-8">
+            <AlertCircle className="h-12 w-12 text-rose-500 mb-3" />
             <h2 className="text-xl font-bold mb-2">Availability is temporarily unavailable</h2>
-            <p className="text-neutral-400 text-sm text-center px-6">
+            <p className="text-neutral-400 text-sm">
               The external ticketing system is currently unreachable. Please try again.
             </p>
-            <button onClick={fetchSeatMap} className="mt-6 bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2 px-6 rounded-lg text-sm transition">
+            <button
+              onClick={fetchSeatMap}
+              className="mt-6 bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition"
+            >
               Retry Connection
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            <div className="lg:col-span-2 bg-neutral-900 border border-neutral-800 rounded-xl p-6 md:p-8 flex flex-col items-center">
-              <div className="w-full max-w-md h-3 border-t-2 border-neutral-600 rounded-b-full text-center text-xs text-neutral-500 uppercase tracking-widest mb-10">
-                Cinema Screen
-              </div>
-
-              {/* Removed overflow-x-auto and reduced spacing/sizes to fit layout without scroll */}
-              <div className="space-y-2 w-full flex flex-col items-center pb-4">
-                {Object.entries(rows).map(([label, seatList]) => (
-                  <div key={label} className="flex items-center gap-2">
-                    <span className="w-4 text-right text-[10px] font-bold text-neutral-500">{label}</span>
-                    <div className="flex items-center gap-1">
-                      {seatList.map((seat) => {
-                        const isSelected = selectedSeats.some((s) => s.seat_ref === seat.seat_ref);
-                        let bg = "bg-neutral-800 hover:bg-neutral-700 border-neutral-700";
-                        if (!seat.is_available) bg = "bg-neutral-950 border-neutral-900 text-neutral-800 cursor-not-allowed";
-                        if (isSelected) bg = "bg-amber-500 border-amber-600 text-black";
-
-                        return (
-                          <button
-                            key={seat.seat_ref}
-                            disabled={!seat.is_available}
-                            onClick={() => handleSeatClick(seat)}
-                            title={seat.is_available ? `Seat ${seat.code} (${formatRupees(seat.price_paise)})` : `Seat ${seat.code} (Unavailable)`}
-                            className={`w-5 h-5 rounded border text-[8px] font-bold flex items-center justify-center transition ${bg}`}
-                          >
-                            {seat.number}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
+          <div className="w-full max-w-4xl flex flex-col items-center">
+            
+            {/* BMS CINEMA SCREEN ARC */}
+            <div className="w-full max-w-xl flex flex-col items-center mb-14 mt-4">
+              <div className="w-full h-3 border-t-[3px] border-amber-400/80 rounded-t-[100%] shadow-[0_-8px_20px_rgba(245,158,11,0.25)] mb-3" />
+              <div className="text-[11px] font-bold tracking-[0.25em] text-neutral-500 uppercase flex items-center gap-1.5">
+                <Tv className="h-3.5 w-3.5" /> All Eyes This Way Please (Screen)
               </div>
             </div>
 
-            <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-              <h2 className="text-xl font-bold border-b border-neutral-800 pb-4 mb-4">{mapData.movie_title}</h2>
-              <div className="text-neutral-400 text-sm space-y-1 mb-6">
-                <p>{mapData.cinema_name || mapData.venue_name} • {mapData.screen_name}</p>
-                <p>{new Date(mapData.starts_at).toLocaleString()}</p>
-              </div>
+            {/* SEAT TIERS */}
+            <div className="w-full space-y-10 overflow-x-auto pb-6 flex flex-col items-center">
+              {tiers.map((tier) => (
+                <div key={tier.price_paise} className="w-full max-w-3xl">
+                  {/* Tier Title Header */}
+                  <div className="border-b border-neutral-800/80 pb-2 mb-4 flex items-center justify-between text-xs font-bold text-neutral-400 tracking-wider">
+                    <span>{tier.name}</span>
+                    <span className="text-amber-400 font-extrabold">{formatRupees(tier.price_paise)}</span>
+                  </div>
 
-              {holdId && countdown > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 rounded-lg p-3 text-center text-sm font-bold mb-6 animate-pulse">
-                  Seats held! Complete checkout in {countdown}s
-                </div>
-              )}
+                  {/* Rows in this tier */}
+                  <div className="space-y-2.5 flex flex-col items-center">
+                    {Object.entries(tier.rows).map(([rowLabel, seatList]) => {
+                      const midIndex = Math.floor(seatList.length / 2);
 
-              <div className="space-y-4">
-                {/* Updated Selected Seats to list out individual prices */}
-                <div className="text-sm text-neutral-400">
-                  <span className="block mb-2 font-semibold">Selected Seats:</span>
-                  {selectedSeats.length === 0 ? (
-                    <span className="text-neutral-500">None</span>
-                  ) : (
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-2">
-                      {selectedSeats.map((s) => (
-                        <div key={s.seat_ref} className="flex justify-between items-center">
-                          <span className="font-bold text-white">{s.code}</span>
-                          <span className="font-medium text-amber-400">{formatRupees(s.price_paise)}</span>
+                      return (
+                        <div key={rowLabel} className="flex items-center gap-3">
+                          <span className="w-5 text-right text-xs font-bold text-neutral-500 select-none">
+                            {rowLabel}
+                          </span>
+
+                          <div className="flex items-center gap-1.5">
+                            {seatList.map((seat, idx) => {
+                              const isSelected = selectedSeats.some((s) => s.seat_ref === seat.seat_ref);
+                              const isAisle = idx === midIndex && seatList.length > 8;
+
+                              let seatStyle = "bg-neutral-900 border-neutral-700 text-neutral-300 hover:border-amber-400 hover:bg-neutral-800";
+                              if (!seat.is_available) {
+                                seatStyle = "bg-neutral-900/40 border-neutral-800/50 text-neutral-700 cursor-not-allowed";
+                              } else if (isSelected) {
+                                seatStyle = "bg-amber-500 border-amber-400 text-black font-extrabold shadow-[0_0_12px_rgba(245,158,11,0.5)] scale-105";
+                              }
+
+                              return (
+                                <div key={seat.seat_ref} className="flex items-center">
+                                  {isAisle && <div className="w-6" />}
+                                  <button
+                                    disabled={!seat.is_available}
+                                    onClick={() => handleSeatClick(seat)}
+                                    title={
+                                      seat.is_available
+                                        ? `Seat ${seat.code} • ${formatRupees(seat.price_paise)}`
+                                        : `Seat ${seat.code} (Unavailable)`
+                                    }
+                                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border text-[11px] font-bold flex items-center justify-center transition-all duration-150 ${seatStyle}`}
+                                  >
+                                    {seat.number}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <span className="w-5 text-left text-xs font-bold text-neutral-500 select-none">
+                            {rowLabel}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      );
+                    })}
+                  </div>
                 </div>
+              ))}
+            </div>
 
-                <div className="flex justify-between text-sm text-neutral-400 pt-2 border-t border-neutral-800">
-                  <span className="font-semibold">Price total:</span>
-                  <span className="font-bold text-amber-500 text-lg">
-                    {formatRupees(totalPricePaise)}
-                  </span>
-                </div>
-
-                <button
-                  onClick={handleCheckout}
-                  disabled={selectedSeats.length === 0 || isCommitLoading}
-                  className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-neutral-800 disabled:text-neutral-500 disabled:cursor-not-allowed text-black font-bold py-3 rounded-lg transition flex items-center justify-center gap-2"
-                >
-                  {isCommitLoading ? <RefreshCw className="h-5 w-5 animate-spin" /> : "Confirm Seats"}
-                </button>
+            {/* SEAT STATUS LEGEND */}
+            <div className="flex items-center justify-center gap-6 mt-8 py-3 px-6 bg-neutral-900/80 border border-neutral-800 rounded-full text-xs font-medium text-neutral-400">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded border border-neutral-600 bg-neutral-900" />
+                <span>Available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-amber-500 border border-amber-400 shadow-sm" />
+                <span className="text-white font-semibold">Selected</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-neutral-900/40 border border-neutral-800 text-neutral-700" />
+                <span>Sold / Unavailable</span>
               </div>
             </div>
           </div>
         )}
       </main>
+
+      {/* BMS FLOATING BOTTOM CHECKOUT BAR */}
+      {selectedSeats.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-neutral-900/95 border-t border-neutral-800 backdrop-blur-lg p-4 z-40 shadow-2xl transition-transform duration-300">
+          <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
+            <div>
+              <div className="text-xs text-neutral-400 flex items-center gap-1.5">
+                <Ticket className="h-3.5 w-3.5 text-amber-500" />
+                <span>{selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'}:</span>
+                <span className="font-extrabold text-white">{selectedSeats.map((s) => s.code).join(", ")}</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">
+                {formatRupees(totalPricePaise)}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleCheckout}
+                disabled={isCommitLoading}
+                className="bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:bg-neutral-800 disabled:text-neutral-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+              >
+                {isCommitLoading ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" /> Processing...
+                  </>
+                ) : (
+                  <>
+                    Pay {formatRupees(totalPricePaise)} <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
