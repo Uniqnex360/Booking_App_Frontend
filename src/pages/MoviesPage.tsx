@@ -23,7 +23,23 @@ export default function MoviesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [city, setCity] = useState('Kochi');
+  const SUPPORTED_CITIES = ['Kochi', 'Chennai', 'Bangalore', 'Mumbai'];
 
+useEffect(() => {
+  const detectCity = async () => {
+    try {
+      const res = await fetch('https://ipapi.co/json/');
+      const data = await res.json();
+      const detected = data.city;
+      if (detected && SUPPORTED_CITIES.includes(detected)) {
+        setCity(detected);
+      }
+    } catch (err) {
+      console.error('IP geolocation failed, using default city', err);
+    }
+  };
+  detectCity();
+}, []);
   useEffect(() => {
     const fetchMoviesAndShowtimes = async () => {
       try {
@@ -105,6 +121,8 @@ export default function MoviesPage() {
               className="bg-neutral-900 border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none"
             >
               <option value="Kochi">Kochi</option>
+              <option value="Chennai">Chennai</option>
+
               <option value="Bangalore">Bangalore</option>
               <option value="Mumbai">Mumbai</option>
             </select>
