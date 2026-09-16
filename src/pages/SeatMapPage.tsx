@@ -274,7 +274,7 @@ export default function SeatMapPage() {
   const totalPricePaise = selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col font-sans select-none pb-28">
+    <div className="min-h-screen bg-neutral-950 text-white flex flex-col font-sans select-none pb-28 overflow-x-hidden">
       <Header />
 
       {/* TOP BMS SUB-HEADER BAR */}
