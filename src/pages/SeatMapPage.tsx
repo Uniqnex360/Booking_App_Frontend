@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   RefreshCw,
   AlertCircle,
-  ShieldCheck,
   Clock,
   ChevronRight,
   Ticket,
@@ -165,7 +164,7 @@ export default function SeatMapPage() {
       amount: booking.total_paise,
       currency: booking.currency || "INR",
       name: "Vyhbz Cinemas",
-      description: `${mapData?.movie_title} (${selectedSeats.length} Seats)`,
+      description: `${mapData?.movie_title || "Movie Ticket"} (${selectedSeats.length} Seats)`,
       handler: async function (response: any) {
         toast.info("Payment verified! Confirming seats...");
         try {
@@ -247,7 +246,6 @@ export default function SeatMapPage() {
   // Organize seats into BookMyShow-style Price Tiers
   const tiers: { name: string; price_paise: number; rows: Record<string, SeatItem[]> }[] = [];
   
-  // Group rows
   const rawRows: Record<string, { price_paise: number; seats: SeatItem[] }> = {};
   allSeats.forEach((seat) => {
     if (!rawRows[seat.row_label]) {
@@ -256,7 +254,6 @@ export default function SeatMapPage() {
     rawRows[seat.row_label].seats.push(seat);
   });
 
-  // Group into tiers based on price
   Object.entries(rawRows).forEach(([rowLabel, rowData]) => {
     let tierName = "CLASSIC";
     const priceRupees = rowData.price_paise / 100;
@@ -272,7 +269,6 @@ export default function SeatMapPage() {
     existingTier.rows[rowLabel] = rowData.seats.sort((a, b) => a.number - b.number);
   });
 
-  // Sort tiers descending by price (VIP on top)
   tiers.sort((a, b) => b.price_paise - a.price_paise);
 
   const totalPricePaise = selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
@@ -294,19 +290,23 @@ export default function SeatMapPage() {
             </button>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-white leading-tight flex items-center gap-2">
-                {mapData.movie_title}
-                <span className="text-[10px] bg-neutral-800 text-neutral-400 font-bold px-2 py-0.5 rounded border border-neutral-700">
-                  {mapData.format || "2D"}
-                </span>
+                {mapData?.movie_title || "Select Seats"}
+                {mapData?.format && (
+                  <span className="text-[10px] bg-neutral-800 text-neutral-400 font-bold px-2 py-0.5 rounded border border-neutral-700">
+                    {mapData.format}
+                  </span>
+                )}
               </h1>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                {mapData.cinema_name || mapData.venue_name} • {mapData.screen_name} |{" "}
-                <span className="text-amber-400 font-semibold">
-                  {new Date(mapData.starts_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                {", "}
-                {new Date(mapData.starts_at).toLocaleDateString([], { month: "short", day: "numeric" })}
-              </p>
+              {mapData && (
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  {mapData.cinema_name || mapData.venue_name} • {mapData.screen_name} |{" "}
+                  <span className="text-amber-400 font-semibold">
+                    {new Date(mapData.starts_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  {", "}
+                  {new Date(mapData.starts_at).toLocaleDateString([], { month: "short", day: "numeric" })}
+                </p>
+              )}
             </div>
           </div>
 
