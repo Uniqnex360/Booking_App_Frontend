@@ -1,27 +1,28 @@
-import { ApiResponse } from '@/types';
-import api from './client';
-import type { Event } from '@/types/api.types';
+import { api, unwrap } from './client';
 import { EventItem } from '@/types/event.types';
-export async function getMyEvents() {
-  const response = await api.get<ApiResponse<{ items: EventItem[]; total: number }>>('/events/me');
-  return response.data.data;
-}
-export async function getEvents(): Promise<EventItem[]> {
-  const response = await api.get<ApiResponse<{ items: EventItem[]; total: number }>>('/events');
-  return response.data.data.items;
+
+export async function getMyEvents(): Promise<EventItem[]> {
+  const data = await unwrap<{ items: EventItem[]; total: number }>(api.get('/events/me'));
+  return data.items || [];
 }
 
-export async function getEventById(id: string): Promise<Event> {
-  const response = await api.get<ApiResponse<Event>>(`/events/${id}`);
-  return response.data.data; 
+export async function getEvents(params?: any): Promise<EventItem[]> {
+  const data = await unwrap<{ items: EventItem[]; total: number }>(api.get('/events', { params }));
+  return data.items || [];
 }
-export async function createEvent(data: any) {
-  const response = await api.post<ApiResponse<Event>>('/events', data);
-  return response.data.data;
+
+export async function getEventById(id: string): Promise<EventItem> {
+  return unwrap<EventItem>(api.get(`/events/${id}`));
 }
-export async function getEventsByCategory(category: string): Promise<Event[]> {
-  const response = await api.get<ApiResponse<{ items: Event[]; total: number }>>('/events', {
-    params: { category },
-  });
-  return response.data.data.items;
+
+export async function createEvent(payload: any): Promise<EventItem> {
+  return unwrap<EventItem>(api.post('/events', payload));
+}
+
+export async function updateEvent(id: string, payload: any): Promise<EventItem> {
+  return unwrap<EventItem>(api.patch(`/events/${id}`, payload));
+}
+
+export async function cancelOrDeleteEvent(id: string, reason?: string): Promise<void> {
+  await unwrap<any>(api.delete(`/events/${id}`, { params: { reason } }));
 }
