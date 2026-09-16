@@ -370,7 +370,7 @@ export default function SeatMapPage() {
                       const midIndex = Math.floor(seatList.length / 2);
 
                       return (
-                        <div key={rowLabel} className="flex items-center gap-3">
+                        <div key={rowLabel} className="flex items-center gap-1 sm:gap-3">
                           <span className="w-5 text-right text-xs font-bold text-neutral-500 select-none">
                             {rowLabel}
                           </span>
@@ -398,7 +398,8 @@ export default function SeatMapPage() {
                                         ? `Seat ${seat.code} • ${formatRupees(seat.price_paise)}`
                                         : `Seat ${seat.code} (Unavailable)`
                                     }
-                                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border text-[11px] font-bold flex items-center justify-center transition-all duration-150 ${seatStyle}`}
+                                    className={`aspect-square rounded-lg border text-[10px] font-bold flex items-center justify-center transition-all duration-150 ${seatStyle}`}
+style={{ width: 'clamp(18px, 5vw, 32px)' }}
                                   >
                                     {seat.number}
                                   </button>
