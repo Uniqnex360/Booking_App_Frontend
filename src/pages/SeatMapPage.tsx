@@ -355,7 +355,7 @@ export default function SeatMapPage() {
             </div>
 
             {/* SEAT TIERS */}
-            <div className="w-full space-y-10 overflow-x-auto pb-6 flex flex-col items-center">
+           <div className="w-full space-y-10 pb-6 flex flex-col items-center px-2">
               {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full max-w-3xl">
                   {/* Tier Title Header */}
@@ -370,7 +370,7 @@ export default function SeatMapPage() {
                       const midIndex = Math.floor(seatList.length / 2);
 
                       return (
-                        <div key={rowLabel} className="flex items-center gap-1 sm:gap-3">
+                       <div key={rowLabel} className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center max-w-full">
                           <span className="w-5 text-right text-xs font-bold text-neutral-500 select-none">
                             {rowLabel}
                           </span>
@@ -398,8 +398,7 @@ export default function SeatMapPage() {
                                         ? `Seat ${seat.code} • ${formatRupees(seat.price_paise)}`
                                         : `Seat ${seat.code} (Unavailable)`
                                     }
-                                    className={`aspect-square rounded-lg border text-[10px] font-bold flex items-center justify-center transition-all duration-150 ${seatStyle}`}
-style={{ width: 'clamp(18px, 5vw, 32px)' }}
+                                   className={`w-6 h-6 sm:w-7 sm:h-7 shrink-0 rounded-lg border text-[9px] sm:text-[10px] font-bold flex items-center justify-center transition-all duration-150 ${seatStyle}`}
                                   >
                                     {seat.number}
                                   </button>
