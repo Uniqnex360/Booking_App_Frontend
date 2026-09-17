@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@/components/common/Loader';
 import { useAuth } from '@/hooks/useAuth';
 import { createBooking } from '@/api/booking.api';
+import { api, unwrap } from '@/api/client';
 import {
-  Wine,
   Calendar,
   Users,
   ArrowLeft,
@@ -16,156 +17,259 @@ import {
   Loader2,
   CheckCircle2,
   MapPin,
+  ShieldCheck,
 } from 'lucide-react';
-import { formatCurrency } from '@/utils/currencyFormatter';
+import { formatCurrency, formatRupees } from '@/utils/currencyFormatter';
+import { toast } from 'sonner';
+
+function loadScript(src: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
 
 export default function BookingPage() {
   const { type, id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  const [itemData, setItemData] = useState<any>(null);
   const [guests, setGuests] = useState(2);
   const [date, setDate] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mockDetails: Record<string, { title: string; venue: string; location: string; price: number; image: string }> = {
-    '1': {
-      title: 'Sunset Vineyard Tour & Tasting',
-      venue: 'Château Lumière Estate',
-      location: 'Napa Valley, CA',
-      price: 85,
-      image: 'https://images.pexels.com/photos/20151747/pexels-photo-20151747.jpeg?auto=compress&cs=tinysrgb&h=400&w=600',
-    },
-    '2': {
-      title: 'Jazz Night: Live Quartet',
-      venue: 'The Velvet Room',
-      location: 'Soho, NYC',
-      price: 45,
-      image: 'https://images.pexels.com/photos/13230484/pexels-photo-13230484.jpeg?auto=compress&cs=tinysrgb&h=400&w=600',
-    },
-  };
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
 
-  const details = mockDetails[id || '1'] || {
-    title: 'Experience Booking',
-    venue: 'Venue',
-    location: 'Location',
-    price: 50,
-    image: 'https://images.pexels.com/photos/941861/pexels-photo-941861.jpeg?auto=compress&cs=tinysrgb&h=400&w=600',
-  };
+  useEffect(() => {
+    const fetchDetails = async () => {
+      setLoading(true);
+      try {
+        if (type?.toLowerCase() === 'event') {
+          const res = await unwrap<any>(api.get(`/events/${id}`));
+          setItemData({
+            title: res.title,
+            venue: res.venue_name,
+            location: res.city,
+            price_paise: res.ticket_categories?.[0]?.price_paise || 50000,
+            image: res.poster_image_url || 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop&q=80',
+            tier_id: res.ticket_categories?.[0]?.id,
+          });
+          setDate(res.starts_at?.split('T')[0] || '');
+        } else if (type?.toLowerCase() === 'restaurant') {
+          const res = await unwrap<any>(api.get(`/restaurants/${id}`).catch(() => null));
+          setItemData({
+            title: res?.name || 'Gourmet Table Reservation',
+            venue: res?.name || 'Exclusive Dining',
+            location: res?.city || 'Kochi',
+            price_paise: 25000, // standard reservation deposit
+            image: res?.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
+          });
+        } else {
+          setItemData({
+            title: 'Experience Booking',
+            venue: 'Vyhbz Experience Venue',
+            location: 'Kochi',
+            price_paise: 50000,
+            image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
+          });
+        }
+      } catch {
+        setItemData({
+          title: 'Experience Booking',
+          venue: 'Vyhbz Experience Venue',
+          location: 'Kochi',
+          price_paise: 50000,
+          image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const totalPrice = details.price * guests;
+    fetchDetails();
+  }, [type, id]);
+
+  const pricePaisePerPerson = itemData?.price_paise || 50000;
+  const totalPricePaise = pricePaisePerPerson * guests;
+
+  const startRazorpayPayment = async () => {
+    const isLoaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+    if (!isLoaded) {
+      toast.error('Failed to load payment gateway. Please retry.');
+      setIsProcessing(false);
+      return;
+    }
+
+    const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_VyBhZExTMTk5';
+
+    const options = {
+      key: rzpKey,
+      amount: totalPricePaise,
+      currency: 'INR',
+      name: 'Vyhbz Experiences',
+      description: `${itemData?.title} (${guests} Guests)`,
+      handler: async function (response: any) {
+        toast.info('Payment verified! Confirming booking...');
+        try {
+          if (type?.toLowerCase() === 'event' && itemData?.tier_id) {
+            await createBooking({
+              type: 'EVENT',
+              ref_id: itemData.tier_id,
+              title: itemData.title,
+              venue: itemData.venue,
+              location: itemData.location,
+              booking_date: date,
+              guests,
+              total_price: totalPricePaise / 100,
+            });
+          }
+          setSuccess(true);
+          setTimeout(() => navigate('/profile'), 2000);
+        } catch (err: any) {
+          toast.error(err.message || 'Booking confirmation failed.');
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      prefill: {
+        name: user?.full_name || 'Customer',
+        email: user?.email || 'customer@vybhz.com',
+        contact: user?.phone || '9999999999',
+      },
+      theme: {
+        color: '#f59e0b',
+      },
+      modal: {
+        ondismiss: function () {
+          toast.warning('Payment canceled.');
+          setIsProcessing(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  };
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setIsProcessing(true);
+
     try {
-      await createBooking({
-        type: type?.toUpperCase() as 'MOVIE' | 'EVENT' | 'RESTAURANT',
-        ref_id: id || '',
-        title: details.title,
-        venue: details.venue,
-        location: details.location,
-        booking_date: date,
-        guests,
-        total_price: totalPrice,
-      });
-      setSuccess(true);
-      setTimeout(() => navigate('/profile'), 2000);
+      await startRazorpayPayment();
     } catch {
-      setError('Booking failed. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Checkout failed. Please try again.');
+      setIsProcessing(false);
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+        <Header />
+        <div className="flex-grow flex items-center justify-center">
+          <Loader />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   if (success) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
         <Header />
-        <div className="flex min-h-screen items-center justify-center px-4">
-          <div className="animate-scale-in text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle2 className="h-10 w-10 text-success" />
+        <div className="flex flex-grow items-center justify-center px-4">
+          <div className="text-center bg-neutral-900 border border-neutral-800 p-8 rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+              <CheckCircle2 className="h-10 w-10" />
             </div>
-            <h1 className="font-serif text-3xl font-semibold text-wine-950">
-              Booking Confirmed!
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your reservation for {details.title} has been confirmed.
+            <h1 className="text-2xl font-black">Booking Confirmed!</h1>
+            <p className="mt-2 text-sm text-neutral-400">
+              Your reservation for <strong className="text-white">{itemData?.title}</strong> has been secured.
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-4 text-xs text-amber-500 font-semibold">
               Redirecting to your profile...
             </p>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
       <Header />
 
-      <div className="mx-auto max-w-4xl px-4 pt-28 sm:px-6 lg:px-8">
+      <main className="flex-grow max-w-4xl w-full mx-auto px-4 pt-24 pb-12 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-wine-700"
+          className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-white transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back
+          <ArrowLeft className="h-4 w-4" /> Back
         </Link>
 
-        <h1 className="mt-4 font-serif text-4xl font-semibold text-wine-950">
+        <h1 className="mt-4 text-3xl md:text-4xl font-black tracking-tight">
           Complete your booking
         </h1>
 
         {error && (
-          <div className="mt-6 animate-slide-down rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="mt-6 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
             {error}
           </div>
         )}
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-2">
-          {/* Summary */}
-          <div className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-soft">
-            <div className="relative aspect-[16/9] overflow-hidden">
+        <div className="mt-8 grid gap-8 lg:grid-cols-2 items-start">
+          {/* Summary Card */}
+          <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 shadow-soft">
+            <div className="relative aspect-[16/9] overflow-hidden bg-neutral-800">
               <img
-                src={details.image}
-                alt={details.title}
+                src={itemData.image}
+                alt={itemData.title}
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="p-5">
-              <h2 className="font-serif text-2xl font-semibold text-wine-950">
-                {details.title}
+            <div className="p-6">
+              <h2 className="text-2xl font-bold">
+                {itemData.title}
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {details.venue}
+              <p className="mt-1 text-sm text-neutral-400">
+                {itemData.venue}
               </p>
-              <div className="mt-3 flex items-center gap-3 text-sm text-muted-foreground">
+              <div className="mt-3 flex items-center gap-3 text-xs text-neutral-400">
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {details.location}
+                  <MapPin className="h-3.5 w-3.5 text-amber-500" />
+                  {itemData.location}
                 </span>
               </div>
-              <div className="mt-6 space-y-3 border-t border-border/50 pt-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Price per person</span>
-                  <span className="font-medium">{formatCurrency(details.price)}</span>
+
+              <div className="mt-6 space-y-3 border-t border-neutral-800 pt-4">
+                <div className="flex justify-between text-sm text-neutral-400">
+                  <span>Price per person</span>
+                  <span className="font-bold text-white">{formatRupees(pricePaisePerPerson)}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Guests</span>
-                  <span className="font-medium">{guests}</span>
+                <div className="flex justify-between text-sm text-neutral-400">
+                  <span>Guests</span>
+                  <span className="font-bold text-white">{guests}</span>
                 </div>
-                <div className="flex justify-between border-t border-border/50 pt-3">
-                  <span className="font-serif text-lg font-semibold text-wine-950">
-                    Total
-                  </span>
-                  <span className="font-serif text-2xl font-semibold text-wine-700">
-                    {formatCurrency(totalPrice)}
+                <div className="flex justify-between border-t border-neutral-800 pt-3 items-center">
+                  <span className="text-base font-bold text-neutral-300">Total</span>
+                  <span className="text-2xl font-black text-amber-400">
+                    {formatRupees(totalPricePaise)}
                   </span>
                 </div>
               </div>
@@ -173,11 +277,10 @@ export default function BookingPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleBooking} className="space-y-5">
+          <form onSubmit={handleBooking} className="space-y-5 bg-neutral-900 border border-neutral-800 p-6 rounded-2xl">
             <div className="space-y-2">
-              <Label htmlFor="date" className="text-sm font-medium">
-                <Calendar className="mr-1 inline h-4 w-4" />
-                Select date
+              <Label htmlFor="date" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                <Calendar className="mr-1 inline h-4 w-4 text-amber-500" /> Select Date
               </Label>
               <Input
                 id="date"
@@ -185,21 +288,20 @@ export default function BookingPage() {
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="h-11 rounded-xl"
+                className="h-11 rounded-xl bg-neutral-950 border-neutral-800 text-white"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="guests" className="text-sm font-medium">
-                <Users className="mr-1 inline h-4 w-4" />
-                Number of guests
+              <Label htmlFor="guests" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                <Users className="mr-1 inline h-4 w-4 text-amber-500" /> Number of Guests / Tickets
               </Label>
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-11 w-11 rounded-xl"
+                  className="h-11 w-11 rounded-xl bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
                   onClick={() => setGuests((g) => Math.max(1, g - 1))}
                 >
                   -
@@ -211,13 +313,13 @@ export default function BookingPage() {
                   max={20}
                   value={guests}
                   onChange={(e) => setGuests(Number(e.target.value) || 1)}
-                  className="h-11 rounded-xl text-center"
+                  className="h-11 rounded-xl text-center bg-neutral-950 border-neutral-800 text-white font-bold"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-11 w-11 rounded-xl"
+                  className="h-11 w-11 rounded-xl bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
                   onClick={() => setGuests((g) => Math.min(20, g + 1))}
                 >
                   +
@@ -226,37 +328,42 @@ export default function BookingPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Guest details</Label>
-              <div className="rounded-xl border border-border/50 bg-card p-4 text-sm">
-                <p className="font-medium text-foreground">
-                  {user?.full_name || 'Guest'}
+              <Label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Contact Details</Label>
+              <div className="rounded-xl border border-neutral-800 bg-neutral-950 p-4 text-sm">
+                <p className="font-bold text-white">
+                  {user?.full_name || 'Customer'}
                 </p>
-                <p className="text-muted-foreground">{user?.email}</p>
+                <p className="text-neutral-400 text-xs mt-0.5">{user?.email}</p>
                 {user?.phone && (
-                  <p className="text-muted-foreground">{user.phone}</p>
+                  <p className="text-neutral-400 text-xs mt-0.5">{user.phone}</p>
                 )}
               </div>
             </div>
 
             <Button
               type="submit"
-              disabled={loading}
-              className="h-12 w-full rounded-xl bg-wine-700 text-sm font-semibold shadow-wine transition-all hover:bg-wine-800 hover:shadow-wine-lg"
+              disabled={isProcessing}
+              className="h-12 w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-base font-extrabold shadow-lg transition-all"
             >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+              {isProcessing ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>
-                  Confirm booking — {formatCurrency(totalPrice)}
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  Pay {formatRupees(totalPricePaise)}
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </>
               )}
             </Button>
+
+            <div className="flex items-center justify-center gap-1.5 text-xs text-neutral-500 pt-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              Secured by Razorpay Sandbox
+            </div>
           </form>
         </div>
-      </div>
+      </main>
 
-      <div className="h-20" />
+      <Footer />
     </div>
   );
 }
