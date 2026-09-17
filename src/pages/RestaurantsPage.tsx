@@ -164,7 +164,7 @@ export default function RestaurantsPage() {
                       {r.tags.slice(0, 1).map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-full bg-wine-700 px-2.5 py-1 text-xs font-semibold text-white shadow-wine"
+                          className="rounded-full bg-wine-700 px-2.5 py-1 text-xs font-semibold text-neutral-900 shadow-wine"
                         >
                           {tag}
                         </span>

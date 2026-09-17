@@ -177,9 +177,9 @@ export default function BecomePartnerPage() {
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
         <div className="relative mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
-            <Sparkles className="h-8 w-8 text-white" />
+            <Sparkles className="h-8 w-8 text-neutral-900" />
           </div>
-          <h1 className="font-serif text-4xl font-semibold text-white sm:text-5xl">
+          <h1 className="font-serif text-4xl font-semibold text-neutral-900 sm:text-5xl">
             Become a Partner
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-wine-100/70">

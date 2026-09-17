@@ -219,7 +219,7 @@ export default function EventsPage() {
                           </div>
                         )}
                         <div className="absolute left-3 top-3">
-                          <Badge className="bg-wine-700 text-xs font-semibold text-white shadow-wine">
+                          <Badge className="bg-wine-700 text-xs font-semibold text-neutral-900 shadow-wine">
                             <CatIcon className="mr-1 h-3 w-3" />
                             {categoryMeta[event.category]?.label || 'Event'}
                           </Badge>
@@ -270,7 +270,7 @@ export default function EventsPage() {
                             onClick={() =>
                               navigate(`/booking/event/${event.id}`)
                             }
-                            className="rounded-full bg-wine-700 px-4 text-xs font-semibold text-white shadow-wine hover:bg-wine-800"
+                            className="rounded-full bg-wine-700 px-4 text-xs font-semibold text-neutral-900 shadow-wine hover:bg-wine-800"
                           >
                             Book Now
                             <ArrowRight className="ml-1 h-3 w-3" />

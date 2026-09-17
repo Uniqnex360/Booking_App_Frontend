@@ -66,11 +66,11 @@ export function Header() {
         {/* Logo */}
         <Link to="/" className="group flex items-center gap-2.5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl wine-gradient shadow-wine transition-transform group-hover:scale-105">
-            <Wine className="h-5 w-5 text-white" strokeWidth={2.2} />
+            <Wine className="h-5 w-5 text-neutral-900" strokeWidth={2.2} />
           </div>
           <span
             className={`font-serif text-2xl font-semibold tracking-tight ${
-              transparent ? 'text-white' : 'text-neutral-200'
+              transparent ? 'text-neutral-900' : 'text-neutral-200'
             }`}
           >
             Vyhbz
@@ -85,7 +85,7 @@ export function Header() {
               to={link.href}
               className={`group relative text-sm font-medium transition-colors ${
                 transparent
-                  ? 'text-white/80 hover:text-white'
+                  ? 'text-neutral-900/80 hover:text-neutral-900'
                   : 'text-neutral-300 hover:text-amber-500'
               }`}
             >
@@ -104,17 +104,17 @@ export function Header() {
                   className={`flex items-center gap-2 rounded-full border p-1 pr-3 transition-all hover:shadow-soft ${
                     transparent
                       ? 'border-white/20 bg-white/10'
-                      : 'border-neutral-800 bg-neutral-900/50'
+                      : 'border-neutral-800 bg-white/50'
                   }`}
                 >
                   <Avatar className="h-8 w-8 border border-neutral-700">
-                    <AvatarFallback className="bg-neutral-800 text-xs font-semibold text-amber-500">
+                    <AvatarFallback className="bg-neutral-100 text-xs font-semibold text-amber-500">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                   <span
                     className={`hidden text-sm font-medium sm:block ${
-                      transparent ? 'text-white' : 'text-neutral-200'
+                      transparent ? 'text-neutral-900' : 'text-neutral-200'
                     }`}
                   >
                     {user.full_name?.split(' ')[0] || 'Account'}
@@ -123,38 +123,38 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-56 rounded-xl border-neutral-800 bg-neutral-900 text-white shadow-soft-lg"
+                className="w-56 rounded-xl border-neutral-800 bg-white text-neutral-900 shadow-soft-lg"
               >
                 <div className="px-2 py-1.5">
                   <p className="text-sm font-semibold">
                     {user.full_name || 'Member'}
                   </p>
-                  <p className="truncate text-xs text-neutral-400">
+                  <p className="truncate text-xs text-neutral-500">
                     {user.email}
                   </p>
                 </div>
-                <DropdownMenuSeparator className="bg-neutral-800" />
+                <DropdownMenuSeparator className="bg-neutral-100" />
                 
-                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-800 cursor-pointer">
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-100 cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-800 cursor-pointer">
+                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-neutral-100 cursor-pointer">
                   <Calendar className="mr-2 h-4 w-4" />
                   My Bookings
                 </DropdownMenuItem>
 
                 {/* Partner Option */}
                 {user.role === 'PARTNER' && (
-                  <DropdownMenuItem onClick={() => navigate('/partner/dashboard')} className="hover:bg-neutral-800 text-amber-500 focus:text-amber-500 cursor-pointer">
+                  <DropdownMenuItem onClick={() => navigate('/partner/dashboard')} className="hover:bg-neutral-100 text-amber-500 focus:text-amber-500 cursor-pointer">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Partner Dashboard
                   </DropdownMenuItem>
                 )}
 
                 {user.role !== 'PARTNER' && user.role !== 'ADMIN' && (
-                  <DropdownMenuItem onClick={() => navigate('/partner/become')} className="hover:bg-neutral-800 text-amber-500 focus:text-amber-500 cursor-pointer">
+                  <DropdownMenuItem onClick={() => navigate('/partner/become')} className="hover:bg-neutral-100 text-amber-500 focus:text-amber-500 cursor-pointer">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Become a Partner
                   </DropdownMenuItem>
@@ -163,19 +163,19 @@ export function Header() {
                 {/* Admin Options */}
                 {user.role === 'ADMIN' && (
                   <>
-                    <DropdownMenuSeparator className="bg-neutral-800" />
-                    <DropdownMenuItem onClick={() => navigate('/admin/partners')} className="hover:bg-neutral-800 cursor-pointer">
+                    <DropdownMenuSeparator className="bg-neutral-100" />
+                    <DropdownMenuItem onClick={() => navigate('/admin/partners')} className="hover:bg-neutral-100 cursor-pointer">
                       <Users className="mr-2 h-4 w-4 text-amber-500" />
                       Partner Verification
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/admin/moderation')} className="hover:bg-neutral-800 cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate('/admin/moderation')} className="hover:bg-neutral-100 cursor-pointer">
                       <ShieldCheck className="mr-2 h-4 w-4 text-amber-500" />
                       Event Moderation
                     </DropdownMenuItem>
                   </>
                 )}
                 
-                <DropdownMenuSeparator className="bg-neutral-800" />
+                <DropdownMenuSeparator className="bg-neutral-100" />
                 
                 <DropdownMenuItem
                   onClick={() => signOut()}
@@ -193,8 +193,8 @@ export function Header() {
                 variant="ghost"
                 className={`text-sm font-medium ${
                   transparent
-                    ? 'text-white/80 hover:text-white hover:bg-white/10'
-                    : 'text-neutral-300 hover:text-amber-500 hover:bg-neutral-900'
+                    ? 'text-neutral-900/80 hover:text-neutral-900 hover:bg-white/10'
+                    : 'text-neutral-300 hover:text-amber-500 hover:bg-white'
                 }`}
               >
                 <Link to="/login">Log in</Link>
@@ -214,7 +214,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-white"
+                className="lg:hidden text-neutral-900"
                 aria-label="Open menu"
               >
                 <Menu className="h-5 w-5" />
@@ -222,7 +222,7 @@ export function Header() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] border-neutral-800 bg-neutral-950 text-white p-0"
+              className="w-[300px] border-neutral-800 bg-neutral-50 text-neutral-900 p-0"
             >
               <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-4">
                 <span className="font-serif text-xl font-semibold">
@@ -232,7 +232,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setMobileOpen(false)}
-                  className="text-white"
+                  className="text-neutral-900"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -243,7 +243,7 @@ export function Header() {
                     key={link.href}
                     to={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-300 hover:bg-neutral-900 hover:text-amber-500"
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-300 hover:bg-white hover:text-amber-500"
                   >
                     {link.label}
                   </Link>
@@ -254,7 +254,7 @@ export function Header() {
                       <Link
                         to="/profile"
                         onClick={() => setMobileOpen(false)}
-                        className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-300 hover:bg-neutral-900"
+                        className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-300 hover:bg-white"
                       >
                         Profile
                       </Link>
@@ -263,7 +263,7 @@ export function Header() {
                         <Link
                           to="/partner/dashboard"
                           onClick={() => setMobileOpen(false)}
-                          className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-neutral-900"
+                          className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-white"
                         >
                           Partner Dashboard
                         </Link>
@@ -274,14 +274,14 @@ export function Header() {
                           <Link
                             to="/admin/partners"
                             onClick={() => setMobileOpen(false)}
-                            className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-neutral-900"
+                            className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-white"
                           >
                             Partner Verification
                           </Link>
                           <Link
                             to="/admin/moderation"
                             onClick={() => setMobileOpen(false)}
-                            className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-neutral-900"
+                            className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-white"
                           >
                             Event Moderation
                           </Link>
@@ -292,7 +292,7 @@ export function Header() {
                         <Link
                           to="/partner/become"
                           onClick={() => setMobileOpen(false)}
-                          className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-neutral-900"
+                          className="rounded-lg px-3 py-2.5 text-sm font-medium text-amber-500 hover:bg-white"
                         >
                           Become a Partner
                         </Link>
@@ -313,7 +313,7 @@ export function Header() {
                       <Button
                         asChild
                         variant="outline"
-                        className="rounded-full border-neutral-800 bg-transparent text-white"
+                        className="rounded-full border-neutral-800 bg-transparent text-neutral-900"
                       >
                         <Link to="/login" onClick={() => setMobileOpen(false)}>
                           Log in

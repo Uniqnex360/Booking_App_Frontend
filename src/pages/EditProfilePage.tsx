@@ -354,7 +354,7 @@ export default function EditProfilePage() {
         <div className="-mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-4">
             <Avatar className="h-24 w-24 border-4 border-background shadow-wine-lg">
-              <AvatarFallback className="bg-wine-700 font-serif text-2xl font-semibold text-white">
+              <AvatarFallback className="bg-wine-700 font-serif text-2xl font-semibold text-neutral-900">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -624,7 +624,7 @@ export default function EditProfilePage() {
                               {addr.label}
                             </p>
                             {addr.is_default && (
-                              <Badge className="rounded-full bg-wine-700 text-xs font-semibold text-white">
+                              <Badge className="rounded-full bg-wine-700 text-xs font-semibold text-neutral-900">
                                 <Star className="mr-1 h-3 w-3 fill-white" />
                                 Default
                               </Badge>

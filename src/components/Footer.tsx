@@ -24,7 +24,7 @@ export function Footer() {
           <div>
             <Link to="/" className="flex items-center gap-2.5">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl wine-gradient">
-                <Wine className="h-4 w-4 text-white" strokeWidth={2.2} />
+                <Wine className="h-4 w-4 text-neutral-900" strokeWidth={2.2} />
               </div>
               <span className="font-serif text-xl font-semibold text-wine-900">
                 Vyhbz App

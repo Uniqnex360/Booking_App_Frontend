@@ -256,7 +256,7 @@ export default function PartnerEventCreatePage() {
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all ${
                       isActive
-                        ? "border-wine-700 bg-wine-700 text-white"
+                        ? "border-wine-700 bg-wine-700 text-neutral-900"
                         : isDone
                           ? "border-wine-700 bg-wine-50 text-wine-700"
                           : "border-border bg-card text-muted-foreground"
@@ -683,7 +683,7 @@ export default function PartnerEventCreatePage() {
                 <Button
                   type="button"
                   onClick={nextStep}
-                  className="rounded-xl bg-wine-700 text-sm font-semibold text-white shadow-wine hover:bg-wine-800"
+                  className="rounded-xl bg-wine-700 text-sm font-semibold text-neutral-900 shadow-wine hover:bg-wine-800"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
@@ -692,7 +692,7 @@ export default function PartnerEventCreatePage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-wine-700 text-sm font-semibold text-white shadow-wine hover:bg-wine-800"
+                  className="rounded-xl bg-wine-700 text-sm font-semibold text-neutral-900 shadow-wine hover:bg-wine-800"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

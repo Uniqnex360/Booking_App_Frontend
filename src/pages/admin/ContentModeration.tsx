@@ -74,7 +74,7 @@ export default function ContentModeration() {
               <div className="flex flex-col gap-2">
                 <Button 
                   onClick={() => handleAction(event.id, 'PUBLISHED')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-green-600 hover:bg-green-700 text-neutral-900"
                 >
                   <Check className="w-4 h-4 mr-2" /> Approve
                 </Button>

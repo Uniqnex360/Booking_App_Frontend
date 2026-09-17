@@ -77,10 +77,10 @@
           <div className="absolute inset-0 bg-wine-radial" />
           <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-wine-500/20 blur-3xl" />
           <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-wine-400/10 blur-3xl" />
-          <div className="relative flex h-full flex-col justify-between p-12 text-white">
+          <div className="relative flex h-full flex-col justify-between p-12 text-neutral-900">
             {/* <Link to="/" className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-                <Wine className="h-5 w-5 text-white" strokeWidth={2.2} />
+                <Wine className="h-5 w-5 text-neutral-900" strokeWidth={2.2} />
               </div>
               <span className="font-serif text-2xl font-semibold">Vyhbz App</span>
             </Link> */}
@@ -129,7 +129,7 @@
             <div className="mb-6 lg:hidden">
               <Link to="/" className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl wine-gradient">
-                  <Wine className="h-5 w-5 text-white" strokeWidth={2.2} />
+                  <Wine className="h-5 w-5 text-neutral-900" strokeWidth={2.2} />
                 </div>
                 <span className="font-serif text-2xl font-semibold text-wine-900">
                   Vyhbz App

@@ -351,7 +351,7 @@ export default function AdminPartnersPage() {
                                   <AlertDialogTrigger asChild>
                                     <Button
                                       size="sm"
-                                      className="rounded-full bg-emerald-600 text-xs font-semibold text-white hover:bg-emerald-700"
+                                      className="rounded-full bg-emerald-600 text-xs font-semibold text-neutral-900 hover:bg-emerald-700"
                                     >
                                       <Check className="h-3.5 w-3.5" />
                                       Approve
@@ -379,7 +379,7 @@ export default function AdminPartnersPage() {
                                         onClick={() =>
                                           handleApprove(partner.id)
                                         }
-                                        className="rounded-xl bg-emerald-600 text-white hover:bg-emerald-700"
+                                        className="rounded-xl bg-emerald-600 text-neutral-900 hover:bg-emerald-700"
                                       >
                                         {approvingId === partner.id ? (
                                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -491,7 +491,7 @@ export default function AdminPartnersPage() {
             <Button
               onClick={handleReject}
               disabled={rejecting || !rejectReason.trim()}
-              className="rounded-xl bg-red-600 text-sm font-semibold text-white hover:bg-red-700"
+              className="rounded-xl bg-red-600 text-sm font-semibold text-neutral-900 hover:bg-red-700"
             >
               {rejecting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

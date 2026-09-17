@@ -98,7 +98,7 @@ export default function VerifyOtpPage() {
           
           <Button 
             type="submit" 
-            className="w-full h-12 bg-wine-700 hover:bg-wine-800 text-white rounded-xl font-semibold"
+            className="w-full h-12 bg-wine-700 hover:bg-wine-800 text-neutral-900 rounded-xl font-semibold"
             disabled={loading || code.length !== 6}
           >
             {loading ? <Loader2 className="animate-spin" /> : "Verify Identity"}

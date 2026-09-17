@@ -86,7 +86,7 @@ export default function ProfilePage() {
         <div className="-mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-4">
             <Avatar className="h-24 w-24 border-4 border-background shadow-wine-lg">
-              <AvatarFallback className="bg-wine-700 font-serif text-2xl font-semibold text-white">
+              <AvatarFallback className="bg-wine-700 font-serif text-2xl font-semibold text-neutral-900">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -316,7 +316,7 @@ function BookingCard({
         <div className="absolute right-3 top-3">
           <Badge
             className={`rounded-full text-xs font-semibold ${
-              past ? 'bg-muted text-muted-foreground' : 'bg-wine-700 text-white'
+              past ? 'bg-muted text-muted-foreground' : 'bg-wine-700 text-neutral-900'
             }`}
           >
             {past ? 'Completed' : 'Confirmed'}
