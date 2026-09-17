@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Loader } from '@/components/common/Loader';
@@ -19,12 +19,24 @@ interface MovieItem {
 }
 
 export default function MoviesPage() {
+   const [searchParams, setSearchParams] = useSearchParams();
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [city, setCity] = useState('Kochi');
+  const search = searchParams.get('search') || '';
+  const city = searchParams.get('city') || 'Kochi';
   const SUPPORTED_CITIES = ['Kochi', 'Chennai', 'Bangalore', 'Mumbai'];
+    const setCity = (next: string) => {
+    const p = new URLSearchParams(searchParams);
+    p.set('city', next);
+    setSearchParams(p);
+  };
 
+  const setSearch = (next: string) => {
+    const p = new URLSearchParams(searchParams);
+    if (next) p.set('search', next);
+    else p.delete('search');
+    setSearchParams(p);
+  };
 useEffect(() => {
   const detectCity = async () => {
     try {
