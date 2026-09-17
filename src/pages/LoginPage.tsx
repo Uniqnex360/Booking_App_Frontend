@@ -157,14 +157,14 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <div className="relative hidden flex-1 overflow-hidden wine-gradient lg:block">
-        <div className="absolute inset-0 bg-wine-radial" />
-        <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-wine-500/20 blur-3xl" />
+      <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 lg:block">
+        <div className="absolute inset-0 " />
+        <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-amber-500/20 blur-3xl" />
         <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-wine-400/10 blur-3xl" />
-        {/* <div className="relative flex h-full flex-col justify-between p-12 text-neutral-900">
+        {/* <div className="relative flex h-full flex-col justify-between p-12 text-slate-900">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-              <Wine className="h-5 w-5 text-neutral-900" strokeWidth={2.2} />
+              <Wine className="h-5 w-5 text-slate-900" strokeWidth={2.2} />
             </div>
             <span className="font-serif text-2xl font-semibold">Vyhbz App</span>
           </Link>
@@ -184,7 +184,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
               {['A', 'M', 'J'].map((i) => (
                 <div
                   key={i}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-wine-800 bg-wine-700 text-xs font-semibold"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-wine-800 bg-amber-500 text-xs font-semibold"
                 >
                   {i}
                 </div>
@@ -195,31 +195,31 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
         </div> */}
       </div>
 
-      <div className="flex flex-1 items-center justify-center bg-background px-4 py-12 sm:px-6">
+      <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12 sm:px-6">
         <div className="w-full max-w-md">
           <Link
             to="/"
-            className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-wine-700"
+            className="mb-8 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to home
           </Link>
 
-          <h1 className="font-serif text-4xl font-semibold text-wine-950">
+          <h1 className="font-serif text-4xl font-semibold text-slate-900">
             Sign in
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-slate-500">
             {/* New to Vyhbz App?{' '} */}
             <Link
               to="/register"
-              className="font-medium text-wine-700 hover:text-wine-900"
+              className="font-medium text-amber-700 hover:text-slate-900"
             >
               Create an account
             </Link>
           </p>
 
           {error && (
-            <div className="mt-6 animate-slide-down rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <div className="mt-6 animate-slide-down rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
               {error}
             </div>
           )}
@@ -229,7 +229,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             <Button
               onClick={handleGoogleAction}
               variant="outline"
-              className="w-full h-11 rounded-xl border-wine-100 hover:bg-wine-50 gap-3"
+              className="w-full h-11 rounded-xl border-amber-100 hover:bg-amber-50 gap-3"
               disabled={loading}
             >
               <img
@@ -245,7 +245,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-slate-50 px-2 text-slate-500">
                 Or continue with
               </span>
             </div>
@@ -257,7 +257,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             defaultValue="email"
             className="mt-6"
           >
-            <TabsList className="grid w-full grid-cols-2 rounded-xl bg-secondary/60 p-1">
+            <TabsList className="grid w-full grid-cols-2 rounded-xl bg-slate-50 p-1">
               <TabsTrigger
                 value="email"
                 className="rounded-lg text-sm font-medium"
@@ -281,7 +281,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
                     Email address
                   </Label>
                   <div className="relative">
-                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <Input
                       id="email"
                       type="email"
@@ -300,7 +300,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
                     </Label>
                   </div>
                   <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <Input
                       id="password"
                       type="password"
@@ -315,7 +315,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-11 w-full rounded-xl bg-wine-700 text-sm font-semibold shadow-wine transition-all hover:bg-wine-800 hover:shadow-wine-lg"
+                  className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -331,7 +331,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
 
             <TabsContent value="phone" className="mt-6" key={activeTab}>
   <div className="flex flex-col items-center justify-center space-y-4 min-h-[120px]">
-    <p className="text-sm text-muted-foreground text-center">
+    <p className="text-sm text-slate-500 text-center">
       Click below to sign in securely with your phone number.
     </p>
     

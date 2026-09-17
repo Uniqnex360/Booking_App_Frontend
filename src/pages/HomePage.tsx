@@ -107,7 +107,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900">
+    <div className="min-h-screen bg-neutral-50 text-slate-900">
       <Header />
 
       {/* HERO BANNER CAROUSEL */}
@@ -129,7 +129,7 @@ export default function HomePage() {
                       <Sparkles className="h-3 w-3" /> Featured
                     </span>
                     <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">{banner.title}</h1>
-                    <p className="text-lg text-neutral-300 mb-6">{banner.subtitle}</p>
+                    <p className="text-lg text-slate-700 mb-6">{banner.subtitle}</p>
                     <Button
                       onClick={() => navigate(banner.link)}
                       size="lg"
@@ -161,14 +161,14 @@ export default function HomePage() {
         <div className="max-w-3xl mx-auto -mt-8 relative z-20 px-4">
           <form
             onSubmit={handleSearch}
-            className="bg-white border border-neutral-800 rounded-2xl p-2 flex items-center shadow-2xl"
+            className="bg-white border border-slate-200 rounded-2xl p-2 flex items-center shadow-2xl"
           >
-            <Search className="h-5 w-5 text-neutral-500 ml-3" />
+            <Search className="h-5 w-5 text-slate-500 ml-3" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for movies, events, plays..."
-              className="flex-1 bg-transparent px-3 py-2 text-neutral-900 placeholder:text-neutral-500 focus:outline-none"
+              className="flex-1 bg-transparent px-3 py-2 text-slate-900 placeholder:text-slate-500 focus:outline-none"
             />
             <Button type="submit" className="bg-amber-500 hover:bg-amber-600 text-black font-bold">
               Search
@@ -184,7 +184,7 @@ export default function HomePage() {
             <Link
               key={cat.title}
               to={cat.link}
-              className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${cat.color} p-6 text-neutral-900 shadow-lg hover:scale-105 transition-transform`}
+              className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${cat.color} p-6 text-slate-900 shadow-lg hover:scale-105 transition-transform`}
             >
               <cat.icon className="h-8 w-8 mb-2 opacity-90" />
               <h3 className="text-lg font-bold">{cat.title}</h3>
@@ -199,7 +199,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold">🎬 Now Showing</h2>
-            <p className="text-neutral-500 text-sm mt-1">The hottest movies playing near you</p>
+            <p className="text-slate-500 text-sm mt-1">The hottest movies playing near you</p>
           </div>
           <Link to="/movies" className="text-amber-500 flex items-center gap-1 font-semibold text-sm hover:text-amber-400 transition">
             See All <ArrowRight className="h-4 w-4" />
@@ -211,7 +211,7 @@ export default function HomePage() {
             <Loader />
           </div>
         ) : movies.length === 0 ? (
-          <div className="bg-white border border-neutral-800 rounded-xl p-8 text-center text-neutral-500">
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
             No movies currently playing. Check back soon!
           </div>
         ) : (
@@ -220,7 +220,7 @@ export default function HomePage() {
               <Link
                 key={m.id}
                 to={`/movies/${m.id}`}
-                className="group bg-white border border-neutral-800 rounded-xl overflow-hidden hover:border-amber-500/50 transition"
+                className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-amber-500/50 transition"
               >
                 <div className="aspect-[2/3] bg-neutral-100 overflow-hidden relative">
                   {m.poster_url ? (
@@ -230,7 +230,7 @@ export default function HomePage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-500">
+                    <div className="w-full h-full flex items-center justify-center text-slate-500">
                       <Film className="h-10 w-10" />
                     </div>
                   )}
@@ -241,12 +241,12 @@ export default function HomePage() {
                 </div>
                 <div className="p-3">
                   <h4 className="font-bold text-sm leading-tight group-hover:text-amber-500 transition line-clamp-1">{m.title}</h4>
-                  <div className="text-neutral-500 text-xs mt-1 flex items-center gap-2 flex-wrap">
+                  <div className="text-slate-500 text-xs mt-1 flex items-center gap-2 flex-wrap">
                     <span>{m.language}</span>
                     <span>•</span>
                     <span>{m.certificate}</span>
                   </div>
-                  <div className="flex items-center gap-1 text-neutral-500 text-xs mt-2">
+                  <div className="flex items-center gap-1 text-slate-500 text-xs mt-2">
                     <Clock className="h-3 w-3" />
                     <span>{m.duration_min} min</span>
                   </div>
@@ -262,7 +262,7 @@ export default function HomePage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl md:text-3xl font-extrabold">🎤 Live Events</h2>
-            <p className="text-neutral-500 text-sm mt-1">Concerts, workshops, and experiences</p>
+            <p className="text-slate-500 text-sm mt-1">Concerts, workshops, and experiences</p>
           </div>
           <Link to="/events" className="text-amber-500 flex items-center gap-1 font-semibold text-sm hover:text-amber-400 transition">
             See All <ArrowRight className="h-4 w-4" />
@@ -270,7 +270,7 @@ export default function HomePage() {
         </div>
 
         {events.length === 0 ? (
-          <div className="bg-white border border-neutral-800 rounded-xl p-8 text-center text-neutral-500">
+          <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
             No upcoming events. Check back soon!
           </div>
         ) : (
@@ -279,32 +279,32 @@ export default function HomePage() {
               <Link
                 key={e.id}
                 to={`/events/${e.id}`}
-                className="group bg-white border border-neutral-800 rounded-xl overflow-hidden hover:border-amber-500/50 transition"
+                className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-amber-500/50 transition"
               >
                 <div className="aspect-[16/10] bg-neutral-100 overflow-hidden">
                   {e.cover_image_url ? (
                     <img src={e.cover_image_url} alt={e.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-900 to-pink-900">
-                      <Music className="h-10 w-10 text-neutral-900/50" />
+                      <Music className="h-10 w-10 text-slate-900/50" />
                     </div>
                   )}
                 </div>
                 <div className="p-4">
                   <span className="text-[10px] uppercase tracking-widest text-amber-500 font-bold">{e.category}</span>
                   <h4 className="font-bold text-base mt-1 group-hover:text-amber-500 transition line-clamp-1">{e.title}</h4>
-                  <p className="text-neutral-500 text-xs mt-2 flex items-center gap-1">
+                  <p className="text-slate-500 text-xs mt-2 flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     {e.venue_name}, {e.city}
                   </p>
                   {e.start_date && (
-                    <p className="text-neutral-500 text-xs mt-1 flex items-center gap-1">
+                    <p className="text-slate-500 text-xs mt-1 flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {new Date(e.start_date).toLocaleDateString()}
                     </p>
                   )}
                   {e.min_price_paise && (
-                    <div className="text-amber-500 font-bold text-sm mt-3 border-t border-neutral-800 pt-3">
+                    <div className="text-amber-500 font-bold text-sm mt-3 border-t border-slate-200 pt-3">
                       From {formatRupees(e.min_price_paise)}
                     </div>
                   )}
@@ -324,7 +324,7 @@ export default function HomePage() {
           </div>
           <Button
             onClick={() => navigate('/movies')}
-            className="bg-black hover:bg-white text-neutral-900 font-bold px-6 py-3"
+            className="bg-black hover:bg-white text-slate-900 font-bold px-6 py-3"
           >
             Book Now
           </Button>

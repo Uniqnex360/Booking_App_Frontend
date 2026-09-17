@@ -322,7 +322,7 @@ export default function EditProfilePage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-slate-50">
         <Header />
         <div className="flex justify-center py-20">
           <Loader className="h-8 w-8" />
@@ -339,13 +339,13 @@ export default function EditProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       {/* Banner */}
-      <div className="relative h-48 overflow-hidden wine-gradient lg:h-56">
-        <div className="absolute inset-0 bg-wine-radial" />
-        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-wine-500/20 blur-3xl" />
+      <div className="relative h-48 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 lg:h-56">
+        <div className="absolute inset-0 " />
+        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
       </div>
 
@@ -353,27 +353,27 @@ export default function EditProfilePage() {
         {/* Back link */}
         <div className="-mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-4">
-            <Avatar className="h-24 w-24 border-4 border-background shadow-wine-lg">
-              <AvatarFallback className="bg-wine-700 font-serif text-2xl font-semibold text-neutral-900">
+            <Avatar className="h-24 w-24 border-4 border-background shadow-md">
+              <AvatarFallback className="bg-amber-500 font-serif text-2xl font-semibold text-slate-900">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="pb-2">
              
-              <h1 className="font-serif text-3xl font-semibold text-wine-950">
+              <h1 className="font-serif text-3xl font-semibold text-slate-900">
                  <Link to="/profile/edit">
                 <Settings className="mr-2 h-4 w-4" />
               </Link>
                 Edit Profile
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 Manage your personal info and saved addresses
               </p>
             </div>
           </div>
           <Link
             to="/profile"
-            className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-wine-700 transition-colors hover:text-wine-900"
+            className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 transition-colors hover:text-slate-900"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to profile
@@ -382,24 +382,24 @@ export default function EditProfilePage() {
 
         {/* Error banner */}
         {error && (
-          <div className="mt-6 animate-slide-down rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div className="mt-6 animate-slide-down rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
             {error}
           </div>
         )}
 
         {/* Tabs */}
         <Tabs defaultValue="personal" className="mt-8">
-          <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl bg-secondary/60 p-1">
+          <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl bg-slate-50 p-1">
             <TabsTrigger
               value="personal"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-soft"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
             >
               <User className="mr-2 h-4 w-4" />
               Personal Info
             </TabsTrigger>
             <TabsTrigger
               value="addresses"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-soft"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
             >
               <MapPin className="mr-2 h-4 w-4" />
               Saved Addresses
@@ -408,18 +408,18 @@ export default function EditProfilePage() {
 
           {/* --- Personal Info Tab --- */}
           <TabsContent value="personal" className="mt-6">
-            <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-soft sm:p-8">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
               {/* Identity header (read-only) */}
-              <div className="flex flex-col gap-4 border-b border-border/50 pb-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-wine-50 ring-1 ring-wine-100">
-                    <User className="h-7 w-7 text-wine-600" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-wine-100">
+                    <User className="h-7 w-7 text-amber-600" />
                   </div>
                   <div>
-                    <p className="font-serif text-xl font-semibold text-wine-950">
+                    <p className="font-serif text-xl font-semibold text-slate-900">
                       {user?.full_name || "Member"}
                     </p>
-                    <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <p className="flex items-center gap-1 text-sm text-slate-500">
                       <Mail className="h-3.5 w-3.5" />
                       {user?.email}
                     </p>
@@ -427,7 +427,7 @@ export default function EditProfilePage() {
                 </div>
                 <Badge
                   variant="outline"
-                  className="w-fit border-wine-200 bg-wine-50 text-wine-700"
+                  className="w-fit border-amber-200 bg-amber-50 text-amber-700"
                 >
                   {user?.role || "USER"}
                 </Badge>
@@ -452,13 +452,13 @@ export default function EditProfilePage() {
                   />
                   <div className="flex items-center justify-between">
                     {profileErrors.bio ? (
-                      <p className="text-xs text-destructive">
+                      <p className="text-xs text-rose-600">
                         {profileErrors.bio.message}
                       </p>
                     ) : (
                       <span />
                     )}
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       {bioCount}/500
                     </p>
                   </div>
@@ -543,7 +543,7 @@ export default function EditProfilePage() {
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="h-11 rounded-xl bg-wine-700 px-6 text-sm font-semibold shadow-wine transition-all hover:bg-wine-800 hover:shadow-wine-lg"
+                    className="h-11 rounded-xl bg-amber-500 px-6 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
                   >
                     {saving ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -560,7 +560,7 @@ export default function EditProfilePage() {
                     )}
                   </Button>
                   {saveSuccess && (
-                    <span className="animate-fade-in text-sm text-success">
+                    <span className="animate-fade-in text-sm text-emerald-600">
                       Your profile has been updated.
                     </span>
                   )}
@@ -571,19 +571,19 @@ export default function EditProfilePage() {
 
           {/* --- Addresses Tab --- */}
           <TabsContent value="addresses" className="mt-6">
-            <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-soft sm:p-8">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-serif text-2xl font-semibold text-wine-950">
+                  <h2 className="font-serif text-2xl font-semibold text-slate-900">
                     Saved Addresses
                   </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-1 text-sm text-slate-500">
                     Manage your delivery and booking locations
                   </p>
                 </div>
                 <Button
                   onClick={openAddAddress}
-                  className="rounded-full bg-wine-700 px-5 text-sm font-semibold shadow-wine transition-all hover:bg-wine-800 hover:shadow-wine-lg"
+                  className="rounded-full bg-amber-500 px-5 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
                 >
                   <Plus className="h-4 w-4" />
                   Add New
@@ -593,14 +593,14 @@ export default function EditProfilePage() {
               {/* Address list */}
               <div className="mt-6 space-y-4">
                 {addresses.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-border bg-card/50 py-12 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-wine-50">
-                      <MapPin className="h-7 w-7 text-wine-600" />
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+                      <MapPin className="h-7 w-7 text-amber-600" />
                     </div>
-                    <h3 className="font-serif text-lg font-semibold text-wine-950">
+                    <h3 className="font-serif text-lg font-semibold text-slate-900">
                       No saved addresses
                     </h3>
-                    <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+                    <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
                       Add an address to speed up your booking process.
                     </p>
                   </div>
@@ -608,33 +608,33 @@ export default function EditProfilePage() {
                   addresses.map((addr) => (
                     <div
                       key={addr.id}
-                      className="flex flex-col gap-4 rounded-2xl border border-border/50 bg-background p-5 transition-all hover:border-wine-200 hover:shadow-soft sm:flex-row sm:items-start sm:justify-between"
+                      className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all hover:border-amber-200 hover:shadow-soft sm:flex-row sm:items-start sm:justify-between"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-wine-50">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50">
                           {addr.label.toLowerCase().includes("office") ? (
-                            <Building2 className="h-5 w-5 text-wine-600" />
+                            <Building2 className="h-5 w-5 text-amber-600" />
                           ) : (
-                            <Home className="h-5 w-5 text-wine-600" />
+                            <Home className="h-5 w-5 text-amber-600" />
                           )}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-serif text-lg font-semibold text-wine-950">
+                            <p className="font-serif text-lg font-semibold text-slate-900">
                               {addr.label}
                             </p>
                             {addr.is_default && (
-                              <Badge className="rounded-full bg-wine-700 text-xs font-semibold text-neutral-900">
+                              <Badge className="rounded-full bg-amber-500 text-xs font-semibold text-slate-900">
                                 <Star className="mr-1 h-3 w-3 fill-white" />
                                 Default
                               </Badge>
                             )}
                           </div>
-                          <p className="mt-1 text-sm text-foreground/70">
+                          <p className="mt-1 text-sm text-slate-600">
                             {addr.line1}
                             {addr.line2 ? `, ${addr.line2}` : ""}
                           </p>
-                          <p className="text-sm text-foreground/70">
+                          <p className="text-sm text-slate-600">
                             {addr.city}, {addr.state} — {addr.pincode}
                           </p>
                         </div>
@@ -646,7 +646,7 @@ export default function EditProfilePage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleSetDefault(addr.id)}
-                            className="rounded-full border-wine-200 text-xs font-medium text-wine-700 hover:bg-wine-50"
+                            className="rounded-full border-amber-200 text-xs font-medium text-amber-700 hover:bg-amber-50"
                           >
                             <Check className="h-3.5 w-3.5" />
                             Set Default
@@ -656,7 +656,7 @@ export default function EditProfilePage() {
                           variant="outline"
                           size="sm"
                           onClick={() => openEditAddress(addr)}
-                          className="rounded-full border-border text-xs font-medium hover:bg-secondary"
+                          className="rounded-full border-slate-200 text-xs font-medium hover:bg-slate-50"
                         >
                           <Edit3 className="h-3.5 w-3.5" />
                           Edit
@@ -665,7 +665,7 @@ export default function EditProfilePage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteAddress(addr.id)}
-                          className="rounded-full border-destructive/30 text-xs font-medium text-destructive hover:bg-destructive/5"
+                          className="rounded-full border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           Delete
@@ -684,9 +684,9 @@ export default function EditProfilePage() {
 
       {/* --- Address Dialog --- */}
       <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl border-border/60 shadow-soft-lg">
+        <DialogContent className="max-w-md rounded-2xl border-slate-200/60 shadow-soft-lg">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl font-semibold text-wine-950">
+            <DialogTitle className="font-serif text-2xl font-semibold text-slate-900">
               {editingAddress ? "Edit Address" : "Add New Address"}
             </DialogTitle>
             <DialogDescription>
@@ -697,7 +697,7 @@ export default function EditProfilePage() {
           </DialogHeader>
 
           {addressError && (
-            <div className="animate-slide-down rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-2 text-sm text-destructive">
+            <div className="animate-slide-down rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-600">
               {addressError}
             </div>
           )}
@@ -709,7 +709,7 @@ export default function EditProfilePage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full border-dashed border-wine-300 text-wine-700 hover:bg-wine-50 hover:border-wine-500 transition-all"
+              className="w-full border-dashed border-wine-300 text-amber-700 hover:bg-amber-50 hover:border-wine-500 transition-all"
               onClick={detectLocation}
             >
               <MapPin className="mr-2 h-4 w-4" />
@@ -721,7 +721,7 @@ export default function EditProfilePage() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground font-medium">
+                <span className="bg-slate-50 px-2 text-slate-500 font-medium">
                   Or enter manually
                 </span>
               </div>
@@ -737,7 +737,7 @@ export default function EditProfilePage() {
                 className="h-11 rounded-xl"
               />
               {addressErrors.label && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-rose-600">
                   {addressErrors.label.message}
                 </p>
               )}
@@ -754,7 +754,7 @@ export default function EditProfilePage() {
                 className="h-11 rounded-xl"
               />
               {addressErrors.line1 && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-rose-600">
                   {addressErrors.line1.message}
                 </p>
               )}
@@ -763,7 +763,7 @@ export default function EditProfilePage() {
             <div className="space-y-2">
               <Label htmlFor="addr-line2" className="text-sm font-medium">
                 Address Line 2{" "}
-                <span className="text-muted-foreground">(optional)</span>
+                <span className="text-slate-500">(optional)</span>
               </Label>
               <Input
                 id="addr-line2"
@@ -785,7 +785,7 @@ export default function EditProfilePage() {
                   className="h-11 rounded-xl"
                 />
                 {addressErrors.city && (
-                  <p className="text-xs text-destructive">
+                  <p className="text-xs text-rose-600">
                     {addressErrors.city.message}
                   </p>
                 )}
@@ -802,7 +802,7 @@ export default function EditProfilePage() {
                   className="h-11 rounded-xl"
                 />
                 {addressErrors.state && (
-                  <p className="text-xs text-destructive">
+                  <p className="text-xs text-rose-600">
                     {addressErrors.state.message}
                   </p>
                 )}
@@ -820,13 +820,13 @@ export default function EditProfilePage() {
                 className="h-11 rounded-xl"
               />
               {addressErrors.pincode && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-rose-600">
                   {addressErrors.pincode.message}
                 </p>
               )}
             </div>
 
-            <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-secondary/30 p-3">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/30 p-3">
               <Controller
                 control={addressControl}
                 name="is_default"
@@ -836,7 +836,7 @@ export default function EditProfilePage() {
                     id="addr-default"
                     checked={field.value || false}
                     onChange={field.onChange}
-                    className="h-4 w-4 rounded border-border accent-wine-700"
+                    className="h-4 w-4 rounded border-slate-200 accent-wine-700"
                   />
                 )}
               />
@@ -860,7 +860,7 @@ export default function EditProfilePage() {
               <Button
                 type="submit"
                 disabled={addressSaving}
-                className="rounded-xl bg-wine-700 text-sm font-semibold shadow-wine hover:bg-wine-800"
+                className="rounded-xl bg-amber-500 text-sm font-semibold shadow-sm hover:bg-amber-600"
               >
                 {addressSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

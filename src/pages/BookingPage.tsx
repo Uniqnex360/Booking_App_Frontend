@@ -184,7 +184,7 @@ export default function BookingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
         <Header />
         <div className="flex-grow flex items-center justify-center">
           <Loader />
@@ -196,16 +196,16 @@ export default function BookingPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
         <Header />
         <div className="flex flex-grow items-center justify-center px-4">
-          <div className="text-center bg-white border border-neutral-800 p-8 rounded-2xl max-w-md w-full shadow-2xl">
+          <div className="text-center bg-white border border-slate-200 p-8 rounded-2xl max-w-md w-full shadow-2xl">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
               <CheckCircle2 className="h-10 w-10" />
             </div>
             <h1 className="text-2xl font-black">Booking Confirmed!</h1>
-            <p className="mt-2 text-sm text-neutral-500">
-              Your reservation for <strong className="text-neutral-900">{itemData?.title}</strong> has been secured.
+            <p className="mt-2 text-sm text-slate-500">
+              Your reservation for <strong className="text-slate-900">{itemData?.title}</strong> has been secured.
             </p>
             <p className="mt-4 text-xs text-amber-500 font-semibold">
               Redirecting to your profile...
@@ -218,13 +218,13 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col font-sans">
       <Header />
 
       <main className="flex-grow max-w-4xl w-full mx-auto px-4 pt-24 pb-12 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
+          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
@@ -242,7 +242,7 @@ export default function BookingPage() {
 
         <div className="mt-8 grid gap-8 lg:grid-cols-2 items-start">
           {/* Summary Card */}
-          <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-white shadow-soft">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
             <div className="relative aspect-[16/9] overflow-hidden bg-neutral-100">
               <img
                 src={itemData?.image}
@@ -254,27 +254,27 @@ export default function BookingPage() {
               <h2 className="text-2xl font-bold">
                 {itemData?.title}
               </h2>
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-1 text-sm text-slate-500">
                 {itemData?.venue}
               </p>
-              <div className="mt-3 flex items-center gap-3 text-xs text-neutral-500">
+              <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 text-amber-500" />
                   {itemData?.location}
                 </span>
               </div>
 
-              <div className="mt-6 space-y-3 border-t border-neutral-800 pt-4">
-                <div className="flex justify-between text-sm text-neutral-500">
+              <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
+                <div className="flex justify-between text-sm text-slate-500">
                   <span>Price per ticket</span>
-                  <span className="font-bold text-neutral-900">{formatRupees(pricePaisePerPerson)}</span>
+                  <span className="font-bold text-slate-900">{formatRupees(pricePaisePerPerson)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-neutral-500">
+                <div className="flex justify-between text-sm text-slate-500">
                   <span>Quantity</span>
-                  <span className="font-bold text-neutral-900">{guests} {guests === 1 ? 'ticket' : 'tickets'}</span>
+                  <span className="font-bold text-slate-900">{guests} {guests === 1 ? 'ticket' : 'tickets'}</span>
                 </div>
-                <div className="flex justify-between border-t border-neutral-800 pt-3 items-center">
-                  <span className="text-base font-bold text-neutral-300">Total</span>
+                <div className="flex justify-between border-t border-slate-200 pt-3 items-center">
+                  <span className="text-base font-bold text-slate-700">Total</span>
                   <span className="text-2xl font-black text-amber-400">
                     {formatRupees(totalPricePaise)}
                   </span>
@@ -284,9 +284,9 @@ export default function BookingPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleBooking} className="space-y-5 bg-white border border-neutral-800 p-6 rounded-2xl">
+          <form onSubmit={handleBooking} className="space-y-5 bg-white border border-slate-200 p-6 rounded-2xl">
             <div className="space-y-2">
-              <Label htmlFor="date" className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+              <Label htmlFor="date" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                 <Calendar className="mr-1 inline h-4 w-4 text-amber-500" /> Event Date
               </Label>
               <Input
@@ -295,13 +295,13 @@ export default function BookingPage() {
                 required
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="h-11 rounded-xl bg-neutral-50 border-neutral-800 text-neutral-900"
+                className="h-11 rounded-xl bg-neutral-50 border-slate-200 text-slate-900"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="guests" className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+                <Label htmlFor="guests" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   <Users className="mr-1 inline h-4 w-4 text-amber-500" /> Number of Tickets
                 </Label>
                 <span className="text-[11px] font-semibold text-amber-400">
@@ -315,7 +315,7 @@ export default function BookingPage() {
                   variant="outline"
                   size="icon"
                   disabled={guests <= 1}
-                  className="h-11 w-11 rounded-xl bg-neutral-50 border-neutral-800 text-neutral-900 hover:bg-neutral-100 disabled:opacity-40"
+                  className="h-11 w-11 rounded-xl bg-neutral-50 border-slate-200 text-slate-900 hover:bg-neutral-100 disabled:opacity-40"
                   onClick={() => setGuests((g) => Math.max(1, g - 1))}
                 >
                   -
@@ -330,14 +330,14 @@ export default function BookingPage() {
                     const val = Number(e.target.value) || 1;
                     setGuests(Math.min(maxAllowedGuests, Math.max(1, val)));
                   }}
-                  className="h-11 rounded-xl text-center bg-neutral-50 border-neutral-800 text-neutral-900 font-bold"
+                  className="h-11 rounded-xl text-center bg-neutral-50 border-slate-200 text-slate-900 font-bold"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
                   disabled={guests >= maxAllowedGuests}
-                  className="h-11 w-11 rounded-xl bg-neutral-50 border-neutral-800 text-neutral-900 hover:bg-neutral-100 disabled:opacity-40"
+                  className="h-11 w-11 rounded-xl bg-neutral-50 border-slate-200 text-slate-900 hover:bg-neutral-100 disabled:opacity-40"
                   onClick={() => setGuests((g) => Math.min(maxAllowedGuests, g + 1))}
                 >
                   +
@@ -346,14 +346,14 @@ export default function BookingPage() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs font-bold text-neutral-500 uppercase tracking-wider">Contact Details</Label>
-              <div className="rounded-xl border border-neutral-800 bg-neutral-50 p-4 text-sm">
-                <p className="font-bold text-neutral-900">
+              <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contact Details</Label>
+              <div className="rounded-xl border border-slate-200 bg-neutral-50 p-4 text-sm">
+                <p className="font-bold text-slate-900">
                   {user?.full_name || 'Customer'}
                 </p>
-                <p className="text-neutral-500 text-xs mt-0.5">{user?.email}</p>
+                <p className="text-slate-500 text-xs mt-0.5">{user?.email}</p>
                 {user?.phone && (
-                  <p className="text-neutral-500 text-xs mt-0.5">{user.phone}</p>
+                  <p className="text-slate-500 text-xs mt-0.5">{user.phone}</p>
                 )}
               </div>
             </div>
@@ -373,7 +373,7 @@ export default function BookingPage() {
               )}
             </Button>
 
-            <div className="flex items-center justify-center gap-1.5 text-xs text-neutral-500 pt-2">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 pt-2">
               <ShieldCheck className="h-4 w-4 text-emerald-500" />
               Secured by Razorpay Sandbox
             </div>

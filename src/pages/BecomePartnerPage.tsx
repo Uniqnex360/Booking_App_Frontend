@@ -146,20 +146,20 @@ export default function BecomePartnerPage() {
    if (checking) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-wine-700" />
+        <Loader2 className="h-8 w-8 animate-spin text-amber-700" />
       </div>
     );
   }
 
   if (existingPartner?.status === 'PENDING_APPROVAL') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-slate-50">
         <Header />
         <div className="mx-auto max-w-2xl px-4 py-20 text-center">
           <Clock className="mx-auto h-16 w-16 text-amber-500 mb-4" />
           <h1 className="text-3xl font-serif font-bold">Application Under Review</h1>
-          <p className="text-muted-foreground mt-2">You have already submitted an application for <strong>{existingPartner.business_name}</strong>.</p>
-          <Button asChild className="mt-6 bg-wine-700">
+          <p className="text-slate-500 mt-2">You have already submitted an application for <strong>{existingPartner.business_name}</strong>.</p>
+          <Button asChild className="mt-6 bg-amber-500">
             <Link to="/partner/dashboard">Go to Dashboard</Link>
           </Button>
         </div>
@@ -167,19 +167,19 @@ export default function BecomePartnerPage() {
     );
   }
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       {/* Hero */}
-      <div className="relative overflow-hidden wine-gradient">
-        <div className="absolute inset-0 bg-wine-radial" />
-        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-wine-500/20 blur-3xl" />
+      <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500">
+        <div className="absolute inset-0 " />
+        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
         <div className="relative mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
-            <Sparkles className="h-8 w-8 text-neutral-900" />
+            <Sparkles className="h-8 w-8 text-slate-900" />
           </div>
-          <h1 className="font-serif text-4xl font-semibold text-neutral-900 sm:text-5xl">
+          <h1 className="font-serif text-4xl font-semibold text-slate-900 sm:text-5xl">
             Become a Partner
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-wine-100/70">
@@ -203,17 +203,17 @@ export default function BecomePartnerPage() {
   )}
         <Link
           to="/"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-wine-700"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to home
         </Link>
 
-        <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-soft sm:p-8">
-          <h2 className="font-serif text-2xl font-semibold text-wine-950">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+          <h2 className="font-serif text-2xl font-semibold text-slate-900">
             Partner Application
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-slate-500">
             Fill in your business details below. Fields marked with * are
             required.
           </p>
@@ -243,9 +243,9 @@ export default function BecomePartnerPage() {
                           return (
                             <SelectItem key={key} value={key}>
                               <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4 text-wine-600" />
+                                <Icon className="h-4 w-4 text-amber-600" />
                                 <span>{meta.label}</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-xs text-slate-500">
                                   — {meta.desc}
                                 </span>
                               </div>
@@ -258,7 +258,7 @@ export default function BecomePartnerPage() {
                 )}
               />
               {errors.partner_type && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-rose-600">
                   {errors.partner_type.message}
                 </p>
               )}
@@ -270,7 +270,7 @@ export default function BecomePartnerPage() {
                 Business Name *
               </Label>
               <div className="relative">
-                <Store className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Store className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <Input
                   id="business_name"
                   placeholder="e.g. The Grand Bistro"
@@ -279,7 +279,7 @@ export default function BecomePartnerPage() {
                 />
               </div>
               {errors.business_name && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-rose-600">
                   {errors.business_name.message}
                 </p>
               )}
@@ -291,7 +291,7 @@ export default function BecomePartnerPage() {
                 Contact Person *
               </Label>
               <div className="relative">
-                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                 <Input
                   id="contact_name"
                   placeholder="John Doe"
@@ -300,7 +300,7 @@ export default function BecomePartnerPage() {
                 />
               </div>
               {errors.contact_name && (
-                <p className="text-xs text-destructive">
+                <p className="text-xs text-rose-600">
                   {errors.contact_name.message}
                 </p>
               )}
@@ -313,7 +313,7 @@ export default function BecomePartnerPage() {
                   Contact Phone *
                 </Label>
                 <div className="relative">
-                  <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="contact_phone"
                     type="tel"
@@ -323,7 +323,7 @@ export default function BecomePartnerPage() {
                   />
                 </div>
                 {errors.contact_phone && (
-                  <p className="text-xs text-destructive">
+                  <p className="text-xs text-rose-600">
                     {errors.contact_phone.message}
                   </p>
                 )}
@@ -334,7 +334,7 @@ export default function BecomePartnerPage() {
                   City *
                 </Label>
                 <div className="relative">
-                  <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="city"
                     placeholder="Mumbai"
@@ -343,7 +343,7 @@ export default function BecomePartnerPage() {
                   />
                 </div>
                 {errors.city && (
-                  <p className="text-xs text-destructive">
+                  <p className="text-xs text-rose-600">
                     {errors.city.message}
                   </p>
                 )}
@@ -355,10 +355,10 @@ export default function BecomePartnerPage() {
               <div className="space-y-2">
                 <Label htmlFor="gst_number" className="text-sm font-medium">
                   GST Number{' '}
-                  <span className="text-muted-foreground">(optional)</span>
+                  <span className="text-slate-500">(optional)</span>
                 </Label>
                 <div className="relative">
-                  <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="gst_number"
                     placeholder="22AAAAA0000A1Z5"
@@ -371,10 +371,10 @@ export default function BecomePartnerPage() {
               <div className="space-y-2">
                 <Label htmlFor="pan_number" className="text-sm font-medium">
                   PAN Number{' '}
-                  <span className="text-muted-foreground">(optional)</span>
+                  <span className="text-slate-500">(optional)</span>
                 </Label>
                 <div className="relative">
-                  <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="pan_number"
                     placeholder="AAAAA0000A"
@@ -389,7 +389,7 @@ export default function BecomePartnerPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="h-11 w-full rounded-xl bg-wine-700 text-sm font-semibold shadow-wine transition-all hover:bg-wine-800 hover:shadow-wine-lg"
+              className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -100,7 +100,7 @@ export default function SeatMapPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
         <Header />
         <div className="flex-grow flex items-center justify-center">
           <Loader />
@@ -274,31 +274,31 @@ export default function SeatMapPage() {
   const totalPricePaise = selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col font-sans select-none pb-28 overflow-x-hidden">
+    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col font-sans select-none pb-28 overflow-x-hidden">
       <Header />
 
       {/* TOP BMS SUB-HEADER BAR */}
-      <div className="bg-white border-b border-neutral-800 pt-20 pb-4 sticky top-0 z-20 backdrop-blur-md bg-white/90 shadow-md">
+      <div className="bg-white border-b border-slate-200 pt-20 pb-4 sticky top-0 z-20 backdrop-blur-md bg-white/90 shadow-md">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-neutral-100 rounded-full text-neutral-500 hover:text-neutral-900 transition"
+              className="p-2 hover:bg-neutral-100 rounded-full text-slate-500 hover:text-slate-900 transition"
               title="Back"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-neutral-900 leading-tight flex items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 leading-tight flex items-center gap-2">
                 {mapData?.movie_title || "Select Seats"}
                 {mapData?.format && (
-                  <span className="text-[10px] bg-neutral-100 text-neutral-500 font-bold px-2 py-0.5 rounded border border-neutral-700">
+                  <span className="text-[10px] bg-neutral-100 text-slate-500 font-bold px-2 py-0.5 rounded border border-slate-200">
                     {mapData.format}
                   </span>
                 )}
               </h1>
               {mapData && (
-                <p className="text-xs text-neutral-500 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {mapData.cinema_name || mapData.venue_name} • {mapData.screen_name} |{" "}
                   <span className="text-amber-400 font-semibold">
                     {new Date(mapData.starts_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -330,15 +330,15 @@ export default function SeatMapPage() {
 
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8 flex flex-col items-center">
         {isSourceUnavailable ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white border border-neutral-800 rounded-2xl max-w-lg mx-auto text-center px-6 mt-8">
+          <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl max-w-lg mx-auto text-center px-6 mt-8">
             <AlertCircle className="h-12 w-12 text-rose-500 mb-3" />
             <h2 className="text-xl font-bold mb-2">Availability is temporarily unavailable</h2>
-            <p className="text-neutral-500 text-sm">
+            <p className="text-slate-500 text-sm">
               The external ticketing system is currently unreachable. Please try again.
             </p>
             <button
               onClick={fetchSeatMap}
-              className="mt-6 bg-neutral-100 hover:bg-neutral-700 text-neutral-900 font-bold py-2.5 px-6 rounded-xl text-sm transition"
+              className="mt-6 bg-neutral-100 hover:bg-slate-200 text-slate-900 font-bold py-2.5 px-6 rounded-xl text-sm transition"
             >
               Retry Connection
             </button>
@@ -349,7 +349,7 @@ export default function SeatMapPage() {
             {/* BMS CINEMA SCREEN ARC */}
             <div className="w-full max-w-xl flex flex-col items-center mb-14 mt-4">
               <div className="w-full h-3 border-t-[3px] border-amber-400/80 rounded-t-[100%] shadow-[0_-8px_20px_rgba(245,158,11,0.25)] mb-3" />
-              <div className="text-[11px] font-bold tracking-[0.25em] text-neutral-500 uppercase flex items-center gap-1.5">
+              <div className="text-[11px] font-bold tracking-[0.25em] text-slate-500 uppercase flex items-center gap-1.5">
                 <Tv className="h-3.5 w-3.5" /> All Eyes This Way Please (Screen)
               </div>
             </div>
@@ -359,7 +359,7 @@ export default function SeatMapPage() {
               {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full max-w-3xl">
                   {/* Tier Title Header */}
-                  <div className="border-b border-neutral-800/80 pb-2 mb-4 flex items-center justify-between text-xs font-bold text-neutral-500 tracking-wider">
+                  <div className="border-b border-slate-200/80 pb-2 mb-4 flex items-center justify-between text-xs font-bold text-slate-500 tracking-wider">
                     <span>{tier.name}</span>
                     <span className="text-amber-400 font-extrabold">{formatRupees(tier.price_paise)}</span>
                   </div>
@@ -371,7 +371,7 @@ export default function SeatMapPage() {
 
                       return (
                        <div key={rowLabel} className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center max-w-full">
-                          <span className="w-5 text-right text-xs font-bold text-neutral-500 select-none">
+                          <span className="w-5 text-right text-xs font-bold text-slate-500 select-none">
                             {rowLabel}
                           </span>
 
@@ -380,9 +380,9 @@ export default function SeatMapPage() {
                               const isSelected = selectedSeats.some((s) => s.seat_ref === seat.seat_ref);
                               const isAisle = idx === midIndex && seatList.length > 8;
 
-                              let seatStyle = "bg-white border-neutral-700 text-neutral-300 hover:border-amber-400 hover:bg-neutral-100";
+                              let seatStyle = "bg-white border-slate-200 text-slate-700 hover:border-amber-400 hover:bg-neutral-100";
                               if (!seat.is_available) {
-                                seatStyle = "bg-white/40 border-neutral-800/50 text-neutral-700 cursor-not-allowed";
+                                seatStyle = "bg-white/40 border-slate-200/50 text-slate-700 cursor-not-allowed";
                               } else if (isSelected) {
                                 seatStyle = "bg-amber-500 border-amber-400 text-black font-extrabold shadow-[0_0_12px_rgba(245,158,11,0.5)] scale-105";
                               }
@@ -417,17 +417,17 @@ export default function SeatMapPage() {
             </div>
 
             {/* SEAT STATUS LEGEND */}
-            <div className="flex items-center justify-center gap-6 mt-8 py-3 px-6 bg-white/80 border border-neutral-800 rounded-full text-xs font-medium text-neutral-500">
+            <div className="flex items-center justify-center gap-6 mt-8 py-3 px-6 bg-white/80 border border-slate-200 rounded-full text-xs font-medium text-slate-500">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded border border-neutral-600 bg-white" />
                 <span>Available</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded bg-amber-500 border border-amber-400 shadow-sm" />
-                <span className="text-neutral-900 font-semibold">Selected</span>
+                <span className="text-slate-900 font-semibold">Selected</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-white/40 border border-neutral-800 text-neutral-700" />
+                <div className="w-4 h-4 rounded bg-white/40 border border-slate-200 text-slate-700" />
                 <span>Sold / Unavailable</span>
               </div>
             </div>
@@ -437,13 +437,13 @@ export default function SeatMapPage() {
 
       {/* BMS FLOATING BOTTOM CHECKOUT BAR */}
       {selectedSeats.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-neutral-800 backdrop-blur-lg p-4 z-40 shadow-2xl transition-transform duration-300">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 border-t border-slate-200 backdrop-blur-lg p-4 z-40 shadow-2xl transition-transform duration-300">
           <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
             <div>
-              <div className="text-xs text-neutral-500 flex items-center gap-1.5">
+              <div className="text-xs text-slate-500 flex items-center gap-1.5">
                 <Ticket className="h-3.5 w-3.5 text-amber-500" />
                 <span>{selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'}:</span>
-                <span className="font-extrabold text-neutral-900">{selectedSeats.map((s) => s.code).join(", ")}</span>
+                <span className="font-extrabold text-slate-900">{selectedSeats.map((s) => s.code).join(", ")}</span>
               </div>
               <div className="text-xl sm:text-2xl font-black text-amber-400 mt-0.5">
                 {formatRupees(totalPricePaise)}
@@ -454,7 +454,7 @@ export default function SeatMapPage() {
               <button
                 onClick={handleCheckout}
                 disabled={isCommitLoading}
-                className="bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:bg-neutral-100 disabled:text-neutral-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center gap-2 text-sm sm:text-base cursor-pointer"
+                className="bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:bg-neutral-100 disabled:text-slate-500 text-black font-extrabold px-8 py-3.5 rounded-xl transition shadow-[0_0_20px_rgba(245,158,11,0.3)] flex items-center gap-2 text-sm sm:text-base cursor-pointer"
               >
                 {isCommitLoading ? (
                   <>

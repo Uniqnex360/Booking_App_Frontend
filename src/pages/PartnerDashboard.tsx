@@ -140,7 +140,7 @@ export default function PartnerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
         <Header />
         <div className="flex-grow flex items-center justify-center">
           <Loader />
@@ -170,11 +170,11 @@ export default function PartnerDashboard() {
       : pastEvents;
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
       <Header />
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
         {/* Partner Header Banner */}
-        <div className="bg-white border border-neutral-800 rounded-2xl p-6 md:p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-3xl font-extrabold">{partner?.business_name || 'Partner Dashboard'}</h1>
@@ -182,7 +182,7 @@ export default function PartnerDashboard() {
                 <CheckCircle2 className="h-3 w-3 mr-1" /> Approved
               </Badge>
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-neutral-500 mt-2">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 mt-2">
               <span className="flex items-center gap-1">
                 <MapPin className="h-4 w-4 text-amber-500" /> {partner?.city}
               </span>
@@ -204,13 +204,13 @@ export default function PartnerDashboard() {
         </div>
 
         {/* Event Tabs */}
-        <div className="flex items-center gap-2 border-b border-neutral-800 mb-8 pb-3">
+        <div className="flex items-center gap-2 border-b border-slate-200 mb-8 pb-3">
           <button
             onClick={() => setActiveTab('ACTIVE')}
             className={`px-4 py-2 text-sm font-bold rounded-lg transition flex items-center gap-2 ${
               activeTab === 'ACTIVE'
                 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-neutral-500 hover:text-neutral-900'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             <CalendarCheck className="h-4 w-4" /> Active Events ({activeEvents.length})
@@ -220,7 +220,7 @@ export default function PartnerDashboard() {
             className={`px-4 py-2 text-sm font-bold rounded-lg transition flex items-center gap-2 ${
               activeTab === 'PENDING'
                 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-neutral-500 hover:text-neutral-900'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             <Clock className="h-4 w-4" /> Under Review ({pendingEvents.length})
@@ -230,7 +230,7 @@ export default function PartnerDashboard() {
             className={`px-4 py-2 text-sm font-bold rounded-lg transition flex items-center gap-2 ${
               activeTab === 'PAST'
                 ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-neutral-500 hover:text-neutral-900'
+                : 'text-slate-500 hover:text-slate-900'
             }`}
           >
             <CalendarX className="h-4 w-4" /> Completed / Past ({pastEvents.length})
@@ -239,7 +239,7 @@ export default function PartnerDashboard() {
 
         {/* Events Grid */}
         {currentList.length === 0 ? (
-          <div className="bg-white border border-neutral-800 rounded-xl p-12 text-center text-neutral-500">
+          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">
             <p className="text-lg font-bold mb-2">No {activeTab.toLowerCase()} events found</p>
             <p className="text-sm">Click &quot;Host New Event&quot; to publish your upcoming events.</p>
           </div>
@@ -253,14 +253,14 @@ export default function PartnerDashboard() {
               return (
                 <div
                   key={e.id}
-                  className="bg-white border border-neutral-800 rounded-xl overflow-hidden flex flex-col justify-between"
+                  className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col justify-between"
                 >
                   <div>
                     <div className="aspect-[16/9] bg-neutral-100 relative">
                       {e.poster_image_url ? (
                         <img src={e.poster_image_url} alt={e.title} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-neutral-500">
+                        <div className="w-full h-full flex items-center justify-center text-slate-500">
                           <ImageOff className="h-8 w-8" />
                         </div>
                       )}
@@ -271,7 +271,7 @@ export default function PartnerDashboard() {
                               ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                               : e.status === 'PENDING_APPROVAL'
                               ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                              : 'bg-neutral-100 text-neutral-500 border-neutral-700'
+                              : 'bg-neutral-100 text-slate-500 border-slate-200'
                           }`}
                         >
                           {isPast ? 'COMPLETED' : e.status}
@@ -282,18 +282,18 @@ export default function PartnerDashboard() {
                     <div className="p-5">
                       <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">{e.category}</span>
                       <h3 className="text-xl font-bold mt-1 line-clamp-1">{e.title}</h3>
-                      <p className="text-neutral-500 text-xs mt-2 flex items-center gap-1">
+                      <p className="text-slate-500 text-xs mt-2 flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" /> {e.venue_name}, {e.city}
                       </p>
-                      <p className="text-neutral-500 text-xs mt-1 flex items-center gap-1">
+                      <p className="text-slate-500 text-xs mt-1 flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
                         {format(parseISO(e.starts_at), 'MMM d, yyyy · h:mm a')}
                       </p>
                     </div>
                   </div>
 
-                  <div className="p-5 pt-0 border-t border-neutral-800/60 mt-4 flex items-center justify-between">
-                    <div className="text-xs text-neutral-500 flex items-center gap-1">
+                  <div className="p-5 pt-0 border-t border-slate-200/60 mt-4 flex items-center justify-between">
+                    <div className="text-xs text-slate-500 flex items-center gap-1">
                       <Ticket className="h-3.5 w-3.5 text-amber-500" />
                       {e.ticket_categories?.length || 1} Ticket Tier(s)
                     </div>
@@ -308,8 +308,8 @@ export default function PartnerDashboard() {
                           title={isEditLocked ? "Editing is locked within 24 hours of event start" : "Edit event details"}
                           className={
                             isEditLocked
-                              ? "text-neutral-600 cursor-not-allowed hover:bg-transparent"
-                              : "text-neutral-300 hover:text-neutral-900 hover:bg-neutral-100"
+                              ? "text-slate-600 cursor-not-allowed hover:bg-transparent"
+                              : "text-slate-700 hover:text-slate-900 hover:bg-neutral-100"
                           }
                         >
                           <Edit3 className="h-4 w-4 mr-1" />
@@ -324,20 +324,20 @@ export default function PartnerDashboard() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-white border-neutral-800 text-neutral-900 rounded-2xl">
+                          <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Cancel Event?</AlertDialogTitle>
-                              <AlertDialogDescription className="text-neutral-500">
-                                Are you sure you want to cancel <strong className="text-neutral-900">{e.title}</strong>? This will notify ticket holders and cancel pending sales.
+                              <AlertDialogDescription className="text-slate-500">
+                                Are you sure you want to cancel <strong className="text-slate-900">{e.title}</strong>? This will notify ticket holders and cancel pending sales.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-neutral-100 text-neutral-900 border-0 hover:bg-neutral-700 rounded-xl">
+                              <AlertDialogCancel className="bg-neutral-100 text-slate-900 border-0 hover:bg-slate-200 rounded-xl">
                                 Close
                               </AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleCancelEvent(e.id)}
-                                className="bg-rose-600 hover:bg-rose-700 text-neutral-900 rounded-xl"
+                                className="bg-rose-600 hover:bg-rose-700 text-slate-900 rounded-xl"
                               >
                                 Confirm Cancellation
                               </AlertDialogAction>
@@ -355,63 +355,63 @@ export default function PartnerDashboard() {
 
         {/* EDIT EVENT MODAL */}
         <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-          <DialogContent className="bg-white border-neutral-800 text-neutral-900 max-w-lg rounded-2xl">
+          <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-lg rounded-2xl">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold">Edit Event Details</DialogTitle>
             </DialogHeader>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
               <div>
-                <Label htmlFor="edit-title" className="text-xs text-neutral-500">Event Title</Label>
+                <Label htmlFor="edit-title" className="text-xs text-slate-500">Event Title</Label>
                 <Input
                   id="edit-title"
                   value={editForm.title}
                   onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="bg-neutral-50 border-neutral-800 mt-1"
+                  className="bg-neutral-50 border-slate-200 mt-1"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="edit-desc" className="text-xs text-neutral-500">Description</Label>
+                <Label htmlFor="edit-desc" className="text-xs text-slate-500">Description</Label>
                 <Textarea
                   id="edit-desc"
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="bg-neutral-50 border-neutral-800 mt-1 min-h-[80px]"
+                  className="bg-neutral-50 border-slate-200 mt-1 min-h-[80px]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="edit-venue" className="text-xs text-neutral-500">Venue Name</Label>
+                  <Label htmlFor="edit-venue" className="text-xs text-slate-500">Venue Name</Label>
                   <Input
                     id="edit-venue"
                     value={editForm.venue_name}
                     onChange={(e) => setEditForm({ ...editForm, venue_name: e.target.value })}
-                    className="bg-neutral-50 border-neutral-800 mt-1"
+                    className="bg-neutral-50 border-slate-200 mt-1"
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-city" className="text-xs text-neutral-500">City</Label>
+                  <Label htmlFor="edit-city" className="text-xs text-slate-500">City</Label>
                   <Input
                     id="edit-city"
                     value={editForm.city}
                     onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                    className="bg-neutral-50 border-neutral-800 mt-1"
+                    className="bg-neutral-50 border-slate-200 mt-1"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <Label htmlFor="edit-image" className="text-xs text-neutral-500">Poster Image URL</Label>
+                <Label htmlFor="edit-image" className="text-xs text-slate-500">Poster Image URL</Label>
                 <Input
                   id="edit-image"
                   value={editForm.poster_image_url}
                   onChange={(e) => setEditForm({ ...editForm, poster_image_url: e.target.value })}
-                  className="bg-neutral-50 border-neutral-800 mt-1"
+                  className="bg-neutral-50 border-slate-200 mt-1"
                   placeholder="https://..."
                 />
               </div>
@@ -421,7 +421,7 @@ export default function PartnerDashboard() {
                   type="button"
                   variant="ghost"
                   onClick={() => setEditingEvent(null)}
-                  className="bg-neutral-100 hover:bg-neutral-700 text-neutral-900 rounded-xl"
+                  className="bg-neutral-100 hover:bg-slate-200 text-slate-900 rounded-xl"
                 >
                   Cancel
                 </Button>

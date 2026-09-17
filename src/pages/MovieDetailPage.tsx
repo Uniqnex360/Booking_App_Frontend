@@ -57,7 +57,7 @@ export default function MovieDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
         <Header />
         <div className="flex-grow flex items-center justify-center">
           <Loader />
@@ -69,7 +69,7 @@ export default function MovieDetailPage() {
 
   if (!movie) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
         <Header />
         <div className="flex-grow flex flex-col items-center justify-center p-4">
           <h2 className="text-xl font-bold">Movie not found</h2>
@@ -85,32 +85,32 @@ export default function MovieDetailPage() {
   const hasShowtimes = movie.venues && movie.venues.length > 0;
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
       <Header />
       <main className="flex-grow">
         {/* Banner Section */}
-        <div className="relative py-12 bg-white border-b border-neutral-800">
+        <div className="relative py-12 bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10">
             <div className="w-48 aspect-[2/3] bg-neutral-100 rounded-xl overflow-hidden shadow-2xl flex-shrink-0">
               {movie.poster_url ? (
                 <img src={movie.poster_url} alt={movie.title} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-neutral-500">No Poster</div>
+                <div className="w-full h-full flex items-center justify-center text-slate-500">No Poster</div>
               )}
             </div>
             <div>
-              <button onClick={() => navigate('/movies')} className="text-sm text-neutral-500 hover:text-neutral-900 flex items-center gap-1 mb-4">
+              <button onClick={() => navigate('/movies')} className="text-sm text-slate-500 hover:text-slate-900 flex items-center gap-1 mb-4">
                 <ArrowLeft className="h-4 w-4" /> Back to Movies
               </button>
               <h1 className="text-4xl font-extrabold tracking-tight">{movie.title}</h1>
-              <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-neutral-300">
+              <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-slate-700">
                 <span className="bg-neutral-100 px-2 py-0.5 rounded text-xs font-semibold">{movie.certificate}</span>
                 <span>•</span>
                 <span>{movie.duration_min} mins</span>
                 <span>•</span>
                 <span>{movie.language}</span>
               </div>
-              <p className="mt-6 text-neutral-300 text-sm max-w-2xl leading-relaxed">
+              <p className="mt-6 text-slate-700 text-sm max-w-2xl leading-relaxed">
                 {movie.synopsis || 'No synopsis available for this film.'}
               </p>
             </div>
@@ -122,18 +122,18 @@ export default function MovieDetailPage() {
           <h2 className="text-2xl font-bold mb-8">Select Showtime</h2>
 
           {!hasShowtimes ? (
-            <div className="bg-white border border-neutral-800 rounded-xl p-8 text-center text-neutral-500">
+            <div className="bg-white border border-slate-200 rounded-xl p-8 text-center text-slate-500">
               This movie is currently not available in your city.
             </div>
           ) : (
             <div className="space-y-6">
               {movie.venues?.map((v) => (
-                <div key={v.venue_id} className="bg-white border border-neutral-800 rounded-xl p-6">
-                  <div className="flex items-start gap-3 border-b border-neutral-800 pb-4 mb-4">
+                <div key={v.venue_id} className="bg-white border border-slate-200 rounded-xl p-6">
+                  <div className="flex items-start gap-3 border-b border-slate-200 pb-4 mb-4">
                     <MapPin className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="font-bold text-lg">{v.venue_name}</h3>
-                      <p className="text-neutral-500 text-sm">{v.address || v.city}</p>
+                      <p className="text-slate-500 text-sm">{v.address || v.city}</p>
                     </div>
                   </div>
 
@@ -142,12 +142,12 @@ export default function MovieDetailPage() {
                       <Link
                         key={st.id}
                         to={`/showtimes/${st.id}/seat-map`}
-                        className="bg-neutral-50 border border-neutral-800 hover:border-amber-500 rounded-lg py-2.5 px-4 text-center transition group min-w-[120px]"
+                        className="bg-neutral-50 border border-slate-200 hover:border-amber-500 rounded-lg py-2.5 px-4 text-center transition group min-w-[120px]"
                       >
-                        <div className="font-bold text-sm text-neutral-200 group-hover:text-amber-500">
+                        <div className="font-bold text-sm text-slate-800 group-hover:text-amber-500">
                           {new Date(st.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
-                        <div className="text-[10px] text-neutral-500 mt-1 uppercase tracking-wider font-semibold">
+                        <div className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">
                           {st.format} • {st.language}
                         </div>
                       </Link>

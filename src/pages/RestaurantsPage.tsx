@@ -117,20 +117,20 @@ export default function RestaurantsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="font-serif text-4xl font-semibold text-wine-950 sm:text-5xl">
+          <h1 className="font-serif text-4xl font-semibold text-slate-900 sm:text-5xl">
             Restaurants
           </h1>
-          <p className="mt-2 text-foreground/60">
+          <p className="mt-2 text-slate-500">
             Reserve a table at the finest dining spots
           </p>
 
           <div className="relative mt-6 max-w-md">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -152,7 +152,7 @@ export default function RestaurantsPage() {
               {filtered.map((r) => (
                 <div
                   key={r.id}
-                  className="group overflow-hidden rounded-2xl border border-border/50 bg-card shadow-soft transition-all hover:-translate-y-1 hover:shadow-soft-lg"
+                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:-translate-y-1 hover:shadow-soft-lg"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
                     <img
@@ -164,7 +164,7 @@ export default function RestaurantsPage() {
                       {r.tags.slice(0, 1).map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-full bg-wine-700 px-2.5 py-1 text-xs font-semibold text-neutral-900 shadow-wine"
+                          className="rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm"
                         >
                           {tag}
                         </span>
@@ -174,30 +174,30 @@ export default function RestaurantsPage() {
                   <div className="p-4">
                     <div className="mb-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-wine-500 text-wine-500" />
+                        <Star className="h-3.5 w-3.5 fill-wine-500 text-amber-500" />
                         <span className="text-xs font-semibold">
                           {r.rating}
                         </span>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-slate-500">
                           ({r.reviews_count})
                         </span>
                       </div>
-                      <span className="text-xs font-semibold text-wine-700">
+                      <span className="text-xs font-semibold text-amber-700">
                         {r.price_range}
                       </span>
                     </div>
-                    <h3 className="font-serif text-lg font-semibold text-wine-950">
+                    <h3 className="font-serif text-lg font-semibold text-slate-900">
                       {r.name}
                     </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1 text-xs text-slate-500">
                       {r.cuisine} • {r.location}
                     </p>
-                    <p className="mt-2 text-xs leading-relaxed text-foreground/60">
+                    <p className="mt-2 text-xs leading-relaxed text-slate-500">
                       {r.description}
                     </p>
 
                     <div className="mt-4">
-                      <p className="mb-2 flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                      <p className="mb-2 flex items-center gap-1 text-xs font-medium text-slate-500">
                         <Clock className="h-3 w-3" />
                         Available times
                       </p>
@@ -206,7 +206,7 @@ export default function RestaurantsPage() {
                           <Link
                             key={time}
                             to={`/booking/restaurant/${r.id}`}
-                            className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 transition-all hover:border-wine-300 hover:bg-wine-50 hover:text-wine-700"
+                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-900/80 transition-all hover:border-wine-300 hover:bg-amber-50 hover:text-amber-700"
                           >
                             {time}
                           </Link>

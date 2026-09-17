@@ -59,18 +59,18 @@ export function Header() {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         transparent
           ? 'bg-transparent py-4'
-          : 'glass shadow-soft py-2 border-b border-neutral-800'
+          : 'glass shadow-soft py-2 border-b border-slate-200'
       }`}
     >
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
         <Link to="/" className="group flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl wine-gradient shadow-wine transition-transform group-hover:scale-105">
-            <Wine className="h-5 w-5 text-neutral-900" strokeWidth={2.2} />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 shadow-sm transition-transform group-hover:scale-105">
+            <Wine className="h-5 w-5 text-slate-900" strokeWidth={2.2} />
           </div>
           <span
             className={`font-serif text-2xl font-semibold tracking-tight ${
-              transparent ? 'text-neutral-900' : 'text-neutral-200'
+              transparent ? 'text-slate-900' : 'text-slate-800'
             }`}
           >
             Vyhbz
@@ -85,8 +85,8 @@ export function Header() {
               to={link.href}
               className={`group relative text-sm font-medium transition-colors ${
                 transparent
-                  ? 'text-neutral-900/80 hover:text-neutral-900'
-                  : 'text-neutral-300 hover:text-amber-500'
+                  ? 'text-slate-900/80 hover:text-slate-900'
+                  : 'text-slate-700 hover:text-amber-500'
               }`}
             >
               {link.label}
@@ -104,17 +104,17 @@ export function Header() {
                   className={`flex items-center gap-2 rounded-full border p-1 pr-3 transition-all hover:shadow-soft ${
                     transparent
                       ? 'border-white/20 bg-white/10'
-                      : 'border-neutral-800 bg-white/50'
+                      : 'border-slate-200 bg-white/50'
                   }`}
                 >
-                  <Avatar className="h-8 w-8 border border-neutral-700">
+                  <Avatar className="h-8 w-8 border border-slate-200">
                     <AvatarFallback className="bg-neutral-100 text-xs font-semibold text-amber-500">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                   <span
                     className={`hidden text-sm font-medium sm:block ${
-                      transparent ? 'text-neutral-900' : 'text-neutral-200'
+                      transparent ? 'text-slate-900' : 'text-slate-800'
                     }`}
                   >
                     {user.full_name?.split(' ')[0] || 'Account'}
@@ -123,13 +123,13 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-56 rounded-xl border-neutral-800 bg-white text-neutral-900 shadow-soft-lg"
+                className="w-56 rounded-xl border-slate-200 bg-white text-slate-900 shadow-soft-lg"
               >
                 <div className="px-2 py-1.5">
                   <p className="text-sm font-semibold">
                     {user.full_name || 'Member'}
                   </p>
-                  <p className="truncate text-xs text-neutral-500">
+                  <p className="truncate text-xs text-slate-500">
                     {user.email}
                   </p>
                 </div>
@@ -193,8 +193,8 @@ export function Header() {
                 variant="ghost"
                 className={`text-sm font-medium ${
                   transparent
-                    ? 'text-neutral-900/80 hover:text-neutral-900 hover:bg-white/10'
-                    : 'text-neutral-300 hover:text-amber-500 hover:bg-white'
+                    ? 'text-slate-900/80 hover:text-slate-900 hover:bg-white/10'
+                    : 'text-slate-700 hover:text-amber-500 hover:bg-white'
                 }`}
               >
                 <Link to="/login">Log in</Link>
@@ -214,7 +214,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-neutral-900"
+                className="lg:hidden text-slate-900"
                 aria-label="Open menu"
               >
                 <Menu className="h-5 w-5" />
@@ -222,9 +222,9 @@ export function Header() {
             </SheetTrigger>
             <SheetContent
               side="right"
-              className="w-[300px] border-neutral-800 bg-neutral-50 text-neutral-900 p-0"
+              className="w-[300px] border-slate-200 bg-neutral-50 text-slate-900 p-0"
             >
-              <div className="flex items-center justify-between border-b border-neutral-800 px-6 py-4">
+              <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
                 <span className="font-serif text-xl font-semibold">
                   Menu
                 </span>
@@ -232,7 +232,7 @@ export function Header() {
                   variant="ghost"
                   size="icon"
                   onClick={() => setMobileOpen(false)}
-                  className="text-neutral-900"
+                  className="text-slate-900"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -243,18 +243,18 @@ export function Header() {
                     key={link.href}
                     to={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-300 hover:bg-white hover:text-amber-500"
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-white hover:text-amber-500"
                   >
                     {link.label}
                   </Link>
                 ))} 
-                <div className="mt-4 border-t border-neutral-800 pt-4 flex flex-col gap-1">
+                <div className="mt-4 border-t border-slate-200 pt-4 flex flex-col gap-1">
                   {user ? (
                     <>
                       <Link
                         to="/profile"
                         onClick={() => setMobileOpen(false)}
-                        className="rounded-lg px-3 py-2.5 text-sm font-medium text-neutral-300 hover:bg-white"
+                        className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-white"
                       >
                         Profile
                       </Link>
@@ -313,7 +313,7 @@ export function Header() {
                       <Button
                         asChild
                         variant="outline"
-                        className="rounded-full border-neutral-800 bg-transparent text-neutral-900"
+                        className="rounded-full border-slate-200 bg-transparent text-slate-900"
                       >
                         <Link to="/login" onClick={() => setMobileOpen(false)}>
                           Log in

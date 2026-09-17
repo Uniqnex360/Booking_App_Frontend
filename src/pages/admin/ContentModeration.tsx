@@ -48,13 +48,13 @@ export default function ContentModeration() {
       
       {events.length === 0 ? (
         <div className="bg-muted/30 rounded-2xl p-20 text-center border-2 border-dashed">
-          <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground">No pending events to review.</p>
+          <AlertCircle className="mx-auto h-12 w-12 text-slate-500 mb-4" />
+          <p className="text-slate-500">No pending events to review.</p>
         </div>
       ) : (
         <div className="grid gap-6">
           {events.map((event) => (
-            <div key={event.id} className="bg-card border rounded-2xl p-6 flex items-center gap-6 shadow-sm">
+            <div key={event.id} className="bg-white border rounded-2xl p-6 flex items-center gap-6 shadow-sm">
               <img 
                 src={event.poster_image_url || '/placeholder.jpg'} 
                 className="w-32 h-32 object-cover rounded-xl"
@@ -62,10 +62,10 @@ export default function ContentModeration() {
               
               <div className="flex-1">
                 <h3 className="text-xl font-semibold">{event.title}</h3>
-                <p className="text-sm text-muted-foreground">{event.venue_name} • {event.city}</p>
+                <p className="text-sm text-slate-500">{event.venue_name} • {event.city}</p>
                 <p className="text-sm mt-2 line-clamp-2">{event.description}</p>
                 <div className="mt-2 flex gap-2">
-                   <span className="text-xs bg-wine-50 text-wine-700 px-2 py-1 rounded-md font-medium">
+                   <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-md font-medium">
                       Category: {event.category}
                    </span>
                 </div>
@@ -74,7 +74,7 @@ export default function ContentModeration() {
               <div className="flex flex-col gap-2">
                 <Button 
                   onClick={() => handleAction(event.id, 'PUBLISHED')}
-                  className="bg-green-600 hover:bg-green-700 text-neutral-900"
+                  className="bg-green-600 hover:bg-green-700 text-slate-900"
                 >
                   <Check className="w-4 h-4 mr-2" /> Approve
                 </Button>

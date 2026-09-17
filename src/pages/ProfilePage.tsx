@@ -47,7 +47,7 @@ export default function ProfilePage() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-slate-50">
         <Header />
         <div className="flex justify-center py-20">
           <Loader className="h-8 w-8" />
@@ -71,13 +71,13 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       {/* Header banner */}
-      <div className="relative h-48 overflow-hidden wine-gradient lg:h-56">
-        <div className="absolute inset-0 bg-wine-radial" />
-        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-wine-500/20 blur-3xl" />
+      <div className="relative h-48 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 lg:h-56">
+        <div className="absolute inset-0 " />
+        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
       </div>
 
@@ -85,18 +85,18 @@ export default function ProfilePage() {
         {/* Profile header */}
         <div className="-mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-4">
-            <Avatar className="h-24 w-24 border-4 border-background shadow-wine-lg">
-              <AvatarFallback className="bg-wine-700 font-serif text-2xl font-semibold text-neutral-900">
+            <Avatar className="h-24 w-24 border-4 border-background shadow-md">
+              <AvatarFallback className="bg-amber-500 font-serif text-2xl font-semibold text-slate-900">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="pb-2">
-              <h1 className="font-serif text-3xl font-semibold text-wine-950">
+              <h1 className="font-serif text-3xl font-semibold text-slate-900">
                 {user.full_name || 'Member'}
               </h1>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <p className="text-sm text-slate-500">{user.email}</p>
               {user.phone && (
-                <p className="mt-0.5 text-sm text-muted-foreground">
+                <p className="mt-0.5 text-sm text-slate-500">
                   {user.phone}
                 </p>
               )}
@@ -106,7 +106,7 @@ export default function ProfilePage() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full border-border bg-card"
+              className="rounded-full border-slate-200 bg-white"
             >
               <Link to ='/profile/edit'>
               <Settings className="mr-2 h-4 w-4" />
@@ -116,7 +116,7 @@ export default function ProfilePage() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full border-border bg-card"
+              className="rounded-full border-slate-200 bg-white"
             >
               <Bell className="h-4 w-4" />
             </Button>
@@ -132,35 +132,35 @@ export default function ProfilePage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-border/50 bg-card p-4 text-center shadow-soft"
+              className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-soft"
             >
-              <stat.icon className="mx-auto mb-2 h-5 w-5 text-wine-600" />
-              <p className="font-serif text-2xl font-semibold text-wine-900">
+              <stat.icon className="mx-auto mb-2 h-5 w-5 text-amber-600" />
+              <p className="font-serif text-2xl font-semibold text-slate-900">
                 {stat.value}
               </p>
-              <p className="text-xs text-muted-foreground">{stat.label}</p>
+              <p className="text-xs text-slate-500">{stat.label}</p>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="bookings" className="mt-10" id="bookings">
-          <TabsList className="grid w-full max-w-md grid-cols-3 rounded-xl bg-secondary/60 p-1">
+          <TabsList className="grid w-full max-w-md grid-cols-3 rounded-xl bg-slate-50 p-1">
             <TabsTrigger
               value="bookings"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-soft"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
             >
               Bookings
             </TabsTrigger>
             <TabsTrigger
               value="saved"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-soft"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
             >
               Saved
             </TabsTrigger>
             <TabsTrigger
               value="activity"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-card data-[state=active]:shadow-soft"
+              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
             >
               Activity
             </TabsTrigger>
@@ -173,20 +173,20 @@ export default function ProfilePage() {
                 <Loader className="h-6 w-6" />
               </div>
             ) : bookings.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-wine-50">
-                  <Calendar className="h-7 w-7 text-wine-600" />
+              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+                  <Calendar className="h-7 w-7 text-amber-600" />
                 </div>
-                <h3 className="font-serif text-xl font-semibold text-wine-950">
+                <h3 className="font-serif text-xl font-semibold text-slate-900">
                   No bookings yet
                 </h3>
-                <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+                <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
                   When you book an experience, it&apos;ll show up here for easy
                   access.
                 </p>
                 <Button
                   asChild
-                  className="mt-6 rounded-full bg-wine-700 px-6 text-sm font-semibold shadow-wine hover:bg-wine-800"
+                  className="mt-6 rounded-full bg-amber-500 px-6 text-sm font-semibold shadow-sm hover:bg-amber-600"
                 >
                   <Link to="/">
                     Browse experiences
@@ -198,8 +198,8 @@ export default function ProfilePage() {
               <>
                 {upcoming.length > 0 && (
                   <div>
-                    <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-wine-950">
-                      <Clock className="h-5 w-5 text-wine-600" />
+                    <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-slate-900">
+                      <Clock className="h-5 w-5 text-amber-600" />
                       Upcoming
                     </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -211,8 +211,8 @@ export default function ProfilePage() {
                 )}
                 {past.length > 0 && (
                   <div>
-                    <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-wine-950">
-                      <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                    <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-slate-900">
+                      <CheckCircle2 className="h-5 w-5 text-slate-500" />
                       Past experiences
                     </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -232,14 +232,14 @@ export default function ProfilePage() {
 
           {/* Saved tab */}
           <TabsContent value="saved" className="mt-6">
-            <div className="rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-wine-50">
-                <Heart className="h-7 w-7 text-wine-600" />
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
+                <Heart className="h-7 w-7 text-amber-600" />
               </div>
-              <h3 className="font-serif text-xl font-semibold text-wine-950">
+              <h3 className="font-serif text-xl font-semibold text-slate-900">
                 Nothing saved yet
               </h3>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+              <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
                 Tap the heart icon on any experience to save it for later.
               </p>
             </div>
@@ -247,31 +247,31 @@ export default function ProfilePage() {
 
           {/* Activity tab */}
           <TabsContent value="activity" className="mt-6">
-            <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-soft">
-              <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-wine-950">
-                <TrendingUp className="h-5 w-5 text-wine-600" />
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+              <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-slate-900">
+                <TrendingUp className="h-5 w-5 text-amber-600" />
                 Recent activity
               </h3>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 border-b border-border/50 pb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wine-50">
-                    <Wine className="h-5 w-5 text-wine-600" />
+                <div className="flex items-start gap-3 border-b border-slate-200 pb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
+                    <Wine className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
                     <p className="text-sm font-medium">Joined Booking App</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-slate-500">
                       Welcome to the community
                     </p>
                   </div>
                 </div>
                 {bookings.length > 0 && (
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-wine-50">
-                      <Calendar className="h-5 w-5 text-wine-600" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
+                      <Calendar className="h-5 w-5 text-amber-600" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">First booking made</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-slate-500">
                         {bookings[bookings.length - 1]?.title}
                       </p>
                     </div>
@@ -297,7 +297,7 @@ function BookingCard({
 }) {
   return (
     <div
-      className={`group overflow-hidden rounded-2xl border border-border/50 bg-card shadow-soft transition-all hover:shadow-soft-lg ${
+      className={`group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:shadow-soft-lg ${
         past ? 'opacity-80' : ''
       }`}
     >
@@ -309,14 +309,14 @@ function BookingCard({
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center wine-gradient-soft">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-amber-500 to-orange-500-soft">
             <Wine className="h-10 w-10 text-wine-400" />
           </div>
         )}
         <div className="absolute right-3 top-3">
           <Badge
             className={`rounded-full text-xs font-semibold ${
-              past ? 'bg-muted text-muted-foreground' : 'bg-wine-700 text-neutral-900'
+              past ? 'bg-muted text-slate-500' : 'bg-amber-500 text-slate-900'
             }`}
           >
             {past ? 'Completed' : 'Confirmed'}
@@ -324,11 +324,11 @@ function BookingCard({
         </div>
       </div>
       <div className="p-4">
-        <h4 className="font-serif text-lg font-semibold text-wine-950">
+        <h4 className="font-serif text-lg font-semibold text-slate-900">
           {booking.title}
         </h4>
-        <p className="text-xs text-muted-foreground">{booking.venue}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+        <p className="text-xs text-slate-500">{booking.venue}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
           <span className="flex items-center gap-1">
             <Calendar className="h-3 w-3" />
             {formatDate(booking.booking_date)}
@@ -344,15 +344,15 @@ function BookingCard({
             {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}
           </span>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
-          <span className="font-serif text-xl font-semibold text-wine-800">
+        <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
+          <span className="font-serif text-xl font-semibold text-slate-800">
             {formatCurrency(booking.total_price)}
           </span>
           {!past && (
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full border-wine-200 text-xs text-wine-700 hover:bg-wine-50"
+              className="rounded-full border-amber-200 text-xs text-amber-700 hover:bg-amber-50"
             >
               View details
             </Button>

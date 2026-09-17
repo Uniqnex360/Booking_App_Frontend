@@ -8,15 +8,15 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          'bg-wine-700 text-neutral-900 shadow-wine hover:bg-wine-800 hover:shadow-wine-lg',
+          'bg-amber-500 text-slate-900 shadow-sm hover:bg-amber-600 hover:shadow-md',
         outline:
-          'border border-border bg-card text-foreground hover:bg-secondary',
-        ghost: 'text-foreground/70 hover:bg-secondary hover:text-foreground',
-        link: 'text-wine-700 underline-offset-4 hover:underline',
+          'border border-slate-200 bg-white text-slate-900 hover:bg-slate-50',
+        ghost: 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+        link: 'text-amber-700 underline-offset-4 hover:underline',
         destructive:
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+          'bg-destructive text-rose-600-foreground hover:bg-destructive/90',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+          'bg-slate-50 text-secondary-foreground hover:bg-slate-50/80',
       },
       size: {
         default: 'h-11 px-5 py-2',

@@ -73,14 +73,14 @@
     return (
       <div className="flex min-h-screen flex-col lg:flex-row">
         {/* Left visual panel */}
-        <div className="relative hidden flex-1 overflow-hidden wine-gradient lg:block">
-          <div className="absolute inset-0 bg-wine-radial" />
-          <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-wine-500/20 blur-3xl" />
+        <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 lg:block">
+          <div className="absolute inset-0 " />
+          <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-amber-500/20 blur-3xl" />
           <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-wine-400/10 blur-3xl" />
-          <div className="relative flex h-full flex-col justify-between p-12 text-neutral-900">
+          <div className="relative flex h-full flex-col justify-between p-12 text-slate-900">
             {/* <Link to="/" className="flex items-center gap-2.5">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-                <Wine className="h-5 w-5 text-neutral-900" strokeWidth={2.2} />
+                <Wine className="h-5 w-5 text-slate-900" strokeWidth={2.2} />
               </div>
               <span className="font-serif text-2xl font-semibold">Vyhbz App</span>
             </Link> */}
@@ -116,11 +116,11 @@
         </div>
 
         {/* Right form panel */}
-        <div className="flex flex-1 items-center justify-center bg-background px-4 py-12 sm:px-6">
+        <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12 sm:px-6">
           <div className="w-full max-w-md">
             <Link
               to="/"
-              className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-wine-700"
+              className="mb-8 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to home
@@ -128,30 +128,30 @@
 
             <div className="mb-6 lg:hidden">
               <Link to="/" className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl wine-gradient">
-                  <Wine className="h-5 w-5 text-neutral-900" strokeWidth={2.2} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500">
+                  <Wine className="h-5 w-5 text-slate-900" strokeWidth={2.2} />
                 </div>
-                <span className="font-serif text-2xl font-semibold text-wine-900">
+                <span className="font-serif text-2xl font-semibold text-slate-900">
                   Vyhbz App
                 </span>
               </Link>
             </div>
 
-            <h1 className="font-serif text-4xl font-semibold text-wine-950">
+            <h1 className="font-serif text-4xl font-semibold text-slate-900">
               Create account
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-slate-500">
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="font-medium text-wine-700 hover:text-wine-900"
+                className="font-medium text-amber-700 hover:text-slate-900"
               >
                 Sign in
               </Link>
             </p>
 
             {error && (
-              <div className="mt-6 animate-slide-down rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              <div className="mt-6 animate-slide-down rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
                 {error}
               </div>
             )}
@@ -160,7 +160,7 @@
                 type="button"
                 onClick={handleGoogleAction}
                 variant="outline" 
-                className="w-full h-11 rounded-xl border-wine-100 hover:bg-wine-50 gap-3 shadow-sm transition-all"
+                className="w-full h-11 rounded-xl border-amber-100 hover:bg-amber-50 gap-3 shadow-sm transition-all"
                 disabled={loading}
               >
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
@@ -173,7 +173,7 @@
                 <span className="w-full border-t border-muted" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or register with email</span>
+                <span className="bg-slate-50 px-2 text-slate-500">Or register with email</span>
               </div>
             </div>
             <form onSubmit={handleRegister} className="mt-8 space-y-5">
@@ -182,7 +182,7 @@
                   Full name
                 </Label>
                 <div className="relative">
-                  <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="fullName"
                     required
@@ -199,7 +199,7 @@
                   Email address
                 </Label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="email"
                     type="email"
@@ -217,7 +217,7 @@
                   Phone number
                 </Label>
                 <div className="relative">
-                  <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="phone"
                     type="tel"
@@ -235,7 +235,7 @@
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="password"
                     type="password"
@@ -253,8 +253,8 @@
                         key={check.label}
                         className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
                           check.met
-                            ? 'bg-success/10 text-success'
-                            : 'bg-muted text-muted-foreground'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-muted text-slate-500'
                         }`}
                       >
                         {check.met ? (
@@ -272,7 +272,7 @@
               <Button
                 type="submit"
                 disabled={loading}
-                className="h-11 w-full rounded-xl bg-wine-700 text-sm font-semibold shadow-wine transition-all hover:bg-wine-800 hover:shadow-wine-lg"
+                className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -285,13 +285,13 @@
               </Button>
             </form>
 
-            {/* <p className="mt-8 text-center text-xs text-muted-foreground">
+            {/* <p className="mt-8 text-center text-xs text-slate-500">
               By creating an account, you agree to our{' '}
-              <Link to="#" className="underline hover:text-wine-700">
+              <Link to="#" className="underline hover:text-amber-700">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link to="#" className="underline hover:text-wine-700">
+              <Link to="#" className="underline hover:text-amber-700">
                 Privacy Policy
               </Link>
               .

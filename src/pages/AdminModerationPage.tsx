@@ -111,21 +111,21 @@ export default function AdminModerationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       {/* Header */}
       <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wine-50">
-              <ShieldCheck className="h-6 w-6 text-wine-700" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50">
+              <ShieldCheck className="h-6 w-6 text-amber-700" />
             </div>
             <div>
-              <h1 className="font-serif text-3xl font-semibold text-wine-950">
+              <h1 className="font-serif text-3xl font-semibold text-slate-900">
                 Content Moderation
               </h1>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 Review and approve pending event submissions
               </p>
             </div>
@@ -135,19 +135,19 @@ export default function AdminModerationPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Admin Navigation Tabs */}
-        <div className="flex border-b border-border/60 gap-4 mb-6">
+        <div className="flex border-b border-slate-200/60 gap-4 mb-6">
           <a
             href="/admin/partners"
-            className="pb-3 text-sm font-medium text-muted-foreground hover:text-wine-900 flex items-center gap-2"
+            className="pb-3 text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-2"
           >
             <ShieldCheck className="h-4 w-4" />
             Partner Verification
           </a>
           <button
             onClick={() => {}}
-            className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-wine-950 flex items-center gap-2"
+            className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-slate-900 flex items-center gap-2"
           >
-            <CalendarClock className="h-4 w-4 text-wine-700" />
+            <CalendarClock className="h-4 w-4 text-amber-700" />
             Event Moderation
           </button>
         </div>
@@ -165,11 +165,11 @@ export default function AdminModerationPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-soft"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft"
               >
                 <div className="flex flex-col gap-4 p-5 sm:flex-row">
                   {/* Poster */}
-                  <div className="h-32 w-full flex-shrink-0 overflow-hidden rounded-xl bg-wine-50 sm:h-24 sm:w-24">
+                  <div className="h-32 w-full flex-shrink-0 overflow-hidden rounded-xl bg-amber-50 sm:h-24 sm:w-24">
                     {event.poster_image_url ? (
                       <img
                         src={event.poster_image_url}
@@ -187,10 +187,10 @@ export default function AdminModerationPage() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <h3 className="font-serif text-lg font-semibold text-wine-950">
+                        <h3 className="font-serif text-lg font-semibold text-slate-900">
                           {event.title}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-slate-500">
                           {event.venue_name}
                         </p>
                       </div>
@@ -200,7 +200,7 @@ export default function AdminModerationPage() {
                       </Badge>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
                       <span className="flex items-center gap-1.5">
                         <CalendarClock className="h-3.5 w-3.5" />
                         {format(parseISO(event.starts_at), 'MMM d, yyyy')} at{' '}
@@ -221,7 +221,7 @@ export default function AdminModerationPage() {
                     </div>
 
                     {event.description && (
-                      <p className="mt-3 line-clamp-2 text-sm text-foreground/60">
+                      <p className="mt-3 line-clamp-2 text-sm text-slate-500">
                         {event.description}
                       </p>
                     )}
@@ -233,7 +233,7 @@ export default function AdminModerationPage() {
                       <AlertDialogTrigger asChild>
                         <Button
                           size="sm"
-                          className="rounded-full bg-emerald-600 text-xs font-semibold text-neutral-900 hover:bg-emerald-700"
+                          className="rounded-full bg-emerald-600 text-xs font-semibold text-slate-900 hover:bg-emerald-700"
                         >
                           <Check className="h-3.5 w-3.5" />
                           Approve
@@ -241,12 +241,12 @@ export default function AdminModerationPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent className="rounded-2xl">
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="font-serif text-xl text-wine-950">
+                          <AlertDialogTitle className="font-serif text-xl text-slate-900">
                             Approve Event
                           </AlertDialogTitle>
                           <AlertDialogDescription>
                             Are you sure you want to approve{' '}
-                            <span className="font-semibold text-wine-950">
+                            <span className="font-semibold text-slate-900">
                               {event.title}
                             </span>
                             ? It will be published immediately and visible to
@@ -259,7 +259,7 @@ export default function AdminModerationPage() {
                           </AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleApprove(event.id)}
-                            className="rounded-xl bg-emerald-600 text-neutral-900 hover:bg-emerald-700"
+                            className="rounded-xl bg-emerald-600 text-slate-900 hover:bg-emerald-700"
                           >
                             {approvingId === event.id ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -295,12 +295,12 @@ export default function AdminModerationPage() {
       >
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl font-semibold text-wine-950">
+            <DialogTitle className="font-serif text-2xl font-semibold text-slate-900">
               Reject Event
             </DialogTitle>
             <DialogDescription>
               Please provide a reason for rejecting{' '}
-              <span className="font-semibold text-wine-950">
+              <span className="font-semibold text-slate-900">
                 {rejectEvent?.title}
               </span>
               . This will be visible to the partner.
@@ -329,7 +329,7 @@ export default function AdminModerationPage() {
             <Button
               onClick={handleReject}
               disabled={rejecting || !rejectReason.trim()}
-              className="rounded-xl bg-red-600 text-sm font-semibold text-neutral-900 hover:bg-red-700"
+              className="rounded-xl bg-red-600 text-sm font-semibold text-slate-900 hover:bg-red-700"
             >
               {rejecting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -347,13 +347,13 @@ export default function AdminModerationPage() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-wine-50">
-        <ShieldCheck className="h-8 w-8 text-wine-600" />
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50">
+        <ShieldCheck className="h-8 w-8 text-amber-600" />
       </div>
-      <h3 className="font-serif text-xl font-semibold text-wine-950">
+      <h3 className="font-serif text-xl font-semibold text-slate-900">
         No Pending Approvals
       </h3>
-      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+      <p className="mt-2 max-w-sm text-sm text-slate-500">
         All caught up! There are no events waiting for review right now.
       </p>
     </div>

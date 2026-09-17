@@ -222,22 +222,22 @@ export default function PartnerEventCreatePage() {
   }
 }, [startsAt, endsAt, trigger]);
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Link
             to="/partner/dashboard"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-wine-700"
+            className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to dashboard
           </Link>
-          <h1 className="font-serif text-4xl font-semibold text-wine-950">
+          <h1 className="font-serif text-4xl font-semibold text-slate-900">
             Create Event
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-slate-500">
             List a new event for guests to discover and book.
           </p>
         </div>
@@ -256,10 +256,10 @@ export default function PartnerEventCreatePage() {
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all ${
                       isActive
-                        ? "border-wine-700 bg-wine-700 text-neutral-900"
+                        ? "border-wine-700 bg-amber-500 text-slate-900"
                         : isDone
-                          ? "border-wine-700 bg-wine-50 text-wine-700"
-                          : "border-border bg-card text-muted-foreground"
+                          ? "border-wine-700 bg-amber-50 text-amber-700"
+                          : "border-slate-200 bg-white text-slate-500"
                     }`}
                   >
                     {isDone ? (
@@ -270,7 +270,7 @@ export default function PartnerEventCreatePage() {
                   </div>
                   <span
                     className={`text-xs font-medium ${
-                      isActive ? "text-wine-700" : "text-muted-foreground"
+                      isActive ? "text-amber-700" : "text-slate-500"
                     }`}
                   >
                     {s.label}
@@ -279,7 +279,7 @@ export default function PartnerEventCreatePage() {
                 {i < steps.length - 1 && (
                   <div
                     className={`mx-2 h-0.5 flex-1 rounded-full transition-all ${
-                      step > s.id ? "bg-wine-700" : "bg-border"
+                      step > s.id ? "bg-amber-500" : "bg-border"
                     }`}
                   />
                 )}
@@ -289,7 +289,7 @@ export default function PartnerEventCreatePage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="rounded-2xl border border-border/50 bg-card p-6 shadow-soft sm:p-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
             <AnimatePresence mode="wait">
               {/* Step 1: Event Details */}
               {step === 1 && (
@@ -301,7 +301,7 @@ export default function PartnerEventCreatePage() {
                   transition={{ duration: 0.3 }}
                   className="space-y-5"
                 >
-                  <h2 className="font-serif text-xl font-semibold text-wine-950">
+                  <h2 className="font-serif text-xl font-semibold text-slate-900">
                     Event Details
                   </h2>
 
@@ -313,7 +313,7 @@ export default function PartnerEventCreatePage() {
                       {...register("title")}
                     />
                     {errors.title && (
-                      <p className="text-xs text-destructive">
+                      <p className="text-xs text-rose-600">
                         {errors.title.message}
                       </p>
                     )}
@@ -339,7 +339,7 @@ export default function PartnerEventCreatePage() {
                                 return (
                                   <SelectItem key={value} value={value}>
                                     <span className="flex items-center gap-2">
-                                      <Icon className="h-4 w-4 text-wine-600" />
+                                      <Icon className="h-4 w-4 text-amber-600" />
                                       {meta.label}
                                     </span>
                                   </SelectItem>
@@ -351,7 +351,7 @@ export default function PartnerEventCreatePage() {
                       )}
                     />
                     {errors.category && (
-                      <p className="text-xs text-destructive">
+                      <p className="text-xs text-rose-600">
                         {errors.category.message}
                       </p>
                     )}
@@ -368,7 +368,7 @@ export default function PartnerEventCreatePage() {
                         {...register("venue_name")}
                       />
                       {errors.venue_name && (
-                        <p className="text-xs text-destructive">
+                        <p className="text-xs text-rose-600">
                           {errors.venue_name.message}
                         </p>
                       )}
@@ -382,7 +382,7 @@ export default function PartnerEventCreatePage() {
                         {...register("city")}
                       />
                       {errors.city && (
-                        <p className="text-xs text-destructive">
+                        <p className="text-xs text-rose-600">
                           {errors.city.message}
                         </p>
                       )}
@@ -398,7 +398,7 @@ export default function PartnerEventCreatePage() {
                       {...register("venue_address")}
                     />
                     {errors.venue_address && (
-                      <p className="text-xs text-destructive">
+                      <p className="text-xs text-rose-600">
                         {errors.venue_address.message}
                       </p>
                     )}
@@ -441,7 +441,7 @@ export default function PartnerEventCreatePage() {
                         {...register("starts_at")}
                       />
                       {errors.starts_at && (
-                        <p className="text-xs text-destructive">
+                        <p className="text-xs text-rose-600">
                           {errors.starts_at.message}
                         </p>
                       )}
@@ -460,7 +460,7 @@ export default function PartnerEventCreatePage() {
                         {...register("ends_at")}
                       />
                       {errors.ends_at && (
-                        <p className="text-xs text-destructive">
+                        <p className="text-xs text-rose-600">
                           {errors.ends_at.message}
                         </p>
                       )}
@@ -478,7 +478,7 @@ export default function PartnerEventCreatePage() {
                   transition={{ duration: 0.3 }}
                   className="space-y-5"
                 >
-                  <h2 className="font-serif text-xl font-semibold text-wine-950">
+                  <h2 className="font-serif text-xl font-semibold text-slate-900">
                     Poster & Description
                   </h2>
 
@@ -492,7 +492,7 @@ export default function PartnerEventCreatePage() {
                       {...register("poster_image_url")}
                     />
                     {errors.poster_image_url && (
-                      <p className="text-xs text-destructive">
+                      <p className="text-xs text-rose-600">
                         {errors.poster_image_url.message}
                       </p>
                     )}
@@ -501,7 +501,7 @@ export default function PartnerEventCreatePage() {
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">
                       Description{" "}
-                      <span className="text-muted-foreground">(optional)</span>
+                      <span className="text-slate-500">(optional)</span>
                     </Label>
                     <Textarea
                       placeholder="Tell guests what makes this event special..."
@@ -523,7 +523,7 @@ export default function PartnerEventCreatePage() {
                   className="space-y-5"
                 >
                   <div className="flex items-center justify-between">
-                    <h2 className="font-serif text-xl font-semibold text-wine-950">
+                    <h2 className="font-serif text-xl font-semibold text-slate-900">
                       Ticket Tiers
                     </h2>
                     <Button
@@ -546,7 +546,7 @@ export default function PartnerEventCreatePage() {
                   </div>
 
                   {errors.ticket_categories?.root?.message && (
-                    <p className="text-xs text-destructive">
+                    <p className="text-xs text-rose-600">
                       {errors.ticket_categories.root.message}
                     </p>
                   )}
@@ -555,10 +555,10 @@ export default function PartnerEventCreatePage() {
                     {ticketFields.map((field, i) => (
                       <div
                         key={field.id}
-                        className="rounded-xl border border-border/50 bg-secondary/20 p-4"
+                        className="rounded-xl border border-slate-200 bg-slate-50/20 p-4"
                       >
                         <div className="mb-3 flex items-center justify-between">
-                          <span className="text-sm font-semibold text-wine-950">
+                          <span className="text-sm font-semibold text-slate-900">
                             Tier {i + 1}
                           </span>
                           {ticketFields.length > 1 && (
@@ -567,7 +567,7 @@ export default function PartnerEventCreatePage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => removeTicket(i)}
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                              className="h-8 w-8 text-rose-600 hover:bg-destructive/10"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -586,7 +586,7 @@ export default function PartnerEventCreatePage() {
                               )}
                             />
 {errors.ticket_categories?.[i]?.name && touchedFields.ticket_categories?.[i]?.name && (
-                              <p className="text-xs text-destructive">
+                              <p className="text-xs text-rose-600">
                                 {errors.ticket_categories[i]?.name?.message}
                               </p>
                             )}
@@ -606,7 +606,7 @@ export default function PartnerEventCreatePage() {
                               )}
                             />
 {errors.ticket_categories?.[i]?.price_paise && touchedFields.ticket_categories?.[i]?.price_paise && (
-                              <p className="text-xs text-destructive">
+                              <p className="text-xs text-rose-600">
                                 {
                                   errors.ticket_categories[i]?.price_paise
                                     ?.message
@@ -628,7 +628,7 @@ export default function PartnerEventCreatePage() {
                               )}
                             />
 {errors.ticket_categories?.[i]?.capacity && touchedFields.ticket_categories?.[i]?.capacity && (
-                              <p className="text-xs text-destructive">
+                              <p className="text-xs text-rose-600">
                                 {errors.ticket_categories[i]?.capacity?.message}
                               </p>
                             )}
@@ -647,7 +647,7 @@ export default function PartnerEventCreatePage() {
                               )}
                             />
 {errors.ticket_categories?.[i]?.max_per_booking && touchedFields.ticket_categories?.[i]?.max_per_booking && (
-                              <p className="text-xs text-destructive">
+                              <p className="text-xs text-rose-600">
                                 {
                                   errors.ticket_categories[i]?.max_per_booking
                                     ?.message
@@ -664,7 +664,7 @@ export default function PartnerEventCreatePage() {
             </AnimatePresence>
 
             {/* Navigation */}
-            <div className="mt-8 flex items-center justify-between border-t border-border/50 pt-6">
+            <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-6">
               {step > 1 ? (
                 <Button
                   type="button"
@@ -683,7 +683,7 @@ export default function PartnerEventCreatePage() {
                 <Button
                   type="button"
                   onClick={nextStep}
-                  className="rounded-xl bg-wine-700 text-sm font-semibold text-neutral-900 shadow-wine hover:bg-wine-800"
+                  className="rounded-xl bg-amber-500 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-600"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
@@ -692,7 +692,7 @@ export default function PartnerEventCreatePage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-wine-700 text-sm font-semibold text-neutral-900 shadow-wine hover:bg-wine-800"
+                  className="rounded-xl bg-amber-500 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-600"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

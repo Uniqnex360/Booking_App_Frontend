@@ -33,12 +33,12 @@ export function LocationPicker({ onLocationSelect, defaultPos = [12.9716, 77.594
   }
 
   return (
-    <div className="h-[300px] w-full overflow-hidden rounded-xl border border-border">
+    <div className="h-[300px] w-full overflow-hidden rounded-xl border border-slate-200">
       <MapContainer center={defaultPos} zoom={13} scrollWheelZoom={false} className="h-full w-full">
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <MapEvents />
       </MapContainer>
-      <p className="mt-1 text-[10px] text-muted-foreground text-center">
+      <p className="mt-1 text-[10px] text-slate-500 text-center">
         Click on the map to pin the exact event location
       </p>
     </div>

@@ -95,30 +95,30 @@ useEffect(() => {
   );
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col">
+    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
       <Header />
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Now Showing</h1>
-            <p className="text-neutral-500 mt-1">Discover movies currently playing in {city}</p>
+            <p className="text-slate-500 mt-1">Discover movies currently playing in {city}</p>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-500" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
               <input
                 type="text"
                 placeholder="Search movies..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-white border border-neutral-800 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 w-64"
+                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 w-64"
               />
             </div>
             <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="bg-white border border-neutral-800 rounded-lg py-2 px-3 text-sm focus:outline-none"
+              className="bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:outline-none"
             >
               <option value="Kochi">Kochi</option>
               <option value="Chennai">Chennai</option>
@@ -134,14 +134,14 @@ useEffect(() => {
             <Loader />
           </div>
         ) : filteredMovies.length === 0 ? (
-          <div className="text-center py-20 text-neutral-500">No movies found matching your search.</div>
+          <div className="text-center py-20 text-slate-500">No movies found matching your search.</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredMovies.map((movie) => (
               <Link
                 key={movie.id}
                 to={`/movies/${movie.id}`}
-                className="group bg-white border border-neutral-800 rounded-xl overflow-hidden hover:border-neutral-700 transition duration-200 flex flex-col"
+                className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-200 transition duration-200 flex flex-col"
               >
                 <div className="aspect-[2/3] w-full bg-neutral-100 relative overflow-hidden">
                   {movie.poster_url ? (
@@ -151,7 +151,7 @@ useEffect(() => {
                       className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-neutral-500 text-sm">
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">
                       No Poster
                     </div>
                   )}
@@ -160,14 +160,14 @@ useEffect(() => {
                   <h3 className="font-bold text-lg leading-tight group-hover:text-amber-500 transition">
                     {movie.title}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-neutral-500 mt-2">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
                     <span>{movie.language}</span>
                     <span>•</span>
                     <span>{movie.certificate}</span>
                   </div>
 
-                  <div className="mt-auto pt-4 border-t border-neutral-800/50 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1.5 text-neutral-500">
+                  <div className="mt-auto pt-4 border-t border-slate-200/50 flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1.5 text-slate-500">
                       <Clock className="h-4 w-4" />
                       <span>{movie.earliest_showtime || 'N/A'}</span>
                     </div>

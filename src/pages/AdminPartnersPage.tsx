@@ -161,22 +161,22 @@ export default function AdminPartnersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
                 {/* Admin Navigation Tabs */}
-        <div className="flex border-b border-border/60 gap-4 mb-6 pt-2">
+        <div className="flex border-b border-slate-200/60 gap-4 mb-6 pt-2">
           <button
             onClick={() => {}}
-            className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-wine-950 flex items-center gap-2"
+            className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-slate-900 flex items-center gap-2"
           >
-            <Users className="h-4 w-4 text-wine-700" />
+            <Users className="h-4 w-4 text-amber-700" />
             Partner Verification
           </button>
           <a
             href="/admin/moderation"
-            className="pb-3 text-sm font-medium text-muted-foreground hover:text-wine-900 flex items-center gap-2"
+            className="pb-3 text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center gap-2"
           >
             <Film className="h-4 w-4" />
             Event Moderation
@@ -184,24 +184,24 @@ export default function AdminPartnersPage() {
         </div>
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-wine-50">
-            <Users className="h-6 w-6 text-wine-700" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50">
+            <Users className="h-6 w-6 text-amber-700" />
           </div>
           <div>
-            <h1 className="font-serif text-3xl font-semibold text-wine-950">
+            <h1 className="font-serif text-3xl font-semibold text-slate-900">
               Partner Management
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-500">
               Review and manage all partner applications
             </p>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-border/50 bg-card p-4 shadow-soft sm:flex-row sm:items-center">
+        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft sm:flex-row sm:items-center">
           <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-wine-950">Filters</span>
+            <Search className="h-4 w-4 text-slate-500" />
+            <span className="text-sm font-medium text-slate-900">Filters</span>
           </div>
           <div className="grid flex-1 gap-4 sm:grid-cols-2">
             <div>
@@ -255,20 +255,20 @@ export default function AdminPartnersPage() {
         </div>
 
         {/* Table */}
-        <div className="mt-6 overflow-hidden rounded-2xl border border-border/50 bg-card shadow-soft">
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
           {loading ? (
             <div className="flex justify-center py-20">
               <Loader className="h-8 w-8" />
             </div>
           ) : partners.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-wine-50">
-                <Users className="h-6 w-6 text-wine-600" />
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50">
+                <Users className="h-6 w-6 text-amber-600" />
               </div>
-              <p className="font-serif text-lg font-semibold text-wine-950">
+              <p className="font-serif text-lg font-semibold text-slate-900">
                 No partners found
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-slate-500">
                 Try adjusting your filters.
               </p>
             </div>
@@ -276,23 +276,23 @@ export default function AdminPartnersPage() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border/50 bg-secondary/30">
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b border-slate-200 bg-slate-50/30">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Business
                     </th>
-                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:table-cell">
+                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:table-cell">
                       Type
                     </th>
-                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:table-cell">
+                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 lg:table-cell">
                       Contact
                     </th>
-                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:table-cell">
+                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 lg:table-cell">
                       City
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Actions
                     </th>
                   </tr>
@@ -304,35 +304,35 @@ export default function AdminPartnersPage() {
                     return (
                       <tr
                         key={partner.id}
-                        className="transition-colors hover:bg-secondary/20"
+                        className="transition-colors hover:bg-slate-50/20"
                       >
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-wine-50">
-                              <TypeIcon className="h-4 w-4 text-wine-600" />
+                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50">
+                              <TypeIcon className="h-4 w-4 text-amber-600" />
                             </div>
                             <div>
-                              <p className="text-sm font-semibold text-wine-950">
+                              <p className="text-sm font-semibold text-slate-900">
                                 {partner.business_name}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-xs text-slate-500">
                                 {partner.contact_name}
                               </p>
                             </div>
                           </div>
                         </td>
                         <td className="hidden px-4 py-4 sm:table-cell">
-                          <span className="text-sm text-foreground/70">
+                          <span className="text-sm text-slate-600">
                             {partnerTypeMeta[partner.partner_type].label}
                           </span>
                         </td>
                         <td className="hidden px-4 py-4 lg:table-cell">
-                          <span className="text-sm text-foreground/70">
+                          <span className="text-sm text-slate-600">
                             {partner.contact_phone}
                           </span>
                         </td>
                         <td className="hidden px-4 py-4 lg:table-cell">
-                          <span className="text-sm text-foreground/70">
+                          <span className="text-sm text-slate-600">
                             {partner.city}
                           </span>
                         </td>
@@ -351,7 +351,7 @@ export default function AdminPartnersPage() {
                                   <AlertDialogTrigger asChild>
                                     <Button
                                       size="sm"
-                                      className="rounded-full bg-emerald-600 text-xs font-semibold text-neutral-900 hover:bg-emerald-700"
+                                      className="rounded-full bg-emerald-600 text-xs font-semibold text-slate-900 hover:bg-emerald-700"
                                     >
                                       <Check className="h-3.5 w-3.5" />
                                       Approve
@@ -359,12 +359,12 @@ export default function AdminPartnersPage() {
                                   </AlertDialogTrigger>
                                   <AlertDialogContent className="rounded-2xl">
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle className="font-serif text-xl text-wine-950">
+                                      <AlertDialogTitle className="font-serif text-xl text-slate-900">
                                         Approve Partner
                                       </AlertDialogTitle>
                                       <AlertDialogDescription>
                                         Are you sure you want to approve{' '}
-                                        <span className="font-semibold text-wine-950">
+                                        <span className="font-semibold text-slate-900">
                                           {partner.business_name}
                                         </span>
                                         ? They will be able to list their
@@ -379,7 +379,7 @@ export default function AdminPartnersPage() {
                                         onClick={() =>
                                           handleApprove(partner.id)
                                         }
-                                        className="rounded-xl bg-emerald-600 text-neutral-900 hover:bg-emerald-700"
+                                        className="rounded-xl bg-emerald-600 text-slate-900 hover:bg-emerald-700"
                                       >
                                         {approvingId === partner.id ? (
                                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -416,7 +416,7 @@ export default function AdminPartnersPage() {
         {/* Pagination */}
         {!loading && meta && meta.total_pages > 1 && (
           <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-500">
               Page {meta.page} of {meta.total_pages} • {meta.total} total
             </p>
             <div className="flex gap-2">
@@ -452,12 +452,12 @@ export default function AdminPartnersPage() {
       >
         <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl font-semibold text-wine-950">
+            <DialogTitle className="font-serif text-2xl font-semibold text-slate-900">
               Reject Partner
             </DialogTitle>
             <DialogDescription>
               Please provide a reason for rejecting{' '}
-              <span className="font-semibold text-wine-950">
+              <span className="font-semibold text-slate-900">
                 {rejectPartner?.business_name}
               </span>
               . This will be visible to the applicant.
@@ -475,7 +475,7 @@ export default function AdminPartnersPage() {
               className="min-h-[100px] rounded-xl"
             />
             {!rejectReason.trim() && rejectReason.length > 0 && (
-              <p className="text-xs text-destructive">
+              <p className="text-xs text-rose-600">
                 Rejection reason is required
               </p>
             )}
@@ -491,7 +491,7 @@ export default function AdminPartnersPage() {
             <Button
               onClick={handleReject}
               disabled={rejecting || !rejectReason.trim()}
-              className="rounded-xl bg-red-600 text-sm font-semibold text-neutral-900 hover:bg-red-700"
+              className="rounded-xl bg-red-600 text-sm font-semibold text-slate-900 hover:bg-red-700"
             >
               {rejecting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

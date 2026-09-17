@@ -105,18 +105,18 @@ export default function EventsPage() {
   }, [events, search, cityFilter, categoryFilter]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       {/* Hero */}
       <div className="relative overflow-hidden bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
-        <div className="absolute -right-20 top-10 h-72 w-72 rounded-full bg-wine-500/10 blur-3xl" />
+        <div className="absolute -right-20 top-10 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="font-serif text-4xl font-semibold text-wine-950 sm:text-5xl"
+            className="font-serif text-4xl font-semibold text-slate-900 sm:text-5xl"
           >
             Experiences
           </motion.h1>
@@ -124,7 +124,7 @@ export default function EventsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-2 text-foreground/60"
+            className="mt-2 text-slate-500"
           >
             Discover and book unforgettable events near you
           </motion.p>
@@ -137,7 +137,7 @@ export default function EventsPage() {
             className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center"
           >
             <div className="relative max-w-md flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -205,8 +205,8 @@ export default function EventsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: i * 0.05 }}
                   >
-                    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-soft transition-all hover:-translate-y-1 hover:shadow-soft-lg">
-                      <div className="relative aspect-[4/3] overflow-hidden bg-wine-50">
+                    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:-translate-y-1 hover:shadow-soft-lg">
+                      <div className="relative aspect-[4/3] overflow-hidden bg-amber-50">
                         {event.poster_image_url ? (
                           <img
                             src={event.poster_image_url}
@@ -219,20 +219,20 @@ export default function EventsPage() {
                           </div>
                         )}
                         <div className="absolute left-3 top-3">
-                          <Badge className="bg-wine-700 text-xs font-semibold text-neutral-900 shadow-wine">
+                          <Badge className="bg-amber-500 text-xs font-semibold text-slate-900 shadow-sm">
                             <CatIcon className="mr-1 h-3 w-3" />
                             {categoryMeta[event.category]?.label || 'Event'}
                           </Badge>
                         </div>
                       </div>
                       <div className="flex flex-1 flex-col p-4">
-                        <h3 className="font-serif text-lg font-semibold text-wine-950">
+                        <h3 className="font-serif text-lg font-semibold text-slate-900">
                           {event.title}
                         </h3>
-                        <p className="mt-1 text-xs text-muted-foreground">
+                        <p className="mt-1 text-xs text-slate-500">
                           {event.venue_name}
                         </p>
-                        <div className="mt-3 flex flex-col gap-1.5 text-xs text-muted-foreground">
+                        <div className="mt-3 flex flex-col gap-1.5 text-xs text-slate-500">
                           <span className="flex items-center gap-1.5">
                             <MapPin className="h-3 w-3" />
                             {event.city}
@@ -246,21 +246,21 @@ export default function EventsPage() {
                             {format(parseISO(event.starts_at), 'h:mm a')}
                           </span>
                         </div>
-                        <div className="mt-auto flex items-center justify-between border-t border-border/50 pt-3">
+                        <div className="mt-auto flex items-center justify-between border-t border-slate-200 pt-3">
                           <div>
                             {minPrice !== null ? (
                               <>
-                                <span className="font-serif text-2xl font-semibold text-wine-800">
+                                <span className="font-serif text-2xl font-semibold text-slate-800">
                                   {formatCurrency(minPrice, 'INR', 100)}
 
                                 </span>
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-xs text-slate-500">
                                   {' '}
                                   /ticket
                                 </span>
                               </>
                             ) : (
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs text-slate-500">
                                 Pricing TBD
                               </span>
                             )}
@@ -270,7 +270,7 @@ export default function EventsPage() {
                             onClick={() =>
                               navigate(`/booking/event/${event.id}`)
                             }
-                            className="rounded-full bg-wine-700 px-4 text-xs font-semibold text-neutral-900 shadow-wine hover:bg-wine-800"
+                            className="rounded-full bg-amber-500 px-4 text-xs font-semibold text-slate-900 shadow-sm hover:bg-amber-600"
                           >
                             Book Now
                             <ArrowRight className="ml-1 h-3 w-3" />
@@ -294,13 +294,13 @@ export default function EventsPage() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-wine-50">
-        <CalendarDays className="h-8 w-8 text-wine-600" />
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50">
+        <CalendarDays className="h-8 w-8 text-amber-600" />
       </div>
-      <h3 className="font-serif text-xl font-semibold text-wine-950">
+      <h3 className="font-serif text-xl font-semibold text-slate-900">
         No Events Found
       </h3>
-      <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+      <p className="mt-2 max-w-sm text-sm text-slate-500">
         Try adjusting your filters or search terms. New events are added
         regularly!
       </p>

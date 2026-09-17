@@ -67,19 +67,19 @@ export default function VerifyOtpPage() {
   const destination = mode === 'signup' ? email : phone;
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-md space-y-6 bg-card p-8 rounded-2xl border shadow-sm">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-slate-50">
+      <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl border shadow-sm">
         
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-serif font-bold">{title}</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-500">
             Enter the 6-digit code sent to <br />
-            <span className="font-medium text-foreground">{destination}</span>
+            <span className="font-medium text-slate-900">{destination}</span>
           </p>
         </div>
         
         {error && (
-          <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-xl animate-shake">
+          <div className="p-3 bg-destructive/10 text-rose-600 text-sm rounded-xl animate-shake">
             {error}
           </div>
         )}
@@ -98,7 +98,7 @@ export default function VerifyOtpPage() {
           
           <Button 
             type="submit" 
-            className="w-full h-12 bg-wine-700 hover:bg-wine-800 text-neutral-900 rounded-xl font-semibold"
+            className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-xl font-semibold"
             disabled={loading || code.length !== 6}
           >
             {loading ? <Loader2 className="animate-spin" /> : "Verify Identity"}
@@ -107,7 +107,7 @@ export default function VerifyOtpPage() {
 
         <Button 
           variant="ghost" 
-          className="w-full text-muted-foreground" 
+          className="w-full text-slate-500" 
           onClick={() => navigate(-1)}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
