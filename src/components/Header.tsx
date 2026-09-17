@@ -253,7 +253,7 @@ const filteredEvents = rawEvents.filter((e: any) =>
                         {results.events.map((e) => (
                           <Link
                             key={e.id}
-                            to={`/events/${e.id}`}
+                            to={`/booking/event/${e.id}`}
                             onClick={() => setShowDropdown(false)}
                             className="flex items-center gap-3 p-2 hover:bg-[#FDF2F4] rounded-lg transition group"
                           >
@@ -456,7 +456,7 @@ const filteredEvents = rawEvents.filter((e: any) =>
               {results.events.map((e) => (
                 <Link
                   key={e.id}
-                  to={`/events/${e.id}`}
+                  to={`/booking/event/${e.id}`}
                   onClick={() => setMobileSearchOpen(false)}
                   className="flex items-center gap-2 p-2 hover:bg-slate-50"
                 >

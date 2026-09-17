@@ -374,7 +374,7 @@ export default function HomePage() {
             {events.map((e) => (
               <Link
                 key={e.id}
-                to={`/events/${e.id}`}
+                to={`/booking/event/${e.id}`}
                 className="snap-start shrink-0 w-[260px] sm:w-[280px] group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-[#7B1E3D]/30 transition"
               >
                 <div className="aspect-[16/9] bg-slate-100 overflow-hidden">
