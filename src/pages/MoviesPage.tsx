@@ -97,7 +97,8 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
       <Header />
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
+     <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-24 pb-12">
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight">Now Showing</h1>
