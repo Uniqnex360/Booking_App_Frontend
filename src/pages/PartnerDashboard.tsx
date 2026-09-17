@@ -1,147 +1,110 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { format, parseISO } from 'date-fns';
-
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Loader } from '@/components/common/Loader';
-import { getMyPartnerProfile } from '@/api/partner.api';
-import { getMyEvents, updateEvent, cancelOrDeleteEvent } from '@/api/event.api';
-import type { Partner, PartnerType } from '@/types/partner.types';
-import type { EventItem } from '@/types/event.types';
-
+import { api, unwrap } from '@/api/client';
+import { formatRupees } from '@/utils/currencyFormatter';
 import {
-  Store,
-  Film,
-  Phone,
-  MapPin,
-  Clock,
-  CheckCircle2,
   Calendar,
   Plus,
+  CheckCircle2,
+  Clock,
+  Building2,
+  Phone,
+  MapPin,
+  TrendingUp,
   Ticket,
-  ImageOff,
-  Trash2,
-  Edit3,
-  CalendarCheck,
-  CalendarX,
-  Loader2,
+  DollarSign,
+  BarChart3,
+  CalendarDays,
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 
-const partnerTypeMeta: Record<
-  PartnerType,
-  { label: string; icon: typeof Store }
-> = {
-  restaurant: { label: 'Restaurant', icon: Store },
-  cinema: { label: 'Cinema', icon: Film },
-  event_organiser: { label: 'Event Organizer', icon: CalendarDays },
-};
+interface PartnerInfo {
+  id: string;
+  organization_name: string;
+  organization_type: string;
+  status: string;
+  city: string;
+  phone: string;
+}
+
+interface EventItem {
+  id: string;
+  title: string;
+  category: string;
+  venue_name: string;
+  city: string;
+  start_date: string;
+  cover_image_url?: string | null;
+  status: string;
+  ticket_categories?: any[];
+}
+
+interface RevenueData {
+  total_revenue_paise: number;
+  total_bookings: number;
+  average_booking_paise: number;
+  by_event: Array<{
+    event_id: string;
+    event_title: string;
+    revenue_paise: number;
+    bookings: number;
+  }>;
+  period: { from: string | null; to: string | null };
+}
 
 export default function PartnerDashboard() {
   const navigate = useNavigate();
-  const [partner, setPartner] = useState<Partner | null>(null);
+  const [partner, setPartner] = useState<PartnerInfo | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [revenue, setRevenue] = useState<RevenueData | null>(null);
+
   const [loading, setLoading] = useState(true);
+  const [revenueLoading, setRevenueLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING' | 'PAST' | 'REVENUE'>('ACTIVE');
 
-  // Edit Modal State
-  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
-  const [editForm, setEditForm] = useState({
-    title: '',
-    description: '',
-    venue_name: '',
-    city: '',
-    poster_image_url: '',
-  });
-  const [savingEdit, setSavingEdit] = useState(false);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const p = await getMyPartnerProfile();
-      setPartner(p);
-      if (p && p.status === 'APPROVED') {
-        const evs = await getMyEvents();
-        setEvents(evs);
-      }
-    } catch {
-      toast.error('Failed to load partner dashboard');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchData();
+    const fetchPartnerData = async () => {
+      setLoading(true);
+      try {
+        const partnerData = await unwrap<PartnerInfo>(api.get('/partner/me'));
+        setPartner(partnerData);
+
+        const eventsData = await unwrap<EventItem[]>(api.get('/events/me')).catch(() => []);
+        setEvents(eventsData || []);
+      } catch (err) {
+        console.error('Failed to load partner dashboard data', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPartnerData();
   }, []);
 
-  const openEditModal = (event: EventItem) => {
-    setEditingEvent(event);
-    setEditForm({
-      title: event.title,
-      description: event.description || '',
-      venue_name: event.venue_name,
-      city: event.city,
-      poster_image_url: event.poster_image_url || '',
-    });
-  };
-
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingEvent) return;
-    setSavingEdit(true);
-
-    try {
-      await updateEvent(editingEvent.id, editForm);
-      toast.success('Event updated successfully');
-      setEditingEvent(null);
-      fetchData();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to update event');
-    } finally {
-      setSavingEdit(false);
+  // Fetch Revenue when user clicks Revenue Tab
+  useEffect(() => {
+    if (activeTab === 'REVENUE' && !revenue) {
+      const fetchRevenue = async () => {
+        setRevenueLoading(true);
+        try {
+          const revData = await unwrap<RevenueData>(api.get('/partner/revenue'));
+          setRevenue(revData);
+        } catch (err) {
+          console.error('Failed to fetch revenue report', err);
+        } finally {
+          setRevenueLoading(false);
+        }
+      };
+      fetchRevenue();
     }
-  };
-
-  const handleCancelEvent = async (id: string) => {
-    try {
-      await cancelOrDeleteEvent(id, 'Cancelled by organizer');
-      toast.success('Event cancelled successfully');
-      fetchData();
-    } catch {
-      toast.error('Failed to cancel event');
-    }
-  };
+  }, [activeTab, revenue]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
+      <div className="min-h-screen bg-[#F5F5F5] text-slate-900 flex flex-col">
         <Header />
-        <div className="flex-grow flex items-center justify-center">
+        <div className="flex-grow flex items-center justify-center pt-20">
           <Loader />
         </div>
         <Footer />
@@ -149,380 +112,263 @@ export default function PartnerDashboard() {
     );
   }
 
-  const now = new Date();
+  const activeEvents = events.filter((e) => e.status === 'APPROVED' || e.status === 'ACTIVE');
+  const pendingEvents = events.filter((e) => e.status === 'PENDING' || e.status === 'UNDER_REVIEW');
+  const pastEvents = events.filter((e) => e.status === 'COMPLETED' || e.status === 'PAST' || e.status === 'EXPIRED');
 
-  const activeEvents = events.filter(
-    (e) => e.status === 'PUBLISHED' && new Date(e.ends_at) >= now
-  );
-  const pendingEvents = events.filter(
-    (e) => e.status === 'PENDING_APPROVAL' || e.status === 'DRAFT'
-  );
-  const pastEvents = events.filter(
-    (e) => e.status === 'CANCELLED' || new Date(e.ends_at) < now
-  );
+  const getListForTab = () => {
+    switch (activeTab) {
+      case 'ACTIVE':
+        return activeEvents;
+      case 'PENDING':
+        return pendingEvents;
+      case 'PAST':
+        return pastEvents;
+      default:
+        return [];
+    }
+  };
 
-  const currentList =
-    activeTab === 'ACTIVE'
-      ? activeEvents
-      : activeTab === 'PENDING'
-      ? pendingEvents
-      : activeTab === 'PAST'
-      ? pastEvents
-      : [];
+  const currentList = getListForTab();
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-[#F5F5F5] text-slate-900 flex flex-col">
       <Header />
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
-        {/* Partner Header Banner */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold">{partner?.business_name || 'Partner Dashboard'}</h1>
-              <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                <CheckCircle2 className="h-3 w-3 mr-1" /> Approved
-              </Badge>
+
+      <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-24 pb-12">
+        {/* Partner Header Card */}
+        {partner && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+                  {partner.organization_name}
+                </h1>
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Approved Partner
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2">
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5 text-[#7B1E3D]" /> {partner.city}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Phone className="h-3.5 w-3.5 text-slate-400" /> {partner.phone}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Building2 className="h-3.5 w-3.5 text-slate-400" /> {partner.organization_type}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 mt-2">
-              <span className="flex items-center gap-1">
-                <MapPin className="h-4 w-4 text-amber-500" /> {partner?.city}
-              </span>
-              <span className="flex items-center gap-1">
-                <Phone className="h-4 w-4 text-amber-500" /> {partner?.contact_phone}
-              </span>
-              <span className="flex items-center gap-1">
-                <Store className="h-4 w-4 text-amber-500" /> {partnerTypeMeta[partner?.partner_type || 'event_organiser'].label}
-              </span>
-            </div>
+
+            <button
+              onClick={() => navigate('/partner/events/new')}
+              className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold px-5 py-3 rounded-xl shadow transition flex items-center justify-center gap-2 shrink-0"
+            >
+              <Plus className="h-5 w-5" /> Host New Event
+            </button>
           </div>
-
-          <Button
-            onClick={() => navigate('/partner/events/new')}
-            className="bg-amber-500 hover:bg-amber-600 text-black font-bold flex items-center gap-2"
-          >
-            <Plus className="h-5 w-5" /> Host New Event
-          </Button>
-        </div>
-
-        {/* Event Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-200 mb-8 pb-3">
-          <button
-            onClick={() => setActiveTab('ACTIVE')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition flex items-center gap-2 ${
-              activeTab === 'ACTIVE'
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <CalendarCheck className="h-4 w-4" /> Active Events ({activeEvents.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('PENDING')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition flex items-center gap-2 ${
-              activeTab === 'PENDING'
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <Clock className="h-4 w-4" /> Under Review ({pendingEvents.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('PAST')}
-            className={`px-4 py-2 text-sm font-bold rounded-lg transition flex items-center gap-2 ${
-              activeTab === 'PAST'
-                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                : 'text-slate-500 hover:text-slate-900'
-            }`}
-          >
-            <CalendarX className="h-4 w-4" /> Completed / Past ({pastEvents.length})
-          </button>
-        </div>
-
-        {/* Revenue Tab */}
-        {activeTab === 'REVENUE' && partner && (
-          <RevenueDashboard partnerId={partner.id} />
         )}
 
-        {/* Events Grid */}
-        {activeTab !== 'REVENUE' && currentList.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">
-            <p className="text-lg font-bold mb-2">No {activeTab.toLowerCase()} events found</p>
-            <p className="text-sm">Click &quot;Host New Event&quot; to publish your upcoming events.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {currentList.map((e) => {
-              const isPast = new Date(e.ends_at) < now;
-              const hoursUntilStart = (new Date(e.starts_at).getTime() - now.getTime()) / (1000 * 60 * 60);
-              const isEditLocked = e.status === 'PUBLISHED' && hoursUntilStart < 24;
+        {/* Tab Navigation */}
+        <div className="flex overflow-x-auto gap-2 border-b border-slate-200 mb-8 scrollbar-hide">
+          <button
+            onClick={() => setActiveTab('ACTIVE')}
+            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
+              activeTab === 'ACTIVE'
+                ? 'border-[#7B1E3D] text-[#7B1E3D]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Active Events ({activeEvents.length})
+          </button>
 
-              return (
-                <div
-                  key={e.id}
-                  className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="aspect-[16/9] bg-neutral-100 relative">
-                      {e.poster_image_url ? (
-                        <img src={e.poster_image_url} alt={e.title} className="w-full h-full object-cover" />
+          <button
+            onClick={() => setActiveTab('PENDING')}
+            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
+              activeTab === 'PENDING'
+                ? 'border-[#7B1E3D] text-[#7B1E3D]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Under Review ({pendingEvents.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('PAST')}
+            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
+              activeTab === 'PAST'
+                ? 'border-[#7B1E3D] text-[#7B1E3D]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Completed / Past ({pastEvents.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab('REVENUE')}
+            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition flex items-center gap-1.5 ${
+              activeTab === 'REVENUE'
+                ? 'border-[#7B1E3D] text-[#7B1E3D]'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <TrendingUp className="h-4 w-4" /> Revenue & Reports
+          </button>
+        </div>
+
+        {/* REVENUE TAB CONTENT */}
+        {activeTab === 'REVENUE' && (
+          <div>
+            {revenueLoading ? (
+              <div className="py-20 flex justify-center">
+                <Loader />
+              </div>
+            ) : !revenue ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 shadow-sm">
+                No revenue report generated yet.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Metric Summary Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between text-slate-400 mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider">Total Revenue</span>
+                      <DollarSign className="h-5 w-5 text-[#7B1E3D]" />
+                    </div>
+                    <p className="text-3xl font-black text-[#7B1E3D]">
+                      {formatRupees(revenue.total_revenue_paise)}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">Confirmed ticket sales</p>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between text-slate-400 mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider">Total Bookings</span>
+                      <Ticket className="h-5 w-5 text-slate-700" />
+                    </div>
+                    <p className="text-3xl font-black text-slate-900">
+                      {revenue.total_bookings}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">Confirmed orders</p>
+                  </div>
+
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between text-slate-400 mb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider">Avg. Booking Value</span>
+                      <BarChart3 className="h-5 w-5 text-slate-700" />
+                    </div>
+                    <p className="text-3xl font-black text-slate-900">
+                      {formatRupees(revenue.average_booking_paise)}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">Revenue per order</p>
+                  </div>
+                </div>
+
+                {/* Revenue Breakdown Table */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                  <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-[#7B1E3D]" /> Event Breakdown
+                  </h2>
+
+                  {revenue.by_event.length === 0 ? (
+                    <p className="text-sm text-slate-500 py-6 text-center">
+                      No event bookings recorded yet.
+                    </p>
+                  ) : (
+                    <div className="divide-y divide-slate-100">
+                      {revenue.by_event.map((item) => (
+                        <div key={item.event_id} className="py-4 flex items-center justify-between">
+                          <div>
+                            <h3 className="font-bold text-slate-900 text-sm md:text-base">
+                              {item.event_title}
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-0.5">
+                              {item.bookings} confirmed booking(s)
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-[#7B1E3D] text-base md:text-lg">
+                              {formatRupees(item.revenue_paise)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* EVENT CARDS TAB CONTENT */}
+        {activeTab !== 'REVENUE' && (
+          <div>
+            {currentList.length === 0 ? (
+              <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 shadow-sm">
+                <CalendarDays className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-lg font-bold text-slate-700">No events in this category</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  Click "Host New Event" to publish a new event.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentList.map((e) => (
+                  <div
+                    key={e.id}
+                    className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition"
+                  >
+                    <div className="aspect-[16/10] bg-slate-100 relative">
+                      {e.cover_image_url ? (
+                        <img
+                          src={e.cover_image_url}
+                          alt={e.title}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-500">
-                          <ImageOff className="h-8 w-8" />
+                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">
+                          No Cover Image
                         </div>
                       )}
-                      <div className="absolute top-3 right-3">
-                        <Badge
-                          className={`border ${
-                            e.status === 'PUBLISHED' && !isPast
-                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                              : e.status === 'PENDING_APPROVAL'
-                              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                              : 'bg-neutral-100 text-slate-500 border-slate-200'
-                          }`}
-                        >
-                          {isPast ? 'COMPLETED' : e.status}
-                        </Badge>
-                      </div>
+                      <span className="absolute top-3 right-3 bg-black/70 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md">
+                        {e.status}
+                      </span>
                     </div>
 
                     <div className="p-5">
-                      <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">{e.category}</span>
-                      <h3 className="text-xl font-bold mt-1 line-clamp-1">{e.title}</h3>
-                      <p className="text-slate-500 text-xs mt-2 flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5" /> {e.venue_name}, {e.city}
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#7B1E3D]">
+                        {e.category}
+                      </span>
+                      <h3 className="font-bold text-base text-slate-900 mt-1 line-clamp-1">
+                        {e.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400" /> {e.venue_name}, {e.city}
                       </p>
-                      <p className="text-slate-500 text-xs mt-1 flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(parseISO(e.starts_at), 'MMM d, yyyy · h:mm a')}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-5 pt-0 border-t border-slate-200/60 mt-4 flex items-center justify-between">
-                    <div className="text-xs text-slate-500 flex items-center gap-1">
-                      <Ticket className="h-3.5 w-3.5 text-amber-500" />
-                      {e.ticket_categories?.length || 1} Ticket Tier(s)
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {e.status !== 'CANCELLED' && !isPast && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={isEditLocked}
-                          onClick={() => openEditModal(e)}
-                          title={isEditLocked ? "Editing is locked within 24 hours of event start" : "Edit event details"}
-                          className={
-                            isEditLocked
-                              ? "text-slate-600 cursor-not-allowed hover:bg-transparent"
-                              : "text-slate-700 hover:text-slate-900 hover:bg-neutral-100"
-                          }
-                        >
-                          <Edit3 className="h-4 w-4 mr-1" />
-                          {isEditLocked ? "Locked (<24h)" : "Edit"}
-                        </Button>
-                      )}
-
-                      {e.status !== 'CANCELLED' && !isPast && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="ghost" className="text-rose-500 hover:text-rose-400 hover:bg-rose-500/10">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-2xl">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Cancel Event?</AlertDialogTitle>
-                              <AlertDialogDescription className="text-slate-500">
-                                Are you sure you want to cancel <strong className="text-slate-900">{e.title}</strong>? This will notify ticket holders and cancel pending sales.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel className="bg-neutral-100 text-slate-900 border-0 hover:bg-slate-200 rounded-xl">
-                                Close
-                              </AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleCancelEvent(e.id)}
-                                className="bg-rose-600 hover:bg-rose-700 text-slate-900 rounded-xl"
-                              >
-                                Confirm Cancellation
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                      {e.start_date && (
+                        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                          {new Date(e.start_date).toLocaleDateString('en-IN', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                          })}
+                        </p>
                       )}
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
           </div>
         )}
-
-        {/* EDIT EVENT MODAL */}
-        <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
-          <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-lg rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Edit Event Details</DialogTitle>
-            </DialogHeader>
-
-            <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
-              <div>
-                <Label htmlFor="edit-title" className="text-xs text-slate-500">Event Title</Label>
-                <Input
-                  id="edit-title"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  className="bg-neutral-50 border-slate-200 mt-1"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="edit-desc" className="text-xs text-slate-500">Description</Label>
-                <Textarea
-                  id="edit-desc"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  className="bg-neutral-50 border-slate-200 mt-1 min-h-[80px]"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="edit-venue" className="text-xs text-slate-500">Venue Name</Label>
-                  <Input
-                    id="edit-venue"
-                    value={editForm.venue_name}
-                    onChange={(e) => setEditForm({ ...editForm, venue_name: e.target.value })}
-                    className="bg-neutral-50 border-slate-200 mt-1"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-city" className="text-xs text-slate-500">City</Label>
-                  <Input
-                    id="edit-city"
-                    value={editForm.city}
-                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                    className="bg-neutral-50 border-slate-200 mt-1"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="edit-image" className="text-xs text-slate-500">Poster Image URL</Label>
-                <Input
-                  id="edit-image"
-                  value={editForm.poster_image_url}
-                  onChange={(e) => setEditForm({ ...editForm, poster_image_url: e.target.value })}
-                  className="bg-neutral-50 border-slate-200 mt-1"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <DialogFooter className="gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setEditingEvent(null)}
-                  className="bg-neutral-100 hover:bg-slate-200 text-slate-900 rounded-xl"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={savingEdit}
-                  className="bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl"
-                >
-                  {savingEdit ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : 'Save Changes'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </main>
+
       <Footer />
-    </div>
-  );
-}
-
-// Revenue Dashboard Component (appended)
-import { getPartnerRevenue } from '@/api/partner.api';
-import { formatRupees } from '@/utils/currencyFormatter';
-import { TrendingUp, DollarSign, BarChart3, CalendarDays } from 'lucide-react';
-
-function RevenueDashboard({ partnerId }: { partnerId: string }) {
-  const [revenue, setRevenue] = useState<any>(null);
-  const [revenueLoading, setRevenueLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchRevenue = async () => {
-      try {
-        const data = await getPartnerRevenue();
-        setRevenue(data);
-      } catch {
-        setRevenue(null);
-      } finally {
-        setRevenueLoading(false);
-      }
-    };
-    fetchRevenue();
-  }, []);
-
-  if (revenueLoading) return <Loader />;
-  if (!revenue) return <p className="text-slate-500">Failed to load revenue data.</p>;
-
-  return (
-    <div className="space-y-6">
-      {/* Revenue Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
-            <DollarSign className="h-4 w-4 text-emerald-600" /> Total Revenue
-          </div>
-          <p className="text-2xl font-black text-slate-900">{formatRupees(revenue.total_revenue_paise)}</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
-            <BarChart3 className="h-4 w-4 text-amber-600" /> Total Bookings
-          </div>
-          <p className="text-2xl font-black text-slate-900">{revenue.total_bookings}</p>
-        </div>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
-            <TrendingUp className="h-4 w-4 text-indigo-600" /> Avg Booking
-          </div>
-          <p className="text-2xl font-black text-slate-900">{formatRupees(revenue.average_booking_paise)}</p>
-        </div>
-      </div>
-
-      {/* Revenue by Event */}
-      {revenue.by_event && revenue.by_event.length > 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 text-amber-600" /> Revenue by Event
-          </h3>
-          <div className="space-y-3">
-            {revenue.by_event.map((ev: any) => (
-              <div key={ev.event_id} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
-                <div>
-                  <p className="font-bold text-sm text-slate-900">{ev.event_title}</p>
-                  <p className="text-xs text-slate-500">{ev.bookings} bookings</p>
-                </div>
-                <span className="text-lg font-black text-emerald-700">{formatRupees(ev.revenue_paise)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {revenue.by_event && revenue.by_event.length === 0 && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 shadow-sm">
-          No revenue data yet. Start hosting events to see earnings!
-        </div>
-      )}
     </div>
   );
 }
