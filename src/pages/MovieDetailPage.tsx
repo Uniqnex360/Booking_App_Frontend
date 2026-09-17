@@ -87,7 +87,7 @@ export default function MovieDetailPage() {
   return (
     <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
       <Header />
-      <main className="flex-grow">
+<main className="flex-grow pt-20">
         {/* Banner Section */}
         <div className="relative py-12 bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row gap-8 items-start relative z-10">
