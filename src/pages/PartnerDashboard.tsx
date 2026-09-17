@@ -19,7 +19,6 @@ import type { EventItem } from '@/types/event.types';
 import {
   Store,
   Film,
-  CalendarDays,
   Phone,
   MapPin,
   Clock,
@@ -67,7 +66,7 @@ export default function PartnerDashboard() {
   const [partner, setPartner] = useState<Partner | null>(null);
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING' | 'PAST'>('ACTIVE');
+  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING' | 'PAST' | 'REVENUE'>('ACTIVE');
 
   // Edit Modal State
   const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
@@ -167,7 +166,9 @@ export default function PartnerDashboard() {
       ? activeEvents
       : activeTab === 'PENDING'
       ? pendingEvents
-      : pastEvents;
+      : activeTab === 'PAST'
+      ? pastEvents
+      : [];
 
   return (
     <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
@@ -237,8 +238,13 @@ export default function PartnerDashboard() {
           </button>
         </div>
 
+        {/* Revenue Tab */}
+        {activeTab === 'REVENUE' && partner && (
+          <RevenueDashboard partnerId={partner.id} />
+        )}
+
         {/* Events Grid */}
-        {currentList.length === 0 ? (
+        {activeTab !== 'REVENUE' && currentList.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">
             <p className="text-lg font-bold mb-2">No {activeTab.toLowerCase()} events found</p>
             <p className="text-sm">Click &quot;Host New Event&quot; to publish your upcoming events.</p>
@@ -438,6 +444,85 @@ export default function PartnerDashboard() {
         </Dialog>
       </main>
       <Footer />
+    </div>
+  );
+}
+
+// Revenue Dashboard Component (appended)
+import { getPartnerRevenue } from '@/api/partner.api';
+import { formatRupees } from '@/utils/currencyFormatter';
+import { TrendingUp, DollarSign, BarChart3, CalendarDays } from 'lucide-react';
+
+function RevenueDashboard({ partnerId }: { partnerId: string }) {
+  const [revenue, setRevenue] = useState<any>(null);
+  const [revenueLoading, setRevenueLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRevenue = async () => {
+      try {
+        const data = await getPartnerRevenue();
+        setRevenue(data);
+      } catch {
+        setRevenue(null);
+      } finally {
+        setRevenueLoading(false);
+      }
+    };
+    fetchRevenue();
+  }, []);
+
+  if (revenueLoading) return <Loader />;
+  if (!revenue) return <p className="text-slate-500">Failed to load revenue data.</p>;
+
+  return (
+    <div className="space-y-6">
+      {/* Revenue Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
+            <DollarSign className="h-4 w-4 text-emerald-600" /> Total Revenue
+          </div>
+          <p className="text-2xl font-black text-slate-900">{formatRupees(revenue.total_revenue_paise)}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
+            <BarChart3 className="h-4 w-4 text-amber-600" /> Total Bookings
+          </div>
+          <p className="text-2xl font-black text-slate-900">{revenue.total_bookings}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
+            <TrendingUp className="h-4 w-4 text-indigo-600" /> Avg Booking
+          </div>
+          <p className="text-2xl font-black text-slate-900">{formatRupees(revenue.average_booking_paise)}</p>
+        </div>
+      </div>
+
+      {/* Revenue by Event */}
+      {revenue.by_event && revenue.by_event.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-amber-600" /> Revenue by Event
+          </h3>
+          <div className="space-y-3">
+            {revenue.by_event.map((ev: any) => (
+              <div key={ev.event_id} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
+                <div>
+                  <p className="font-bold text-sm text-slate-900">{ev.event_title}</p>
+                  <p className="text-xs text-slate-500">{ev.bookings} bookings</p>
+                </div>
+                <span className="text-lg font-black text-emerald-700">{formatRupees(ev.revenue_paise)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {revenue.by_event && revenue.by_event.length === 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 shadow-sm">
+          No revenue data yet. Start hosting events to see earnings!
+        </div>
+      )}
     </div>
   );
 }
