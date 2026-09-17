@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   MapPin,
   ShieldCheck,
+  AlertCircle,
 } from 'lucide-react';
 import { formatRupees } from '@/utils/currencyFormatter';
 import { toast } from 'sonner';
@@ -42,7 +43,7 @@ export default function BookingPage() {
   const { user } = useAuth();
 
   const [itemData, setItemData] = useState<any>(null);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(1);
   const [date, setDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -58,6 +59,7 @@ export default function BookingPage() {
         if (type?.toLowerCase() === 'event') {
           const res = await unwrap<any>(api.get(`/events/${id}`));
           const tier = res.ticket_categories?.[0];
+          const maxAllowed = tier?.max_per_booking || 6;
           setItemData({
             event_id: res.id,
             tier_id: tier?.id,
@@ -65,9 +67,11 @@ export default function BookingPage() {
             venue: res.venue_name,
             location: res.city,
             price_paise: tier?.price_paise || 50000,
+            max_per_booking: maxAllowed,
             image: res.poster_image_url || 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop&q=80',
           });
           setDate(res.starts_at?.split('T')[0] || '');
+          setGuests(Math.min(2, maxAllowed));
         } else if (type?.toLowerCase() === 'restaurant') {
           const res = await unwrap<any>(api.get(`/restaurants/${id}`).catch(() => null));
           setItemData({
@@ -75,8 +79,10 @@ export default function BookingPage() {
             venue: res?.name || 'Exclusive Dining',
             location: res?.city || 'Kochi',
             price_paise: 25000,
+            max_per_booking: 10,
             image: res?.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
           });
+          setGuests(2);
         }
       } catch {
         setItemData({
@@ -84,6 +90,7 @@ export default function BookingPage() {
           venue: 'Vyhbz Venue',
           location: 'Kochi',
           price_paise: 50000,
+          max_per_booking: 6,
           image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
         });
       } finally {
@@ -94,6 +101,7 @@ export default function BookingPage() {
     fetchDetails();
   }, [type, id]);
 
+  const maxAllowedGuests = itemData?.max_per_booking || 6;
   const pricePaisePerPerson = itemData?.price_paise || 50000;
   const totalPricePaise = pricePaisePerPerson * guests;
 
@@ -112,7 +120,7 @@ export default function BookingPage() {
       amount: totalPricePaise,
       currency: 'INR',
       name: 'Vyhbz Experiences',
-      description: `${itemData?.title || 'Experience'} (${guests} Guests)`,
+      description: `${itemData?.title || 'Experience'} (${guests} Tickets)`,
       handler: async function (response: any) {
         toast.info('Payment verified! Confirming booking...');
         try {
@@ -155,6 +163,15 @@ export default function BookingPage() {
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Pre-payment validation
+    if (guests > maxAllowedGuests) {
+      const msg = `Maximum ${maxAllowedGuests} tickets allowed per booking.`;
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -201,7 +218,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen bg-neutral-950 text-white flex flex-col font-sans">
       <Header />
 
       <main className="flex-grow max-w-4xl w-full mx-auto px-4 pt-24 pb-12 sm:px-6 lg:px-8">
@@ -217,8 +234,9 @@ export default function BookingPage() {
         </h1>
 
         {error && (
-          <div className="mt-6 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
-            {error}
+          <div className="mt-6 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -248,12 +266,12 @@ export default function BookingPage() {
 
               <div className="mt-6 space-y-3 border-t border-neutral-800 pt-4">
                 <div className="flex justify-between text-sm text-neutral-400">
-                  <span>Price per person</span>
+                  <span>Price per ticket</span>
                   <span className="font-bold text-white">{formatRupees(pricePaisePerPerson)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-neutral-400">
-                  <span>Guests / Tickets</span>
-                  <span className="font-bold text-white">{guests}</span>
+                  <span>Quantity</span>
+                  <span className="font-bold text-white">{guests} {guests === 1 ? 'ticket' : 'tickets'}</span>
                 </div>
                 <div className="flex justify-between border-t border-neutral-800 pt-3 items-center">
                   <span className="text-base font-bold text-neutral-300">Total</span>
@@ -269,7 +287,7 @@ export default function BookingPage() {
           <form onSubmit={handleBooking} className="space-y-5 bg-neutral-900 border border-neutral-800 p-6 rounded-2xl">
             <div className="space-y-2">
               <Label htmlFor="date" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                <Calendar className="mr-1 inline h-4 w-4 text-amber-500" /> Select Date
+                <Calendar className="mr-1 inline h-4 w-4 text-amber-500" /> Event Date
               </Label>
               <Input
                 id="date"
@@ -282,15 +300,22 @@ export default function BookingPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="guests" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
-                <Users className="mr-1 inline h-4 w-4 text-amber-500" /> Number of Guests / Tickets
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="guests" className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                  <Users className="mr-1 inline h-4 w-4 text-amber-500" /> Number of Tickets
+                </Label>
+                <span className="text-[11px] font-semibold text-amber-400">
+                  Max: {maxAllowedGuests} per booking
+                </span>
+              </div>
+
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-11 w-11 rounded-xl bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
+                  disabled={guests <= 1}
+                  className="h-11 w-11 rounded-xl bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800 disabled:opacity-40"
                   onClick={() => setGuests((g) => Math.max(1, g - 1))}
                 >
                   -
@@ -299,17 +324,21 @@ export default function BookingPage() {
                   id="guests"
                   type="number"
                   min={1}
-                  max={20}
+                  max={maxAllowedGuests}
                   value={guests}
-                  onChange={(e) => setGuests(Number(e.target.value) || 1)}
+                  onChange={(e) => {
+                    const val = Number(e.target.value) || 1;
+                    setGuests(Math.min(maxAllowedGuests, Math.max(1, val)));
+                  }}
                   className="h-11 rounded-xl text-center bg-neutral-950 border-neutral-800 text-white font-bold"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-11 w-11 rounded-xl bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800"
-                  onClick={() => setGuests((g) => Math.min(20, g + 1))}
+                  disabled={guests >= maxAllowedGuests}
+                  className="h-11 w-11 rounded-xl bg-neutral-950 border-neutral-800 text-white hover:bg-neutral-800 disabled:opacity-40"
+                  onClick={() => setGuests((g) => Math.min(maxAllowedGuests, g + 1))}
                 >
                   +
                 </Button>
