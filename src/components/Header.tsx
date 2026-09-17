@@ -110,13 +110,13 @@ export function Header() {
 
         const rawEvents = Array.isArray(eventsRes) ? eventsRes : eventsRes.items || [];
 
-        const filteredMovies = moviesRes.filter((m) =>
-          m.title.toLowerCase().includes(q) || (m.language && m.language.toLowerCase().includes(q))
-        ).slice(0, 4);
+        const filteredMovies = moviesRes.filter((m: any) =>
+  m.title.toLowerCase().includes(q) || (m.language && m.language.toLowerCase().includes(q))
+).slice(0, 4);
 
-        const filteredEvents = rawEvents.filter((e) =>
-          e.title.toLowerCase().includes(q) || (e.category && e.category.toLowerCase().includes(q))
-        ).slice(0, 4);
+const filteredEvents = rawEvents.filter((e: any) =>
+  e.title.toLowerCase().includes(q) || (e.category && e.category.toLowerCase().includes(q))
+).slice(0, 4);
 
         setResults({
           movies: filteredMovies,
