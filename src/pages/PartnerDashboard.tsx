@@ -1,110 +1,229 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { format, parseISO } from 'date-fns';
+
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Loader } from '@/components/common/Loader';
-import { api, unwrap } from '@/api/client';
+import { getMyPartnerProfile } from '@/api/partner.api';
+import { getPartnerRevenue } from '@/api/partner.api';
+import { getMyEvents, updateEvent, cancelOrDeleteEvent } from '@/api/event.api';
 import { formatRupees } from '@/utils/currencyFormatter';
+import type { Partner, PartnerType } from '@/types/partner.types';
+import type { EventItem } from '@/types/event.types';
+
 import {
-  Calendar,
-  Plus,
-  CheckCircle2,
-  Clock,
-  Building2,
+  Store,
+  Film,
   Phone,
   MapPin,
-  TrendingUp,
+  Clock,
+  CheckCircle2,
+  Calendar,
+  Plus,
   Ticket,
+  ImageOff,
+  Trash2,
+  Edit3,
+  CalendarCheck,
+  CalendarX,
+  CalendarDays,
+  Loader2,
+  TrendingUp,
   DollarSign,
   BarChart3,
-  CalendarDays,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 
-interface PartnerInfo {
-  id: string;
-  organization_name: string;
-  organization_type: string;
-  status: string;
-  city: string;
-  phone: string;
-}
+const partnerTypeMeta: Record<
+  PartnerType,
+  { label: string; icon: typeof Store }
+> = {
+  restaurant: { label: 'Restaurant', icon: Store },
+  cinema: { label: 'Cinema', icon: Film },
+  event_organiser: { label: 'Event Organizer', icon: CalendarDays },
+};
 
-interface EventItem {
-  id: string;
-  title: string;
-  category: string;
-  venue_name: string;
-  city: string;
-  start_date: string;
-  cover_image_url?: string | null;
-  status: string;
-  ticket_categories?: any[];
-}
-
-interface RevenueData {
-  total_revenue_paise: number;
-  total_bookings: number;
-  average_booking_paise: number;
-  by_event: Array<{
-    event_id: string;
-    event_title: string;
-    revenue_paise: number;
-    bookings: number;
-  }>;
-  period: { from: string | null; to: string | null };
-}
-
-export default function PartnerDashboard() {
-  const navigate = useNavigate();
-  const [partner, setPartner] = useState<PartnerInfo | null>(null);
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [revenue, setRevenue] = useState<RevenueData | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [revenueLoading, setRevenueLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING' | 'PAST' | 'REVENUE'>('ACTIVE');
+// ---------------------------------------------------------------------------
+// Revenue Dashboard Sub-Component
+// ---------------------------------------------------------------------------
+function RevenueDashboard({ partnerId }: { partnerId: string }) {
+  const [revenue, setRevenue] = useState<any>(null);
+  const [revenueLoading, setRevenueLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPartnerData = async () => {
-      setLoading(true);
+    const fetchRevenue = async () => {
       try {
-        const partnerData = await unwrap<PartnerInfo>(api.get('/partner/me'));
-        setPartner(partnerData);
-
-        const eventsData = await unwrap<EventItem[]>(api.get('/events/me')).catch(() => []);
-        setEvents(eventsData || []);
-      } catch (err) {
-        console.error('Failed to load partner dashboard data', err);
+        const data = await getPartnerRevenue();
+        setRevenue(data);
+      } catch {
+        setRevenue(null);
       } finally {
-        setLoading(false);
+        setRevenueLoading(false);
       }
     };
-    fetchPartnerData();
+    fetchRevenue();
   }, []);
 
-  // Fetch Revenue when user clicks Revenue Tab
-  useEffect(() => {
-    if (activeTab === 'REVENUE' && !revenue) {
-      const fetchRevenue = async () => {
-        setRevenueLoading(true);
-        try {
-          const revData = await unwrap<RevenueData>(api.get('/partner/revenue'));
-          setRevenue(revData);
-        } catch (err) {
-          console.error('Failed to fetch revenue report', err);
-        } finally {
-          setRevenueLoading(false);
-        }
-      };
-      fetchRevenue();
+  if (revenueLoading) return <Loader />;
+  if (!revenue) return <p className="text-slate-500">Failed to load revenue data.</p>;
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
+            <DollarSign className="h-4 w-4 text-emerald-600" /> Total Revenue
+          </div>
+          <p className="text-2xl font-black text-slate-900">{formatRupees(revenue.total_revenue_paise)}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
+            <BarChart3 className="h-4 w-4 text-amber-600" /> Total Bookings
+          </div>
+          <p className="text-2xl font-black text-slate-900">{revenue.total_bookings}</p>
+        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">
+            <TrendingUp className="h-4 w-4 text-indigo-600" /> Avg Booking
+          </div>
+          <p className="text-2xl font-black text-slate-900">{formatRupees(revenue.average_booking_paise)}</p>
+        </div>
+      </div>
+
+      {revenue.by_event && revenue.by_event.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-base font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-amber-600" /> Revenue by Event
+          </h3>
+          <div className="space-y-3">
+            {revenue.by_event.map((ev: any) => (
+              <div key={ev.event_id} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
+                <div>
+                  <p className="font-bold text-sm text-slate-900">{ev.event_title}</p>
+                  <p className="text-xs text-slate-500">{ev.bookings} bookings</p>
+                </div>
+                <span className="text-lg font-black text-emerald-700">{formatRupees(ev.revenue_paise)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {revenue.by_event && revenue.by_event.length === 0 && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-500 shadow-sm">
+          No revenue data yet. Start hosting events to see earnings!
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Partner Dashboard
+// ---------------------------------------------------------------------------
+export default function PartnerDashboard() {
+  const navigate = useNavigate();
+  const [partner, setPartner] = useState<Partner | null>(null);
+  const [events, setEvents] = useState<EventItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'ACTIVE' | 'PENDING' | 'PAST' | 'REVENUE'>('ACTIVE');
+
+  const [editingEvent, setEditingEvent] = useState<EventItem | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    venue_name: '',
+    city: '',
+    poster_image_url: '',
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const p = await getMyPartnerProfile();
+      setPartner(p);
+      if (p && p.status === 'APPROVED') {
+        const evs = await getMyEvents();
+        setEvents(evs);
+      }
+    } catch {
+      toast.error('Failed to load partner dashboard');
+    } finally {
+      setLoading(false);
     }
-  }, [activeTab, revenue]);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const openEditModal = (event: EventItem) => {
+    setEditingEvent(event);
+    setEditForm({
+      title: event.title,
+      description: event.description || '',
+      venue_name: event.venue_name,
+      city: event.city,
+      poster_image_url: event.poster_image_url || '',
+    });
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEvent) return;
+    setSavingEdit(true);
+    try {
+      await updateEvent(editingEvent.id, editForm);
+      toast.success('Event updated successfully');
+      setEditingEvent(null);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update event');
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleCancelEvent = async (id: string) => {
+    try {
+      await cancelOrDeleteEvent(id, 'Cancelled by organizer');
+      toast.success('Event cancelled successfully');
+      fetchData();
+    } catch {
+      toast.error('Failed to cancel event');
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] text-slate-900 flex flex-col">
+      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
         <Header />
-        <div className="flex-grow flex items-center justify-center pt-20">
+        <div className="flex-grow flex items-center justify-center">
           <Loader />
         </div>
         <Footer />
@@ -112,262 +231,169 @@ export default function PartnerDashboard() {
     );
   }
 
-  const activeEvents = events.filter((e) => e.status === 'APPROVED' || e.status === 'ACTIVE');
-  const pendingEvents = events.filter((e) => e.status === 'PENDING' || e.status === 'UNDER_REVIEW');
-  const pastEvents = events.filter((e) => e.status === 'COMPLETED' || e.status === 'PAST' || e.status === 'EXPIRED');
+  const now = new Date();
+  const activeEvents = events.filter((e) => e.status === 'PUBLISHED' && new Date(e.ends_at) >= now);
+  const pendingEvents = events.filter((e) => e.status === 'PENDING_APPROVAL' || e.status === 'DRAFT');
+  const pastEvents = events.filter((e) => e.status === 'CANCELLED' || new Date(e.ends_at) < now);
+  const currentList = activeTab === 'ACTIVE' ? activeEvents : activeTab === 'PENDING' ? pendingEvents : activeTab === 'PAST' ? pastEvents : [];
 
-  const getListForTab = () => {
-    switch (activeTab) {
-      case 'ACTIVE':
-        return activeEvents;
-      case 'PENDING':
-        return pendingEvents;
-      case 'PAST':
-        return pastEvents;
-      default:
-        return [];
-    }
-  };
-
-  const currentList = getListForTab();
+  const tabClass = (tab: string) =>
+    `px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
+      activeTab === tab ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-slate-600 hover:bg-slate-100'
+    }`;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] text-slate-900 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Header />
-
-      <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-24 pb-12">
-        {/* Partner Header Card */}
-        {partner && (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-                  {partner.organization_name}
-                </h1>
-                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-semibold px-2.5 py-1 rounded-full">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> Approved Partner
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-[#7B1E3D]" /> {partner.city}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Phone className="h-3.5 w-3.5 text-slate-400" /> {partner.phone}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Building2 className="h-3.5 w-3.5 text-slate-400" /> {partner.organization_type}
-                </span>
-              </div>
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8 pt-24">
+        {/* Partner Header */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">{partner?.business_name || 'Partner Dashboard'}</h1>
+              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                <CheckCircle2 className="h-3 w-3 mr-1" /> Approved
+              </Badge>
             </div>
-
-            <button
-              onClick={() => navigate('/partner/events/new')}
-              className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold px-5 py-3 rounded-xl shadow transition flex items-center justify-center gap-2 shrink-0"
-            >
-              <Plus className="h-5 w-5" /> Host New Event
-            </button>
+            <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 mt-2">
+              <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-amber-600" /> {partner?.city}</span>
+              <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5 text-amber-600" /> {partner?.contact_phone}</span>
+              <span className="flex items-center gap-1"><Store className="h-3.5 w-3.5 text-amber-600" /> {partnerTypeMeta[partner?.partner_type || 'event_organiser'].label}</span>
+            </div>
           </div>
-        )}
+          <Button onClick={() => navigate('/partner/events/new')} className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl flex items-center gap-2 shadow-sm">
+            <Plus className="h-4 w-4" /> Host New Event
+          </Button>
+        </div>
 
-        {/* Tab Navigation */}
-        <div className="flex overflow-x-auto gap-2 border-b border-slate-200 mb-8 scrollbar-hide">
-          <button
-            onClick={() => setActiveTab('ACTIVE')}
-            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-              activeTab === 'ACTIVE'
-                ? 'border-[#7B1E3D] text-[#7B1E3D]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Active Events ({activeEvents.length})
+        {/* Tabs */}
+        <div className="flex items-center gap-2 border-b border-slate-200 mb-8 pb-3 overflow-x-auto">
+          <button onClick={() => setActiveTab('ACTIVE')} className={tabClass('ACTIVE')}>
+            <CalendarCheck className="h-4 w-4" /> Active ({activeEvents.length})
           </button>
-
-          <button
-            onClick={() => setActiveTab('PENDING')}
-            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-              activeTab === 'PENDING'
-                ? 'border-[#7B1E3D] text-[#7B1E3D]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Under Review ({pendingEvents.length})
+          <button onClick={() => setActiveTab('PENDING')} className={tabClass('PENDING')}>
+            <Clock className="h-4 w-4" /> Under Review ({pendingEvents.length})
           </button>
-
-          <button
-            onClick={() => setActiveTab('PAST')}
-            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition ${
-              activeTab === 'PAST'
-                ? 'border-[#7B1E3D] text-[#7B1E3D]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Completed / Past ({pastEvents.length})
+          <button onClick={() => setActiveTab('PAST')} className={tabClass('PAST')}>
+            <CalendarX className="h-4 w-4" /> Past ({pastEvents.length})
           </button>
-
-          <button
-            onClick={() => setActiveTab('REVENUE')}
-            className={`pb-3 px-4 text-sm font-bold border-b-2 whitespace-nowrap transition flex items-center gap-1.5 ${
-              activeTab === 'REVENUE'
-                ? 'border-[#7B1E3D] text-[#7B1E3D]'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <TrendingUp className="h-4 w-4" /> Revenue & Reports
+          <button onClick={() => setActiveTab('REVENUE')} className={tabClass('REVENUE')}>
+            <TrendingUp className="h-4 w-4" /> Revenue
           </button>
         </div>
 
-        {/* REVENUE TAB CONTENT */}
-        {activeTab === 'REVENUE' && (
-          <div>
-            {revenueLoading ? (
-              <div className="py-20 flex justify-center">
-                <Loader />
-              </div>
-            ) : !revenue ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 shadow-sm">
-                No revenue report generated yet.
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Metric Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between text-slate-400 mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider">Total Revenue</span>
-                      <DollarSign className="h-5 w-5 text-[#7B1E3D]" />
-                    </div>
-                    <p className="text-3xl font-black text-[#7B1E3D]">
-                      {formatRupees(revenue.total_revenue_paise)}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">Confirmed ticket sales</p>
-                  </div>
+        {/* Revenue Tab */}
+        {activeTab === 'REVENUE' && partner && <RevenueDashboard partnerId={partner.id} />}
 
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between text-slate-400 mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider">Total Bookings</span>
-                      <Ticket className="h-5 w-5 text-slate-700" />
-                    </div>
-                    <p className="text-3xl font-black text-slate-900">
-                      {revenue.total_bookings}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">Confirmed orders</p>
-                  </div>
-
-                  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center justify-between text-slate-400 mb-2">
-                      <span className="text-xs font-bold uppercase tracking-wider">Avg. Booking Value</span>
-                      <BarChart3 className="h-5 w-5 text-slate-700" />
-                    </div>
-                    <p className="text-3xl font-black text-slate-900">
-                      {formatRupees(revenue.average_booking_paise)}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">Revenue per order</p>
-                  </div>
-                </div>
-
-                {/* Revenue Breakdown Table */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-                  <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5 text-[#7B1E3D]" /> Event Breakdown
-                  </h2>
-
-                  {revenue.by_event.length === 0 ? (
-                    <p className="text-sm text-slate-500 py-6 text-center">
-                      No event bookings recorded yet.
-                    </p>
-                  ) : (
-                    <div className="divide-y divide-slate-100">
-                      {revenue.by_event.map((item) => (
-                        <div key={item.event_id} className="py-4 flex items-center justify-between">
-                          <div>
-                            <h3 className="font-bold text-slate-900 text-sm md:text-base">
-                              {item.event_title}
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              {item.bookings} confirmed booking(s)
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-[#7B1E3D] text-base md:text-lg">
-                              {formatRupees(item.revenue_paise)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+        {/* Events Grid */}
+        {activeTab !== 'REVENUE' && currentList.length === 0 && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-500 shadow-sm">
+            <p className="text-base font-bold text-slate-800 mb-1">No {activeTab.toLowerCase()} events found</p>
+            <p className="text-xs text-slate-400">Click &quot;Host New Event&quot; to publish your next event.</p>
           </div>
         )}
 
-        {/* EVENT CARDS TAB CONTENT */}
-        {activeTab !== 'REVENUE' && (
-          <div>
-            {currentList.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500 shadow-sm">
-                <CalendarDays className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-lg font-bold text-slate-700">No events in this category</p>
-                <p className="text-sm text-slate-500 mt-1">
-                  Click "Host New Event" to publish a new event.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentList.map((e) => (
-                  <div
-                    key={e.id}
-                    className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition"
-                  >
-                    <div className="aspect-[16/10] bg-slate-100 relative">
-                      {e.cover_image_url ? (
-                        <img
-                          src={e.cover_image_url}
-                          alt={e.title}
-                          className="w-full h-full object-cover"
-                        />
+        {activeTab !== 'REVENUE' && currentList.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {currentList.map((e) => {
+              const isPast = new Date(e.ends_at) < now;
+              const hoursUntilStart = (new Date(e.starts_at).getTime() - now.getTime()) / (1000 * 60 * 60);
+              const isEditLocked = e.status === 'PUBLISHED' && hoursUntilStart < 24;
+
+              return (
+                <div key={e.id} className="bg-white border border-slate-200 rounded-3xl overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-md transition-all">
+                  <div>
+                    <div className="aspect-[16/9] bg-slate-100 relative">
+                      {e.poster_image_url ? (
+                        <img src={e.poster_image_url} alt={e.title} className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">
-                          No Cover Image
-                        </div>
+                        <div className="w-full h-full flex items-center justify-center text-slate-400"><ImageOff className="h-8 w-8" /></div>
                       )}
-                      <span className="absolute top-3 right-3 bg-black/70 backdrop-blur text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md">
-                        {e.status}
-                      </span>
+                      <div className="absolute top-3 right-3">
+                        <Badge className={`border ${e.status === 'PUBLISHED' && !isPast ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : e.status === 'PENDING_APPROVAL' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                          {isPast ? 'COMPLETED' : e.status}
+                        </Badge>
+                      </div>
                     </div>
-
                     <div className="p-5">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#7B1E3D]">
-                        {e.category}
-                      </span>
-                      <h3 className="font-bold text-base text-slate-900 mt-1 line-clamp-1">
-                        {e.title}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                        <MapPin className="h-3.5 w-3.5 text-slate-400" /> {e.venue_name}, {e.city}
-                      </p>
-                      {e.start_date && (
-                        <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                          <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                          {new Date(e.start_date).toLocaleDateString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </p>
+                      <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">{e.category}</span>
+                      <h3 className="text-lg font-bold text-slate-900 mt-1 line-clamp-1">{e.title}</h3>
+                      <p className="text-slate-500 text-xs mt-2 flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-slate-400" /> {e.venue_name}, {e.city}</p>
+                      <p className="text-slate-500 text-xs mt-1 flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-slate-400" /> {format(parseISO(e.starts_at), 'MMM d, yyyy · h:mm a')}</p>
+                    </div>
+                  </div>
+                  <div className="p-5 pt-0 border-t border-slate-100 mt-4 flex items-center justify-between">
+                    <div className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+                      <Ticket className="h-3.5 w-3.5 text-amber-600" /> {e.ticket_categories?.length || 1} Tier(s)
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {e.status !== 'CANCELLED' && !isPast && (
+                        <>
+                          <Button size="sm" variant="ghost" disabled={isEditLocked} onClick={() => openEditModal(e)} title={isEditLocked ? 'Locked within 24h' : 'Edit'} className={isEditLocked ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100 rounded-xl'}>
+                            <Edit3 className="h-3.5 w-3.5 mr-1" /> {isEditLocked ? 'Locked' : 'Edit'}
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="ghost" className="text-rose-600 hover:bg-rose-50 rounded-xl"><Trash2 className="h-3.5 w-3.5" /></Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-white border-slate-200 text-slate-900 rounded-3xl shadow-xl">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-lg font-bold">Cancel Event?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-slate-600 text-sm">Cancel <strong className="text-slate-900">{e.title}</strong>? This will notify attendees and stop sales.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter className="gap-2 mt-4">
+                                <AlertDialogCancel className="bg-slate-100 text-slate-700 border-0 hover:bg-slate-200 rounded-xl text-xs font-semibold">Close</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleCancelEvent(e.id)} className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold">Confirm</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </>
                       )}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              );
+            })}
           </div>
         )}
-      </main>
 
+        {/* Edit Modal */}
+        <Dialog open={!!editingEvent} onOpenChange={(open) => !open && setEditingEvent(null)}>
+          <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-lg rounded-3xl shadow-2xl">
+            <DialogHeader><DialogTitle className="text-xl font-bold">Edit Event Details</DialogTitle></DialogHeader>
+            <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
+              <div>
+                <Label className="text-xs font-semibold text-slate-600">Event Title</Label>
+                <Input id="edit-title" value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="bg-slate-50 border-slate-200 mt-1 rounded-xl" required />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-600">Description</Label>
+                <Textarea id="edit-desc" value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="bg-slate-50 border-slate-200 mt-1 min-h-[80px] rounded-xl" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold text-slate-600">Venue</Label>
+                  <Input id="edit-venue" value={editForm.venue_name} onChange={(e) => setEditForm({ ...editForm, venue_name: e.target.value })} className="bg-slate-50 border-slate-200 mt-1 rounded-xl" required />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-slate-600">City</Label>
+                  <Input id="edit-city" value={editForm.city} onChange={(e) => setEditForm({ ...editForm, city: e.target.value })} className="bg-slate-50 border-slate-200 mt-1 rounded-xl" required />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-slate-600">Poster URL</Label>
+                <Input id="edit-image" value={editForm.poster_image_url} onChange={(e) => setEditForm({ ...editForm, poster_image_url: e.target.value })} className="bg-slate-50 border-slate-200 mt-1 rounded-xl" placeholder="https://..." />
+              </div>
+              <DialogFooter className="gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setEditingEvent(null)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl">Cancel</Button>
+                <Button type="submit" disabled={savingEdit} className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl">
+                  {savingEdit ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </main>
       <Footer />
     </div>
   );
