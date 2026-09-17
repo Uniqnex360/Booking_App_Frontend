@@ -215,7 +215,7 @@ export default function HomePage() {
         </div>
 
         {/* Floating search — BMS style */}
-        <div className="max-w-3xl mx-auto px-4 -mt-6 relative z-20">
+        {/* <div className="max-w-3xl mx-auto px-4 -mt-6 relative z-20">
           <form
             onSubmit={handleSearch}
             className="bg-white rounded-xl border border-slate-200 shadow-lg flex items-center p-1.5"
@@ -234,7 +234,7 @@ export default function HomePage() {
               Search
             </Button>
           </form>
-        </div>
+        </div> */}
       </section>
 
       {/* ── CATEGORY CHIPS ── */}

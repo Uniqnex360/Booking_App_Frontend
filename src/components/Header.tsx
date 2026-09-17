@@ -175,7 +175,6 @@ const filteredEvents = rawEvents.filter((e: any) =>
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
           </div>
         </div>
 
