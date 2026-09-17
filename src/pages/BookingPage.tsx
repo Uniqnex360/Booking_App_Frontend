@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader } from '@/components/common/Loader';
 import { useAuth } from '@/hooks/useAuth';
-import { createBooking } from '@/api/booking.api';
 import { api, unwrap } from '@/api/client';
 import {
   Calendar,
@@ -19,7 +18,7 @@ import {
   MapPin,
   ShieldCheck,
 } from 'lucide-react';
-import { formatCurrency, formatRupees } from '@/utils/currencyFormatter';
+import { formatRupees } from '@/utils/currencyFormatter';
 import { toast } from 'sonner';
 
 function loadScript(src: string): Promise<boolean> {
@@ -58,13 +57,15 @@ export default function BookingPage() {
       try {
         if (type?.toLowerCase() === 'event') {
           const res = await unwrap<any>(api.get(`/events/${id}`));
+          const tier = res.ticket_categories?.[0];
           setItemData({
+            event_id: res.id,
+            tier_id: tier?.id,
             title: res.title,
             venue: res.venue_name,
             location: res.city,
-            price_paise: res.ticket_categories?.[0]?.price_paise || 50000,
+            price_paise: tier?.price_paise || 50000,
             image: res.poster_image_url || 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop&q=80',
-            tier_id: res.ticket_categories?.[0]?.id,
           });
           setDate(res.starts_at?.split('T')[0] || '');
         } else if (type?.toLowerCase() === 'restaurant') {
@@ -73,22 +74,14 @@ export default function BookingPage() {
             title: res?.name || 'Gourmet Table Reservation',
             venue: res?.name || 'Exclusive Dining',
             location: res?.city || 'Kochi',
-            price_paise: 25000, // standard reservation deposit
+            price_paise: 25000,
             image: res?.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
-          });
-        } else {
-          setItemData({
-            title: 'Experience Booking',
-            venue: 'Vyhbz Experience Venue',
-            location: 'Kochi',
-            price_paise: 50000,
-            image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
           });
         }
       } catch {
         setItemData({
           title: 'Experience Booking',
-          venue: 'Vyhbz Experience Venue',
+          venue: 'Vyhbz Venue',
           location: 'Kochi',
           price_paise: 50000,
           image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
@@ -119,21 +112,17 @@ export default function BookingPage() {
       amount: totalPricePaise,
       currency: 'INR',
       name: 'Vyhbz Experiences',
-      description: `${itemData?.title} (${guests} Guests)`,
+      description: `${itemData?.title || 'Experience'} (${guests} Guests)`,
       handler: async function (response: any) {
         toast.info('Payment verified! Confirming booking...');
         try {
           if (type?.toLowerCase() === 'event' && itemData?.tier_id) {
-            await createBooking({
-              type: 'EVENT',
-              ref_id: itemData.tier_id,
-              title: itemData.title,
-              venue: itemData.venue,
-              location: itemData.location,
-              booking_date: date,
-              guests,
-              total_price: totalPricePaise / 100,
-            });
+            await unwrap<any>(api.post('/bookings', {
+              event_id: itemData.event_id || id,
+              tier_id: itemData.tier_id,
+              quantity: guests,
+              idempotency_key: idempotencyKeyRef.current,
+            }));
           }
           setSuccess(true);
           setTimeout(() => navigate('/profile'), 2000);
@@ -238,22 +227,22 @@ export default function BookingPage() {
           <div className="overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900 shadow-soft">
             <div className="relative aspect-[16/9] overflow-hidden bg-neutral-800">
               <img
-                src={itemData.image}
-                alt={itemData.title}
+                src={itemData?.image}
+                alt={itemData?.title}
                 className="h-full w-full object-cover"
               />
             </div>
             <div className="p-6">
               <h2 className="text-2xl font-bold">
-                {itemData.title}
+                {itemData?.title}
               </h2>
               <p className="mt-1 text-sm text-neutral-400">
-                {itemData.venue}
+                {itemData?.venue}
               </p>
               <div className="mt-3 flex items-center gap-3 text-xs text-neutral-400">
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3.5 w-3.5 text-amber-500" />
-                  {itemData.location}
+                  {itemData?.location}
                 </span>
               </div>
 
@@ -263,7 +252,7 @@ export default function BookingPage() {
                   <span className="font-bold text-white">{formatRupees(pricePaisePerPerson)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-neutral-400">
-                  <span>Guests</span>
+                  <span>Guests / Tickets</span>
                   <span className="font-bold text-white">{guests}</span>
                 </div>
                 <div className="flex justify-between border-t border-neutral-800 pt-3 items-center">
@@ -350,7 +339,7 @@ export default function BookingPage() {
               ) : (
                 <>
                   Pay {formatRupees(totalPricePaise)}
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
