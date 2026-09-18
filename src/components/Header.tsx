@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,7 +55,14 @@ export function Header() {
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [city, setCity] = useState('Kochi');
+  const [searchParams, setSearchParams] = useSearchParams();
+const city = searchParams.get('city') || 'Kochi';
+
+const setCity = (next: string) => {
+  const p = new URLSearchParams(searchParams);
+  p.set('city', next);
+  setSearchParams(p);
+};
 
   // Global Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,8 +73,9 @@ export function Header() {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-    detectCity().then((c) => { if (c) setCity(c); });
-  }, []);
+  if (searchParams.get('city')) return;
+  detectCity().then((c) => { if (c) setCity(c); });
+}, []);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll);

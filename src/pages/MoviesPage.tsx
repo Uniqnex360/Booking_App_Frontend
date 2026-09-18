@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
-import { Loader } from '@/components/common/Loader';
-import { api, unwrap } from '@/api/client';
-import { formatRupees } from '@/utils/currencyFormatter';
-import { Search, Clock } from 'lucide-react';
-import { detectCity, SUPPORTED_CITIES } from '@/utils/geolocation';
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { Loader } from "@/components/common/Loader";
+import { api, unwrap } from "@/api/client";
+import { formatRupees } from "@/utils/currencyFormatter";
+import { Search, Clock } from "lucide-react";
+import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
 
 interface MovieItem {
   id: string;
@@ -21,35 +22,36 @@ interface MovieItem {
 
 export default function MoviesPage() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const search = searchParams.get('search') || '';
-  const city = searchParams.get('city') || 'Kochi';
-
-  const setCity = (next: string) => {
-    const p = new URLSearchParams(searchParams);
-    p.set('city', next);
-    setSearchParams(p);
-  };
+ const [searchParams, setSearchParams] = useSearchParams();
+const city = searchParams.get('city') || 'Kochi';
+const setCity = (next: string) => {
+  const p = new URLSearchParams(searchParams);
+  p.set('city', next);
+  setSearchParams(p);
+};
+const search = searchParams.get('search') || '';
 
   const setSearch = (next: string) => {
     const p = new URLSearchParams(searchParams);
-    if (next) p.set('search', next);
-    else p.delete('search');
+    if (next) p.set("search", next);
+    else p.delete("search");
     setSearchParams(p);
   };
 
   useEffect(() => {
-    detectCity().then((c) => { if (c) setCity(c); });
-  }, []);
+  if (searchParams.get('city')) return;
+  detectCity().then((c) => { if (c) setCity(c); });
+}, []);
 
   useEffect(() => {
     const fetchMoviesAndShowtimes = async () => {
       try {
-        const today = new Date().toISOString().split('T')[0];
+        setLoading(true);
+        const today = new Date().toISOString().split("T")[0];
         const rawMovies = await unwrap<MovieItem[]>(
-          api.get(`/movies`, { params: { city, date: today } })
+          api.get(`/movies`, { params: { city, date: today } }),
         );
 
         const enriched = await Promise.all(
@@ -60,32 +62,39 @@ export default function MoviesPage() {
               let earliest: string | null = null;
 
               if (details.venues && details.venues.length > 0) {
-                const allSlots = details.venues.flatMap((v: any) => v.showtimes || []);
+                const allSlots = details.venues.flatMap(
+                  (v: any) => v.showtimes || [],
+                );
                 if (allSlots.length > 0) {
                   const sorted = allSlots.sort(
-                    (a: any, b: any) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
+                    (a: any, b: any) =>
+                      new Date(a.starts_at).getTime() -
+                      new Date(b.starts_at).getTime(),
                   );
-                  earliest = new Date(sorted[0].starts_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  });
+                  earliest = new Date(sorted[0].starts_at).toLocaleTimeString(
+                    [],
+                    {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    },
+                  );
                 }
               }
 
               return {
                 ...m,
-                earliest_showtime: earliest || 'N/A',
+                earliest_showtime: earliest || "N/A",
                 min_price_paise: minPrice,
               };
             } catch {
               return m;
             }
-          })
+          }),
         );
 
         setMovies(enriched);
       } catch (err) {
-        console.error('Failed to load movies', err);
+        console.error("Failed to load movies", err);
       } finally {
         setLoading(false);
       }
@@ -94,7 +103,7 @@ export default function MoviesPage() {
   }, [city]);
 
   const filteredMovies = movies.filter((m) =>
-    m.title.toLowerCase().includes(search.toLowerCase())
+    m.title.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -103,8 +112,12 @@ export default function MoviesPage() {
       <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-16 lg:pt-[104px] pb-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 mt-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Now Showing</h1>
-            <p className="text-slate-500 mt-1">Discover movies currently playing in {city}</p>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+              Now Showing
+            </h1>
+            <p className="text-slate-500 mt-1">
+              Discover movies currently playing in {city}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -124,7 +137,9 @@ export default function MoviesPage() {
               className="bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:outline-none"
             >
               {SUPPORTED_CITIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
           </div>
@@ -135,7 +150,9 @@ export default function MoviesPage() {
             <Loader />
           </div>
         ) : filteredMovies.length === 0 ? (
-          <div className="text-center py-20 text-slate-500">No movies found matching your search.</div>
+          <div className="text-center py-20 text-slate-500">
+            No movies found matching your search.
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredMovies.map((movie) => (
@@ -167,12 +184,13 @@ export default function MoviesPage() {
                     <span>{movie.certificate}</span>
                   </div>
 
-                  {movie.earliest_showtime && movie.earliest_showtime !== 'N/A' && (
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-2">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span>First show {movie.earliest_showtime}</span>
-                    </div>
-                  )}
+                  {movie.earliest_showtime &&
+                    movie.earliest_showtime !== "N/A" && (
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-2">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>First show {movie.earliest_showtime}</span>
+                      </div>
+                    )}
 
                   <button
                     onClick={() => navigate(`/movies/${movie.id}`)}
