@@ -269,7 +269,7 @@ export default function SeatMapPage() {
     existingTier.rows[rowLabel] = rowData.seats.sort((a, b) => a.number - b.number);
   });
 
-  tiers.sort((a, b) => b.price_paise - a.price_paise);
+  tiers.sort((a, b) => a.price_paise - b.price_paise);
 
   const totalPricePaise = selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
 
