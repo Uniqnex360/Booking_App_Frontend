@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -112,7 +112,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [currentBanner, setCurrentBanner] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [searchParams] = useSearchParams();
+  const city = searchParams.get('city') || 'Kochi';
   useEffect(() => {
     const t = setInterval(
       () => setCurrentBanner((p) => (p + 1) % HERO_BANNERS.length),
@@ -127,7 +128,8 @@ export default function HomePage() {
         const today = new Date().toISOString().split('T')[0];
         const [moviesData, eventsData] = await Promise.all([
           unwrap<MovieCard[]>(
-            api.get(`/movies`, { params: { city: 'Kochi', date: today } })
+            api.get(`/movies`, { params: { city, date: today } })
+
           ).catch(() => []),
           unwrap<any>(api.get(`/events`)).catch(() => ({ items: [] })),
         ]);
@@ -141,7 +143,7 @@ export default function HomePage() {
       }
     };
     load();
-  }, []);
+  }, [city]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
