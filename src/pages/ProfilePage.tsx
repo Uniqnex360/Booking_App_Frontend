@@ -64,12 +64,13 @@ export default function ProfilePage() {
     .toUpperCase();
 
   const upcoming = bookings.filter(
-    (b) => b.status === 'CONFIRMED' && isUpcoming(b.booking_date)
-  );
-  const past = bookings.filter(
-    (b) => b.status === 'COMPLETED' || !isUpcoming(b.booking_date)
-  );
-
+  (b) =>
+    (b.status === 'CONFIRMED' || b.status === 'HELD') &&
+    isUpcoming(b.starts_at ?? b.booking_date)
+);
+const past = bookings.filter(
+  (b) => !upcoming.some((u) => u.id === b.id)
+);
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
@@ -287,7 +288,6 @@ export default function ProfilePage() {
     </div>
   );
 }
-
 function BookingCard({
   booking,
   past = false,
@@ -295,6 +295,8 @@ function BookingCard({
   booking: Booking;
   past?: boolean;
 }) {
+  const isMovie = booking.type === 'MOVIE' && !!booking.starts_at;
+
   return (
     <div
       className={`group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:shadow-soft-lg ${
@@ -305,7 +307,7 @@ function BookingCard({
         {booking.image_url ? (
           <img
             src={booking.image_url}
-            alt={booking.title}
+            alt={booking.movie_title ?? booking.title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -323,27 +325,79 @@ function BookingCard({
           </Badge>
         </div>
       </div>
+
       <div className="p-4">
-        <h4 className="font-serif text-lg font-semibold text-slate-900">
-          {booking.title}
-        </h4>
-        <p className="text-xs text-slate-500">{booking.venue}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {formatDate(booking.booking_date)}
-          </span>
-          {booking.location && (
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {booking.location}
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}
-          </span>
-        </div>
+        {isMovie ? (
+          <>
+            <h4 className="font-serif text-lg font-semibold text-slate-900">
+              {booking.movie_title ?? booking.title}
+            </h4>
+
+            {(booking.certificate || booking.format || booking.language) && (
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 mt-0.5">
+                {[booking.certificate, booking.format, booking.language]
+                  .filter(Boolean)
+                  .join(' • ')}
+              </p>
+            )}
+
+            {(booking.cinema_name || booking.screen_name) && (
+              <p className="text-sm font-medium text-slate-700 mt-2">
+                {booking.cinema_name}
+                {booking.screen_name ? `, ${booking.screen_name}` : ''}
+              </p>
+            )}
+
+            <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+              <Calendar className="h-3 w-3" />
+              {new Date(booking.starts_at!).toLocaleString([], {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </p>
+
+            {booking.seat_codes && booking.seat_codes.length > 0 && (
+              <p className="text-xs text-slate-500 mt-1">
+                {booking.seat_codes.length}{' '}
+                {booking.seat_codes.length === 1 ? 'Ticket' : 'Tickets'}:{' '}
+                {booking.seat_codes.join(', ')}
+              </p>
+            )}
+
+            {booking.ref_code && (
+              <p className="text-[10px] font-mono text-slate-400 mt-1">
+                Ref: {booking.ref_code}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <h4 className="font-serif text-lg font-semibold text-slate-900">
+              {booking.title}
+            </h4>
+            <p className="text-xs text-slate-500">{booking.venue}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                {formatDate(booking.booking_date)}
+              </span>
+              {booking.location && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {booking.location}
+                </span>
+              )}
+              <span className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}
+              </span>
+            </div>
+          </>
+        )}
+
         <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
           <span className="font-serif text-xl font-semibold text-slate-800">
             {formatCurrency(booking.total_price)}
