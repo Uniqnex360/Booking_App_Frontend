@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Loader } from '@/components/common/Loader';
 import { api, unwrap } from '@/api/client';
 import { formatRupees } from '@/utils/currencyFormatter';
-import { Search, Clock, Calendar } from 'lucide-react';
+import { Search, Clock } from 'lucide-react';
 import { detectCity, SUPPORTED_CITIES } from '@/utils/geolocation';
 
 interface MovieItem {
@@ -20,14 +20,12 @@ interface MovieItem {
 }
 
 export default function MoviesPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(true);
   const search = searchParams.get('search') || '';
   const city = searchParams.get('city') || 'Kochi';
-  useEffect(() => {
-  detectCity().then((c) => { if (c) setCity(c); });
-}, []);
 
   const setCity = (next: string) => {
     const p = new URLSearchParams(searchParams);
@@ -43,19 +41,7 @@ export default function MoviesPage() {
   };
 
   useEffect(() => {
-    const detectCity = async () => {
-      try {
-        const res = await fetch('https://ipapi.co/json/');
-        const data = await res.json();
-        const detected = data.city;
-        if (detected && SUPPORTED_CITIES.includes(detected)) {
-          setCity(detected);
-        }
-      } catch (err) {
-        console.error('IP geolocation failed, using default city', err);
-      }
-    };
-    detectCity();
+    detectCity().then((c) => { if (c) setCity(c); });
   }, []);
 
   useEffect(() => {
@@ -153,9 +139,8 @@ export default function MoviesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredMovies.map((movie) => (
-              <Link
+              <div
                 key={movie.id}
-                to={`/movies/${movie.id}`}
                 className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-[#7B1E3D]/30 hover:shadow-md transition duration-200 flex flex-col"
               >
                 <div className="aspect-[2/3] w-full bg-neutral-100 relative overflow-hidden">
@@ -171,6 +156,7 @@ export default function MoviesPage() {
                     </div>
                   )}
                 </div>
+
                 <div className="p-4 flex-grow flex flex-col">
                   <h3 className="font-bold text-lg leading-tight group-hover:text-[#7B1E3D] transition">
                     {movie.title}
@@ -181,17 +167,21 @@ export default function MoviesPage() {
                     <span>{movie.certificate}</span>
                   </div>
 
-                  <div className="mt-auto pt-4 border-t border-slate-200/50 flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-1.5 text-slate-500">
-                      <Clock className="h-4 w-4" />
-                      <span>{movie.earliest_showtime || 'N/A'}</span>
+                  {movie.earliest_showtime && movie.earliest_showtime !== 'N/A' && (
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-2">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>First show {movie.earliest_showtime}</span>
                     </div>
-                    <span className="font-bold text-[#7B1E3D]">
-                      from {formatRupees(movie.min_price_paise || 25000)}
-                    </span>
-                  </div>
+                  )}
+
+                  <button
+                    onClick={() => navigate(`/movies/${movie.id}`)}
+                    className="mt-4 w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white text-sm font-bold rounded-lg py-2.5 transition"
+                  >
+                    Book Tickets
+                  </button>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}
