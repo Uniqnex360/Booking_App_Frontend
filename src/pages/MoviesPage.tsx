@@ -6,6 +6,7 @@ import { Loader } from '@/components/common/Loader';
 import { api, unwrap } from '@/api/client';
 import { formatRupees } from '@/utils/currencyFormatter';
 import { Search, Clock, Calendar } from 'lucide-react';
+import { detectCity, SUPPORTED_CITIES } from '@/utils/geolocation';
 
 interface MovieItem {
   id: string;
@@ -19,13 +20,16 @@ interface MovieItem {
 }
 
 export default function MoviesPage() {
-   const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(true);
   const search = searchParams.get('search') || '';
   const city = searchParams.get('city') || 'Kochi';
-  const SUPPORTED_CITIES = ['Kochi', 'Chennai', 'Bangalore', 'Mumbai'];
-    const setCity = (next: string) => {
+  useEffect(() => {
+  detectCity().then((c) => { if (c) setCity(c); });
+}, []);
+
+  const setCity = (next: string) => {
     const p = new URLSearchParams(searchParams);
     p.set('city', next);
     setSearchParams(p);
@@ -37,21 +41,23 @@ export default function MoviesPage() {
     else p.delete('search');
     setSearchParams(p);
   };
-useEffect(() => {
-  const detectCity = async () => {
-    try {
-      const res = await fetch('https://ipapi.co/json/');
-      const data = await res.json();
-      const detected = data.city;
-      if (detected && SUPPORTED_CITIES.includes(detected)) {
-        setCity(detected);
+
+  useEffect(() => {
+    const detectCity = async () => {
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        const data = await res.json();
+        const detected = data.city;
+        if (detected && SUPPORTED_CITIES.includes(detected)) {
+          setCity(detected);
+        }
+      } catch (err) {
+        console.error('IP geolocation failed, using default city', err);
       }
-    } catch (err) {
-      console.error('IP geolocation failed, using default city', err);
-    }
-  };
-  detectCity();
-}, []);
+    };
+    detectCity();
+  }, []);
+
   useEffect(() => {
     const fetchMoviesAndShowtimes = async () => {
       try {
@@ -60,7 +66,6 @@ useEffect(() => {
           api.get(`/movies`, { params: { city, date: today } })
         );
 
-        // Fetch prices and showtimes for each movie
         const enriched = await Promise.all(
           rawMovies.map(async (m) => {
             try {
@@ -109,23 +114,22 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
       <Header />
-     <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-24 pb-12">
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-16 lg:pt-[104px] pb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 mt-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Now Showing</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Now Showing</h1>
             <p className="text-slate-500 mt-1">Discover movies currently playing in {city}</p>
           </div>
 
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search movies..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-amber-500 w-64"
+                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#7B1E3D]/40 w-64"
               />
             </div>
             <select
@@ -133,11 +137,9 @@ useEffect(() => {
               onChange={(e) => setCity(e.target.value)}
               className="bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm focus:outline-none"
             >
-              <option value="Kochi">Kochi</option>
-              <option value="Chennai">Chennai</option>
-
-              <option value="Bangalore">Bangalore</option>
-              <option value="Mumbai">Mumbai</option>
+              {SUPPORTED_CITIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -154,7 +156,7 @@ useEffect(() => {
               <Link
                 key={movie.id}
                 to={`/movies/${movie.id}`}
-                className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-200 transition duration-200 flex flex-col"
+                className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-[#7B1E3D]/30 hover:shadow-md transition duration-200 flex flex-col"
               >
                 <div className="aspect-[2/3] w-full bg-neutral-100 relative overflow-hidden">
                   {movie.poster_url ? (
@@ -170,7 +172,7 @@ useEffect(() => {
                   )}
                 </div>
                 <div className="p-4 flex-grow flex flex-col">
-                  <h3 className="font-bold text-lg leading-tight group-hover:text-amber-500 transition">
+                  <h3 className="font-bold text-lg leading-tight group-hover:text-[#7B1E3D] transition">
                     {movie.title}
                   </h3>
                   <div className="flex items-center gap-2 text-xs text-slate-500 mt-2">
@@ -184,7 +186,7 @@ useEffect(() => {
                       <Clock className="h-4 w-4" />
                       <span>{movie.earliest_showtime || 'N/A'}</span>
                     </div>
-                    <span className="font-bold text-amber-500">
+                    <span className="font-bold text-[#7B1E3D]">
                       from {formatRupees(movie.min_price_paise || 25000)}
                     </span>
                   </div>

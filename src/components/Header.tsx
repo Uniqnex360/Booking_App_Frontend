@@ -32,6 +32,7 @@ import {
   Loader2,
   ChevronRight,
 } from 'lucide-react';
+import { detectCity, SUPPORTED_CITIES } from '@/utils/geolocation';
 
 const navLinks = [
   { href: '/movies', label: 'Movies' },
@@ -39,7 +40,7 @@ const navLinks = [
   { href: '/restaurants', label: 'Restaurants' },
 ];
 
-const CITIES = ['Kochi', 'Chennai', 'Bangalore', 'Mumbai'];
+
 
 interface SearchResults {
   movies: any[];
@@ -64,7 +65,9 @@ export function Header() {
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+    useEffect(() => {
+    detectCity().then((c) => { if (c) setCity(c); });
+  }, []);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll);
@@ -111,12 +114,12 @@ export function Header() {
         const rawEvents = Array.isArray(eventsRes) ? eventsRes : eventsRes.items || [];
 
         const filteredMovies = moviesRes.filter((m: any) =>
-  m.title.toLowerCase().includes(q) || (m.language && m.language.toLowerCase().includes(q))
-).slice(0, 4);
+          m.title.toLowerCase().includes(q) || (m.language && m.language.toLowerCase().includes(q))
+        ).slice(0, 4);
 
-const filteredEvents = rawEvents.filter((e: any) =>
-  e.title.toLowerCase().includes(q) || (e.category && e.category.toLowerCase().includes(q))
-).slice(0, 4);
+        const filteredEvents = rawEvents.filter((e: any) =>
+          e.title.toLowerCase().includes(q) || (e.category && e.category.toLowerCase().includes(q))
+        ).slice(0, 4);
 
         setResults({
           movies: filteredMovies,
@@ -150,7 +153,7 @@ const filteredEvents = rawEvents.filter((e: any) =>
           : 'bg-white border-b border-slate-100'
       }`}
     >
-      {/* ── TOP ROW ── */}
+      {/* ── SINGLE NAV ROW (BMS-style) ── */}
       <nav className="mx-auto flex max-w-[1280px] items-center gap-3 px-4 sm:px-6 h-16">
         {/* Logo */}
         <Link to="/" className="group flex items-center gap-2.5 shrink-0">
@@ -171,7 +174,7 @@ const filteredEvents = rawEvents.filter((e: any) =>
               onChange={(e) => setCity(e.target.value)}
               className="bg-transparent border-none outline-none cursor-pointer font-semibold text-slate-700 hover:text-[#7B1E3D] pr-1"
             >
-              {CITIES.map((c) => (
+              {SUPPORTED_CITIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
@@ -279,9 +282,9 @@ const filteredEvents = rawEvents.filter((e: any) =>
 
         {/* Desktop Nav Links */}
         <div className="hidden lg:flex items-center gap-6 shrink-0 ml-auto">
-          {navLinks.map((link) => (
+          {navLinks.map((link, i) => (
             <Link
-              key={link.href}
+              key={`${link.href}-${i}`}
               to={link.href}
               className={`relative text-sm font-semibold transition-colors ${
                 location.pathname.startsWith(link.href)
@@ -295,6 +298,12 @@ const filteredEvents = rawEvents.filter((e: any) =>
               )}
             </Link>
           ))}
+          <Link
+            to="/partner/become"
+            className="text-sm font-bold text-[#7B1E3D] hover:text-[#5C0F2A]"
+          >
+            List Your Show
+          </Link>
         </div>
 
         {/* Right side actions */}
@@ -400,16 +409,16 @@ const filteredEvents = rawEvents.filter((e: any) =>
                   onChange={(e) => setCity(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800"
                 >
-                  {CITIES.map((c) => (
+                  {SUPPORTED_CITIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>
 
               <div className="flex flex-col gap-1 px-3 py-3">
-                {navLinks.map((link) => (
+                {navLinks.map((link, i) => (
                   <Link
-                    key={link.href}
+                    key={`${link.href}-${i}`}
                     to={link.href}
                     onClick={() => setMobileOpen(false)}
                     className="rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-[#FDF2F4] hover:text-[#7B1E3D]"
@@ -417,6 +426,13 @@ const filteredEvents = rawEvents.filter((e: any) =>
                     {link.label}
                   </Link>
                 ))}
+                <Link
+                  to="/partner/become"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-sm font-bold text-[#7B1E3D] hover:bg-[#FDF2F4]"
+                >
+                  List Your Show
+                </Link>
               </div>
             </SheetContent>
           </Sheet>

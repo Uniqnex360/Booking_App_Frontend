@@ -40,7 +40,6 @@ import {
   ImageOff,
 } from 'lucide-react';
 import { formatCurrency } from '@/utils/currencyFormatter';
-
 const categoryMeta: Record<
   EventCategory,
   { label: string; icon: typeof Music }
@@ -53,7 +52,6 @@ const categoryMeta: Record<
   exhibition: { label: 'Exhibition', icon: Palette },
   other: { label: 'Other', icon: Sparkles },
 };
-
 const categoryOptions: { value: EventCategory | 'all'; label: string }[] = [
   { value: 'all', label: 'All Categories' },
   ...Object.entries(categoryMeta).map(([value, meta]) => ({
@@ -108,23 +106,23 @@ export default function EventsPage() {
     <div className="min-h-screen bg-slate-50">
       <Header />
 
-      {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
-        <div className="absolute -right-20 top-10 h-72 w-72 rounded-full bg-amber-500/10 blur-3xl" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      {/* Hero — offset for fixed header (64px) + secondary strip (40px on lg) */}
+      <div className="relative overflow-hidden bg-gradient-to-b from-[#FDF2F4] to-white pt-16 lg:pt-[104px] pb-8">
+        <div className="absolute -right-20 top-10 h-72 w-72 rounded-full bg-[#7B1E3D]/10 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="font-serif text-4xl font-semibold text-slate-900 sm:text-5xl"
+            className="text-3xl font-bold text-slate-900 sm:text-4xl"
           >
-            Experiences
+            Events
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-2 text-slate-500"
+            className="mt-2 text-sm text-slate-500"
           >
             Discover and book unforgettable events near you
           </motion.p>
@@ -134,20 +132,20 @@ export default function EventsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center"
+            className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center"
           >
             <div className="relative max-w-md flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search events or venues..."
-                className="h-11 rounded-xl pl-10"
+                className="h-11 rounded-lg pl-10 border-slate-200 focus-visible:ring-[#7B1E3D]/30"
               />
             </div>
             <div className="flex gap-3">
               <Select value={cityFilter} onValueChange={setCityFilter}>
-                <SelectTrigger className="h-11 w-[150px] rounded-xl">
+                <SelectTrigger className="h-11 w-[150px] rounded-lg border-slate-200">
                   <SelectValue placeholder="City" />
                 </SelectTrigger>
                 <SelectContent>
@@ -163,7 +161,7 @@ export default function EventsPage() {
                 value={categoryFilter}
                 onValueChange={setCategoryFilter}
               >
-                <SelectTrigger className="h-11 w-[170px] rounded-xl">
+                <SelectTrigger className="h-11 w-[170px] rounded-lg border-slate-200">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -205,8 +203,8 @@ export default function EventsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: i * 0.05 }}
                   >
-                    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:-translate-y-1 hover:shadow-soft-lg">
-                      <div className="relative aspect-[4/3] overflow-hidden bg-amber-50">
+                    <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-[#7B1E3D]/30">
+                      <div className="relative aspect-[4/3] overflow-hidden bg-[#FDF2F4]">
                         {event.poster_image_url ? (
                           <img
                             src={event.poster_image_url}
@@ -214,19 +212,19 @@ export default function EventsPage() {
                             className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center">
-                            <ImageOff className="h-10 w-10 text-wine-300" />
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#5C0F2A] to-[#9B1B3A]">
+                            <ImageOff className="h-10 w-10 text-white/50" />
                           </div>
                         )}
                         <div className="absolute left-3 top-3">
-                          <Badge className="bg-amber-500 text-xs font-semibold text-slate-900 shadow-sm">
+                          <Badge className="bg-[#7B1E3D] text-xs font-semibold text-white shadow-sm">
                             <CatIcon className="mr-1 h-3 w-3" />
                             {categoryMeta[event.category]?.label || 'Event'}
                           </Badge>
                         </div>
                       </div>
                       <div className="flex flex-1 flex-col p-4">
-                        <h3 className="font-serif text-lg font-semibold text-slate-900">
+                        <h3 className="font-bold text-base text-slate-900 line-clamp-2 group-hover:text-[#7B1E3D] transition">
                           {event.title}
                         </h3>
                         <p className="mt-1 text-xs text-slate-500">
@@ -246,13 +244,12 @@ export default function EventsPage() {
                             {format(parseISO(event.starts_at), 'h:mm a')}
                           </span>
                         </div>
-                        <div className="mt-auto flex items-center justify-between border-t border-slate-200 pt-3">
+                        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
                           <div>
                             {minPrice !== null ? (
                               <>
-                                <span className="font-serif text-2xl font-semibold text-slate-800">
+                                <span className="text-lg font-bold text-slate-900">
                                   {formatCurrency(minPrice, 'INR', 100)}
-
                                 </span>
                                 <span className="text-xs text-slate-500">
                                   {' '}
@@ -270,7 +267,7 @@ export default function EventsPage() {
                             onClick={() =>
                               navigate(`/booking/event/${event.id}`)
                             }
-                            className="rounded-full bg-amber-500 px-4 text-xs font-semibold text-slate-900 shadow-sm hover:bg-amber-600"
+                            className="rounded-lg bg-[#7B1E3D] hover:bg-[#5C0F2A] px-4 text-xs font-semibold text-white"
                           >
                             Book Now
                             <ArrowRight className="ml-1 h-3 w-3" />
@@ -294,10 +291,10 @@ export default function EventsPage() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50">
-        <CalendarDays className="h-8 w-8 text-amber-600" />
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#FDF2F4]">
+        <CalendarDays className="h-8 w-8 text-[#7B1E3D]" />
       </div>
-      <h3 className="font-serif text-xl font-semibold text-slate-900">
+      <h3 className="text-xl font-bold text-slate-900">
         No Events Found
       </h3>
       <p className="mt-2 max-w-sm text-sm text-slate-500">
