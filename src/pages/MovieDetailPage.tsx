@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Loader } from '@/components/common/Loader';
@@ -42,7 +42,8 @@ export default function MovieDetailPage() {
   const navigate = useNavigate();
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [searchParams] = useSearchParams();
+const city = searchParams.get('city') || 'Kochi';
   useEffect(() => {
     const fetchMovie = async () => {
       try {
@@ -84,7 +85,8 @@ export default function MovieDetailPage() {
     );
   }
 
-  const hasShowtimes = movie.venues && movie.venues.length > 0;
+  const visibleVenues = (movie.venues ?? []).filter((v) => v.city === city);
+const hasShowtimes = visibleVenues.length > 0;
 
   return (
     <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
@@ -155,7 +157,7 @@ export default function MovieDetailPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              {movie.venues?.map((v) => (
+              {visibleVenues.map((v) => (
                 <div key={v.venue_id} className="bg-white border border-slate-200 rounded-xl p-6">
                   <div className="flex items-start gap-3 border-b border-slate-200 pb-4 mb-4">
                     <MapPin className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
