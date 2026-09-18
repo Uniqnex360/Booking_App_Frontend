@@ -202,46 +202,56 @@ export default function SeatMapPage() {
   };
 
   const handleCheckout = async () => {
-    if (selectedSeats.length === 0) return;
-    setIsCommitLoading(true);
+  if (selectedSeats.length === 0) return;
+  setIsCommitLoading(true);
 
-    try {
-      const res = await unwrap<any>(
-        api.post(
-          `/bookings/hold`,
-          {
-            showtime_id: id,
-            seat_ids: selectedSeats.map((s) => s.seat_ref),
+  try {
+    const res = await unwrap<any>(
+      api.post(
+        `/bookings/hold`,
+        {
+          showtime_id: id,
+          seat_ids: selectedSeats.map((s) => s.seat_ref),
+        },
+        {
+          headers: {
+            "Idempotency-Key": idempotencyKeyRef.current,
           },
-          {
-            headers: {
-              "Idempotency-Key": idempotencyKeyRef.current,
-            },
-          }
-        )
+        }
+      )
+    );
+
+    if (res.status === "HELD") {
+      setHoldId(res.id);
+      setHeldUntil(new Date(res.held_until));
+
+      // Commit immediately — no payment gateway
+      const commitRes = await unwrap<any>(
+        api.post(`/bookings/${res.id}/commit`, {
+          payment_ref: `no-payment-${crypto.randomUUID()}`, // or omit if backend allows
+        })
       );
 
-      if (res.status === "HELD") {
-        setHoldId(res.id);
-        setHeldUntil(new Date(res.held_until));
-        await startRazorpayPayment(res);
-      } else {
-        toast.success(`Booking confirmed successfully!`);
-        navigate(`/profile`);
-      }
-    } catch (err: any) {
-      if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
-        toast.error("One or more selected seats were just taken. Refreshing...");
-        fetchSeatMap();
-      } else if (err.code === "HOLD_EXPIRED") {
-        toast.error("Hold expired. Please select seats again.");
-        fetchSeatMap();
-      } else {
-        toast.error(err.message || "Booking failed.");
-      }
-      setIsCommitLoading(false);
+      toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
+      navigate(`/profile`);
+    } else {
+      // Backend returned something other than HELD (e.g. immediately CONFIRMED)
+      toast.success(`Booking confirmed successfully!`);
+      navigate(`/profile`);
     }
-  };
+  } catch (err: any) {
+    if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
+      toast.error("One or more selected seats were just taken. Refreshing...");
+      fetchSeatMap();
+    } else if (err.code === "HOLD_EXPIRED") {
+      toast.error("Hold expired. Please select seats again.");
+      fetchSeatMap();
+    } else {
+      toast.error(err.message || "Booking failed.");
+    }
+    setIsCommitLoading(false);
+  }
+};
 
   // Organize seats into BookMyShow-style Price Tiers
   const tiers: { name: string; price_paise: number; rows: Record<string, SeatItem[]> }[] = [];
