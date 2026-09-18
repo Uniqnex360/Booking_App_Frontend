@@ -1,10 +1,12 @@
 import { api, unwrap } from './client';
-import type { Booking, CreateBookingPayload } from '@/types/booking.types';
+import type { Booking, BookingDetail, CreateBookingPayload } from '@/types/booking.types';
 
 export async function getBookings(): Promise<Booking[]> {
   return unwrap<Booking[]>(api.get('/bookings'));
 }
-
+export async function getBookingById(id: string): Promise<BookingDetail> {
+  return unwrap<BookingDetail>(api.get(`/bookings/${id}`));
+}
 export async function createBooking(
   payload: CreateBookingPayload
 ): Promise<Booking> {

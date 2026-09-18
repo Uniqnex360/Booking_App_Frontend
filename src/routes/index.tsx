@@ -16,6 +16,7 @@ import PartnerDashboard from '@/pages/PartnerDashboard';
 import AdminPartnersPage from '@/pages/AdminPartnersPage';
 import PartnerEventCreatePage from '@/pages/PartnerEventCreatePage';
 import AdminModerationPage from '@/pages/AdminModerationPage';
+import BookingDetailPage from "@/pages/BookingDetailPage";
 
 export function AppRoutes() {
   return (
@@ -36,6 +37,14 @@ export function AppRoutes() {
           </PrivateRoute>
         }
       />
+      <Route
+  path="/bookings/:id"
+  element={
+    <PrivateRoute>
+      <BookingDetailPage />
+    </PrivateRoute>
+  }
+/>
       <Route
         path="/profile"
         element={

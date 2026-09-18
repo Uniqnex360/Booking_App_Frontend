@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Header } from '@/components/Header';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader } from '@/components/common/Loader';
-import { useAuth } from '@/hooks/useAuth';
-import { getBookings } from '@/api/booking.api';
-import type { Booking } from '@/types/booking.types';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { Header } from "@/components/Header";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader } from "@/components/common/Loader";
+import { useAuth } from "@/hooks/useAuth";
+import { getBookings } from "@/api/booking.api";
+import type { Booking } from "@/types/booking.types";
 import {
   Wine,
   Calendar,
@@ -22,9 +22,9 @@ import {
   Bell,
   Star,
   TrendingUp,
-} from 'lucide-react';
-import { formatCurrency } from '@/utils/currencyFormatter';
-import { formatDate, isUpcoming } from '@/utils/dateFormatter';
+} from "lucide-react";
+import { formatCurrency } from "@/utils/currencyFormatter";
+import { formatDate, isUpcoming } from "@/utils/dateFormatter";
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
@@ -56,21 +56,19 @@ export default function ProfilePage() {
     );
   }
 
-  const initials = (user.full_name || user.email || 'U')
-    .split(' ')
+  const initials = (user.full_name || user.email || "U")
+    .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   const upcoming = bookings.filter(
-  (b) =>
-    (b.status === 'CONFIRMED' || b.status === 'HELD') &&
-    isUpcoming(b.starts_at ?? b.booking_date)
-);
-const past = bookings.filter(
-  (b) => !upcoming.some((u) => u.id === b.id)
-);
+    (b) =>
+      (b.status === "CONFIRMED" || b.status === "HELD") &&
+      isUpcoming(b.starts_at ?? b.booking_date),
+  );
+  const past = bookings.filter((b) => !upcoming.some((u) => u.id === b.id));
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
@@ -93,13 +91,11 @@ const past = bookings.filter(
             </Avatar>
             <div className="pb-2">
               <h1 className="font-serif text-3xl font-semibold text-slate-900">
-                {user.full_name || 'Member'}
+                {user.full_name || "Member"}
               </h1>
               <p className="text-sm text-slate-500">{user.email}</p>
               {user.phone && (
-                <p className="mt-0.5 text-sm text-slate-500">
-                  {user.phone}
-                </p>
+                <p className="mt-0.5 text-sm text-slate-500">{user.phone}</p>
               )}
             </div>
           </div>
@@ -109,8 +105,8 @@ const past = bookings.filter(
               size="sm"
               className="rounded-full border-slate-200 bg-white"
             >
-              <Link to ='/profile/edit'>
-              <Settings className="mr-2 h-4 w-4" />
+              <Link to="/profile/edit">
+                <Settings className="mr-2 h-4 w-4" />
               </Link>
               Edit profile
             </Button>
@@ -127,9 +123,9 @@ const past = bookings.filter(
         {/* Stats row */}
         <div className="mt-8 grid grid-cols-3 gap-4">
           {[
-            { label: 'Total bookings', value: bookings.length, icon: Calendar },
-            { label: 'Upcoming', value: upcoming.length, icon: Clock },
-            { label: 'Member since', value: '2026', icon: Star },
+            { label: "Total bookings", value: bookings.length, icon: Calendar },
+            { label: "Upcoming", value: upcoming.length, icon: Clock },
+            { label: "Member since", value: "2026", icon: Star },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -218,11 +214,7 @@ const past = bookings.filter(
                     </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       {past.map((booking) => (
-                        <BookingCard
-                          key={booking.id}
-                          booking={booking}
-                          past
-                        />
+                        <BookingCard key={booking.id} booking={booking} past />
                       ))}
                     </div>
                   </div>
@@ -295,12 +287,12 @@ function BookingCard({
   booking: Booking;
   past?: boolean;
 }) {
-  const isMovie = booking.type === 'MOVIE' && !!booking.starts_at;
+  const isMovie = booking.type === "MOVIE" && !!booking.starts_at;
 
   return (
     <div
       className={`group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:shadow-soft-lg ${
-        past ? 'opacity-80' : ''
+        past ? "opacity-80" : ""
       }`}
     >
       <div className="relative aspect-[16/9] overflow-hidden">
@@ -318,10 +310,10 @@ function BookingCard({
         <div className="absolute right-3 top-3">
           <Badge
             className={`rounded-full text-xs font-semibold ${
-              past ? 'bg-muted text-slate-500' : 'bg-amber-500 text-slate-900'
+              past ? "bg-muted text-slate-500" : "bg-amber-500 text-slate-900"
             }`}
           >
-            {past ? 'Completed' : 'Confirmed'}
+            {past ? "Completed" : "Confirmed"}
           </Badge>
         </div>
       </div>
@@ -337,33 +329,33 @@ function BookingCard({
               <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 mt-0.5">
                 {[booking.certificate, booking.format, booking.language]
                   .filter(Boolean)
-                  .join(' • ')}
+                  .join(" • ")}
               </p>
             )}
 
             {(booking.cinema_name || booking.screen_name) && (
               <p className="text-sm font-medium text-slate-700 mt-2">
                 {booking.cinema_name}
-                {booking.screen_name ? `, ${booking.screen_name}` : ''}
+                {booking.screen_name ? `, ${booking.screen_name}` : ""}
               </p>
             )}
 
             <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
               <Calendar className="h-3 w-3" />
               {new Date(booking.starts_at!).toLocaleString([], {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
               })}
             </p>
 
             {booking.seat_codes && booking.seat_codes.length > 0 && (
               <p className="text-xs text-slate-500 mt-1">
-                {booking.seat_codes.length}{' '}
-                {booking.seat_codes.length === 1 ? 'Ticket' : 'Tickets'}:{' '}
-                {booking.seat_codes.join(', ')}
+                {booking.seat_codes.length}{" "}
+                {booking.seat_codes.length === 1 ? "Ticket" : "Tickets"}:{" "}
+                {booking.seat_codes.join(", ")}
               </p>
             )}
 
@@ -392,7 +384,7 @@ function BookingCard({
               )}
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
-                {booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}
+                {booking.guests} {booking.guests === 1 ? "guest" : "guests"}
               </span>
             </div>
           </>
@@ -404,13 +396,13 @@ function BookingCard({
           </span>
           {!past && (
             <Button
-  asChild
-  size="sm"
-  variant="outline"
-  className="rounded-full border-amber-200 text-xs text-amber-700 hover:bg-amber-50"
->
-  <Link to={`/bookings/${booking.id}`}>View details</Link>
-</Button>
+              asChild
+              size="sm"
+              variant="outline"
+              className="rounded-full border-amber-200 text-xs text-amber-700 hover:bg-amber-50"
+            >
+              <Link to={`/bookings/${booking.id}`}>View details</Link>
+            </Button>
           )}
         </div>
       </div>
