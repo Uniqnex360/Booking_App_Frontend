@@ -207,19 +207,22 @@ export default function SeatMapPage() {
 
   try {
     const res = await unwrap<any>(
-      api.post(
-        `/bookings/hold`,
-        {
-          showtime_id: id,
-          seat_ids: selectedSeats.map((s) => s.seat_ref),
-        },
-        {
-          headers: {
-            "Idempotency-Key": idempotencyKeyRef.current,
-          },
-        }
-      )
-    );
+  api.post(
+    `/bookings/hold`,
+    {
+      showtime_id: id,
+      seat_ids: selectedSeats.map((s) => s.seat_ref),
+      seat_codes: selectedSeats.map(
+        (s) => s.code || `${s.row_label}${s.number}`
+      ),
+    },
+    {
+      headers: {
+        "Idempotency-Key": idempotencyKeyRef.current,
+      },
+    }
+  )
+);
 
     if (res.status === "HELD") {
       setHoldId(res.id);
