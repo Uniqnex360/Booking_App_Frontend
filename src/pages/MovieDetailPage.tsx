@@ -33,6 +33,8 @@ interface MovieDetail {
   poster_url: string | null;
   synopsis: string | null;
   venues?: VenueGroup[];
+   genre: string | null;             
+  release_date: string | null;
 }
 
 export default function MovieDetailPage() {
@@ -103,13 +105,39 @@ export default function MovieDetailPage() {
                 <ArrowLeft className="h-4 w-4" /> Back to Movies
               </button>
               <h1 className="text-4xl font-extrabold tracking-tight">{movie.title}</h1>
-              <div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-slate-700">
-                <span className="bg-neutral-100 px-2 py-0.5 rounded text-xs font-semibold">{movie.certificate}</span>
-                <span>•</span>
-                <span>{movie.duration_min} mins</span>
-                <span>•</span>
-                <span>{movie.language}</span>
-              </div>
+              {/* Rating + Genre row */}
+<div className="flex flex-wrap items-center gap-3 mt-3 text-sm text-slate-700">
+  <span className="bg-[#7B1E3D] text-white px-2 py-0.5 rounded text-xs font-bold">
+    ★ 8.5/10
+  </span>
+  {movie.genre && (
+    <>
+      <span>•</span>
+      <span>{movie.genre}</span>
+    </>
+  )}
+</div>
+
+{/* Format + Language + Duration */}
+<div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-slate-700">
+  <span className="bg-neutral-100 px-2 py-0.5 rounded text-xs font-semibold">{movie.certificate}</span>
+  <span>•</span>
+  <span>{Math.floor(movie.duration_min / 60)}h {movie.duration_min % 60}m</span>
+  <span>•</span>
+  <span>{movie.language}</span>
+  {movie.release_date && (
+    <>
+      <span>•</span>
+      <span>
+        Released {new Date(movie.release_date).toLocaleDateString('en-IN', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })}
+      </span>
+    </>
+  )}
+</div>
               <p className="mt-6 text-slate-700 text-sm max-w-2xl leading-relaxed">
                 {movie.synopsis || 'No synopsis available for this film.'}
               </p>
