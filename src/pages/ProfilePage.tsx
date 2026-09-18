@@ -404,12 +404,13 @@ function BookingCard({
           </span>
           {!past && (
             <Button
-              size="sm"
-              variant="outline"
-              className="rounded-full border-amber-200 text-xs text-amber-700 hover:bg-amber-50"
-            >
-              View details
-            </Button>
+  asChild
+  size="sm"
+  variant="outline"
+  className="rounded-full border-amber-200 text-xs text-amber-700 hover:bg-amber-50"
+>
+  <Link to={`/bookings/${booking.id}`}>View details</Link>
+</Button>
           )}
         </div>
       </div>
