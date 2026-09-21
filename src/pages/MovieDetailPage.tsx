@@ -178,7 +178,7 @@ const hasShowtimes = visibleVenues.length > 0;
                           {new Date(st.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                         <div className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider font-semibold">
-                          {st.format} • {st.language}
+                          {st.screen_name} • {st.format} • {st.language}
                         </div>
                       </Link>
                     ))}
