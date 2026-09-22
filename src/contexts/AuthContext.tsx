@@ -91,10 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      return { error: getErrorMessage(err) }; 
     }
   };
-  const initiateSignUp = async (payload: RegisterPayload) => {
+ const initiateSignUp = async (payload: RegisterPayload) => {
   try {
     const { data } = await api.post('/auth/register/initiate', payload);
-    return { userId: data.user_id, error: null };
+    return { userId: data.data?.user_id ?? null, error: null };
   } catch (err: any) {
     return { userId: null, error: getErrorMessage(err) };
   }
