@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/common/Loader';
 import { api, unwrap } from '@/api/client';
 import { formatRupees } from '@/utils/currencyFormatter';
+import { withCity } from '@/lib/cityLink';
 import {
   Search,
   Film,
@@ -244,7 +245,7 @@ export default function HomePage() {
               <p className="text-sm text-slate-500 mt-0.5">Now showing near you</p>
             </div>
             <Link
-              to="/movies"
+              to={withCity("/movies", city)}
               className="text-sm font-semibold text-[#7B1E3D] hover:text-[#5C0F2A] flex items-center gap-1"
             >
               See All <ArrowRight className="h-4 w-4" />
@@ -264,7 +265,7 @@ export default function HomePage() {
               {movies.map((m) => (
                 <Link
                   key={m.id}
-                  to={`/movies/${m.id}`}
+                  to={withCity(`/movies/${m.id}`, city)}
                   className="snap-start shrink-0 w-[140px] sm:w-[160px] md:w-[180px] group"
                 >
                   <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-slate-200 shadow-sm">
@@ -332,7 +333,7 @@ export default function HomePage() {
               <p className="text-sm text-slate-500 mt-0.5">Concerts, plays & experiences</p>
             </div>
             <Link
-              to="/events"
+              to={withCity("/events", city)}
               className="text-sm font-semibold text-[#7B1E3D] hover:text-[#5C0F2A] flex items-center gap-1"
             >
               See All <ArrowRight className="h-4 w-4" />
@@ -348,7 +349,7 @@ export default function HomePage() {
               {events.map((e) => (
                 <Link
                   key={e.id}
-                  to={`/booking/event/${e.id}`}
+                  to={withCity(`/booking/event/${e.id}`, city)}
                   className="snap-start shrink-0 w-[260px] sm:w-[280px] group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-[#7B1E3D]/30 transition"
                 >
                   <div className="aspect-[16/9] bg-slate-100 overflow-hidden">

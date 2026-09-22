@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, FormEvent } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { withCity } from '@/lib/cityLink';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
@@ -164,7 +165,7 @@ const setCity = (next: string) => {
       {/* ── SINGLE NAV ROW (BMS-style) ── */}
       <nav className="mx-auto flex max-w-[1280px] items-center gap-3 px-4 sm:px-6 h-16">
         {/* Logo */}
-        <Link to="/" className="group flex items-center gap-2.5 shrink-0">
+        <Link to={withCity("/", city)} className="group flex items-center gap-2.5 shrink-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#7B1E3D] to-[#9B1B3A] shadow-sm transition-transform group-hover:scale-105">
             <Wine className="h-4.5 w-4.5 text-white" strokeWidth={2.2} />
           </div>
@@ -233,7 +234,7 @@ const setCity = (next: string) => {
                         {results.movies.map((m) => (
                           <Link
                             key={m.id}
-                            to={`/movies/${m.id}`}
+                            to={withCity(`/movies/${m.id}`, city)}
                             onClick={() => setShowDropdown(false)}
                             className="flex items-center gap-3 p-2 hover:bg-[#FDF2F4] rounded-lg transition group"
                           >
@@ -263,7 +264,7 @@ const setCity = (next: string) => {
                         {results.events.map((e) => (
                           <Link
                             key={e.id}
-                            to={`/booking/event/${e.id}`}
+                            to={withCity(`/booking/event/${e.id}`, city)}
                             onClick={() => setShowDropdown(false)}
                             className="flex items-center gap-3 p-2 hover:bg-[#FDF2F4] rounded-lg transition group"
                           >
@@ -293,7 +294,7 @@ const setCity = (next: string) => {
           {navLinks.map((link, i) => (
             <Link
               key={`${link.href}-${i}`}
-              to={link.href}
+              to={withCity(link.href, city)}
               className={`relative text-sm font-semibold transition-colors ${
                 location.pathname.startsWith(link.href)
                   ? 'text-[#7B1E3D]'
@@ -468,7 +469,7 @@ const setCity = (next: string) => {
               {results.movies.map((m) => (
                 <Link
                   key={m.id}
-                  to={`/movies/${m.id}`}
+                  to={withCity(`/movies/${m.id}`, city)}
                   onClick={() => setMobileSearchOpen(false)}
                   className="flex items-center gap-2 p-2 hover:bg-slate-50"
                 >
@@ -479,7 +480,7 @@ const setCity = (next: string) => {
               {results.events.map((e) => (
                 <Link
                   key={e.id}
-                  to={`/booking/event/${e.id}`}
+                  to={withCity(`/booking/event/${e.id}`, city)}
                   onClick={() => setMobileSearchOpen(false)}
                   className="flex items-center gap-2 p-2 hover:bg-slate-50"
                 >

@@ -5,6 +5,7 @@ import { Footer } from '@/components/Footer';
 import { Loader } from '@/components/common/Loader';
 import { api, unwrap } from '@/api/client';
 import { ArrowLeft, Clock, Calendar, MapPin } from 'lucide-react';
+import { withCity } from '@/lib/cityLink';
 
 interface ShowtimeSlot {
   id: string;
@@ -171,7 +172,7 @@ const hasShowtimes = visibleVenues.length > 0;
                     {v.showtimes.map((st) => (
                       <Link
                         key={st.id}
-                        to={`/showtimes/${st.id}/seat-map`}
+                        to={withCity(`/showtimes/${st.id}/seat-map`, city)}
                         className="bg-neutral-50 border border-slate-200 hover:border-amber-500 rounded-lg py-2.5 px-4 text-center transition group min-w-[120px]"
                       >
                         <div className="font-bold text-sm text-slate-800 group-hover:text-amber-500">
