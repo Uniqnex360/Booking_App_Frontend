@@ -192,7 +192,12 @@ export default function PartnerDashboard() {
       poster_image_url: event.poster_image_url || '',
     });
   };
-
+useEffect(() => {
+  if (partner && partner.status !== 'APPROVED') {
+    toast.error('Your partner account is not approved yet.');
+    navigate('/partner/dashboard');
+  }
+}, [partner]);
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingEvent) return;
@@ -251,9 +256,17 @@ export default function PartnerDashboard() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">{partner?.business_name || 'Partner Dashboard'}</h1>
-              <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
-                <CheckCircle2 className="h-3 w-3 mr-1" /> Approved
-              </Badge>
+              <Badge className={
+  partner?.status === 'APPROVED'
+    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold'
+   : partner?.status === 'PENDING_APPROVAL'
+
+    ? 'bg-amber-50 text-amber-700 border border-amber-200 font-bold'
+    : 'bg-slate-100 text-slate-600 border border-slate-200 font-bold'
+}>
+  <CheckCircle2 className="h-3 w-3 mr-1" />
+  {partner?.status === 'APPROVED' ? 'Approved' : partner?.status === 'PENDING_APPROVAL' ? 'Pending Approval' : partner?.status}
+</Badge>
             </div>
             <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-500 mt-2">
               <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-amber-600" /> {partner?.city}</span>
@@ -261,9 +274,14 @@ export default function PartnerDashboard() {
               <span className="flex items-center gap-1"><Store className="h-3.5 w-3.5 text-amber-600" /> {partnerTypeMeta[partner?.partner_type || 'event_organiser'].label}</span>
             </div>
           </div>
-          <Button onClick={() => navigate('/partner/events/new')} className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl flex items-center gap-2 shadow-sm">
-            <Plus className="h-4 w-4" /> Host New Event
-          </Button>
+          <Button
+  onClick={() => navigate('/partner/events/new')}
+  disabled={partner?.status !== 'APPROVED'}
+  title={partner?.status !== 'APPROVED' ? 'Wait for admin approval first' : ''}
+  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  <Plus className="h-4 w-4" /> Host New Event
+</Button>
         </div>
 
         {/* Tabs */}

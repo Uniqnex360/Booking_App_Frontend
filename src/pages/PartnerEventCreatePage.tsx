@@ -205,13 +205,21 @@ export default function PartnerEventCreatePage() {
         description: "It is now pending admin approval.",
       });
       navigate("/partner/dashboard");
-    } catch {
-      toast.error("Failed to create event", {
-        description: "Please check your details and try again.",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    }  catch (err: any) {
+  const status = err?.response?.status;
+  if (status === 403) {
+    toast.error("Account not approved", {
+      description: "Your partner account must be approved before hosting events.",
+    });
+    navigate("/partner/dashboard");
+  } else {
+    toast.error("Failed to create event", {
+      description: "Please check your details and try again.",
+    });
+  }
+} finally {
+  setSubmitting(false);
+}
   };
   const startsAt = watch("starts_at");
   const endsAt = watch("ends_at");
