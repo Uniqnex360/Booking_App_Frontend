@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +11,8 @@ export default function VerifyOtpPage() {
   
   // 1. Extract EVERYTHING from context
   const { signInWithFirebase, verifySignUp } = useAuthContext();
-
-  // 2. Extract URL Parameters
-  const mode = searchParams.get('mode'); // 'signup' or null (login)
-  const phone = searchParams.get('phone');
-  const email = searchParams.get('email');
-  const userId = searchParams.get('user_id');
+const { mode, email, userId } = (useLocation().state as any) || {};
+const phone = searchParams.get('phone'); // keep, phone path unaffected
 
   // 3. Component State
   const [code, setCode] = useState('');

@@ -65,7 +65,7 @@
     setError(apiError);
   } else if (userId) {
     // 2. Navigate to OTP page passing user_id and email in the URL
-    navigate(`/verify-otp?mode=signup&email=${encodeURIComponent(email)}&user_id=${userId}`);
+    navigate('/verify-otp', { state: { mode: 'signup', email, userId } });
   }
 };
 
