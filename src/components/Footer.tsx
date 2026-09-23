@@ -1,5 +1,6 @@
+// src/components/Footer.tsx
 import { Link } from 'react-router-dom';
-import { Wine, Facebook, Twitter, Instagram, Youtube } from 'lucide-react';
+import { Wine, Facebook, Twitter, Instagram, Youtube, HeadphonesIcon, TicketIcon, MailIcon } from 'lucide-react';
 
 const footerSections = [
   {
@@ -12,7 +13,14 @@ const footerSections = [
   },
   {
     title: 'Help & Support',
-    links: ['About Us', 'Contact Us', 'Terms & Conditions', 'Privacy Policy', 'FAQs'],
+    // Notice the updated path for Terms & Conditions
+    links: [
+      { name: 'About Us', path: '#' },
+      { name: 'Contact Us', path: '#' },
+      { name: 'Terms & Conditions', path: '/terms' },
+      { name: 'Privacy Policy', path: '#' },
+      { name: 'FAQs', path: '#' }
+    ],
   },
 ];
 
@@ -25,61 +33,74 @@ const socials = [
 
 export function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-white text-slate-700 pt-12 pb-8">
+    <footer className="bg-[#313035] text-[#cccccc] pt-8 pb-12 mt-auto">
       <div className="mx-auto max-w-[1280px] px-4 sm:px-6">
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5 pb-10 border-b border-slate-100">
-          <div className="lg:col-span-2">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#7B1E3D] to-[#9B1B3A]">
-                <Wine className="h-4 w-4 text-white" strokeWidth={2.2} />
-              </div>
-              <span className="text-xl font-bold text-[#7B1E3D]">Vyhbz</span>
-            </Link>
-            <p className="mt-3 max-w-xs text-xs leading-relaxed text-slate-500">
+        
+        {/* BMS Style Top Strip: Support & Contact */}
+        <div className="flex flex-col md:flex-row items-center justify-around py-6 border-b border-[#444444] gap-6 mb-8 text-center">
+          <div className="flex flex-col items-center group cursor-pointer">
+            <div className="text-[#888888] group-hover:text-white transition-colors mb-2">
+              <HeadphonesIcon size={36} strokeWidth={1.5} />
+            </div>
+            <span className="text-xs font-semibold text-[#888888] group-hover:text-white transition-colors">24/7 CUSTOMER CARE</span>
+          </div>
+          <div className="flex flex-col items-center group cursor-pointer">
+            <div className="text-[#888888] group-hover:text-white transition-colors mb-2">
+              <TicketIcon size={36} strokeWidth={1.5} />
+            </div>
+            <span className="text-xs font-semibold text-[#888888] group-hover:text-white transition-colors">RESEND BOOKING CONFIRMATION</span>
+          </div>
+          <div className="flex flex-col items-center group cursor-pointer">
+            <div className="text-[#888888] group-hover:text-white transition-colors mb-2">
+              <MailIcon size={36} strokeWidth={1.5} />
+            </div>
+            <span className="text-xs font-semibold text-[#888888] group-hover:text-white transition-colors">SUBSCRIBE TO NEWSLETTER</span>
+          </div>
+        </div>
+
+        {/* Links Grid */}
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 pb-10">
+          <div className="lg:col-span-1">
+            <p className="mb-4 text-xs font-bold uppercase tracking-wider text-white">
+              Vyhbz App
+            </p>
+            <p className="max-w-xs text-xs leading-relaxed text-[#888888] mb-5">
               Your gateway to premium cinema experiences, IMAX shows, live concerts, and fine dining reservations.
             </p>
-
             {/* App badges */}
-            <div className="mt-5 flex gap-2">
-              <a href="#" className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 hover:border-[#7B1E3D]/40 transition">
+            <div className="flex flex-col gap-2">
+              <a href="#" className="flex items-center gap-2 rounded-md border border-[#444444] px-3 py-2 hover:border-white transition max-w-[140px]">
                 <span className="text-[10px] leading-tight">
-                  <span className="block text-slate-400">Get it on</span>
-                  <span className="block font-bold text-slate-800">Google Play</span>
+                  <span className="block text-[#888888]">Get it on</span>
+                  <span className="block font-bold text-white">Google Play</span>
                 </span>
               </a>
-              <a href="#" className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 hover:border-[#7B1E3D]/40 transition">
+              <a href="#" className="flex items-center gap-2 rounded-md border border-[#444444] px-3 py-2 hover:border-white transition max-w-[140px]">
                 <span className="text-[10px] leading-tight">
-                  <span className="block text-slate-400">Download on</span>
-                  <span className="block font-bold text-slate-800">App Store</span>
+                  <span className="block text-[#888888]">Download on</span>
+                  <span className="block font-bold text-white">App Store</span>
                 </span>
               </a>
             </div>
-
-           {/* Socials */}
-<div className="mt-5 flex gap-3">
-  {socials.map((s, i) => (
-    <a
-      key={i}
-      href={s.href}
-      className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-[#7B1E3D] hover:text-white transition"
-    >
-      <s.icon className="h-3.5 w-3.5" />
-    </a>
-  ))}
-</div>
- </div>  
+          </div>
 
           {footerSections.map((col) => (
             <div key={col.title}>
-              <p className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-900">
+              <p className="mb-4 text-xs font-bold uppercase tracking-wider text-white">
                 {col.title}
               </p>
               <ul className="space-y-2">
-                {col.links.map((link) => (
-                  <li key={link}>
-                    <Link to="#" className="text-xs text-slate-500 transition-colors hover:text-[#7B1E3D]">
-                      {link}
-                    </Link>
+                {col.links.map((link, idx) => (
+                  <li key={idx}>
+                    {typeof link === 'string' ? (
+                      <Link to="#" className="text-xs text-[#888888] transition-colors hover:text-white">
+                        {link}
+                      </Link>
+                    ) : (
+                      <Link to={link.path} className="text-xs text-[#888888] transition-colors hover:text-white">
+                        {link.name}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -87,13 +108,41 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Vyhbz App. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link to="#" className="hover:text-[#7B1E3D]">Privacy Policy</Link>
-            <Link to="#" className="hover:text-[#7B1E3D]">Terms of Service</Link>
-            <Link to="#" className="hover:text-[#7B1E3D]">Cookie Settings</Link>
+        {/* BMS Centered Logo & Socials with Horizontal Lines */}
+        <div className="relative flex items-center justify-center py-6 my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-[#444444]"></div>
           </div>
+          <div className="relative bg-[#313035] px-6 flex items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F84464]">
+              <Wine className="h-5 w-5 text-white" strokeWidth={2} />
+            </div>
+            <span className="text-2xl font-bold tracking-wide text-white">Vyhbz</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center gap-4 mb-8">
+          {socials.map((s, i) => (
+            <a
+              key={i}
+              href={s.href}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#444444] text-white hover:bg-white hover:text-[#313035] transition-colors duration-300"
+            >
+              <s.icon className="h-5 w-5" />
+            </a>
+          ))}
+        </div>
+
+        {/* Copyright & Bottom Links */}
+        <div className="flex flex-col items-center justify-center text-[11px] text-[#888888] text-center">
+          <p className="mb-2">
+            Copyright {new Date().getFullYear()} © Vyhbz Entertainment Pvt. Ltd. All Rights Reserved.
+          </p>
+          <p className="max-w-4xl mx-auto leading-relaxed">
+            The content and images used on this site are copyright protected and copyrights vests with the respective owners. 
+            The usage of the content and images on this website is intended to promote the works and no endorsement of the artist shall be implied. 
+            Unauthorized use is prohibited and punishable by law.
+          </p>
         </div>
       </div>
     </footer>

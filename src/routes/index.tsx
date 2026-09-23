@@ -19,6 +19,7 @@ import AdminModerationPage from '@/pages/AdminModerationPage';
 import BookingDetailPage from "@/pages/BookingDetailPage";
 import VerifyOtpPage from "@/pages/VerifyOtpPage";
 import BuyTicketsPage from "@/pages/BuyTicketsPage";
+import TermsAndConditionsPage from "@/components/TermsAndConditionsPage";
 
 export function AppRoutes() {
   return (
@@ -28,6 +29,7 @@ export function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movies/:id" element={<MovieDetailPage />} />
+      <Route path="/terms" element={<TermsAndConditionsPage />} />
       <Route path="/showtimes/:id/seat-map" element={<PrivateRoute><SeatMapPage /></PrivateRoute>} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/restaurants" element={<RestaurantsPage />} />
