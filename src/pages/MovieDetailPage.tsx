@@ -5,8 +5,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
-import { withCity } from "@/utils/withCity";
 import { MapPin, Minus, Plus, X } from "lucide-react";
+import { withCity } from "@/lib/cityLink";
 
 interface ShowtimeSlot {
   id: string;
