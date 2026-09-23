@@ -124,9 +124,14 @@ export default function MovieDetailPage() {
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  
+  // Ticket booking states
+  const [showGlobalTicketModal, setShowGlobalTicketModal] = useState(false);
+  const [hasPreSelectedTickets, setHasPreSelectedTickets] = useState(false);
+  const [ticketCount, setTicketCount] = useState(2);
+  
   const [pendingSlot, setPendingSlot] = useState<ShowtimeSlot | null>(null);
   const [pendingVenue, setPendingVenue] = useState<VenueGroup | null>(null);
-  const [ticketCount, setTicketCount] = useState(2);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filters
@@ -236,14 +241,22 @@ export default function MovieDetailPage() {
         .filter((v) => v.showtimes.length > 0)
     : [];
 
-  const confirmSeatSelection = () => {
-    if (!pendingSlot) return;
+  // Directly navigate to seat layout
+  const handleDirectNavigation = (slotId: string) => {
     navigate(
       withCity(
-        `/showtimes/${pendingSlot.id}/seat-map?qty=${ticketCount}`,
+        `/showtimes/${slotId}/seat-map?qty=${ticketCount}`,
         city
       )
     );
+  };
+
+  const handleGlobalTicketConfirm = () => {
+    setShowGlobalTicketModal(false);
+    setHasPreSelectedTickets(true);
+    // Smooth scroll down to showtimes
+    const el = document.getElementById("showtimes-section");
+    el?.scrollIntoView({ behavior: "smooth" });
   };
 
   const toggleDropdown = (name: "langFormat" | "time") =>
@@ -261,7 +274,7 @@ export default function MovieDetailPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      {/* ─── Hero Banner (BMS dark gradient with backdrop) ─── */}
+      {/* ─── Hero Banner ─── */}
       <div
         className="relative pt-16 lg:pt-[72px]"
         style={{
@@ -269,7 +282,6 @@ export default function MovieDetailPage() {
             "linear-gradient(90deg, rgba(26,26,46,0.98) 0%, rgba(26,26,46,0.85) 50%, rgba(26,26,46,0.98) 100%)",
         }}
       >
-        {/* Blurred backdrop */}
         {movie.poster_url && (
           <div
             className="absolute inset-0 opacity-20 bg-cover bg-center blur-2xl"
@@ -312,7 +324,7 @@ export default function MovieDetailPage() {
                 {movie.title}
               </h1>
 
-              {/* Rating pill (BMS style large) */}
+              {/* Rating Card */}
               <div className="mt-4 bg-[#333338] rounded-xl px-5 py-3 inline-flex items-center gap-4">
                 <div className="flex items-center gap-2">
                   <Star className="h-6 w-6 text-[#F5C518] fill-[#F5C518]" />
@@ -362,10 +374,7 @@ export default function MovieDetailPage() {
               {/* Action buttons */}
               <div className="flex items-center gap-3 mt-6">
                 <button
-                  onClick={() => {
-                    const el = document.getElementById("showtimes-section");
-                    el?.scrollIntoView({ behavior: "smooth" });
-                  }}
+                  onClick={() => setShowGlobalTicketModal(true)}
                   className="bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold text-sm px-10 py-3 rounded-md transition"
                 >
                   Book tickets
@@ -410,7 +419,7 @@ export default function MovieDetailPage() {
           </div>
         ) : (
           <>
-            {/* ─── Date strip full width white bar ─── */}
+            {/* ─── Date strip ─── */}
             <div className="sticky top-[56px] lg:top-[72px] z-30 bg-white shadow-sm border-b border-gray-200">
               <div className="max-w-[1240px] mx-auto px-4">
                 <div className="flex overflow-x-auto scrollbar-none">
@@ -444,7 +453,7 @@ export default function MovieDetailPage() {
               </div>
             </div>
 
-            {/* ─── Filters bar (BMS style with pills) ─── */}
+            {/* ─── Filters bar ─── */}
             <div className="bg-white border-b border-gray-200">
               <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
                 {/* Language/Format */}
@@ -552,11 +561,27 @@ export default function MovieDetailPage() {
                   )}
                 </div>
 
-                {/* Price filter (dummy for BMS look) */}
+                {/* Price filter placeholder */}
                 <button className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border bg-white text-gray-700 border-gray-300 hover:border-gray-400">
                   Price
                   <ChevronDown className="h-3 w-3" />
                 </button>
+
+                {/* Pre-selected Tickets Display Indicator */}
+                {hasPreSelectedTickets && (
+                  <div className="flex items-center gap-2 bg-[#F84464]/10 text-[#F84464] px-4 py-1.5 rounded-full border border-[#F84464]/20 text-xs font-semibold">
+                    <span>{ticketCount} Tickets Selected</span>
+                    <button 
+                      onClick={() => {
+                        setHasPreSelectedTickets(false);
+                        setShowGlobalTicketModal(true);
+                      }} 
+                      className="underline text-[10px] hover:text-[#C73854]"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
 
                 {/* Search cinemas */}
                 <div className="relative ml-auto">
@@ -643,9 +668,14 @@ export default function MovieDetailPage() {
                               key={slot.id}
                               onClick={() => {
                                 if (isPast) return;
-                                setTicketCount(2);
-                                setPendingSlot(slot);
-                                setPendingVenue(venue);
+                                if (hasPreSelectedTickets) {
+                                  // Direct Instant Navigation
+                                  handleDirectNavigation(slot.id);
+                                } else {
+                                  // Fallback: Show tickets modal if user manually scrolled down
+                                  setPendingSlot(slot);
+                                  setPendingVenue(venue);
+                                }
                               }}
                               disabled={isPast}
                               className={`group relative border rounded px-4 py-2 min-w-[100px] text-center transition ${
@@ -690,7 +720,82 @@ export default function MovieDetailPage() {
 
       <Footer />
 
-      {/* ─── Ticket Selection Modal ─── */}
+      {/* ─── Global Ticket Selection Modal (Triggered by Hero Booking Button) ─── */}
+      {showGlobalTicketModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
+          onClick={() => setShowGlobalTicketModal(false)}
+        >
+          <div
+            className="bg-white rounded-t-2xl sm:rounded-lg w-full sm:max-w-[440px] overflow-hidden shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="bg-white px-6 pt-5 pb-4 relative border-b border-gray-100">
+              <button
+                onClick={() => setShowGlobalTicketModal(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              <h3 className="text-gray-900 font-bold text-lg pr-8">
+                How Many Seats?
+              </h3>
+            </div>
+
+            {/* Ticket count illustrations */}
+            <div className="px-6 py-8 bg-white">
+              <div className="flex items-center justify-center mb-8">
+                <div className="w-40 h-24 relative flex items-end justify-center">
+                  <div className="flex items-end gap-1">
+                    {Array.from({ length: ticketCount }, (_, i) => (
+                      <div
+                        key={i}
+                        className="w-6 h-10 bg-[#F84464] rounded-t-full relative"
+                        style={{
+                          background:
+                            "linear-gradient(180deg, #F84464 0%, #C73854 100%)",
+                        }}
+                      >
+                        <div className="w-4 h-4 bg-[#FDBB9C] rounded-full absolute -top-3 left-1/2 -translate-x-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Number pills */}
+              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
+                  (n) => (
+                    <button
+                      key={n}
+                      onClick={() => setTicketCount(n)}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border transition ${
+                        ticketCount === n
+                          ? "bg-[#F84464] text-white border-[#F84464]"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  )
+                )}
+              </div>
+
+              <button
+                onClick={handleGlobalTicketConfirm}
+                className="w-full bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold rounded py-3 mt-8 transition text-sm flex items-center justify-center gap-2"
+              >
+                Proceed to Showtimes
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Fallback Ticket Selection Modal (Only shown if showtimes were clicked without clicking 'Book Tickets' first) ─── */}
       {pendingSlot && (
         <div
           className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
@@ -713,11 +818,10 @@ export default function MovieDetailPage() {
               </h3>
             </div>
 
-            {/* Seat count selector - BMS uses illustrated character but we'll use styled circles */}
+            {/* Seat count selector */}
             <div className="px-6 py-8 bg-white">
               <div className="flex items-center justify-center mb-8">
                 <div className="w-40 h-24 relative flex items-end justify-center">
-                  {/* Simple people icons row representing seat count */}
                   <div className="flex items-end gap-1">
                     {Array.from({ length: ticketCount }, (_, i) => (
                       <div
@@ -779,7 +883,11 @@ export default function MovieDetailPage() {
               </div>
 
               <button
-                onClick={confirmSeatSelection}
+                onClick={() => {
+                  if (pendingSlot) {
+                    handleDirectNavigation(pendingSlot.id);
+                  }
+                }}
                 className="w-full bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold rounded py-3 mt-6 transition text-sm flex items-center justify-center gap-2"
               >
                 Select Seats
