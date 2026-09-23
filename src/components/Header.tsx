@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, FormEvent } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { withCity } from '@/lib/cityLink';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,15 +25,15 @@ import {
   Sparkles,
   X,
   Search,
-  MapPin,
   ChevronDown,
   Film,
   Music,
-  Utensils,
   Loader2,
   ChevronRight,
 } from 'lucide-react';
 import { detectCity, SUPPORTED_CITIES } from '@/utils/geolocation';
+
+const CITY_STORAGE_KEY = 'vyhbz_selected_city';
 
 const navLinks = [
   { href: '/movies', label: 'Movies' },
@@ -47,6 +47,22 @@ interface SearchResults {
   restaurants: any[];
 }
 
+function getStoredCity(): string | null {
+  try {
+    return localStorage.getItem(CITY_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function storeCity(city: string) {
+  try {
+    localStorage.setItem(CITY_STORAGE_KEY, city);
+  } catch {
+    // ignore
+  }
+}
+
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,29 +70,61 @@ export function Header() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
-  const city = searchParams.get('city') || 'Kochi';
+
+  // Priority: URL param → localStorage → default
+  const cityFromUrl = searchParams.get('city');
+  const city = cityFromUrl || getStoredCity() || 'Kochi';
 
   const setCity = (next: string) => {
+    storeCity(next);
     const p = new URLSearchParams(searchParams);
     p.set('city', next);
-    setSearchParams(p);
+    setSearchParams(p, { replace: true });
   };
+
+  // Sync URL ↔ storage. Never let IP override a stored/manual choice.
+  useEffect(() => {
+    if (cityFromUrl) {
+      // URL wins — remember it
+      storeCity(cityFromUrl);
+      return;
+    }
+
+    const stored = getStoredCity();
+    if (stored) {
+      // Restore user's last choice into the URL (no IP)
+      const p = new URLSearchParams(searchParams);
+      p.set('city', stored);
+      setSearchParams(p, { replace: true });
+      return;
+    }
+
+    // First visit only: try geolocation once
+    detectCity().then((c) => {
+      if (!c) return;
+      // Only apply if user still has no stored city
+      if (!getStoredCity() && !new URLSearchParams(window.location.search).get('city')) {
+        storeCity(c);
+        const p = new URLSearchParams(window.location.search);
+        p.set('city', c);
+        setSearchParams(p, { replace: true });
+      }
+    });
+  }, []); // run once on mount
 
   // Global Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [results, setResults] = useState<SearchResults>({ movies: [], events: [], restaurants: [] });
+  const [results, setResults] = useState<SearchResults>({
+    movies: [],
+    events: [],
+    restaurants: [],
+  });
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (searchParams.get('city')) return;
-    detectCity().then((c) => { if (c) setCity(c); });
-  }, []);
-
-  // Close dropdown on outside click or route change
   useEffect(() => {
     setShowDropdown(false);
     setMobileSearchOpen(false);
@@ -92,7 +140,6 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced Live Global Search across Movies, Events, Restaurants
   useEffect(() => {
     const q = searchQuery.trim().toLowerCase();
     if (q.length < 2) {
@@ -114,18 +161,26 @@ export function Header() {
 
         const rawEvents = Array.isArray(eventsRes) ? eventsRes : eventsRes.items || [];
 
-        const filteredMovies = moviesRes.filter((m: any) =>
-          m.title.toLowerCase().includes(q) || (m.language && m.language.toLowerCase().includes(q))
-        ).slice(0, 4);
+        const filteredMovies = moviesRes
+          .filter(
+            (m: any) =>
+              m.title.toLowerCase().includes(q) ||
+              (m.language && m.language.toLowerCase().includes(q))
+          )
+          .slice(0, 4);
 
-        const filteredEvents = rawEvents.filter((e: any) =>
-          e.title.toLowerCase().includes(q) || (e.category && e.category.toLowerCase().includes(q))
-        ).slice(0, 4);
+        const filteredEvents = rawEvents
+          .filter(
+            (e: any) =>
+              e.title.toLowerCase().includes(q) ||
+              (e.category && e.category.toLowerCase().includes(q))
+          )
+          .slice(0, 4);
 
         setResults({
           movies: filteredMovies,
           events: filteredEvents,
-          restaurants: [], 
+          restaurants: [],
         });
       } catch (err) {
         console.error('Global search error', err);
@@ -137,7 +192,10 @@ export function Header() {
     return () => clearTimeout(timer);
   }, [searchQuery, city]);
 
-  const hasResults = results.movies.length > 0 || results.events.length > 0 || results.restaurants.length > 0;
+  const hasResults =
+    results.movies.length > 0 ||
+    results.events.length > 0 ||
+    results.restaurants.length > 0;
 
   const initials = (user?.full_name || user?.email || 'U')
     .split(' ')
@@ -150,15 +208,14 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
       {/* ── TIER 1: PRIMARY NAV ── */}
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16">
-        {/* Logo */}
-        <Link to={withCity("/", city)} className="flex items-center gap-2 shrink-0">
+        <Link to={withCity('/', city)} className="flex items-center gap-2 shrink-0">
           <MonitorPlay className="h-7 w-7 text-[#F84464]" />
           <span className="text-[22px] font-bold tracking-tight text-[#333333] hidden sm:block mt-0.5">
             Vyhbz
           </span>
         </Link>
 
-        {/* Desktop Search Bar (BMS-style wide centered search) */}
+        {/* Desktop Search */}
         <div className="relative hidden md:flex flex-1 max-w-[600px] ml-4" ref={dropdownRef}>
           <div className="flex w-full items-center bg-gray-50 focus-within:bg-white border border-gray-200 focus-within:border-[#F84464]/50 rounded-md transition shadow-inner shadow-gray-100/50">
             <Search className="h-4 w-4 text-gray-400 ml-3 shrink-0" />
@@ -183,16 +240,15 @@ export function Header() {
             ) : null}
           </div>
 
-          {/* GLOBAL SEARCH RESULTS DROPDOWN */}
           {showDropdown && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50 max-h-[480px] overflow-y-auto">
               {!isSearching && !hasResults ? (
                 <div className="p-6 text-center text-gray-500 text-sm">
-                  No matches found for "<span className="font-semibold">{searchQuery}</span>"
+                  No matches found for &quot;
+                  <span className="font-semibold">{searchQuery}</span>&quot;
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
-                  {/* MOVIES SECTION */}
                   {results.movies.length > 0 && (
                     <div className="p-2">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1.5">
@@ -207,13 +263,21 @@ export function Header() {
                             className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md transition group"
                           >
                             <div className="h-10 w-7 bg-gray-200 rounded overflow-hidden shrink-0">
-                              {m.poster_url && <img src={m.poster_url} alt={m.title} className="w-full h-full object-cover" />}
+                              {m.poster_url && (
+                                <img
+                                  src={m.poster_url}
+                                  alt={m.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#F84464]">
                                 {m.title}
                               </p>
-                              <p className="text-[11px] text-gray-500 truncate">{m.language} • {m.certificate}</p>
+                              <p className="text-[11px] text-gray-500 truncate">
+                                {m.language} • {m.certificate}
+                              </p>
                             </div>
                           </Link>
                         ))}
@@ -221,7 +285,6 @@ export function Header() {
                     </div>
                   )}
 
-                  {/* EVENTS SECTION */}
                   {results.events.length > 0 && (
                     <div className="p-2">
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-wider px-2 mb-1.5 mt-1">
@@ -236,13 +299,21 @@ export function Header() {
                             className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-md transition group"
                           >
                             <div className="h-8 w-10 bg-gray-200 rounded overflow-hidden shrink-0">
-                              {e.cover_image_url && <img src={e.cover_image_url} alt={e.title} className="w-full h-full object-cover" />}
+                              {e.cover_image_url && (
+                                <img
+                                  src={e.cover_image_url}
+                                  alt={e.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#F84464]">
                                 {e.title}
                               </p>
-                              <p className="text-[11px] text-gray-500 truncate">{e.category} • {e.city}</p>
+                              <p className="text-[11px] text-gray-500 truncate">
+                                {e.category} • {e.city}
+                              </p>
                             </div>
                           </Link>
                         ))}
@@ -255,10 +326,8 @@ export function Header() {
           )}
         </div>
 
-        {/* Right side actions */}
+        {/* Right side */}
         <div className="flex items-center gap-4 shrink-0 ml-auto md:ml-4">
-          
-          {/* Mobile Search Toggle */}
           <button
             type="button"
             className="md:hidden text-gray-600 hover:text-gray-900 transition"
@@ -267,7 +336,7 @@ export function Header() {
             {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
           </button>
 
-          {/* City picker */}
+          {/* City picker — user choice always wins */}
           <div className="relative hidden md:flex items-center">
             <select
               value={city}
@@ -275,13 +344,14 @@ export function Header() {
               className="appearance-none bg-transparent border-none outline-none cursor-pointer text-sm font-medium text-gray-700 hover:text-[#F84464] pr-4 transition-colors z-10 relative"
             >
               {SUPPORTED_CITIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
             <ChevronDown className="h-3.5 w-3.5 text-gray-500 absolute right-0 pointer-events-none" />
           </div>
 
-          {/* User Auth */}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -306,52 +376,70 @@ export function Header() {
                   <p className="truncate text-xs text-gray-500">{user.email}</p>
                 </div>
                 <DropdownMenuSeparator className="bg-gray-100" />
-                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm">
+                <DropdownMenuItem
+                  onClick={() => navigate(withCity('/profile', city))}
+                  className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm"
+                >
                   <User className="mr-2 h-4 w-4" /> Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profile')} className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm">
+                <DropdownMenuItem
+                  onClick={() => navigate(withCity('/profile', city))}
+                  className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm"
+                >
                   <Calendar className="mr-2 h-4 w-4" /> My Bookings
                 </DropdownMenuItem>
 
                 {user.role === 'PARTNER' && (
-                  <DropdownMenuItem onClick={() => navigate('/partner/dashboard')} className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm">
+                  <DropdownMenuItem
+                    onClick={() => navigate('/partner/dashboard')}
+                    className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                  >
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Partner Dashboard
                   </DropdownMenuItem>
                 )}
                 {user.role !== 'PARTNER' && user.role !== 'ADMIN' && (
-                  <DropdownMenuItem onClick={() => navigate('/partner/become')} className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm">
+                  <DropdownMenuItem
+                    onClick={() => navigate('/partner/become')}
+                    className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                  >
                     <Sparkles className="mr-2 h-4 w-4" /> Become a Partner
                   </DropdownMenuItem>
                 )}
                 {user.role === 'ADMIN' && (
                   <>
                     <DropdownMenuSeparator className="bg-gray-100" />
-                    <DropdownMenuItem onClick={() => navigate('/admin/partners')} className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm">
+                    <DropdownMenuItem
+                      onClick={() => navigate('/admin/partners')}
+                      className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                    >
                       <Users className="mr-2 h-4 w-4" /> Partner Verification
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate('/admin/moderation')} className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm">
+                    <DropdownMenuItem
+                      onClick={() => navigate('/admin/moderation')}
+                      className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                    >
                       <ShieldCheck className="mr-2 h-4 w-4" /> Event Moderation
                     </DropdownMenuItem>
                   </>
                 )}
                 <DropdownMenuSeparator className="bg-gray-100" />
-                <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md font-medium text-sm">
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="cursor-pointer text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md font-medium text-sm"
+                >
                   <LogOut className="mr-2 h-4 w-4" /> Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <div className="flex items-center">
-              <Button 
-                onClick={() => navigate('/login')}
-                className="rounded text-xs font-semibold h-7 px-4 bg-[#F84464] hover:bg-[#E8375A] text-white shadow-none"
-              >
-                Sign in
-              </Button>
-            </div>
+            <Button
+              onClick={() => navigate(withCity('/login', city))}
+              className="rounded text-xs font-semibold h-7 px-4 bg-[#F84464] hover:bg-[#E8375A] text-white shadow-none"
+            >
+              Sign in
+            </Button>
           )}
 
-          {/* Mobile Drawer Toggle */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <button className="lg:hidden text-gray-700 hover:text-gray-900">
@@ -367,14 +455,18 @@ export function Header() {
               </div>
 
               <div className="px-5 py-4 border-b border-gray-100">
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Your City</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                  Your City
+                </label>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-900 outline-none"
                 >
                   {SUPPORTED_CITIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -383,7 +475,7 @@ export function Header() {
                 {navLinks.map((link, i) => (
                   <Link
                     key={`${link.href}-${i}`}
-                    to={link.href}
+                    to={withCity(link.href, city)}
                     onClick={() => setMobileOpen(false)}
                     className="px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#F84464] flex items-center justify-between"
                   >
@@ -406,7 +498,7 @@ export function Header() {
         </div>
       </div>
 
-      {/* ── TIER 2: SECONDARY NAV (Desktop Only) ── */}
+      {/* ── TIER 2: SECONDARY NAV ── */}
       <div className="hidden lg:block bg-[#F5F5FA] border-t border-gray-200">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-4 h-10">
           <div className="flex items-center gap-6">
@@ -424,18 +516,16 @@ export function Header() {
               </Link>
             ))}
           </div>
-          <div className="flex items-center">
-            <Link
-              to="/partner/become"
-              className="text-[13px] font-medium text-gray-600 hover:text-[#F84464] transition-colors"
-            >
-              List Your Show
-            </Link>
-          </div>
+          <Link
+            to="/partner/become"
+            className="text-[13px] font-medium text-gray-600 hover:text-[#F84464] transition-colors"
+          >
+            List Your Show
+          </Link>
         </div>
       </div>
 
-      {/* ── MOBILE SEARCH BAR ── */}
+      {/* Mobile search */}
       {mobileSearchOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white p-3 shadow-md">
           <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
@@ -449,8 +539,6 @@ export function Header() {
               className="w-full bg-transparent text-sm focus:outline-none text-gray-900"
             />
           </div>
-
-          {/* Mobile Results Overlay */}
           {hasResults && (
             <div className="mt-2 divide-y divide-gray-100 max-h-60 overflow-y-auto border border-gray-100 rounded-md shadow-sm">
               {results.movies.map((m) => (
@@ -461,7 +549,9 @@ export function Header() {
                   className="flex items-center gap-3 p-2.5 hover:bg-gray-50"
                 >
                   <Film className="h-4 w-4 text-[#F84464] shrink-0" />
-                  <span className="text-sm font-medium text-gray-800 truncate">{m.title}</span>
+                  <span className="text-sm font-medium text-gray-800 truncate">
+                    {m.title}
+                  </span>
                 </Link>
               ))}
               {results.events.map((e) => (
@@ -472,7 +562,9 @@ export function Header() {
                   className="flex items-center gap-3 p-2.5 hover:bg-gray-50"
                 >
                   <Music className="h-4 w-4 text-[#F84464] shrink-0" />
-                  <span className="text-sm font-medium text-gray-800 truncate">{e.title}</span>
+                  <span className="text-sm font-medium text-gray-800 truncate">
+                    {e.title}
+                  </span>
                 </Link>
               ))}
             </div>

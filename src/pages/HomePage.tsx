@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -37,11 +37,49 @@ interface EventCard {
   min_price_paise?: number;
 }
 
-// Simulated Carousel Data
-const HERO_BANNERS = [
+// Location-specific banners (fallback is generic)
+const BANNERS_BY_CITY: Record<
+  string,
+  { title: string; subtitle: string; image: string; link: string }[]
+> = {
+  Kochi: [
+    {
+      title: 'PVR Cinemas — Now Booking',
+      subtitle: 'IMAX & Dolby Atmos at PVR Lulu Mall, Kochi',
+      image:
+        'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1240&auto=format&fit=crop&q=80',
+      link: '/movies',
+    },
+    {
+      title: 'Live Events & Concerts',
+      subtitle: 'The best shows and experiences in Kochi',
+      image:
+        'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1240&auto=format&fit=crop&q=80',
+      link: '/events',
+    },
+  ],
+  Chennai: [
+    {
+      title: 'Movies in Chennai',
+      subtitle: 'Book tickets at top cinemas across Chennai',
+      image:
+        'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1240&auto=format&fit=crop&q=80',
+      link: '/movies',
+    },
+    {
+      title: 'Live Events in Chennai',
+      subtitle: 'Concerts, plays & experiences near you',
+      image:
+        'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1240&auto=format&fit=crop&q=80',
+      link: '/events',
+    },
+  ],
+};
+
+const DEFAULT_BANNERS = [
   {
-    title: 'PVR Cinemas — Now Booking',
-    subtitle: 'IMAX & Dolby Atmos at PVR Lulu Mall',
+    title: 'Movies Near You',
+    subtitle: 'Book tickets at the best cinemas in your city',
     image:
       'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1240&auto=format&fit=crop&q=80',
     link: '/movies',
@@ -61,6 +99,16 @@ const CATEGORIES = [
   { icon: Utensils, title: 'Dining', link: '/restaurants' },
 ];
 
+const CITY_STORAGE_KEY = 'vyhbz_selected_city';
+
+function getStoredCity(): string | null {
+  try {
+    return localStorage.getItem(CITY_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 function HorizontalScroller({
   children,
   className = '',
@@ -69,7 +117,7 @@ function HorizontalScroller({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  
+
   const scroll = (dir: -1 | 1) => {
     if (ref.current) {
       const clientWidth = ref.current.clientWidth;
@@ -79,7 +127,6 @@ function HorizontalScroller({
 
   return (
     <div className={`relative group/row ${className}`}>
-      {/* Left Scroll Button */}
       <button
         type="button"
         aria-label="Scroll left"
@@ -88,8 +135,7 @@ function HorizontalScroller({
       >
         <ChevronLeft className="h-6 w-6" />
       </button>
-      
-      {/* Scrollable Container */}
+
       <div
         ref={ref}
         className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 pt-2 px-1"
@@ -98,7 +144,6 @@ function HorizontalScroller({
         {children}
       </div>
 
-      {/* Right Scroll Button */}
       <button
         type="button"
         aria-label="Scroll right"
@@ -118,18 +163,33 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [currentBanner, setCurrentBanner] = useState(0);
   const [searchParams] = useSearchParams();
-  const city = searchParams.get('city') || 'Kochi';
+
+  // Same priority as Header: URL → localStorage → default
+  const city =
+    searchParams.get('city') || getStoredCity() || 'Kochi';
+
+  const heroBanners = useMemo(
+    () => BANNERS_BY_CITY[city] || DEFAULT_BANNERS,
+    [city]
+  );
+
+  useEffect(() => {
+    setCurrentBanner(0);
+  }, [city]);
 
   useEffect(() => {
     const t = setInterval(
-      () => setCurrentBanner((p) => (p + 1) % HERO_BANNERS.length),
+      () => setCurrentBanner((p) => (p + 1) % heroBanners.length),
       5000
     );
     return () => clearInterval(t);
-  }, []);
+  }, [heroBanners.length]);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
+      setLoading(true);
+      setMovies([]); // clear immediately so old city movies don't flash
       try {
         const today = new Date().toISOString().split('T')[0];
         const [moviesData, eventsData] = await Promise.all([
@@ -138,16 +198,22 @@ export default function HomePage() {
           ).catch(() => []),
           unwrap<any>(api.get(`/events`)).catch(() => ({ items: [] })),
         ]);
+        if (cancelled) return;
         setMovies(moviesData.slice(0, 10));
-        const items = Array.isArray(eventsData) ? eventsData : eventsData.items || [];
+        const items = Array.isArray(eventsData)
+          ? eventsData
+          : eventsData.items || [];
         setEvents(items.slice(0, 8));
       } catch (err) {
         console.error('Failed to load homepage data', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     load();
+    return () => {
+      cancelled = true;
+    };
   }, [city]);
 
   return (
@@ -155,15 +221,17 @@ export default function HomePage() {
       <Header />
 
       <div className="pt-16 lg:pt-[104px]">
-        {/* ── BMS STYLE HERO CAROUSEL ── */}
+        {/* Hero — location specific */}
         <section className="bg-white pb-6 pt-2">
           <div className="relative h-[180px] sm:h-[260px] md:h-[320px] max-w-[1240px] mx-auto overflow-hidden rounded-xl shadow-sm cursor-pointer group">
-            {HERO_BANNERS.map((banner, idx) => (
+            {heroBanners.map((banner, idx) => (
               <div
-                key={idx}
-                onClick={() => navigate(banner.link)}
+                key={`${city}-${idx}`}
+                onClick={() => navigate(withCity(banner.link, city))}
                 className={`absolute inset-0 transition-opacity duration-700 ${
-                  idx === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  idx === currentBanner
+                    ? 'opacity-100'
+                    : 'opacity-0 pointer-events-none'
                 }`}
               >
                 <img
@@ -171,7 +239,6 @@ export default function HomePage() {
                   alt={banner.title}
                   className="w-full h-full object-cover"
                 />
-                {/* Fallback dark overlay for text visibility if needed, though BMS banners are usually pre-designed images */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent" />
                 <div className="absolute inset-0 flex items-center px-8 md:px-12">
                   <div className="max-w-lg">
@@ -186,9 +253,8 @@ export default function HomePage() {
               </div>
             ))}
 
-            {/* Carousel Dots */}
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-              {HERO_BANNERS.map((_, idx) => (
+              {heroBanners.map((_, idx) => (
                 <button
                   key={idx}
                   type="button"
@@ -202,12 +268,13 @@ export default function HomePage() {
                 />
               ))}
             </div>
-            
-            {/* Carousel Arrows */}
+
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setCurrentBanner((p) => (p - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
+                setCurrentBanner(
+                  (p) => (p - 1 + heroBanners.length) % heroBanners.length
+                );
               }}
               className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-10 bg-black/40 text-white flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
             >
@@ -216,7 +283,7 @@ export default function HomePage() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setCurrentBanner((p) => (p + 1) % HERO_BANNERS.length);
+                setCurrentBanner((p) => (p + 1) % heroBanners.length);
               }}
               className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-10 bg-black/40 text-white flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
             >
@@ -225,14 +292,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── BMS STYLE QUICK CATEGORIES ── */}
+        {/* Categories */}
         <section className="bg-white border-b border-gray-200">
           <div className="max-w-[1240px] mx-auto px-4 py-6">
             <div className="flex items-center justify-center gap-6 sm:gap-12">
               {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.title}
-                  to={cat.link}
+                  to={withCity(cat.link, city)}
                   className="group flex flex-col items-center gap-2"
                 >
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 group-hover:bg-[#F84464]/10 transition-colors">
@@ -247,14 +314,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── RECOMMENDED MOVIES ── */}
+        {/* Recommended Movies */}
         <section className="max-w-[1240px] mx-auto px-4 py-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-[#333333]">
               Recommended Movies
             </h2>
             <Link
-              to={withCity("/movies", city)}
+              to={withCity('/movies', city)}
               className="text-sm font-semibold text-[#F84464] hover:underline flex items-center"
             >
               See All <ChevronRightIcon className="h-4 w-4 ml-0.5" />
@@ -267,7 +334,7 @@ export default function HomePage() {
             </div>
           ) : movies.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-10 text-center text-slate-500">
-              No movies currently playing. Check back soon!
+              No movies currently playing in {city}. Check back soon!
             </div>
           ) : (
             <HorizontalScroller>
@@ -289,7 +356,6 @@ export default function HomePage() {
                         <Film className="h-10 w-10" />
                       </div>
                     )}
-                    {/* BMS Rating Strip */}
                     <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm py-1.5 px-3 flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-white text-xs font-semibold">
                         <Star className="h-3.5 w-3.5 fill-[#F5C518] text-[#F5C518]" />
@@ -302,7 +368,7 @@ export default function HomePage() {
                     {m.title}
                   </h3>
                   <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
-                    {m.genre || 'Action/Thriller'}
+                    {m.genre || `${m.certificate} • ${m.language}`}
                   </p>
                 </Link>
               ))}
@@ -310,9 +376,12 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* ── BMS STYLE PROMO STRIP (PREMIERE OR STREAM) ── */}
+        {/* Promo */}
         <section className="max-w-[1240px] mx-auto px-4 py-4">
-          <div className="rounded-xl bg-[#2B314B] px-6 py-6 md:px-10 md:py-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md cursor-pointer hover:shadow-lg transition">
+          <div
+            onClick={() => navigate(withCity('/movies', city))}
+            className="rounded-xl bg-[#2B314B] px-6 py-6 md:px-10 md:py-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md cursor-pointer hover:shadow-lg transition"
+          >
             <div className="flex items-center gap-4">
               <div className="bg-[#F84464] w-12 h-12 rounded-full flex items-center justify-center shrink-0">
                 <Film className="h-6 w-6 text-white ml-0.5" />
@@ -322,21 +391,19 @@ export default function HomePage() {
                   Endless Entertainment Anytime.
                 </h3>
                 <p className="text-white/70 text-sm mt-1">
-                  Watch new movies & live events on your schedule.
+                  Watch new movies & live events in {city}.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── THE BEST EVENTS ── */}
+        {/* Events */}
         <section className="max-w-[1240px] mx-auto px-4 py-10">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[#333333]">
-              The Best Events
-            </h2>
+            <h2 className="text-2xl font-bold text-[#333333]">The Best Events</h2>
             <Link
-              to={withCity("/events", city)}
+              to={withCity('/events', city)}
               className="text-sm font-semibold text-[#F84464] hover:underline flex items-center"
             >
               See All <ChevronRightIcon className="h-4 w-4 ml-0.5" />
@@ -367,12 +434,11 @@ export default function HomePage() {
                         <Music className="h-10 w-10 text-gray-400" />
                       </div>
                     )}
-                    {/* Event Category Tag */}
                     <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-[#333] uppercase">
                       {e.category}
                     </div>
                   </div>
-                  
+
                   <div className="mt-3">
                     <h3 className="font-medium text-[#333] text-base line-clamp-2 leading-snug group-hover:text-black">
                       {e.title}
