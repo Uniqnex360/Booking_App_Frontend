@@ -18,6 +18,7 @@ import PartnerEventCreatePage from '@/pages/PartnerEventCreatePage';
 import AdminModerationPage from '@/pages/AdminModerationPage';
 import BookingDetailPage from "@/pages/BookingDetailPage";
 import VerifyOtpPage from "@/pages/VerifyOtpPage";
+import BuyTicketsPage from "@/pages/BuyTicketsPage";
 
 export function AppRoutes() {
   return (
@@ -31,6 +32,7 @@ export function AppRoutes() {
       <Route path="/events" element={<EventsPage />} />
       <Route path="/restaurants" element={<RestaurantsPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
+        <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
 
       <Route
         path="/booking/:type/:id"
