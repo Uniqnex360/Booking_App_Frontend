@@ -1,4 +1,4 @@
-export const SUPPORTED_CITIES = ['Kochi', 'Chennai', 'Bangalore', 'Mumbai'];
+export const SUPPORTED_CITIES = ['Kochi', 'Chennai', 'Bangalore'];
 
 export async function detectCity(): Promise<string | null> {
   try {
