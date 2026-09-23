@@ -4,7 +4,6 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
-import AuthModal from "@/components/AuthModal";
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
@@ -14,6 +13,7 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import AuthModal from "./AuthModal";
 
 interface SeatItem {
   seat_ref: string;
@@ -552,7 +552,6 @@ export default function SeatMapPage() {
         </div>
       )}
 
-      {/* ─── AUTH MODAL (BMS: only on Pay) ─── */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
