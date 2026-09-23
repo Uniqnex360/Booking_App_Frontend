@@ -248,28 +248,25 @@ export default function SeatMapPage() {
     }
   };
 
-  // src/pages/SeatMapPage.tsx
-
-  const handlePayClick = () => {
+    const handlePayClick = () => {
     if (selectedSeats.length !== requiredSeatCount) {
       toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
       return;
     }
 
-    if (!isUserLoggedIn()) {
+    const savedContact = localStorage.getItem('vyhbz_contact_details');
+    if (!savedContact) {
       setIsAuthModalOpen(true);
-      return;
+    } else {
+      handleCheckout();
     }
-
-    handleCheckout();
   };
 
-  const handleAuthSuccess = () => {
+  // 2. Submit Handler for the Contact Modal
+  const handleContactSubmit = (details: { email: string; phone: string }) => {
     setIsAuthModalOpen(false);
-    // Give a 50ms tick so localStorage tokens are readable by the api client
-    setTimeout(() => {
-      handleCheckout();
-    }, 50);
+    toast.success(`Booking confirmation will be sent to ${details.email}`);
+    handleCheckout();
   };
 
   
@@ -561,9 +558,8 @@ export default function SeatMapPage() {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
-        onSuccess={handleAuthSuccess}
+        onSubmit={handleContactSubmit}
       />
-
       <Footer />
     </div>
   );
