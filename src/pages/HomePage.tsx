@@ -2,23 +2,18 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/common/Loader';
 import { api, unwrap } from '@/api/client';
 import { formatRupees } from '@/utils/currencyFormatter';
 import { withCity } from '@/lib/cityLink';
 import {
-  Search,
   Film,
   Music,
   Utensils,
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Calendar,
-  MapPin,
   Star,
+  ChevronRight as ChevronRightIcon,
 } from 'lucide-react';
 
 interface MovieCard {
@@ -28,6 +23,7 @@ interface MovieCard {
   duration_min: number;
   certificate: string;
   poster_url: string | null;
+  genre?: string;
 }
 
 interface EventCard {
@@ -41,29 +37,28 @@ interface EventCard {
   min_price_paise?: number;
 }
 
+// Simulated Carousel Data
 const HERO_BANNERS = [
   {
     title: 'PVR Cinemas — Now Booking',
     subtitle: 'IMAX & Dolby Atmos at PVR Lulu Mall',
     image:
-      'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1240&auto=format&fit=crop&q=80',
     link: '/movies',
-    cta: 'Book Tickets',
   },
   {
     title: 'Live Events & Concerts',
     subtitle: 'The best shows and experiences near you',
     image:
-      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1240&auto=format&fit=crop&q=80',
     link: '/events',
-    cta: 'Explore Events',
   },
 ];
 
 const CATEGORIES = [
-  { icon: Film, title: 'Movies', link: '/movies', blurb: 'Now showing' },
-  { icon: Music, title: 'Events', link: '/events', blurb: 'Concerts & more' },
-  { icon: Utensils, title: 'Dining', link: '/restaurants', blurb: 'Reserve a table' },
+  { icon: Film, title: 'Movies', link: '/movies' },
+  { icon: Music, title: 'Events', link: '/events' },
+  { icon: Utensils, title: 'Dining', link: '/restaurants' },
 ];
 
 function HorizontalScroller({
@@ -74,33 +69,43 @@ function HorizontalScroller({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  
   const scroll = (dir: -1 | 1) => {
-    ref.current?.scrollBy({ left: dir * 320, behavior: 'smooth' });
+    if (ref.current) {
+      const clientWidth = ref.current.clientWidth;
+      ref.current.scrollBy({ left: dir * (clientWidth * 0.75), behavior: 'smooth' });
+    }
   };
+
   return (
     <div className={`relative group/row ${className}`}>
+      {/* Left Scroll Button */}
       <button
         type="button"
         aria-label="Scroll left"
         onClick={() => scroll(-1)}
-        className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-700 opacity-0 group-hover/row:opacity-100 transition hover:bg-wine-50"
+        className="hidden md:flex absolute -left-5 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.2)] text-gray-700 opacity-0 group-hover/row:opacity-100 transition hover:scale-105"
       >
-        <ChevronLeft className="h-5 w-5" />
+        <ChevronLeft className="h-6 w-6" />
       </button>
+      
+      {/* Scrollable Container */}
       <div
         ref={ref}
-        className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-2 -mx-1 px-1"
+        className="flex gap-6 overflow-x-auto scrollbar-hide snap-x snap-mandatory pb-4 pt-2 px-1"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {children}
       </div>
+
+      {/* Right Scroll Button */}
       <button
         type="button"
         aria-label="Scroll right"
         onClick={() => scroll(1)}
-        className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white shadow-md border border-slate-200 text-slate-700 opacity-0 group-hover/row:opacity-100 transition hover:bg-wine-50"
+        className="hidden md:flex absolute -right-5 top-1/2 -translate-y-1/2 z-10 h-10 w-10 items-center justify-center rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.2)] text-gray-700 opacity-0 group-hover/row:opacity-100 transition hover:scale-105"
       >
-        <ChevronRight className="h-5 w-5" />
+        <ChevronRight className="h-6 w-6" />
       </button>
     </div>
   );
@@ -112,9 +117,9 @@ export default function HomePage() {
   const [events, setEvents] = useState<EventCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentBanner, setCurrentBanner] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
   const [searchParams] = useSearchParams();
   const city = searchParams.get('city') || 'Kochi';
+
   useEffect(() => {
     const t = setInterval(
       () => setCurrentBanner((p) => (p + 1) % HERO_BANNERS.length),
@@ -130,7 +135,6 @@ export default function HomePage() {
         const [moviesData, eventsData] = await Promise.all([
           unwrap<MovieCard[]>(
             api.get(`/movies`, { params: { city, date: today } })
-
           ).catch(() => []),
           unwrap<any>(api.get(`/events`)).catch(() => ({ items: [] })),
         ]);
@@ -146,25 +150,18 @@ export default function HomePage() {
     load();
   }, [city]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/movies?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-[#F5F5F5] text-slate-900">
+    <div className="min-h-screen bg-[#F5F5F5] text-slate-900 pb-12 font-sans">
       <Header />
 
-      {/* offset for fixed header: 64px base, 104px on lg (adds secondary strip) */}
       <div className="pt-16 lg:pt-[104px]">
-        {/* ── HERO ── */}
-        <section className="relative bg-white">
-          <div className="relative h-[220px] sm:h-[320px] md:h-[420px] max-w-[1280px] mx-auto overflow-hidden md:rounded-b-2xl">
+        {/* ── BMS STYLE HERO CAROUSEL ── */}
+        <section className="bg-white pb-6 pt-2">
+          <div className="relative h-[180px] sm:h-[260px] md:h-[320px] max-w-[1240px] mx-auto overflow-hidden rounded-xl shadow-sm cursor-pointer group">
             {HERO_BANNERS.map((banner, idx) => (
               <div
                 key={idx}
+                onClick={() => navigate(banner.link)}
                 className={`absolute inset-0 transition-opacity duration-700 ${
                   idx === currentBanner ? 'opacity-100' : 'opacity-0 pointer-events-none'
                 }`}
@@ -174,81 +171,93 @@ export default function HomePage() {
                   alt={banner.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-                <div className="absolute inset-0 flex items-center">
-                  <div className="px-6 md:px-12 max-w-lg">
-                    <p className="text-wine-100 text-xs font-semibold tracking-wider uppercase mb-2">
-                      Featured
-                    </p>
-                    <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-white leading-tight mb-2">
+                {/* Fallback dark overlay for text visibility if needed, though BMS banners are usually pre-designed images */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent" />
+                <div className="absolute inset-0 flex items-center px-8 md:px-12">
+                  <div className="max-w-lg">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2 leading-tight">
                       {banner.title}
-                    </h1>
-                    <p className="text-sm sm:text-base text-white/80 mb-5">{banner.subtitle}</p>
-                    <Button
-                      onClick={() => navigate(banner.link)}
-                      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold rounded-lg px-5"
-                    >
-                      {banner.cta}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    </h2>
+                    <p className="text-sm md:text-base text-white/80">
+                      {banner.subtitle}
+                    </p>
                   </div>
                 </div>
               </div>
             ))}
 
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {/* Carousel Dots */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
               {HERO_BANNERS.map((_, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  aria-label={`Go to slide ${idx + 1}`}
-                  onClick={() => setCurrentBanner(idx)}
-                  className={`h-1.5 rounded-full transition-all ${
-                    idx === currentBanner ? 'bg-[#7B1E3D] w-6' : 'bg-white/70 w-2'
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentBanner(idx);
+                  }}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentBanner ? 'bg-white w-5' : 'bg-white/50 w-1.5'
                   }`}
                 />
+              ))}
+            </div>
+            
+            {/* Carousel Arrows */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentBanner((p) => (p - 1 + HERO_BANNERS.length) % HERO_BANNERS.length);
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-10 bg-black/40 text-white flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentBanner((p) => (p + 1) % HERO_BANNERS.length);
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-10 bg-black/40 text-white flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </div>
+        </section>
+
+        {/* ── BMS STYLE QUICK CATEGORIES ── */}
+        <section className="bg-white border-b border-gray-200">
+          <div className="max-w-[1240px] mx-auto px-4 py-6">
+            <div className="flex items-center justify-center gap-6 sm:gap-12">
+              {CATEGORIES.map((cat) => (
+                <Link
+                  key={cat.title}
+                  to={cat.link}
+                  className="group flex flex-col items-center gap-2"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 group-hover:bg-[#F84464]/10 transition-colors">
+                    <cat.icon className="h-6 w-6 text-gray-600 group-hover:text-[#F84464]" />
+                  </div>
+                  <span className="font-medium text-gray-700 text-sm group-hover:text-[#F84464] transition-colors">
+                    {cat.title}
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ── CATEGORY CHIPS ── */}
-        <section className="max-w-[1280px] mx-auto px-4 pt-10 pb-4">
-          <div className="grid grid-cols-3 gap-3 md:gap-4">
-            {CATEGORIES.map((cat) => (
-              <Link
-                key={cat.title}
-                to={cat.link}
-                className="group flex items-center gap-3 rounded-xl bg-white border border-slate-200 px-4 py-4 shadow-sm hover:border-[#7B1E3D]/40 hover:shadow-md transition"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FDF2F4] text-[#7B1E3D] group-hover:bg-[#7B1E3D] group-hover:text-white transition">
-                  <cat.icon className="h-5 w-5" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-bold text-slate-900 text-sm md:text-base">
-                    {cat.title}
-                  </span>
-                  <span className="block text-xs text-slate-500 truncate">{cat.blurb}</span>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
         {/* ── RECOMMENDED MOVIES ── */}
-        <section className="max-w-[1280px] mx-auto px-4 py-8">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-slate-900">
-                Recommended Movies
-              </h2>
-              <p className="text-sm text-slate-500 mt-0.5">Now showing near you</p>
-            </div>
+        <section className="max-w-[1240px] mx-auto px-4 py-10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-[#333333]">
+              Recommended Movies
+            </h2>
             <Link
               to={withCity("/movies", city)}
-              className="text-sm font-semibold text-[#7B1E3D] hover:text-[#5C0F2A] flex items-center gap-1"
+              className="text-sm font-semibold text-[#F84464] hover:underline flex items-center"
             >
-              See All <ArrowRight className="h-4 w-4" />
+              See All <ChevronRightIcon className="h-4 w-4 ml-0.5" />
             </Link>
           </div>
 
@@ -266,36 +275,34 @@ export default function HomePage() {
                 <Link
                   key={m.id}
                   to={withCity(`/movies/${m.id}`, city)}
-                  className="snap-start shrink-0 w-[140px] sm:w-[160px] md:w-[180px] group"
+                  className="snap-start shrink-0 w-[140px] sm:w-[180px] md:w-[220px] group"
                 >
-                  <div className="relative aspect-[2/3] rounded-xl overflow-hidden bg-slate-200 shadow-sm">
+                  <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-slate-200 shadow-sm">
                     {m.poster_url ? (
                       <img
                         src={m.poster_url}
                         alt={m.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-400">
                         <Film className="h-10 w-10" />
                       </div>
                     )}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-2 pt-8">
-                      <div className="flex items-center gap-1 text-white text-xs font-semibold">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        8.5/10
+                    {/* BMS Rating Strip */}
+                    <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-sm py-1.5 px-3 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-white text-xs font-semibold">
+                        <Star className="h-3.5 w-3.5 fill-[#F5C518] text-[#F5C518]" />
+                        <span>8.5/10</span>
                       </div>
+                      <span className="text-white/80 text-[10px]">50K Votes</span>
                     </div>
                   </div>
-                  <h3 className="mt-2 font-bold text-sm text-slate-900 line-clamp-2 group-hover:text-[#7B1E3D] transition">
+                  <h3 className="mt-3 font-medium text-base text-[#333333] line-clamp-1 group-hover:text-black">
                     {m.title}
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
-                    {m.certificate} • {m.language}
-                  </p>
-                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                    <Clock className="h-3 w-3" />
-                    {m.duration_min} min
+                  <p className="text-sm text-gray-500 mt-0.5 line-clamp-1">
+                    {m.genre || 'Action/Thriller'}
                   </p>
                 </Link>
               ))}
@@ -303,40 +310,36 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* ── WINE PROMO STRIP ── */}
-        <section className="max-w-[1280px] mx-auto px-4 py-2">
-          <div className="rounded-2xl bg-gradient-to-r from-[#5C0F2A] via-[#7B1E3D] to-[#9B1B3A] px-6 py-8 md:px-10 md:py-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-lg">
-            <div>
-              <h3 className="text-xl md:text-2xl font-bold text-white">
-                Unlimited entertainment. One booking away.
-              </h3>
-              <p className="text-white/80 text-sm mt-1">
-                Grab the best seats for PVR Premieres and live events.
-              </p>
+        {/* ── BMS STYLE PROMO STRIP (PREMIERE OR STREAM) ── */}
+        <section className="max-w-[1240px] mx-auto px-4 py-4">
+          <div className="rounded-xl bg-[#2B314B] px-6 py-6 md:px-10 md:py-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md cursor-pointer hover:shadow-lg transition">
+            <div className="flex items-center gap-4">
+              <div className="bg-[#F84464] w-12 h-12 rounded-full flex items-center justify-center shrink-0">
+                <Film className="h-6 w-6 text-white ml-0.5" />
+              </div>
+              <div>
+                <h3 className="text-xl md:text-2xl font-bold text-white">
+                  Endless Entertainment Anytime.
+                </h3>
+                <p className="text-white/70 text-sm mt-1">
+                  Watch new movies & live events on your schedule.
+                </p>
+              </div>
             </div>
-            <Button
-              onClick={() => navigate('/movies')}
-              className="bg-white text-[#7B1E3D] hover:bg-wine-50 font-bold rounded-lg px-6 shrink-0"
-            >
-              Book Now
-            </Button>
           </div>
         </section>
 
-        {/* ── EVENTS ── */}
-        <section className="max-w-[1280px] mx-auto px-4 py-10">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-slate-900">
-                The Best Events This Week
-              </h2>
-              <p className="text-sm text-slate-500 mt-0.5">Concerts, plays & experiences</p>
-            </div>
+        {/* ── THE BEST EVENTS ── */}
+        <section className="max-w-[1240px] mx-auto px-4 py-10">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-[#333333]">
+              The Best Events
+            </h2>
             <Link
               to={withCity("/events", city)}
-              className="text-sm font-semibold text-[#7B1E3D] hover:text-[#5C0F2A] flex items-center gap-1"
+              className="text-sm font-semibold text-[#F84464] hover:underline flex items-center"
             >
-              See All <ArrowRight className="h-4 w-4" />
+              See All <ChevronRightIcon className="h-4 w-4 ml-0.5" />
             </Link>
           </div>
 
@@ -350,48 +353,45 @@ export default function HomePage() {
                 <Link
                   key={e.id}
                   to={withCity(`/booking/event/${e.id}`, city)}
-                  className="snap-start shrink-0 w-[260px] sm:w-[280px] group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md hover:border-[#7B1E3D]/30 transition"
+                  className="snap-start shrink-0 w-[240px] sm:w-[280px] group cursor-pointer"
                 >
-                  <div className="aspect-[16/9] bg-slate-100 overflow-hidden">
+                  <div className="aspect-[4/3] rounded-lg bg-slate-200 overflow-hidden shadow-sm relative">
                     {e.cover_image_url ? (
                       <img
                         src={e.cover_image_url}
                         alt={e.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#5C0F2A] to-[#9B1B3A]">
-                        <Music className="h-10 w-10 text-white/50" />
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <Music className="h-10 w-10 text-gray-400" />
                       </div>
                     )}
-                  </div>
-                  <div className="p-3.5">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-[#7B1E3D]">
+                    {/* Event Category Tag */}
+                    <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-[#333] uppercase">
                       {e.category}
-                    </span>
-                    <h3 className="font-bold text-sm text-slate-900 mt-1 line-clamp-2 group-hover:text-[#7B1E3D] transition">
+                    </div>
+                  </div>
+                  
+                  <div className="mt-3">
+                    <h3 className="font-medium text-[#333] text-base line-clamp-2 leading-snug group-hover:text-black">
                       {e.title}
                     </h3>
-                    <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">
-                        {e.venue_name}, {e.city}
-                      </span>
+                    <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                      {e.venue_name}, {e.city}
                     </p>
                     {e.start_date && (
-                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
+                      <p className="text-sm text-gray-500 mt-0.5">
                         {new Date(e.start_date).toLocaleDateString('en-IN', {
+                          weekday: 'short',
                           day: 'numeric',
                           month: 'short',
-                          year: 'numeric',
                         })}
                       </p>
                     )}
                     {e.min_price_paise != null && (
-                      <p className="text-sm font-bold text-slate-900 mt-3 pt-3 border-t border-slate-100">
-                        <span className="text-slate-500 font-medium text-xs mr-1">from</span>
-                        {formatRupees(e.min_price_paise)}
+                      <p className="text-sm text-gray-700 mt-1">
+                        {formatRupees(e.min_price_paise)} onwards
                       </p>
                     )}
                   </div>
