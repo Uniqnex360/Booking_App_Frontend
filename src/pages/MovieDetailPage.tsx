@@ -5,8 +5,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
-import { MapPin } from "lucide-react";
-import { withCity } from "@/lib/cityLink";
+import { withCity } from "@/utils/withCity";
+import { MapPin, Minus, Plus, X } from "lucide-react";
 
 interface ShowtimeSlot {
   id: string;
@@ -36,6 +36,8 @@ interface MovieDetail {
   release_date: string;
   venues?: VenueGroup[];
 }
+
+const MAX_TICKETS = 10;
 
 function formatDuration(mins: number): string {
   const h = Math.floor(mins / 60);
@@ -70,8 +72,6 @@ function istTimeLabel(iso: string): string {
 
 function datePillLabel(dateKey: string, todayKey: string): string {
   if (dateKey === todayKey) return "Today";
-  // dateKey is YYYY-MM-DD; parse as IST-local by constructing a date at noon UTC
-  // to avoid rolling back a day in negative-offset environments.
   const [y, m, d] = dateKey.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
   const weekday = dt.toLocaleDateString("en-IN", {
@@ -98,6 +98,8 @@ export default function MovieDetailPage() {
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [pendingSlot, setPendingSlot] = useState<ShowtimeSlot | null>(null);
+  const [ticketCount, setTicketCount] = useState(2);
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -145,7 +147,6 @@ export default function MovieDetailPage() {
 
   const venuesInCity = (movie.venues ?? []).filter((v) => v.city === city);
 
-  // Unique future dates across all venues in this city, ascending.
   const dateKeys = Array.from(
     new Set(
       venuesInCity.flatMap((v) =>
@@ -158,31 +159,38 @@ export default function MovieDetailPage() {
 
   const activeDate = selectedDate ?? dateKeys[0] ?? null;
 
-  // Venues with at least one future showtime on the active date.
   const venuesForDate = activeDate
-    ? venuesInCity
-        .map((v) => ({
-          ...v,
-          showtimes: v.showtimes
-            .filter((s) => new Date(s.starts_at).getTime() > now)
-            .filter((s) => istDateKey(s.starts_at) === activeDate)
-            .sort(
-              (a, b) =>
-                new Date(a.starts_at).getTime() -
-                new Date(b.starts_at).getTime(),
-            ),
-        }))
-        .filter((v) => v.showtimes.length > 0 || venuesInCity.length > 0)
+    ? venuesInCity.map((v) => ({
+        ...v,
+        showtimes: v.showtimes
+          .filter((s) => new Date(s.starts_at).getTime() > now)
+          .filter((s) => istDateKey(s.starts_at) === activeDate)
+          .sort(
+            (a, b) =>
+              new Date(a.starts_at).getTime() -
+              new Date(b.starts_at).getTime(),
+          ),
+      }))
     : [];
+
+  const confirmSeatSelection = () => {
+    if (!pendingSlot) return;
+    navigate(
+      withCity(
+        `/showtimes/${pendingSlot.id}/seat-map?qty=${ticketCount}`,
+        city,
+      ),
+    );
+  };
 
   return (
     <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
       <Header />
       <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-16 lg:pt-[104px] pb-12">
-        {/* Banner */}
-        <div className="flex flex-col sm:flex-row gap-6 mt-6 mb-10">
-          <div className="w-full sm:w-64 shrink-0">
-            <div className="aspect-[2/3] w-full bg-neutral-200 rounded-xl overflow-hidden">
+        {/* Compact banner */}
+        <div className="flex items-center gap-4 mt-6 mb-8">
+          <div className="w-20 sm:w-24 shrink-0">
+            <div className="aspect-[2/3] w-full bg-neutral-200 rounded-lg overflow-hidden">
               {movie.poster_url ? (
                 <img
                   src={movie.poster_url}
@@ -190,20 +198,19 @@ export default function MovieDetailPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-500 text-sm">
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-[10px] text-center px-1">
                   No Poster
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex-1">
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 truncate">
               {movie.title}
             </h1>
-
-            <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 mt-3">
-              <span className="border border-slate-300 rounded px-1.5 py-0.5 text-xs font-semibold">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-2">
+              <span className="border border-slate-300 rounded px-1.5 py-0.5 font-semibold">
                 {movie.certificate}
               </span>
               <span>{movie.genre}</span>
@@ -211,27 +218,22 @@ export default function MovieDetailPage() {
               <span>{formatDuration(movie.duration_min)}</span>
               <span>•</span>
               <span>{movie.language}</span>
-              <span>•</span>
-              <span>Released {formatReleaseDate(movie.release_date)}</span>
             </div>
-
-            <p className="text-slate-700 mt-5 leading-relaxed max-w-2xl">
-              {movie.synopsis}
-            </p>
           </div>
         </div>
 
-        {/* Showtimes */}
-        <div className="border-t border-slate-200 pt-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Showtimes</h2>
+        {/* Showtimes — front and center, BMS style */}
+        <div>
+          <h2 className="text-lg font-bold text-slate-900 mb-4">
+            Book tickets for {movie.title}
+          </h2>
 
           {dateKeys.length === 0 ? (
-            <div className="text-center py-16 text-slate-500">
+            <div className="text-center py-16 text-slate-500 bg-white border border-slate-200 rounded-xl">
               This movie is currently not showing in {city}.
             </div>
           ) : (
             <>
-              {/* Date pills */}
               <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6">
                 {dateKeys.map((dk) => (
                   <button
@@ -248,25 +250,22 @@ export default function MovieDetailPage() {
                 ))}
               </div>
 
-              {/* Venue list */}
               <div className="flex flex-col gap-5">
                 {venuesForDate.map((venue) => (
                   <div
                     key={venue.venue_id}
                     className="bg-white border border-slate-200 rounded-xl p-5"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 mb-4">
-                      <div>
-                        <h3 className="font-bold text-slate-900">
-                          {venue.venue_name}
-                        </h3>
-                        {venue.address && (
-                          <p className="flex items-center gap-1 text-xs text-slate-500 mt-1">
-                            <MapPin className="h-3.5 w-3.5" />
-                            {venue.address}
-                          </p>
-                        )}
-                      </div>
+                    <div className="mb-4">
+                      <h3 className="font-bold text-slate-900">
+                        {venue.venue_name}
+                      </h3>
+                      {venue.address && (
+                        <p className="flex items-center gap-1 text-xs text-slate-500 mt-1">
+                          <MapPin className="h-3.5 w-3.5" />
+                          {venue.address}
+                        </p>
+                      )}
                     </div>
 
                     {venue.showtimes.length === 0 ? (
@@ -278,14 +277,10 @@ export default function MovieDetailPage() {
                         {venue.showtimes.map((slot) => (
                           <button
                             key={slot.id}
-                            onClick={() =>
-                              navigate(
-                                withCity(
-                                  `/showtimes/${slot.id}/seat-map`,
-                                  city,
-                                ),
-                              )
-                            }
+                            onClick={() => {
+                              setTicketCount(2);
+                              setPendingSlot(slot);
+                            }}
                             className="flex flex-col items-center border border-slate-200 rounded-lg px-4 py-2 text-sm hover:border-[#7B1E3D] hover:bg-[#7B1E3D]/5 transition"
                           >
                             <span className="font-bold text-slate-900">
@@ -305,8 +300,75 @@ export default function MovieDetailPage() {
             </>
           )}
         </div>
+
+        {/* Synopsis, pushed below the fold */}
+        <div className="border-t border-slate-200 mt-10 pt-8 max-w-2xl">
+          <h2 className="text-lg font-bold text-slate-900 mb-3">About the movie</h2>
+          <p className="text-slate-700 leading-relaxed">{movie.synopsis}</p>
+          <p className="text-sm text-slate-500 mt-3">
+            Released {formatReleaseDate(movie.release_date)}
+          </p>
+        </div>
       </main>
       <Footer />
+
+      {/* Ticket-quantity picker */}
+      {pendingSlot && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50"
+          onClick={() => setPendingSlot(null)}
+        >
+          <div
+            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:w-96 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-bold text-lg text-slate-900">
+                Select tickets
+              </h3>
+              <button
+                onClick={() => setPendingSlot(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="text-sm text-slate-500 mb-6">
+              {istTimeLabel(pendingSlot.starts_at)} · {pendingSlot.screen_name} ·{" "}
+              {pendingSlot.format}
+            </p>
+
+            <div className="flex items-center justify-center gap-6 mb-6">
+              <button
+                onClick={() => setTicketCount((c) => Math.max(1, c - 1))}
+                disabled={ticketCount <= 1}
+                className="h-10 w-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-700 disabled:opacity-30 hover:border-[#7B1E3D] transition"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <span className="text-3xl font-extrabold text-slate-900 w-10 text-center">
+                {ticketCount}
+              </span>
+              <button
+                onClick={() =>
+                  setTicketCount((c) => Math.min(MAX_TICKETS, c + 1))
+                }
+                disabled={ticketCount >= MAX_TICKETS}
+                className="h-10 w-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-700 disabled:opacity-30 hover:border-[#7B1E3D] transition"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            <button
+              onClick={confirmSeatSelection}
+              className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-lg py-3 transition"
+            >
+              Select Seats
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
