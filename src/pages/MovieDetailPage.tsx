@@ -5,13 +5,24 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
-import { ChevronDown, Minus, Plus, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  MapPin,
+  Minus,
+  Plus,
+  Search,
+  Share2,
+  Star,
+  X,
+} from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 
 interface ShowtimeSlot {
   id: string;
   screen_name: string;
-  starts_at: string; // ISO UTC
+  starts_at: string;
   language: string;
   format: string;
 }
@@ -54,7 +65,6 @@ function formatReleaseDate(dateStr: string): string {
   });
 }
 
-// YYYY-MM-DD in Asia/Kolkata for a given ISO timestamp
 function istDateKey(iso: string): string {
   return new Date(iso).toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -62,33 +72,31 @@ function istDateKey(iso: string): string {
 }
 
 function istTimeLabel(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+  return new Date(iso)
+    .toLocaleTimeString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .toUpperCase();
 }
 
 function dateTabParts(dateKey: string) {
   const [y, m, d] = dateKey.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
   return {
-    weekday: dt.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" }),
+    weekday: dt
+      .toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })
+      .toUpperCase(),
     day: dt.toLocaleDateString("en-IN", { day: "2-digit", timeZone: "UTC" }),
-    month: dt.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" }),
+    month: dt
+      .toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })
+      .toUpperCase(),
   };
 }
 
 type PreferredTime = "any" | "morning" | "afternoon" | "evening" | "night";
-
-const PREFERRED_TIME_LABELS: Record<PreferredTime, string> = {
-  any: "Preferred Time",
-  morning: "Morning (before 12PM)",
-  afternoon: "Afternoon (12–4PM)",
-  evening: "Evening (4–9PM)",
-  night: "Night (after 9PM)",
-};
 
 function istHour(iso: string): number {
   return Number(
@@ -96,7 +104,7 @@ function istHour(iso: string): number {
       timeZone: "Asia/Kolkata",
       hour: "2-digit",
       hour12: false,
-    }),
+    })
   );
 }
 
@@ -119,7 +127,9 @@ export default function MovieDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [pendingSlot, setPendingSlot] = useState<ShowtimeSlot | null>(null);
+  const [pendingVenue, setPendingVenue] = useState<VenueGroup | null>(null);
   const [ticketCount, setTicketCount] = useState(2);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Filters
   const [langFormatFilter, setLangFormatFilter] = useState<string>("all");
@@ -144,7 +154,7 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-  // --- Derived calculations moved ABOVE early returns ---
+  // All hooks above early returns
   const now = Date.now();
   const todayKey = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -160,30 +170,28 @@ export default function MovieDetailPage() {
         venuesInCity.flatMap((v) =>
           v.showtimes
             .filter((s) => new Date(s.starts_at).getTime() > now)
-            .map((s) => istDateKey(s.starts_at)),
-        ),
-      ),
+            .map((s) => istDateKey(s.starts_at))
+        )
+      )
     ).sort();
   }, [venuesInCity, now]);
 
   const activeDate = selectedDate ?? dateKeys[0] ?? null;
 
-  // Language·format combos available on the active date, for the filter dropdown
   const langFormatOptions = useMemo(() => {
     const set = new Set<string>();
     venuesInCity.forEach((v) =>
       v.showtimes
         .filter((s) => new Date(s.starts_at).getTime() > now)
         .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
-        .forEach((s) => set.add(`${s.language} - ${s.format}`)),
+        .forEach((s) => set.add(`${s.language} - ${s.format}`))
     );
     return Array.from(set).sort();
   }, [venuesInCity, activeDate, now]);
 
-  // --- Early returns now happen AFTER all hooks have executed ---
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex flex-col">
+      <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
         <Header />
         <div className="flex-grow flex justify-center items-center py-20">
           <Loader />
@@ -195,9 +203,9 @@ export default function MovieDetailPage() {
 
   if (!movie) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex flex-col">
+      <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
         <Header />
-        <div className="flex-grow flex justify-center items-center py-20 text-slate-500">
+        <div className="flex-grow flex justify-center items-center py-20 text-gray-500">
           Movie not found.
         </div>
         <Footer />
@@ -215,17 +223,23 @@ export default function MovieDetailPage() {
             .filter(
               (s) =>
                 langFormatFilter === "all" ||
-                `${s.language} - ${s.format}` === langFormatFilter,
+                `${s.language} - ${s.format}` === langFormatFilter
             )
             .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
             .sort(
               (a, b) =>
                 new Date(a.starts_at).getTime() -
-                new Date(b.starts_at).getTime(),
+                new Date(b.starts_at).getTime()
             ),
         }))
+        .filter((v) =>
+          searchQuery
+            ? v.venue_name.toLowerCase().includes(searchQuery.toLowerCase())
+            : true
+        )
+        .filter((v) => v.showtimes.length > 0)
         .sort((a, b) =>
-          sortBy === "name" ? a.venue_name.localeCompare(b.venue_name) : 0,
+          sortBy === "name" ? a.venue_name.localeCompare(b.venue_name) : 0
         )
     : [];
 
@@ -234,329 +248,514 @@ export default function MovieDetailPage() {
     navigate(
       withCity(
         `/showtimes/${pendingSlot.id}/seat-map?qty=${ticketCount}`,
-        city,
-      ),
+        city
+      )
     );
   };
 
   const toggleDropdown = (name: "langFormat" | "time" | "sort") =>
     setOpenDropdown((cur) => (cur === name ? null : name));
 
-  return (
-    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
-      <Header />
-      <main className="flex-grow max-w-[1280px] w-full mx-auto px-4 pt-16 lg:pt-[104px] pb-12">
-        {/* Compact banner */}
-        <div className="flex items-center gap-4 mt-6 mb-6">
-          <div className="w-20 sm:w-24 shrink-0">
-            <div className="aspect-[2/3] w-full bg-neutral-200 rounded-lg overflow-hidden">
-              {movie.poster_url ? (
-                <img
-                  src={movie.poster_url}
-                  alt={movie.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400 text-[10px] text-center px-1">
-                  No Poster
-                </div>
-              )}
-            </div>
-          </div>
+  const genres = movie.genre.split(",").map((g) => g.trim());
 
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">
-              {movie.title}
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Movie runtime: {formatDuration(movie.duration_min)}
-            </p>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="border border-slate-300 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                {movie.certificate}
-              </span>
-              {movie.genre.split(",").map((g) => (
-                <span
-                  key={g.trim()}
-                  className="border border-slate-300 rounded-full px-2.5 py-0.5 text-xs text-slate-600"
+  return (
+    <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
+      <Header />
+
+      {/* ─── Hero Banner (BMS style dark gradient) ─── */}
+      <div className="bg-[#1A1A2E] pt-16 lg:pt-[72px]">
+        <div className="max-w-[1240px] mx-auto px-4 py-6 lg:py-8">
+          <div className="flex gap-6 items-start">
+            {/* Poster */}
+            <div className="hidden sm:block w-[196px] shrink-0">
+              <div className="w-full aspect-[2/3] rounded-lg overflow-hidden shadow-2xl relative group cursor-pointer">
+                {movie.poster_url ? (
+                  <img
+                    src={movie.poster_url}
+                    alt={movie.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400 text-sm">
+                    No Poster
+                  </div>
+                )}
+                {/* Play trailer overlay */}
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                    <div className="w-0 h-0 border-l-[16px] border-l-white border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent ml-1" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Movie Info */}
+            <div className="flex-1 min-w-0 text-white">
+              <h1 className="text-[28px] lg:text-[32px] font-bold leading-tight">
+                {movie.title}
+              </h1>
+
+              {/* Rating pill */}
+              <div className="flex items-center gap-3 mt-3">
+                <div className="flex items-center gap-1 bg-[#333] rounded-lg px-3 py-1.5">
+                  <Star className="h-4 w-4 text-[#E8375A] fill-[#E8375A]" />
+                  <span className="font-bold text-sm">—</span>
+                  <span className="text-xs text-gray-400">/10</span>
+                </div>
+                <button className="text-xs text-white/60 hover:text-white/80 underline underline-offset-2">
+                  Rate now
+                </button>
+              </div>
+
+              {/* Format pills */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                {Array.from(
+                  new Set(
+                    venuesInCity.flatMap((v) =>
+                      v.showtimes.map((s) => s.format)
+                    )
+                  )
+                ).map((fmt) => (
+                  <span
+                    key={fmt}
+                    className="bg-[#333] text-white text-xs font-medium px-3 py-1 rounded"
+                  >
+                    {fmt}
+                  </span>
+                ))}
+              </div>
+
+              {/* Meta row */}
+              <div className="flex flex-wrap items-center gap-1.5 text-sm text-white/70 mt-4">
+                <span>{formatDuration(movie.duration_min)}</span>
+                <span>•</span>
+                {genres.map((g, i) => (
+                  <span key={g}>
+                    {g}
+                    {i < genres.length - 1 ? "," : ""}
+                  </span>
+                ))}
+                <span>•</span>
+                <span>{movie.certificate}</span>
+                <span>•</span>
+                <span>{formatReleaseDate(movie.release_date)}</span>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex items-center gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    const el = document.getElementById("showtimes-section");
+                    el?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="bg-[#E8375A] hover:bg-[#D42D4F] text-white font-bold text-sm px-8 py-3 rounded-lg transition shadow-lg shadow-[#E8375A]/30"
                 >
-                  {g.trim()}
-                </span>
-              ))}
+                  Book tickets
+                </button>
+                <button className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition">
+                  <Share2 className="h-4 w-4" />
+                </button>
+                <button className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition">
+                  <Heart className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {dateKeys.length === 0 ? (
-          <div className="text-center py-16 text-slate-500 bg-white border border-slate-200 rounded-xl">
-            This movie is currently not showing in {city}.
-          </div>
-        ) : (
-          <>
-            {/* Date tabs + filter dropdown row */}
-            <div className="flex flex-wrap items-stretch border-b border-slate-200 mb-6">
-              <div className="flex overflow-x-auto">
-                {dateKeys.map((dk) => {
-                  const { weekday, day, month } = dateTabParts(dk);
-                  const isToday = dk === todayKey;
-                  const isActive = activeDate === dk;
-                  return (
-                    <button
-                      key={dk}
-                      onClick={() => setSelectedDate(dk)}
-                      className={`shrink-0 flex flex-col items-center justify-center px-4 py-2 min-w-[64px] border-b-2 transition ${
-                        isActive
-                          ? "bg-[#7B1E3D] text-white border-[#7B1E3D]"
-                          : "bg-white text-slate-700 border-transparent hover:bg-slate-50"
-                      }`}
-                    >
-                      <span className="text-[10px] font-semibold uppercase">
-                        {isToday ? "Today" : weekday}
-                      </span>
-                      <span className="text-base font-bold leading-tight">
-                        {day}
-                      </span>
-                      <span className="text-[10px] uppercase">{month}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="flex items-center gap-1 ml-auto flex-wrap">
-                {/* Language · Format filter */}
-                <div className="relative">
-                  <button
-                    onClick={() => toggleDropdown("langFormat")}
-                    className="flex items-center gap-1 px-3 py-2 text-sm text-slate-700 border-b-2 border-transparent hover:bg-slate-50"
-                  >
-                    {langFormatFilter === "all"
-                      ? "Language - Format"
-                      : langFormatFilter}
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </button>
-                  {openDropdown === "langFormat" && (
-                    <div className="absolute right-0 z-10 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[200px]">
-                      <button
-                        onClick={() => {
-                          setLangFormatFilter("all");
-                          setOpenDropdown(null);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-                      >
-                        All
-                      </button>
-                      {langFormatOptions.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => {
-                            setLangFormatFilter(opt);
-                            setOpenDropdown(null);
-                          }}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Preferred Time filter */}
-                <div className="relative">
-                  <button
-                    onClick={() => toggleDropdown("time")}
-                    className="flex items-center gap-1 px-3 py-2 text-sm text-slate-700 border-b-2 border-transparent hover:bg-slate-50"
-                  >
-                    {PREFERRED_TIME_LABELS[preferredTime]}
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </button>
-                  {openDropdown === "time" && (
-                    <div className="absolute right-0 z-10 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[220px]">
-                      {(Object.keys(PREFERRED_TIME_LABELS) as PreferredTime[]).map(
-                        (key) => (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setPreferredTime(key);
-                              setOpenDropdown(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-                          >
-                            {PREFERRED_TIME_LABELS[key]}
-                          </button>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Sort By */}
-                <div className="relative">
-                  <button
-                    onClick={() => toggleDropdown("sort")}
-                    className="flex items-center gap-1 px-3 py-2 text-sm text-slate-700 border-b-2 border-transparent hover:bg-slate-50"
-                  >
-                    Sort By
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  </button>
-                  {openDropdown === "sort" && (
-                    <div className="absolute right-0 z-10 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[180px]">
-                      <button
-                        onClick={() => {
-                          setSortBy("time");
-                          setOpenDropdown(null);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-                      >
-                        Default
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSortBy("name");
-                          setOpenDropdown(null);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm hover:bg-slate-50"
-                      >
-                        Cinema Name (A-Z)
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Availability legend */}
-            <div className="flex items-center justify-end gap-4 text-xs text-slate-500 mb-4">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                Available
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-amber-500" />
-                Fast Filling
-              </span>
-            </div>
-
-            {/* Venue list */}
-            <div className="flex flex-col gap-4">
-              {venuesForDate.map((venue) => (
-                <div
-                  key={venue.venue_id}
-                  className="bg-white border border-slate-200 rounded-xl p-5"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="font-bold text-slate-900">
-                        {venue.venue_name}
-                      </h3>
-                      {venue.address && (
-                        <p className="text-xs text-slate-500 mt-1">
-                          {venue.address}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {venue.showtimes.length === 0 ? (
-                    <p className="text-sm text-slate-400">
-                      No shows on this date
-                    </p>
-                  ) : (
-                    <div className="flex flex-wrap gap-3">
-                      {venue.showtimes.map((slot) => (
-                        <button
-                          key={slot.id}
-                          onClick={() => {
-                            setTicketCount(2);
-                            setPendingSlot(slot);
-                          }}
-                          className="flex flex-col items-center border border-emerald-500 text-emerald-700 rounded-md px-4 py-1.5 text-sm hover:bg-emerald-50 transition"
-                        >
-                          <span className="font-bold">
-                            {istTimeLabel(slot.starts_at)}
-                          </span>
-                          <span className="text-[10px] text-slate-500 mt-0.5">
-                            {slot.format}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Synopsis */}
-        <div className="border-t border-slate-200 mt-10 pt-8 max-w-2xl">
-          <h2 className="text-lg font-bold text-slate-900 mb-3">
+      {/* ─── About section ─── */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-[1240px] mx-auto px-4 py-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-2">
             About the movie
           </h2>
-          <p className="text-slate-700 leading-relaxed">{movie.synopsis}</p>
-          <p className="text-sm text-slate-500 mt-3">
-            Released {formatReleaseDate(movie.release_date)} · {movie.language}
+          <p className="text-gray-600 text-sm leading-relaxed max-w-3xl">
+            {movie.synopsis}
           </p>
         </div>
-      </main>
+      </div>
+
+      {/* ─── Showtimes Section ─── */}
+      <div id="showtimes-section" className="bg-[#F5F5F5]">
+        <div className="max-w-[1240px] mx-auto px-4 py-0">
+          {dateKeys.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+              <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+              <p className="text-lg font-medium">
+                No showtimes available in {city}
+              </p>
+              <p className="text-sm text-gray-400 mt-1">
+                Try selecting a different city
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* ─── Date strip (BMS style) ─── */}
+              <div className="sticky top-[56px] lg:top-[72px] z-30 bg-white border-b border-gray-200 -mx-4 px-4">
+                <div className="flex items-stretch">
+                  <div className="flex overflow-x-auto scrollbar-none gap-0 flex-1">
+                    {dateKeys.map((dk) => {
+                      const { weekday, day, month } = dateTabParts(dk);
+                      const isToday = dk === todayKey;
+                      const isActive = activeDate === dk;
+                      return (
+                        <button
+                          key={dk}
+                          onClick={() => setSelectedDate(dk)}
+                          className={`shrink-0 flex flex-col items-center justify-center w-[76px] py-3 transition-all relative ${
+                            isActive
+                              ? "text-[#E8375A]"
+                              : "text-gray-500 hover:text-gray-700"
+                          }`}
+                        >
+                          <span
+                            className={`text-[11px] font-medium ${isActive ? "text-[#E8375A]" : ""}`}
+                          >
+                            {isToday ? "TODAY" : weekday}
+                          </span>
+                          <span
+                            className={`text-lg font-bold leading-tight ${
+                              isActive
+                                ? "bg-[#E8375A] text-white w-8 h-8 rounded-full flex items-center justify-center text-sm"
+                                : ""
+                            }`}
+                          >
+                            {day}
+                          </span>
+                          <span className="text-[10px] font-medium">
+                            {month}
+                          </span>
+                          {isActive && (
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-[3px] bg-[#E8375A] rounded-t" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Vertical divider */}
+                  <div className="w-px bg-gray-200 my-2" />
+
+                  {/* Filter buttons */}
+                  <div className="flex items-center gap-0 pl-2 shrink-0">
+                    {/* Language/Format */}
+                    <div className="relative">
+                      <button
+                        onClick={() => toggleDropdown("langFormat")}
+                        className={`flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full mx-0.5 transition ${
+                          langFormatFilter !== "all"
+                            ? "bg-[#E8375A] text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {langFormatFilter === "all"
+                          ? movie.language
+                          : langFormatFilter.split(" - ")[0]}
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                      {openDropdown === "langFormat" && (
+                        <div className="absolute right-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[200px]">
+                          <button
+                            onClick={() => {
+                              setLangFormatFilter("all");
+                              setOpenDropdown(null);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === "all" ? "text-[#E8375A] font-medium" : "text-gray-700"}`}
+                          >
+                            All Languages
+                          </button>
+                          {langFormatOptions.map((opt) => (
+                            <button
+                              key={opt}
+                              onClick={() => {
+                                setLangFormatFilter(opt);
+                                setOpenDropdown(null);
+                              }}
+                              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === opt ? "text-[#E8375A] font-medium" : "text-gray-700"}`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Time filter */}
+                    <div className="relative">
+                      <button
+                        onClick={() => toggleDropdown("time")}
+                        className={`flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full mx-0.5 transition ${
+                          preferredTime !== "any"
+                            ? "bg-[#E8375A] text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        {preferredTime === "any"
+                          ? "Show Time"
+                          : preferredTime.charAt(0).toUpperCase() +
+                            preferredTime.slice(1)}
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                      {openDropdown === "time" && (
+                        <div className="absolute right-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
+                          {(
+                            [
+                              "any",
+                              "morning",
+                              "afternoon",
+                              "evening",
+                              "night",
+                            ] as PreferredTime[]
+                          ).map((key) => {
+                            const labels: Record<PreferredTime, string> = {
+                              any: "Any Time",
+                              morning: "Morning (Before 12 PM)",
+                              afternoon: "Afternoon (12 PM - 4 PM)",
+                              evening: "Evening (4 PM - 9 PM)",
+                              night: "Night (After 9 PM)",
+                            };
+                            return (
+                              <button
+                                key={key}
+                                onClick={() => {
+                                  setPreferredTime(key);
+                                  setOpenDropdown(null);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${preferredTime === key ? "text-[#E8375A] font-medium" : "text-gray-700"}`}
+                              >
+                                {labels[key]}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Search cinemas */}
+                    <div className="relative ml-1">
+                      <button
+                        onClick={() => {
+                          const el =
+                            document.getElementById("cinema-search-input");
+                          el?.focus();
+                        }}
+                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                      >
+                        <Search className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── Availability legend & search ─── */}
+              <div className="flex items-center justify-between py-4">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                    <input
+                      id="cinema-search-input"
+                      type="text"
+                      placeholder="Search cinemas"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-md w-52 focus:outline-none focus:border-[#E8375A] focus:ring-1 focus:ring-[#E8375A]/20"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-5 text-xs text-gray-500">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#4ABD5D]" />
+                    AVAILABLE
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#F5C518]" />
+                    FAST FILLING
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full border-2 border-gray-300" />
+                    SUBTITLES LANGUAGE
+                  </span>
+                </div>
+              </div>
+
+              {/* ─── Venue List (BMS style) ─── */}
+              <div className="flex flex-col gap-0 pb-8">
+                {venuesForDate.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+                    <p className="font-medium">
+                      No shows available for selected filters
+                    </p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Try changing date, language or time filter
+                    </p>
+                  </div>
+                ) : (
+                  venuesForDate.map((venue, idx) => (
+                    <div
+                      key={venue.venue_id}
+                      className={`bg-white px-5 py-4 flex items-start gap-4 ${
+                        idx === 0 ? "rounded-t-lg" : ""
+                      } ${idx === venuesForDate.length - 1 ? "rounded-b-lg" : ""} ${
+                        idx !== venuesForDate.length - 1
+                          ? "border-b border-gray-100"
+                          : ""
+                      }`}
+                    >
+                      {/* Venue info (left side) */}
+                      <div className="w-[260px] shrink-0">
+                        <div className="flex items-center gap-1.5">
+                          <Heart className="h-3.5 w-3.5 text-gray-300 hover:text-[#E8375A] cursor-pointer transition" />
+                          <h3 className="text-sm font-semibold text-gray-800 truncate">
+                            {venue.venue_name}
+                          </h3>
+                        </div>
+                        {venue.address && (
+                          <p className="text-[11px] text-gray-400 mt-0.5 ml-5 truncate">
+                            {venue.address}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Showtimes (right side) */}
+                      <div className="flex-1 flex flex-wrap gap-2.5">
+                        {venue.showtimes.map((slot) => {
+                          const isPast =
+                            new Date(slot.starts_at).getTime() < now;
+                          return (
+                            <button
+                              key={slot.id}
+                              onClick={() => {
+                                if (isPast) return;
+                                setTicketCount(2);
+                                setPendingSlot(slot);
+                                setPendingVenue(venue);
+                              }}
+                              disabled={isPast}
+                              className={`group relative border rounded-md px-4 py-2 min-w-[90px] text-center transition ${
+                                isPast
+                                  ? "border-gray-200 text-gray-300 cursor-not-allowed"
+                                  : "border-[#4ABD5D] text-[#4ABD5D] hover:bg-[#4ABD5D]/5 cursor-pointer"
+                              }`}
+                            >
+                              <span className="text-[13px] font-bold block">
+                                {istTimeLabel(slot.starts_at)}
+                              </span>
+                              <span className="text-[10px] text-gray-400 font-medium">
+                                {slot.screen_name}
+                              </span>
+
+                              {/* Tooltip on hover */}
+                              {!isPast && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                                  {slot.language} • {slot.format}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
       <Footer />
 
-      {/* Ticket-quantity picker */}
+      {/* ─── Ticket Selection Modal (BMS style) ─── */}
       {pendingSlot && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50"
+          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50"
           onClick={() => setPendingSlot(null)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:w-96 p-6"
+            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[400px] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="font-bold text-lg text-slate-900">
-                Select tickets
-              </h3>
+            {/* Modal header */}
+            <div className="bg-[#1A1A2E] px-6 pt-5 pb-4 relative">
               <button
                 onClick={() => setPendingSlot(null)}
-                className="text-slate-400 hover:text-slate-600"
+                className="absolute top-4 right-4 text-white/50 hover:text-white transition"
               >
                 <X className="h-5 w-5" />
               </button>
+              <h3 className="text-white font-bold text-lg pr-8">
+                {movie.title}
+              </h3>
+              <div className="flex items-center gap-2 text-white/60 text-xs mt-1.5">
+                <span>{pendingVenue?.venue_name}</span>
+              </div>
+              <div className="flex items-center gap-2 text-white/60 text-xs mt-1">
+                <span>
+                  {activeDate &&
+                    (() => {
+                      const { weekday, day, month } = dateTabParts(activeDate);
+                      return `${weekday}, ${day} ${month}`;
+                    })()}
+                </span>
+                <span>•</span>
+                <span>{istTimeLabel(pendingSlot.starts_at)}</span>
+                <span>•</span>
+                <span>{pendingSlot.screen_name}</span>
+              </div>
+              <div className="flex gap-1.5 mt-2">
+                <span className="bg-white/10 text-white/70 text-[10px] font-medium px-2 py-0.5 rounded">
+                  {pendingSlot.language}
+                </span>
+                <span className="bg-white/10 text-white/70 text-[10px] font-medium px-2 py-0.5 rounded">
+                  {pendingSlot.format}
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-slate-500 mb-6">
-              {istTimeLabel(pendingSlot.starts_at)} · {pendingSlot.screen_name} ·{" "}
-              {pendingSlot.format}
-            </p>
 
-            <div className="flex items-center justify-center gap-6 mb-6">
+            {/* Ticket count */}
+            <div className="px-6 py-6">
+              <p className="text-center text-gray-500 text-sm mb-5">
+                How many seats?
+              </p>
+
+              <div className="flex items-center justify-center gap-0">
+                {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
+                  (n) => (
+                    <button
+                      key={n}
+                      onClick={() => setTicketCount(n)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition mx-0.5 ${
+                        ticketCount === n
+                          ? "bg-[#E8375A] text-white shadow-lg shadow-[#E8375A]/30"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  )
+                )}
+              </div>
+
               <button
-                onClick={() => setTicketCount((c) => Math.max(1, c - 1))}
-                disabled={ticketCount <= 1}
-                className="h-10 w-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-700 disabled:opacity-30 hover:border-[#7B1E3D] transition"
+                onClick={confirmSeatSelection}
+                className="w-full bg-[#E8375A] hover:bg-[#D42D4F] text-white font-bold rounded-lg py-3.5 mt-6 transition text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#E8375A]/20"
               >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span className="text-3xl font-extrabold text-slate-900 w-10 text-center">
-                {ticketCount}
-              </span>
-              <button
-                onClick={() =>
-                  setTicketCount((c) => Math.min(MAX_TICKETS, c + 1))
-                }
-                disabled={ticketCount >= MAX_TICKETS}
-                className="h-10 w-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-700 disabled:opacity-30 hover:border-[#7B1E3D] transition"
-              >
-                <Plus className="h-4 w-4" />
+                Select Seats
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
-
-            <button
-              onClick={confirmSeatSelection}
-              className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-lg py-3 transition"
-            >
-              Select Seats
-            </button>
           </div>
         </div>
+      )}
+
+      {/* Close dropdown on outside click */}
+      {openDropdown && (
+        <div
+          className="fixed inset-0 z-10"
+          onClick={() => setOpenDropdown(null)}
+        />
       )}
     </div>
   );
