@@ -56,34 +56,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setLoading(false);
     onClose();
   };
+  // src/pages/AuthModal.tsx
+
   const verifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setLoading(true);
     try {
       const res = await unwrap<{ access_token: string; refresh_token: string }>(
-        api.post("/auth/login/verify", {
+        api.post('/auth/login/verify', {
           user_id: userId,
           otp_code: otp,
           method,
-        }),
+        })
       );
       setTokens(res.access_token, res.refresh_token);
+      setLoading(false);
+      
+      // 1. Call onSuccess to trigger handleCheckout in SeatMapPage
       onSuccess();
-      if (reloadOnSuccess) {
-        window.location.reload();
-      } else {
-        handleClose();
-      }
+      
+      // 2. Close the modal without reloading the page
+      handleClose();
     } catch (err: any) {
       setError(
-        err?.error?.message ??
-          err?.detail?.message ??
-          err?.message ??
-          "Invalid OTP",
+        err?.error?.message ?? err?.detail?.message ?? err?.message ?? 'Invalid OTP'
       );
       setLoading(false);
     }
+  };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -212,5 +213,5 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       </div>
     );
   };
-};
+
 export default AuthModal;

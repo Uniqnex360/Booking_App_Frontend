@@ -248,7 +248,8 @@ export default function SeatMapPage() {
     }
   };
 
-  // BMS flow: Pay → login popup (if needed) → then checkout
+  // src/pages/SeatMapPage.tsx
+
   const handlePayClick = () => {
     if (selectedSeats.length !== requiredSeatCount) {
       toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
@@ -265,9 +266,13 @@ export default function SeatMapPage() {
 
   const handleAuthSuccess = () => {
     setIsAuthModalOpen(false);
-    // Tokens are set; continue booking without losing seat selection
-    handleCheckout();
+    // Give a 50ms tick so localStorage tokens are readable by the api client
+    setTimeout(() => {
+      handleCheckout();
+    }, 50);
   };
+
+  
 
   // Organize rows into price tiers (Expensive on top)
   const tiers: {
@@ -319,7 +324,8 @@ export default function SeatMapPage() {
       <Header />
 
       {/* ─── BMS SUB-HEADER ─── */}
-      <div className="bg-[#333338] text-white pt-16 lg:pt-[72px] sticky top-0 z-20 shadow-md">
+     <div className="bg-[#333338] text-white pt-[112px] lg:pt-[120px] sticky top-0 z-20 shadow-md">
+
         <div className="max-w-[1240px] mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
