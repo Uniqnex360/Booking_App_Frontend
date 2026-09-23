@@ -10,8 +10,7 @@ import {
   ChevronRight,
   Heart,
   MapPin,
-  Minus,
-  Plus,
+  Play,
   Search,
   Share2,
   Star,
@@ -79,20 +78,19 @@ function istTimeLabel(iso: string): string {
       minute: "2-digit",
       hour12: true,
     })
-    .toUpperCase();
+    .toLowerCase();
 }
 
 function dateTabParts(dateKey: string) {
   const [y, m, d] = dateKey.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
   return {
-    weekday: dt
-      .toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })
-      .toUpperCase(),
+    weekday: dt.toLocaleDateString("en-IN", {
+      weekday: "short",
+      timeZone: "UTC",
+    }),
     day: dt.toLocaleDateString("en-IN", { day: "2-digit", timeZone: "UTC" }),
-    month: dt
-      .toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })
-      .toUpperCase(),
+    month: dt.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" }),
   };
 }
 
@@ -134,9 +132,8 @@ export default function MovieDetailPage() {
   // Filters
   const [langFormatFilter, setLangFormatFilter] = useState<string>("all");
   const [preferredTime, setPreferredTime] = useState<PreferredTime>("any");
-  const [sortBy, setSortBy] = useState<"time" | "name">("time");
   const [openDropdown, setOpenDropdown] = useState<
-    "langFormat" | "time" | "sort" | null
+    "langFormat" | "time" | null
   >(null);
 
   useEffect(() => {
@@ -154,7 +151,6 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-  // All hooks above early returns
   const now = Date.now();
   const todayKey = new Date().toLocaleDateString("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -191,7 +187,7 @@ export default function MovieDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <Header />
         <div className="flex-grow flex justify-center items-center py-20">
           <Loader />
@@ -203,7 +199,7 @@ export default function MovieDetailPage() {
 
   if (!movie) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
+      <div className="min-h-screen bg-white flex flex-col">
         <Header />
         <div className="flex-grow flex justify-center items-center py-20 text-gray-500">
           Movie not found.
@@ -238,9 +234,6 @@ export default function MovieDetailPage() {
             : true
         )
         .filter((v) => v.showtimes.length > 0)
-        .sort((a, b) =>
-          sortBy === "name" ? a.venue_name.localeCompare(b.venue_name) : 0
-        )
     : [];
 
   const confirmSeatSelection = () => {
@@ -253,22 +246,42 @@ export default function MovieDetailPage() {
     );
   };
 
-  const toggleDropdown = (name: "langFormat" | "time" | "sort") =>
+  const toggleDropdown = (name: "langFormat" | "time") =>
     setOpenDropdown((cur) => (cur === name ? null : name));
 
   const genres = movie.genre.split(",").map((g) => g.trim());
+  const allFormats = Array.from(
+    new Set(venuesInCity.flatMap((v) => v.showtimes.map((s) => s.format)))
+  );
+  const allLanguages = Array.from(
+    new Set(venuesInCity.flatMap((v) => v.showtimes.map((s) => s.language)))
+  );
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      {/* ─── Hero Banner (BMS style dark gradient) ─── */}
-      <div className="bg-[#1A1A2E] pt-16 lg:pt-[72px]">
-        <div className="max-w-[1240px] mx-auto px-4 py-6 lg:py-8">
-          <div className="flex gap-6 items-start">
+      {/* ─── Hero Banner (BMS dark gradient with backdrop) ─── */}
+      <div
+        className="relative pt-16 lg:pt-[72px]"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(26,26,46,0.98) 0%, rgba(26,26,46,0.85) 50%, rgba(26,26,46,0.98) 100%)",
+        }}
+      >
+        {/* Blurred backdrop */}
+        {movie.poster_url && (
+          <div
+            className="absolute inset-0 opacity-20 bg-cover bg-center blur-2xl"
+            style={{ backgroundImage: `url(${movie.poster_url})` }}
+          />
+        )}
+
+        <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
+          <div className="flex gap-8 items-start">
             {/* Poster */}
-            <div className="hidden sm:block w-[196px] shrink-0">
-              <div className="w-full aspect-[2/3] rounded-lg overflow-hidden shadow-2xl relative group cursor-pointer">
+            <div className="hidden sm:block w-[240px] shrink-0">
+              <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer">
                 {movie.poster_url ? (
                   <img
                     src={movie.poster_url}
@@ -280,10 +293,14 @@ export default function MovieDetailPage() {
                     No Poster
                   </div>
                 )}
-                {/* Play trailer overlay */}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                  <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                    <div className="w-0 h-0 border-l-[16px] border-l-white border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent ml-1" />
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+                      <Play className="h-6 w-6 text-white fill-white ml-0.5" />
+                    </div>
+                    <span className="text-white text-xs font-medium">
+                      Watch Trailer
+                    </span>
                   </div>
                 </div>
               </div>
@@ -291,53 +308,54 @@ export default function MovieDetailPage() {
 
             {/* Movie Info */}
             <div className="flex-1 min-w-0 text-white">
-              <h1 className="text-[28px] lg:text-[32px] font-bold leading-tight">
+              <h1 className="text-[32px] lg:text-[40px] font-bold leading-tight">
                 {movie.title}
               </h1>
 
-              {/* Rating pill */}
-              <div className="flex items-center gap-3 mt-3">
-                <div className="flex items-center gap-1 bg-[#333] rounded-lg px-3 py-1.5">
-                  <Star className="h-4 w-4 text-[#E8375A] fill-[#E8375A]" />
-                  <span className="font-bold text-sm">—</span>
-                  <span className="text-xs text-gray-400">/10</span>
+              {/* Rating pill (BMS style large) */}
+              <div className="mt-4 bg-[#333338] rounded-xl px-5 py-3 inline-flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Star className="h-6 w-6 text-[#F5C518] fill-[#F5C518]" />
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-bold text-xl">8.5</span>
+                      <span className="text-sm text-gray-400">/10</span>
+                    </div>
+                    <div className="text-[11px] text-gray-400">
+                      142.5K Votes
+                    </div>
+                  </div>
                 </div>
-                <button className="text-xs text-white/60 hover:text-white/80 underline underline-offset-2">
+                <button className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-md px-4 py-2 text-xs font-medium transition">
                   Rate now
                 </button>
               </div>
 
               {/* Format pills */}
-              <div className="flex flex-wrap gap-2 mt-4">
-                {Array.from(
-                  new Set(
-                    venuesInCity.flatMap((v) =>
-                      v.showtimes.map((s) => s.format)
-                    )
-                  )
-                ).map((fmt) => (
+              <div className="flex flex-wrap gap-2 mt-5">
+                {allFormats.map((fmt) => (
                   <span
                     key={fmt}
-                    className="bg-[#333] text-white text-xs font-medium px-3 py-1 rounded"
+                    className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded"
                   >
                     {fmt}
                   </span>
                 ))}
+                {allLanguages.length > 0 && (
+                  <span className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded">
+                    {allLanguages.join(", ")}
+                  </span>
+                )}
               </div>
 
               {/* Meta row */}
-              <div className="flex flex-wrap items-center gap-1.5 text-sm text-white/70 mt-4">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-white mt-5">
                 <span>{formatDuration(movie.duration_min)}</span>
-                <span>•</span>
-                {genres.map((g, i) => (
-                  <span key={g}>
-                    {g}
-                    {i < genres.length - 1 ? "," : ""}
-                  </span>
-                ))}
-                <span>•</span>
+                <span className="text-white/40">•</span>
+                <span>{genres.join(", ")}</span>
+                <span className="text-white/40">•</span>
                 <span>{movie.certificate}</span>
-                <span>•</span>
+                <span className="text-white/40">•</span>
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
 
@@ -348,15 +366,15 @@ export default function MovieDetailPage() {
                     const el = document.getElementById("showtimes-section");
                     el?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="bg-[#E8375A] hover:bg-[#D42D4F] text-white font-bold text-sm px-8 py-3 rounded-lg transition shadow-lg shadow-[#E8375A]/30"
+                  className="bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold text-sm px-10 py-3 rounded-md transition"
                 >
                   Book tickets
                 </button>
-                <button className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition">
-                  <Share2 className="h-4 w-4" />
-                </button>
-                <button className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center text-white/60 hover:text-white hover:border-white/40 transition">
+                <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
                   <Heart className="h-4 w-4" />
+                </button>
+                <button className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+                  <Share2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -366,20 +384,20 @@ export default function MovieDetailPage() {
 
       {/* ─── About section ─── */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1240px] mx-auto px-4 py-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-2">
+        <div className="max-w-[1240px] mx-auto px-4 py-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">
             About the movie
           </h2>
-          <p className="text-gray-600 text-sm leading-relaxed max-w-3xl">
+          <p className="text-gray-700 text-sm leading-relaxed max-w-4xl">
             {movie.synopsis}
           </p>
         </div>
       </div>
 
       {/* ─── Showtimes Section ─── */}
-      <div id="showtimes-section" className="bg-[#F5F5F5]">
-        <div className="max-w-[1240px] mx-auto px-4 py-0">
-          {dateKeys.length === 0 ? (
+      <div id="showtimes-section" className="bg-[#F5F5FA]">
+        {dateKeys.length === 0 ? (
+          <div className="max-w-[1240px] mx-auto px-4">
             <div className="text-center py-16 text-gray-500">
               <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-3" />
               <p className="text-lg font-medium">
@@ -389,199 +407,192 @@ export default function MovieDetailPage() {
                 Try selecting a different city
               </p>
             </div>
-          ) : (
-            <>
-              {/* ─── Date strip (BMS style) ─── */}
-              <div className="sticky top-[56px] lg:top-[72px] z-30 bg-white border-b border-gray-200 -mx-4 px-4">
-                <div className="flex items-stretch">
-                  <div className="flex overflow-x-auto scrollbar-none gap-0 flex-1">
-                    {dateKeys.map((dk) => {
-                      const { weekday, day, month } = dateTabParts(dk);
-                      const isToday = dk === todayKey;
-                      const isActive = activeDate === dk;
-                      return (
-                        <button
-                          key={dk}
-                          onClick={() => setSelectedDate(dk)}
-                          className={`shrink-0 flex flex-col items-center justify-center w-[76px] py-3 transition-all relative ${
-                            isActive
-                              ? "text-[#E8375A]"
-                              : "text-gray-500 hover:text-gray-700"
-                          }`}
-                        >
-                          <span
-                            className={`text-[11px] font-medium ${isActive ? "text-[#E8375A]" : ""}`}
-                          >
-                            {isToday ? "TODAY" : weekday}
-                          </span>
-                          <span
-                            className={`text-lg font-bold leading-tight ${
-                              isActive
-                                ? "bg-[#E8375A] text-white w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                                : ""
-                            }`}
-                          >
-                            {day}
-                          </span>
-                          <span className="text-[10px] font-medium">
-                            {month}
-                          </span>
-                          {isActive && (
-                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-[3px] bg-[#E8375A] rounded-t" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Vertical divider */}
-                  <div className="w-px bg-gray-200 my-2" />
-
-                  {/* Filter buttons */}
-                  <div className="flex items-center gap-0 pl-2 shrink-0">
-                    {/* Language/Format */}
-                    <div className="relative">
+          </div>
+        ) : (
+          <>
+            {/* ─── Date strip full width white bar ─── */}
+            <div className="sticky top-[56px] lg:top-[72px] z-30 bg-white shadow-sm border-b border-gray-200">
+              <div className="max-w-[1240px] mx-auto px-4">
+                <div className="flex overflow-x-auto scrollbar-none">
+                  {dateKeys.map((dk) => {
+                    const { weekday, day, month } = dateTabParts(dk);
+                    const isToday = dk === todayKey;
+                    const isActive = activeDate === dk;
+                    return (
                       <button
-                        onClick={() => toggleDropdown("langFormat")}
-                        className={`flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full mx-0.5 transition ${
-                          langFormatFilter !== "all"
-                            ? "bg-[#E8375A] text-white"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        key={dk}
+                        onClick={() => setSelectedDate(dk)}
+                        className={`shrink-0 flex flex-col items-center justify-center min-w-[88px] py-3.5 px-4 border-b-[3px] transition-all ${
+                          isActive
+                            ? "border-[#F84464] text-[#F84464]"
+                            : "border-transparent text-gray-700 hover:text-[#F84464]"
                         }`}
                       >
-                        {langFormatFilter === "all"
-                          ? movie.language
-                          : langFormatFilter.split(" - ")[0]}
-                        <ChevronDown className="h-3 w-3" />
+                        <span className="text-[13px] font-semibold uppercase">
+                          {isToday ? "Today" : weekday}
+                        </span>
+                        <span className="text-[22px] font-bold leading-tight my-0.5">
+                          {day}
+                        </span>
+                        <span className="text-[11px] font-medium uppercase text-gray-500">
+                          {month}
+                        </span>
                       </button>
-                      {openDropdown === "langFormat" && (
-                        <div className="absolute right-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[200px]">
-                          <button
-                            onClick={() => {
-                              setLangFormatFilter("all");
-                              setOpenDropdown(null);
-                            }}
-                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === "all" ? "text-[#E8375A] font-medium" : "text-gray-700"}`}
-                          >
-                            All Languages
-                          </button>
-                          {langFormatOptions.map((opt) => (
-                            <button
-                              key={opt}
-                              onClick={() => {
-                                setLangFormatFilter(opt);
-                                setOpenDropdown(null);
-                              }}
-                              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === opt ? "text-[#E8375A] font-medium" : "text-gray-700"}`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
-                    {/* Time filter */}
-                    <div className="relative">
-                      <button
-                        onClick={() => toggleDropdown("time")}
-                        className={`flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full mx-0.5 transition ${
-                          preferredTime !== "any"
-                            ? "bg-[#E8375A] text-white"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        {preferredTime === "any"
-                          ? "Show Time"
-                          : preferredTime.charAt(0).toUpperCase() +
-                            preferredTime.slice(1)}
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                      {openDropdown === "time" && (
-                        <div className="absolute right-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
-                          {(
-                            [
-                              "any",
-                              "morning",
-                              "afternoon",
-                              "evening",
-                              "night",
-                            ] as PreferredTime[]
-                          ).map((key) => {
-                            const labels: Record<PreferredTime, string> = {
-                              any: "Any Time",
-                              morning: "Morning (Before 12 PM)",
-                              afternoon: "Afternoon (12 PM - 4 PM)",
-                              evening: "Evening (4 PM - 9 PM)",
-                              night: "Night (After 9 PM)",
-                            };
-                            return (
-                              <button
-                                key={key}
-                                onClick={() => {
-                                  setPreferredTime(key);
-                                  setOpenDropdown(null);
-                                }}
-                                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${preferredTime === key ? "text-[#E8375A] font-medium" : "text-gray-700"}`}
-                              >
-                                {labels[key]}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Search cinemas */}
-                    <div className="relative ml-1">
+            {/* ─── Filters bar (BMS style with pills) ─── */}
+            <div className="bg-white border-b border-gray-200">
+              <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
+                {/* Language/Format */}
+                <div className="relative">
+                  <button
+                    onClick={() => toggleDropdown("langFormat")}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
+                      langFormatFilter !== "all"
+                        ? "bg-[#F84464] text-white border-[#F84464]"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {langFormatFilter === "all"
+                      ? "Languages & Formats"
+                      : langFormatFilter}
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                  {openDropdown === "langFormat" && (
+                    <div className="absolute left-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
                       <button
                         onClick={() => {
-                          const el =
-                            document.getElementById("cinema-search-input");
-                          el?.focus();
+                          setLangFormatFilter("all");
+                          setOpenDropdown(null);
                         }}
-                        className="flex items-center gap-1 px-3 py-2 text-xs font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition"
+                        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
+                          langFormatFilter === "all"
+                            ? "text-[#F84464] font-medium"
+                            : "text-gray-700"
+                        }`}
                       >
-                        <Search className="h-3 w-3" />
+                        All Languages
                       </button>
+                      {langFormatOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => {
+                            setLangFormatFilter(opt);
+                            setOpenDropdown(null);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
+                            langFormatFilter === opt
+                              ? "text-[#F84464] font-medium"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
                     </div>
-                  </div>
+                  )}
+                </div>
+
+                {/* Time filter */}
+                <div className="relative">
+                  <button
+                    onClick={() => toggleDropdown("time")}
+                    className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
+                      preferredTime !== "any"
+                        ? "bg-[#F84464] text-white border-[#F84464]"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {preferredTime === "any"
+                      ? "Show Time"
+                      : preferredTime.charAt(0).toUpperCase() +
+                        preferredTime.slice(1)}
+                    <ChevronDown className="h-3 w-3" />
+                  </button>
+                  {openDropdown === "time" && (
+                    <div className="absolute left-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[240px]">
+                      {(
+                        [
+                          "any",
+                          "morning",
+                          "afternoon",
+                          "evening",
+                          "night",
+                        ] as PreferredTime[]
+                      ).map((key) => {
+                        const labels: Record<PreferredTime, string> = {
+                          any: "Any Time",
+                          morning: "Morning (Before 12 PM)",
+                          afternoon: "Afternoon (12 PM - 4 PM)",
+                          evening: "Evening (4 PM - 9 PM)",
+                          night: "Night (After 9 PM)",
+                        };
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              setPreferredTime(key);
+                              setOpenDropdown(null);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
+                              preferredTime === key
+                                ? "text-[#F84464] font-medium"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            {labels[key]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Price filter (dummy for BMS look) */}
+                <button className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border bg-white text-gray-700 border-gray-300 hover:border-gray-400">
+                  Price
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+
+                {/* Search cinemas */}
+                <div className="relative ml-auto">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search cinemas"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 pr-3 py-1.5 text-xs bg-white border border-gray-300 rounded-full w-56 focus:outline-none focus:border-[#F84464]"
+                  />
                 </div>
               </div>
+            </div>
 
-              {/* ─── Availability legend & search ─── */}
-              <div className="flex items-center justify-between py-4">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                    <input
-                      id="cinema-search-input"
-                      type="text"
-                      placeholder="Search cinemas"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 text-sm bg-white border border-gray-200 rounded-md w-52 focus:outline-none focus:border-[#E8375A] focus:ring-1 focus:ring-[#E8375A]/20"
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-5 text-xs text-gray-500">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#4ABD5D]" />
-                    AVAILABLE
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#F5C518]" />
-                    FAST FILLING
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2.5 w-2.5 rounded-full border-2 border-gray-300" />
-                    SUBTITLES LANGUAGE
-                  </span>
-                </div>
+            {/* ─── Legend ─── */}
+            <div className="bg-[#F5F5FA] border-b border-gray-200">
+              <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-end gap-5 text-[11px] text-gray-600 font-medium">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full border-2 border-[#1EA83C]" />
+                  AVAILABLE
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full border-2 border-[#FFB000] bg-[#FFB000]/20" />
+                  FAST FILLING
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2.5 w-2.5 rounded-full border-2 border-gray-400" />
+                  SUBTITLES LANGUAGE
+                </span>
               </div>
+            </div>
 
-              {/* ─── Venue List (BMS style) ─── */}
-              <div className="flex flex-col gap-0 pb-8">
+            {/* ─── Venue List ─── */}
+            <div className="max-w-[1240px] mx-auto px-4 py-6">
+              <div className="flex flex-col gap-3 pb-8">
                 {venuesForDate.length === 0 ? (
                   <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
                     <p className="font-medium">
@@ -592,33 +603,37 @@ export default function MovieDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  venuesForDate.map((venue, idx) => (
+                  venuesForDate.map((venue) => (
                     <div
                       key={venue.venue_id}
-                      className={`bg-white px-5 py-4 flex items-start gap-4 ${
-                        idx === 0 ? "rounded-t-lg" : ""
-                      } ${idx === venuesForDate.length - 1 ? "rounded-b-lg" : ""} ${
-                        idx !== venuesForDate.length - 1
-                          ? "border-b border-gray-100"
-                          : ""
-                      }`}
+                      className="bg-white rounded-lg px-5 py-5 flex items-start gap-6 border-b border-dashed border-gray-200"
                     >
-                      {/* Venue info (left side) */}
-                      <div className="w-[260px] shrink-0">
-                        <div className="flex items-center gap-1.5">
-                          <Heart className="h-3.5 w-3.5 text-gray-300 hover:text-[#E8375A] cursor-pointer transition" />
-                          <h3 className="text-sm font-semibold text-gray-800 truncate">
-                            {venue.venue_name}
-                          </h3>
+                      {/* Venue info (left) */}
+                      <div className="w-[280px] shrink-0">
+                        <div className="flex items-start gap-2">
+                          <Heart className="h-4 w-4 text-gray-300 hover:text-[#F84464] cursor-pointer transition mt-0.5 shrink-0" />
+                          <div className="min-w-0">
+                            <h3 className="text-[15px] font-medium text-gray-800 leading-snug">
+                              {venue.venue_name}
+                            </h3>
+                          </div>
                         </div>
-                        {venue.address && (
-                          <p className="text-[11px] text-gray-400 mt-0.5 ml-5 truncate">
-                            {venue.address}
-                          </p>
-                        )}
+                        <div className="flex items-center gap-3 mt-2 ml-6 text-[11px] font-semibold">
+                          <button className="text-[#1EA83C] hover:underline">
+                            INFO
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button className="text-[#1EA83C] hover:underline">
+                            M-Ticket
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button className="text-[#1EA83C] hover:underline">
+                            Food & Beverage
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Showtimes (right side) */}
+                      {/* Showtimes (right) */}
                       <div className="flex-1 flex flex-wrap gap-2.5">
                         {venue.showtimes.map((slot) => {
                           const isPast =
@@ -633,23 +648,19 @@ export default function MovieDetailPage() {
                                 setPendingVenue(venue);
                               }}
                               disabled={isPast}
-                              className={`group relative border rounded-md px-4 py-2 min-w-[90px] text-center transition ${
+                              className={`group relative border rounded px-4 py-2 min-w-[100px] text-center transition ${
                                 isPast
                                   ? "border-gray-200 text-gray-300 cursor-not-allowed"
-                                  : "border-[#4ABD5D] text-[#4ABD5D] hover:bg-[#4ABD5D]/5 cursor-pointer"
+                                  : "border-[#1EA83C] text-[#1EA83C] bg-white hover:bg-[#1EA83C] hover:text-white cursor-pointer"
                               }`}
                             >
-                              <span className="text-[13px] font-bold block">
+                              <span className="text-[13px] font-semibold block">
                                 {istTimeLabel(slot.starts_at)}
                               </span>
-                              <span className="text-[10px] text-gray-400 font-medium">
-                                {slot.screen_name}
-                              </span>
-
-                              {/* Tooltip on hover */}
                               {!isPast && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                                  {slot.language} • {slot.format}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
+                                  {slot.language} • {slot.format} •{" "}
+                                  {slot.screen_name}
                                 </div>
                               )}
                             </button>
@@ -660,76 +671,81 @@ export default function MovieDetailPage() {
                   ))
                 )}
               </div>
-            </>
-          )}
-        </div>
+
+              {/* Cancellation info footer */}
+              {venuesForDate.length > 0 && (
+                <div className="text-center text-xs text-gray-500 pb-8">
+                  <p className="inline-flex items-center gap-1">
+                    <span className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px] font-bold">
+                      i
+                    </span>
+                    Cancellation available
+                  </p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <Footer />
 
-      {/* ─── Ticket Selection Modal (BMS style) ─── */}
+      {/* ─── Ticket Selection Modal ─── */}
       {pendingSlot && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50"
+          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
           onClick={() => setPendingSlot(null)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[400px] overflow-hidden"
+            className="bg-white rounded-t-2xl sm:rounded-lg w-full sm:max-w-[440px] overflow-hidden shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal header */}
-            <div className="bg-[#1A1A2E] px-6 pt-5 pb-4 relative">
+            <div className="bg-white px-6 pt-5 pb-4 relative border-b border-gray-100">
               <button
                 onClick={() => setPendingSlot(null)}
-                className="absolute top-4 right-4 text-white/50 hover:text-white transition"
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
               >
                 <X className="h-5 w-5" />
               </button>
-              <h3 className="text-white font-bold text-lg pr-8">
-                {movie.title}
+              <h3 className="text-gray-900 font-bold text-lg pr-8">
+                How Many Seats?
               </h3>
-              <div className="flex items-center gap-2 text-white/60 text-xs mt-1.5">
-                <span>{pendingVenue?.venue_name}</span>
-              </div>
-              <div className="flex items-center gap-2 text-white/60 text-xs mt-1">
-                <span>
-                  {activeDate &&
-                    (() => {
-                      const { weekday, day, month } = dateTabParts(activeDate);
-                      return `${weekday}, ${day} ${month}`;
-                    })()}
-                </span>
-                <span>•</span>
-                <span>{istTimeLabel(pendingSlot.starts_at)}</span>
-                <span>•</span>
-                <span>{pendingSlot.screen_name}</span>
-              </div>
-              <div className="flex gap-1.5 mt-2">
-                <span className="bg-white/10 text-white/70 text-[10px] font-medium px-2 py-0.5 rounded">
-                  {pendingSlot.language}
-                </span>
-                <span className="bg-white/10 text-white/70 text-[10px] font-medium px-2 py-0.5 rounded">
-                  {pendingSlot.format}
-                </span>
-              </div>
             </div>
 
-            {/* Ticket count */}
-            <div className="px-6 py-6">
-              <p className="text-center text-gray-500 text-sm mb-5">
-                How many seats?
-              </p>
+            {/* Seat count selector - BMS uses illustrated character but we'll use styled circles */}
+            <div className="px-6 py-8 bg-white">
+              <div className="flex items-center justify-center mb-8">
+                <div className="w-40 h-24 relative flex items-end justify-center">
+                  {/* Simple people icons row representing seat count */}
+                  <div className="flex items-end gap-1">
+                    {Array.from({ length: ticketCount }, (_, i) => (
+                      <div
+                        key={i}
+                        className="w-6 h-10 bg-[#F84464] rounded-t-full relative"
+                        style={{
+                          background:
+                            "linear-gradient(180deg, #F84464 0%, #C73854 100%)",
+                        }}
+                      >
+                        <div className="w-4 h-4 bg-[#FDBB9C] rounded-full absolute -top-3 left-1/2 -translate-x-1/2" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-              <div className="flex items-center justify-center gap-0">
+              {/* Number pills */}
+              <div className="flex items-center justify-center gap-1.5 flex-wrap">
                 {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
                   (n) => (
                     <button
                       key={n}
                       onClick={() => setTicketCount(n)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition mx-0.5 ${
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border transition ${
                         ticketCount === n
-                          ? "bg-[#E8375A] text-white shadow-lg shadow-[#E8375A]/30"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                          ? "bg-[#F84464] text-white border-[#F84464]"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                       }`}
                     >
                       {n}
@@ -738,9 +754,33 @@ export default function MovieDetailPage() {
                 )}
               </div>
 
+              {/* Show info */}
+              <div className="mt-6 text-center">
+                <p className="text-sm font-semibold text-gray-800">
+                  {pendingVenue?.venue_name}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {activeDate &&
+                    (() => {
+                      const { weekday, day, month } = dateTabParts(activeDate);
+                      return `${weekday}, ${day} ${month}`;
+                    })()}{" "}
+                  • {istTimeLabel(pendingSlot.starts_at)} •{" "}
+                  {pendingSlot.screen_name}
+                </p>
+                <div className="flex justify-center gap-1.5 mt-2">
+                  <span className="bg-gray-100 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded">
+                    {pendingSlot.language}
+                  </span>
+                  <span className="bg-gray-100 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded">
+                    {pendingSlot.format}
+                  </span>
+                </div>
+              </div>
+
               <button
                 onClick={confirmSeatSelection}
-                className="w-full bg-[#E8375A] hover:bg-[#D42D4F] text-white font-bold rounded-lg py-3.5 mt-6 transition text-sm flex items-center justify-center gap-2 shadow-lg shadow-[#E8375A]/20"
+                className="w-full bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold rounded py-3 mt-6 transition text-sm flex items-center justify-center gap-2"
               >
                 Select Seats
                 <ChevronRight className="h-4 w-4" />
@@ -750,7 +790,6 @@ export default function MovieDetailPage() {
         </div>
       )}
 
-      {/* Close dropdown on outside click */}
       {openDropdown && (
         <div
           className="fixed inset-0 z-10"
