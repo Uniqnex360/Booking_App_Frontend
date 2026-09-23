@@ -10,7 +10,6 @@ import {
   RefreshCw,
   AlertCircle,
   Clock,
-  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -38,25 +37,15 @@ interface SeatMapDetail {
   language?: string;
 }
 
-function loadScript(src: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = src;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-}
-
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // ─── Strict seat count enforcement from URL param ───
+  // Enforce seat count from URL param (default to 2)
   const requiredSeatCount = Math.min(
     10,
-    Math.max(1, parseInt(searchParams.get("qty") || "1", 10) || 1)
+    Math.max(1, parseInt(searchParams.get("qty") || "2", 10) || 2)
   );
 
   const [mapData, setMapData] = useState<SeatMapDetail | null>(null);
@@ -146,33 +135,47 @@ export default function SeatMapPage() {
     });
   }
 
-  const handleSeatClick = (seat: SeatItem) => {
-    if (!seat.is_available || holdId) return;
+  // ─── BOOKMYSHOW SIGNATURE BLOCK-SELECTION ENGINE ───
+  const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
+    if (!clickedSeat.is_available || holdId) return;
 
-    const isSelected = selectedSeats.some((s) => s.seat_ref === seat.seat_ref);
-    if (isSelected) {
-      const nextSeats = selectedSeats.filter(
-        (s) => s.seat_ref !== seat.seat_ref
-      );
-      setSelectedSeats(nextSeats);
-      idempotencyKeyRef.current = crypto.randomUUID();
-    } else {
-      // ─── ENFORCE EXACT SEAT COUNT ───
-      if (selectedSeats.length >= requiredSeatCount) {
-        toast.warning(
-          `You can only select ${requiredSeatCount} ${requiredSeatCount === 1 ? "seat" : "seats"}. Deselect one to change.`
-        );
-        return;
+    // Find index of clicked seat in row seats (sorted numerically)
+    const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
+    const clickedIdx = sortedRow.findIndex(
+      (s) => s.seat_ref === clickedSeat.seat_ref
+    );
+    if (clickedIdx === -1) return;
+
+    // Shift window left if we hit the right boundary or find unavailable seats
+    for (let shift = 0; shift < requiredSeatCount; shift++) {
+      const startIdx = clickedIdx - shift;
+      const endIdx = startIdx + requiredSeatCount;
+
+      if (startIdx >= 0 && endIdx <= sortedRow.length) {
+        const candidateWindow = sortedRow.slice(startIdx, endIdx);
+
+        const allAvailable = candidateWindow.every((s) => s.is_available);
+        const isContiguous = candidateWindow.every((s, i) => {
+          if (i === 0) return true;
+          return s.number === candidateWindow[i - 1].number + 1;
+        });
+
+        if (allAvailable && isContiguous) {
+          setSelectedSeats(candidateWindow);
+          idempotencyKeyRef.current = crypto.randomUUID();
+          return;
+        }
       }
-      setSelectedSeats([...selectedSeats, seat]);
     }
+
+    // Fallback: If contiguous block isn't possible, select just the clicked seat
+    setSelectedSeats([clickedSeat]);
+    idempotencyKeyRef.current = crypto.randomUUID();
   };
 
   const handleCheckout = async () => {
     if (selectedSeats.length !== requiredSeatCount) {
-      toast.warning(
-        `Please select exactly ${requiredSeatCount} ${requiredSeatCount === 1 ? "seat" : "seats"} to continue.`
-      );
+      toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
       return;
     }
     setIsCommitLoading(true);
@@ -226,7 +229,7 @@ export default function SeatMapPage() {
     }
   };
 
-  // Organize into BMS-style price tiers
+  // Organize rows into price tiers (Expensive on top)
   const tiers: {
     name: string;
     price_paise: number;
@@ -262,13 +265,7 @@ export default function SeatMapPage() {
     );
   });
 
-  tiers.sort((a, b) => b.price_paise - a.price_paise); // BMS: expensive on top
-
-  // Find max seat count for aligning rows
-  const maxSeatsInRow = Math.max(
-    ...Object.values(rawRows).map((r) => r.seats.length),
-    0
-  );
+  tiers.sort((a, b) => b.price_paise - a.price_paise);
 
   const totalPricePaise = selectedSeats.reduce(
     (acc, s) => acc + (s.price_paise || 0),
@@ -283,7 +280,7 @@ export default function SeatMapPage() {
 
       {/* ─── BMS SUB-HEADER ─── */}
       <div className="bg-[#333338] text-white pt-16 lg:pt-[72px] sticky top-0 z-20 shadow-md">
-        <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-[1240px] mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => navigate(-1)}
@@ -293,9 +290,14 @@ export default function SeatMapPage() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-bold text-white truncate">
-                {mapData?.movie_title || "Select Seats"}
-              </h1>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-base sm:text-lg font-bold text-white truncate">
+                  {mapData?.movie_title || "Select Seats"}
+                </h1>
+                <div className="bg-white/15 border border-white/10 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold tracking-wide shrink-0 text-white">
+                  {requiredSeatCount} {requiredSeatCount === 1 ? "Ticket" : "Tickets"}
+                </div>
+              </div>
               {mapData && (
                 <p className="text-[11px] text-white/60 mt-0.5 truncate">
                   {mapData.cinema_name || mapData.venue_name} •{" "}
@@ -332,21 +334,6 @@ export default function SeatMapPage() {
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* ─── SELECTION INSTRUCTION BANNER ─── */}
-      <div className="bg-[#F84464]/10 border-b border-[#F84464]/20">
-        <div className="max-w-[1240px] mx-auto px-4 py-2.5 flex items-center justify-center gap-2 text-xs sm:text-sm text-[#F84464] font-semibold">
-          <Info className="h-4 w-4 shrink-0" />
-          <span>
-            Please select{" "}
-            <span className="font-extrabold">
-              {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"}
-            </span>
-            {selectedSeats.length > 0 &&
-              ` — ${selectedSeats.length}/${requiredSeatCount} selected`}
-          </span>
         </div>
       </div>
 
@@ -395,7 +382,7 @@ export default function SeatMapPage() {
                             {rowLabel}
                           </span>
 
-                          {/* Seats */}
+                          {/* Seats Container */}
                           <div className="flex items-center gap-1 sm:gap-1.5">
                             {seatList.map((seat, idx) => {
                               const isSelected = selectedSeats.some(
@@ -404,7 +391,6 @@ export default function SeatMapPage() {
                               const isAisle =
                                 idx === midIndex && seatList.length > 8;
 
-                              // BMS seat styling: green outlined available, filled green selected, gray sold
                               let seatStyle = "";
                               if (!seat.is_available) {
                                 seatStyle =
@@ -425,7 +411,7 @@ export default function SeatMapPage() {
                                   {isAisle && <div className="w-4 sm:w-6" />}
                                   <button
                                     disabled={!seat.is_available}
-                                    onClick={() => handleSeatClick(seat)}
+                                    onClick={() => handleSeatClick(seat, seatList)}
                                     title={
                                       seat.is_available
                                         ? `Seat ${seat.code} • ${formatRupees(seat.price_paise)}`
@@ -452,7 +438,7 @@ export default function SeatMapPage() {
               ))}
             </div>
 
-            {/* ─── SCREEN AT BOTTOM (BMS style) ─── */}
+            {/* ─── SCREEN AT BOTTOM (BMS style projection) ─── */}
             <div className="w-full max-w-2xl flex flex-col items-center mt-12 mb-6">
               <div
                 className="w-full h-4 relative"
@@ -490,7 +476,7 @@ export default function SeatMapPage() {
 
       {/* ─── BMS FLOATING BOTTOM CHECKOUT BAR ─── */}
       {selectedSeats.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 z-40 animate-in fade-in slide-in-from-bottom duration-200">
           <div className="max-w-[1240px] mx-auto flex items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="text-xs text-slate-500 truncate">
@@ -505,15 +491,6 @@ export default function SeatMapPage() {
               <div className="text-lg sm:text-xl font-bold text-slate-900 mt-0.5">
                 Total: {formatRupees(totalPricePaise)}
               </div>
-              {!canProceed && (
-                <div className="text-[11px] text-[#F84464] font-semibold mt-0.5">
-                  Select {requiredSeatCount - selectedSeats.length} more{" "}
-                  {requiredSeatCount - selectedSeats.length === 1
-                    ? "seat"
-                    : "seats"}{" "}
-                  to continue
-                </div>
-              )}
             </div>
 
             <button
