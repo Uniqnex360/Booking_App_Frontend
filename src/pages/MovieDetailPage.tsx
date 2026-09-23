@@ -14,6 +14,7 @@ import {
   Search,
   Share2,
   Star,
+  Users,
   X,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
@@ -125,13 +126,11 @@ export default function MovieDetailPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   
-  // Ticket booking states
-  const [showGlobalTicketModal, setShowGlobalTicketModal] = useState(false);
-  const [hasPreSelectedTickets, setHasPreSelectedTickets] = useState(false);
+  // Enforced flow states
+  const [showTicketModal, setShowTicketModal] = useState(false);
+  const [isBookingActive, setIsBookingActive] = useState(false); // Controls visibility of showtimes section
   const [ticketCount, setTicketCount] = useState(2);
   
-  const [pendingSlot, setPendingSlot] = useState<ShowtimeSlot | null>(null);
-  const [pendingVenue, setPendingVenue] = useState<VenueGroup | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filters
@@ -241,22 +240,27 @@ export default function MovieDetailPage() {
         .filter((v) => v.showtimes.length > 0)
     : [];
 
-  // Directly navigate to seat layout
-  const handleDirectNavigation = (slotId: string) => {
+  const handleBookTicketsClick = () => {
+    setShowTicketModal(true);
+  };
+
+  const handleTicketConfirm = () => {
+    setShowTicketModal(false);
+    setIsBookingActive(true);
+    // Smooth scroll down to showtimes area after render
+    setTimeout(() => {
+      const el = document.getElementById("showtimes-section");
+      el?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  };
+
+  const handleShowtimeClick = (slotId: string) => {
     navigate(
       withCity(
         `/showtimes/${slotId}/seat-map?qty=${ticketCount}`,
         city
       )
     );
-  };
-
-  const handleGlobalTicketConfirm = () => {
-    setShowGlobalTicketModal(false);
-    setHasPreSelectedTickets(true);
-    // Smooth scroll down to showtimes
-    const el = document.getElementById("showtimes-section");
-    el?.scrollIntoView({ behavior: "smooth" });
   };
 
   const toggleDropdown = (name: "langFormat" | "time") =>
@@ -374,8 +378,8 @@ export default function MovieDetailPage() {
               {/* Action buttons */}
               <div className="flex items-center gap-3 mt-6">
                 <button
-                  onClick={() => setShowGlobalTicketModal(true)}
-                  className="bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold text-sm px-10 py-3 rounded-md transition"
+                  onClick={handleBookTicketsClick}
+                  className="bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold text-sm px-10 py-3 rounded-md transition shadow-lg shadow-[#F84464]/20"
                 >
                   Book tickets
                 </button>
@@ -403,342 +407,331 @@ export default function MovieDetailPage() {
         </div>
       </div>
 
-      {/* ─── Showtimes Section ─── */}
-      <div id="showtimes-section" className="bg-[#F5F5FA]">
-        {dateKeys.length === 0 ? (
-          <div className="max-w-[1240px] mx-auto px-4">
-            <div className="text-center py-16 text-gray-500">
-              <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-              <p className="text-lg font-medium">
-                No showtimes available in {city}
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Try selecting a different city
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* ─── Date strip ─── */}
-            <div className="sticky top-[56px] lg:top-[72px] z-30 bg-white shadow-sm border-b border-gray-200">
-              <div className="max-w-[1240px] mx-auto px-4">
-                <div className="flex overflow-x-auto scrollbar-none">
-                  {dateKeys.map((dk) => {
-                    const { weekday, day, month } = dateTabParts(dk);
-                    const isToday = dk === todayKey;
-                    const isActive = activeDate === dk;
-                    return (
-                      <button
-                        key={dk}
-                        onClick={() => setSelectedDate(dk)}
-                        className={`shrink-0 flex flex-col items-center justify-center min-w-[88px] py-3.5 px-4 border-b-[3px] transition-all ${
-                          isActive
-                            ? "border-[#F84464] text-[#F84464]"
-                            : "border-transparent text-gray-700 hover:text-[#F84464]"
-                        }`}
-                      >
-                        <span className="text-[13px] font-semibold uppercase">
-                          {isToday ? "Today" : weekday}
-                        </span>
-                        <span className="text-[22px] font-bold leading-tight my-0.5">
-                          {day}
-                        </span>
-                        <span className="text-[11px] font-medium uppercase text-gray-500">
-                          {month}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+      {/* ─── Showtimes Section (Strictly conditionally rendered) ─── */}
+      {isBookingActive && (
+        <div id="showtimes-section" className="bg-[#F5F5FA] border-t border-gray-200 scroll-mt-14">
+          {dateKeys.length === 0 ? (
+            <div className="max-w-[1240px] mx-auto px-4">
+              <div className="text-center py-16 text-gray-500">
+                <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+                <p className="text-lg font-medium">
+                  No showtimes available in {city}
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Try selecting a different city
+                </p>
               </div>
             </div>
-
-            {/* ─── Filters bar ─── */}
-            <div className="bg-white border-b border-gray-200">
-              <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
-                {/* Language/Format */}
-                <div className="relative">
-                  <button
-                    onClick={() => toggleDropdown("langFormat")}
-                    className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
-                      langFormatFilter !== "all"
-                        ? "bg-[#F84464] text-white border-[#F84464]"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                    }`}
-                  >
-                    {langFormatFilter === "all"
-                      ? "Languages & Formats"
-                      : langFormatFilter}
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
-                  {openDropdown === "langFormat" && (
-                    <div className="absolute left-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
-                      <button
-                        onClick={() => {
-                          setLangFormatFilter("all");
-                          setOpenDropdown(null);
-                        }}
-                        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                          langFormatFilter === "all"
-                            ? "text-[#F84464] font-medium"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        All Languages
-                      </button>
-                      {langFormatOptions.map((opt) => (
+          ) : (
+            <>
+              {/* ─── Date strip ─── */}
+              <div className="sticky top-[56px] lg:top-[72px] z-30 bg-white shadow-sm border-b border-gray-200">
+                <div className="max-w-[1240px] mx-auto px-4">
+                  <div className="flex overflow-x-auto scrollbar-none">
+                    {dateKeys.map((dk) => {
+                      const { weekday, day, month } = dateTabParts(dk);
+                      const isToday = dk === todayKey;
+                      const isActive = activeDate === dk;
+                      return (
                         <button
-                          key={opt}
-                          onClick={() => {
-                            setLangFormatFilter(opt);
-                            setOpenDropdown(null);
-                          }}
-                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                            langFormatFilter === opt
-                              ? "text-[#F84464] font-medium"
-                              : "text-gray-700"
+                          key={dk}
+                          onClick={() => setSelectedDate(dk)}
+                          className={`shrink-0 flex flex-col items-center justify-center min-w-[88px] py-3.5 px-4 border-b-[3px] transition-all ${
+                            isActive
+                              ? "border-[#F84464] text-[#F84464]"
+                              : "border-transparent text-gray-700 hover:text-[#F84464]"
                           }`}
                         >
-                          {opt}
+                          <span className="text-[13px] font-semibold uppercase">
+                            {isToday ? "Today" : weekday}
+                          </span>
+                          <span className="text-[22px] font-bold leading-tight my-0.5">
+                            {day}
+                          </span>
+                          <span className="text-[11px] font-medium uppercase text-gray-500">
+                            {month}
+                          </span>
                         </button>
-                      ))}
-                    </div>
-                  )}
+                      );
+                    })}
+                  </div>
                 </div>
+              </div>
 
-                {/* Time filter */}
-                <div className="relative">
-                  <button
-                    onClick={() => toggleDropdown("time")}
-                    className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
-                      preferredTime !== "any"
-                        ? "bg-[#F84464] text-white border-[#F84464]"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                    }`}
-                  >
-                    {preferredTime === "any"
-                      ? "Show Time"
-                      : preferredTime.charAt(0).toUpperCase() +
-                        preferredTime.slice(1)}
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
-                  {openDropdown === "time" && (
-                    <div className="absolute left-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[240px]">
-                      {(
-                        [
-                          "any",
-                          "morning",
-                          "afternoon",
-                          "evening",
-                          "night",
-                        ] as PreferredTime[]
-                      ).map((key) => {
-                        const labels: Record<PreferredTime, string> = {
-                          any: "Any Time",
-                          morning: "Morning (Before 12 PM)",
-                          afternoon: "Afternoon (12 PM - 4 PM)",
-                          evening: "Evening (4 PM - 9 PM)",
-                          night: "Night (After 9 PM)",
-                        };
-                        return (
-                          <button
-                            key={key}
-                            onClick={() => {
-                              setPreferredTime(key);
-                              setOpenDropdown(null);
-                            }}
-                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
-                              preferredTime === key
-                                ? "text-[#F84464] font-medium"
-                                : "text-gray-700"
-                            }`}
-                          >
-                            {labels[key]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Price filter placeholder */}
-                <button className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border bg-white text-gray-700 border-gray-300 hover:border-gray-400">
-                  Price
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-
-                {/* Pre-selected Tickets Display Indicator */}
-                {hasPreSelectedTickets && (
+              {/* ─── Filters & Selection Info bar ─── */}
+              <div className="bg-white border-b border-gray-200">
+                <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
+                  {/* Persistent Active Seat Count indicator (BMS style) */}
                   <div className="flex items-center gap-2 bg-[#F84464]/10 text-[#F84464] px-4 py-1.5 rounded-full border border-[#F84464]/20 text-xs font-semibold">
-                    <span>{ticketCount} Tickets Selected</span>
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{ticketCount} Tickets</span>
                     <button 
-                      onClick={() => {
-                        setHasPreSelectedTickets(false);
-                        setShowGlobalTicketModal(true);
-                      }} 
-                      className="underline text-[10px] hover:text-[#C73854]"
+                      onClick={() => setShowTicketModal(true)} 
+                      className="underline text-[10px] ml-1.5 hover:text-[#C73854]"
                     >
                       Change
                     </button>
                   </div>
-                )}
 
-                {/* Search cinemas */}
-                <div className="relative ml-auto">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search cinemas"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-3 py-1.5 text-xs bg-white border border-gray-300 rounded-full w-56 focus:outline-none focus:border-[#F84464]"
-                  />
-                </div>
-              </div>
-            </div>
+                  {/* Vertical divider */}
+                  <div className="h-6 w-px bg-gray-200 hidden sm:block" />
 
-            {/* ─── Legend ─── */}
-            <div className="bg-[#F5F5FA] border-b border-gray-200">
-              <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-end gap-5 text-[11px] text-gray-600 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full border-2 border-[#1EA83C]" />
-                  AVAILABLE
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full border-2 border-[#FFB000] bg-[#FFB000]/20" />
-                  FAST FILLING
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2.5 w-2.5 rounded-full border-2 border-gray-400" />
-                  SUBTITLES LANGUAGE
-                </span>
-              </div>
-            </div>
-
-            {/* ─── Venue List ─── */}
-            <div className="max-w-[1240px] mx-auto px-4 py-6">
-              <div className="flex flex-col gap-3 pb-8">
-                {venuesForDate.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
-                    <p className="font-medium">
-                      No shows available for selected filters
-                    </p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Try changing date, language or time filter
-                    </p>
-                  </div>
-                ) : (
-                  venuesForDate.map((venue) => (
-                    <div
-                      key={venue.venue_id}
-                      className="bg-white rounded-lg px-5 py-5 flex items-start gap-6 border-b border-dashed border-gray-200"
+                  {/* Language/Format */}
+                  <div className="relative">
+                    <button
+                      onClick={() => toggleDropdown("langFormat")}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
+                        langFormatFilter !== "all"
+                          ? "bg-[#F84464] text-white border-[#F84464]"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                      }`}
                     >
-                      {/* Venue info (left) */}
-                      <div className="w-[280px] shrink-0">
-                        <div className="flex items-start gap-2">
-                          <Heart className="h-4 w-4 text-gray-300 hover:text-[#F84464] cursor-pointer transition mt-0.5 shrink-0" />
-                          <div className="min-w-0">
-                            <h3 className="text-[15px] font-medium text-gray-800 leading-snug">
-                              {venue.venue_name}
-                            </h3>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 mt-2 ml-6 text-[11px] font-semibold">
-                          <button className="text-[#1EA83C] hover:underline">
-                            INFO
+                      {langFormatFilter === "all"
+                        ? "Languages & Formats"
+                        : langFormatFilter}
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                    {openDropdown === "langFormat" && (
+                      <div className="absolute left-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
+                        <button
+                          onClick={() => {
+                            setLangFormatFilter("all");
+                            setOpenDropdown(null);
+                          }}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
+                            langFormatFilter === "all"
+                              ? "text-[#F84464] font-medium"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          All Languages
+                        </button>
+                        {langFormatOptions.map((opt) => (
+                          <button
+                            key={opt}
+                            onClick={() => {
+                              setLangFormatFilter(opt);
+                              setOpenDropdown(null);
+                            }}
+                            className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
+                              langFormatFilter === opt
+                                ? "text-[#F84464] font-medium"
+                                : "text-gray-700"
+                            }`}
+                          >
+                            {opt}
                           </button>
-                          <span className="text-gray-300">|</span>
-                          <button className="text-[#1EA83C] hover:underline">
-                            M-Ticket
-                          </button>
-                          <span className="text-gray-300">|</span>
-                          <button className="text-[#1EA83C] hover:underline">
-                            Food & Beverage
-                          </button>
-                        </div>
+                        ))}
                       </div>
+                    )}
+                  </div>
 
-                      {/* Showtimes (right) */}
-                      <div className="flex-1 flex flex-wrap gap-2.5">
-                        {venue.showtimes.map((slot) => {
-                          const isPast =
-                            new Date(slot.starts_at).getTime() < now;
+                  {/* Time filter */}
+                  <div className="relative">
+                    <button
+                      onClick={() => toggleDropdown("time")}
+                      className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
+                        preferredTime !== "any"
+                          ? "bg-[#F84464] text-white border-[#F84464]"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                      }`}
+                    >
+                      {preferredTime === "any"
+                        ? "Show Time"
+                        : preferredTime.charAt(0).toUpperCase() +
+                          preferredTime.slice(1)}
+                      <ChevronDown className="h-3 w-3" />
+                    </button>
+                    {openDropdown === "time" && (
+                      <div className="absolute left-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[240px]">
+                        {(
+                          [
+                            "any",
+                            "morning",
+                            "afternoon",
+                            "evening",
+                            "night",
+                          ] as PreferredTime[]
+                        ).map((key) => {
+                          const labels: Record<PreferredTime, string> = {
+                            any: "Any Time",
+                            morning: "Morning (Before 12 PM)",
+                            afternoon: "Afternoon (12 PM - 4 PM)",
+                            evening: "Evening (4 PM - 9 PM)",
+                            night: "Night (After 9 PM)",
+                          };
                           return (
                             <button
-                              key={slot.id}
+                              key={key}
                               onClick={() => {
-                                if (isPast) return;
-                                if (hasPreSelectedTickets) {
-                                  // Direct Instant Navigation
-                                  handleDirectNavigation(slot.id);
-                                } else {
-                                  // Fallback: Show tickets modal if user manually scrolled down
-                                  setPendingSlot(slot);
-                                  setPendingVenue(venue);
-                                }
+                                setPreferredTime(key);
+                                setOpenDropdown(null);
                               }}
-                              disabled={isPast}
-                              className={`group relative border rounded px-4 py-2 min-w-[100px] text-center transition ${
-                                isPast
-                                  ? "border-gray-200 text-gray-300 cursor-not-allowed"
-                                  : "border-[#1EA83C] text-[#1EA83C] bg-white hover:bg-[#1EA83C] hover:text-white cursor-pointer"
+                              className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${
+                                preferredTime === key
+                                  ? "text-[#F84464] font-medium"
+                                  : "text-gray-700"
                               }`}
                             >
-                              <span className="text-[13px] font-semibold block">
-                                {istTimeLabel(slot.starts_at)}
-                              </span>
-                              {!isPast && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
-                                  {slot.language} • {slot.format} •{" "}
-                                  {slot.screen_name}
-                                </div>
-                              )}
+                              {labels[key]}
                             </button>
                           );
                         })}
                       </div>
-                    </div>
-                  ))
-                )}
+                    )}
+                  </div>
+
+                  {/* Search cinemas */}
+                  <div className="relative ml-auto">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search cinemas"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 pr-3 py-1.5 text-xs bg-white border border-gray-300 rounded-full w-56 focus:outline-none focus:border-[#F84464]"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Cancellation info footer */}
-              {venuesForDate.length > 0 && (
-                <div className="text-center text-xs text-gray-500 pb-8">
-                  <p className="inline-flex items-center gap-1">
-                    <span className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px] font-bold">
-                      i
-                    </span>
-                    Cancellation available
-                  </p>
+              {/* ─── Legend ─── */}
+              <div className="bg-[#F5F5FA] border-b border-gray-200">
+                <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-end gap-5 text-[11px] text-gray-600 font-medium">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full border-2 border-[#1EA83C]" />
+                    AVAILABLE
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full border-2 border-[#FFB000] bg-[#FFB000]/20" />
+                    FAST FILLING
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full border-2 border-gray-400" />
+                    SUBTITLES LANGUAGE
+                  </span>
                 </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+              </div>
+
+              {/* ─── Venue List ─── */}
+              <div className="max-w-[1240px] mx-auto px-4 py-6">
+                <div className="flex flex-col gap-3 pb-8">
+                  {venuesForDate.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500 bg-white rounded-lg">
+                      <p className="font-medium">
+                        No shows available for selected filters
+                      </p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Try changing date, language or time filter
+                      </p>
+                    </div>
+                  ) : (
+                    venuesForDate.map((venue) => (
+                      <div
+                        key={venue.venue_id}
+                        className="bg-white rounded-lg px-5 py-5 flex items-start gap-6 border-b border-dashed border-gray-200"
+                      >
+                        {/* Venue info (left) */}
+                        <div className="w-[280px] shrink-0">
+                          <div className="flex items-start gap-2">
+                            <Heart className="h-4 w-4 text-gray-300 hover:text-[#F84464] cursor-pointer transition mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <h3 className="text-[15px] font-medium text-gray-800 leading-snug">
+                                {venue.venue_name}
+                              </h3>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2 ml-6 text-[11px] font-semibold">
+                            <button className="text-[#1EA83C] hover:underline">
+                              INFO
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button className="text-[#1EA83C] hover:underline">
+                              M-Ticket
+                            </button>
+                            <span className="text-gray-300">|</span>
+                            <button className="text-[#1EA83C] hover:underline">
+                              Food & Beverage
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Showtimes (right) */}
+                        <div className="flex-1 flex flex-wrap gap-2.5">
+                          {venue.showtimes.map((slot) => {
+                            const isPast =
+                              new Date(slot.starts_at).getTime() < now;
+                            return (
+                              <button
+                                key={slot.id}
+                                onClick={() => {
+                                  if (isPast) return;
+                                  // Instantly go to seat map with the pre-selected ticket count
+                                  handleShowtimeClick(slot.id);
+                                }}
+                                disabled={isPast}
+                                className={`group relative border rounded px-4 py-2 min-w-[100px] text-center transition ${
+                                  isPast
+                                    ? "border-gray-200 text-gray-300 cursor-not-allowed"
+                                    : "border-[#1EA83C] text-[#1EA83C] bg-white hover:bg-[#1EA83C] hover:text-white cursor-pointer"
+                                }`}
+                              >
+                                <span className="text-[13px] font-semibold block">
+                                  {istTimeLabel(slot.starts_at)}
+                                </span>
+                                {!isPast && (
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
+                                    {slot.language} • {slot.format} •{" "}
+                                    {slot.screen_name}
+                                  </div>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Cancellation info footer */}
+                {venuesForDate.length > 0 && (
+                  <div className="text-center text-xs text-gray-500 pb-8">
+                    <p className="inline-flex items-center gap-1">
+                      <span className="w-4 h-4 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-[10px] font-bold">
+                        i
+                      </span>
+                      Cancellation available
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       <Footer />
 
-      {/* ─── Global Ticket Selection Modal (Triggered by Hero Booking Button) ─── */}
-      {showGlobalTicketModal && (
+      {/* ─── Ticket Selection Modal ─── */}
+      {showTicketModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
-          onClick={() => setShowGlobalTicketModal(false)}
+          onClick={() => setShowTicketModal(false)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-lg w-full sm:max-w-[440px] overflow-hidden shadow-2xl"
+            className="bg-white rounded-t-2xl sm:rounded-lg w-full sm:max-w-[440px] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal header */}
             <div className="bg-white px-6 pt-5 pb-4 relative border-b border-gray-100">
               <button
-                onClick={() => setShowGlobalTicketModal(false)}
+                onClick={() => setShowTicketModal(false)}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
               >
                 <X className="h-5 w-5" />
               </button>
-              <h3 className="text-gray-900 font-bold text-lg pr-8">
+              <h3 className="text-gray-900 font-bold text-lg pr-8 text-center sm:text-left">
                 How Many Seats?
               </h3>
             </div>
@@ -784,113 +777,10 @@ export default function MovieDetailPage() {
               </div>
 
               <button
-                onClick={handleGlobalTicketConfirm}
+                onClick={handleTicketConfirm}
                 className="w-full bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold rounded py-3 mt-8 transition text-sm flex items-center justify-center gap-2"
               >
-                Proceed to Showtimes
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Fallback Ticket Selection Modal (Only shown if showtimes were clicked without clicking 'Book Tickets' first) ─── */}
-      {pendingSlot && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
-          onClick={() => setPendingSlot(null)}
-        >
-          <div
-            className="bg-white rounded-t-2xl sm:rounded-lg w-full sm:max-w-[440px] overflow-hidden shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal header */}
-            <div className="bg-white px-6 pt-5 pb-4 relative border-b border-gray-100">
-              <button
-                onClick={() => setPendingSlot(null)}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              <h3 className="text-gray-900 font-bold text-lg pr-8">
-                How Many Seats?
-              </h3>
-            </div>
-
-            {/* Seat count selector */}
-            <div className="px-6 py-8 bg-white">
-              <div className="flex items-center justify-center mb-8">
-                <div className="w-40 h-24 relative flex items-end justify-center">
-                  <div className="flex items-end gap-1">
-                    {Array.from({ length: ticketCount }, (_, i) => (
-                      <div
-                        key={i}
-                        className="w-6 h-10 bg-[#F84464] rounded-t-full relative"
-                        style={{
-                          background:
-                            "linear-gradient(180deg, #F84464 0%, #C73854 100%)",
-                        }}
-                      >
-                        <div className="w-4 h-4 bg-[#FDBB9C] rounded-full absolute -top-3 left-1/2 -translate-x-1/2" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Number pills */}
-              <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
-                  (n) => (
-                    <button
-                      key={n}
-                      onClick={() => setTicketCount(n)}
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold border transition ${
-                        ticketCount === n
-                          ? "bg-[#F84464] text-white border-[#F84464]"
-                          : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-              </div>
-
-              {/* Show info */}
-              <div className="mt-6 text-center">
-                <p className="text-sm font-semibold text-gray-800">
-                  {pendingVenue?.venue_name}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  {activeDate &&
-                    (() => {
-                      const { weekday, day, month } = dateTabParts(activeDate);
-                      return `${weekday}, ${day} ${month}`;
-                    })()}{" "}
-                  • {istTimeLabel(pendingSlot.starts_at)} •{" "}
-                  {pendingSlot.screen_name}
-                </p>
-                <div className="flex justify-center gap-1.5 mt-2">
-                  <span className="bg-gray-100 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded">
-                    {pendingSlot.language}
-                  </span>
-                  <span className="bg-gray-100 text-gray-700 text-[10px] font-semibold px-2 py-0.5 rounded">
-                    {pendingSlot.format}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => {
-                  if (pendingSlot) {
-                    handleDirectNavigation(pendingSlot.id);
-                  }
-                }}
-                className="w-full bg-[#F84464] hover:bg-[#E8375A] text-white font-semibold rounded py-3 mt-6 transition text-sm flex items-center justify-center gap-2"
-              >
-                Select Seats
+                Select Showtimes
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
