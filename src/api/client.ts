@@ -146,7 +146,7 @@ export async function unwrap<T>(promise: Promise<any>): Promise<T> {
     const response = await promise;
     const body = response.data;
     if (body && body.status === 'error') {
-      throw new ApiError(body.code, body.message, body.status, response.status);
+      throw new ApiError(body.error?.type ?? String(body.code), body.error?.message ?? body.message ?? 'An error occurred', body.status, response.status);
     }
     // Unwrap the standard "data" envelope
     return (body && body.data !== undefined ? body.data : body) as T;
@@ -157,7 +157,7 @@ export async function unwrap<T>(promise: Promise<any>): Promise<T> {
     if (axios.isAxiosError(error) && error.response) {
       const body = error.response.data;
       if (body && body.code) {
-        throw new ApiError(body.code, body.message || 'An error occurred', body.status || 'error', error.response.status);
+        throw new ApiError(body.error?.type ?? String(body.code), body.error?.message ?? body.message ?? 'An error occurred', body.status || 'error', error.response.status);
       }
       throw new ApiError(
         error.response.statusText || 'SERVER_ERROR',
