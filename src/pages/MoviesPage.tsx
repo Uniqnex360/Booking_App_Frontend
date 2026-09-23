@@ -84,9 +84,8 @@ export default function MoviesPage() {
     const fetchMovies = async () => {
       try {
         setLoading(true);
-        const today = new Date().toISOString().split("T")[0];
         const data = await unwrap<MovieItem[]>(
-          api.get(`/movies`, { params: { city, date: today } })
+          api.get(`/movies`, { params: { city } })
         );
         setMovies(data);
       } catch (err) {

@@ -191,10 +191,9 @@ export default function HomePage() {
       setLoading(true);
       setMovies([]); // clear immediately so old city movies don't flash
       try {
-        const today = new Date().toISOString().split('T')[0];
         const [moviesData, eventsData] = await Promise.all([
           unwrap<MovieCard[]>(
-            api.get(`/movies`, { params: { city, date: today } })
+            api.get(`/movies`, { params: { city } })
           ).catch(() => []),
           unwrap<any>(api.get(`/events`)).catch(() => ({ items: [] })),
         ]);
