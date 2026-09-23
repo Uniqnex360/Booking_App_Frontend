@@ -144,6 +144,43 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
+  // --- Derived calculations moved ABOVE early returns ---
+  const now = Date.now();
+  const todayKey = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Asia/Kolkata",
+  });
+
+  const venuesInCity = useMemo(() => {
+    return (movie?.venues ?? []).filter((v) => v.city === city);
+  }, [movie, city]);
+
+  const dateKeys = useMemo(() => {
+    return Array.from(
+      new Set(
+        venuesInCity.flatMap((v) =>
+          v.showtimes
+            .filter((s) => new Date(s.starts_at).getTime() > now)
+            .map((s) => istDateKey(s.starts_at)),
+        ),
+      ),
+    ).sort();
+  }, [venuesInCity, now]);
+
+  const activeDate = selectedDate ?? dateKeys[0] ?? null;
+
+  // Language·format combos available on the active date, for the filter dropdown
+  const langFormatOptions = useMemo(() => {
+    const set = new Set<string>();
+    venuesInCity.forEach((v) =>
+      v.showtimes
+        .filter((s) => new Date(s.starts_at).getTime() > now)
+        .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
+        .forEach((s) => set.add(`${s.language} - ${s.format}`)),
+    );
+    return Array.from(set).sort();
+  }, [venuesInCity, activeDate, now]);
+
+  // --- Early returns now happen AFTER all hooks have executed ---
   if (loading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex flex-col">
@@ -167,37 +204,6 @@ export default function MovieDetailPage() {
       </div>
     );
   }
-
-  const now = Date.now();
-  const todayKey = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Kolkata",
-  });
-
-  const venuesInCity = (movie.venues ?? []).filter((v) => v.city === city);
-
-  const dateKeys = Array.from(
-    new Set(
-      venuesInCity.flatMap((v) =>
-        v.showtimes
-          .filter((s) => new Date(s.starts_at).getTime() > now)
-          .map((s) => istDateKey(s.starts_at)),
-      ),
-    ),
-  ).sort();
-
-  const activeDate = selectedDate ?? dateKeys[0] ?? null;
-
-  // Language·format combos available on the active date, for the filter dropdown
-  const langFormatOptions = useMemo(() => {
-    const set = new Set<string>();
-    venuesInCity.forEach((v) =>
-      v.showtimes
-        .filter((s) => new Date(s.starts_at).getTime() > now)
-        .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
-        .forEach((s) => set.add(`${s.language} - ${s.format}`)),
-    );
-    return Array.from(set).sort();
-  }, [venuesInCity, activeDate, now]);
 
   const venuesForDate = activeDate
     ? venuesInCity
@@ -287,7 +293,7 @@ export default function MovieDetailPage() {
           </div>
         ) : (
           <>
-            {/* Date tabs + filter dropdown row, BMS style */}
+            {/* Date tabs + filter dropdown row */}
             <div className="flex flex-wrap items-stretch border-b border-slate-200 mb-6">
               <div className="flex overflow-x-auto">
                 {dateKeys.map((dk) => {
@@ -482,7 +488,7 @@ export default function MovieDetailPage() {
           </>
         )}
 
-        {/* Synopsis, pushed below the fold */}
+        {/* Synopsis */}
         <div className="border-t border-slate-200 mt-10 pt-8 max-w-2xl">
           <h2 className="text-lg font-bold text-slate-900 mb-3">
             About the movie
