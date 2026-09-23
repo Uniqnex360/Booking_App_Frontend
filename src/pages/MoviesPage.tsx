@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
-import { formatRupees } from "@/utils/currencyFormatter";
-import { Search, Clock } from "lucide-react";
+import { Search } from "lucide-react";
 import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
 
 interface MovieItem {
@@ -16,22 +15,27 @@ interface MovieItem {
   duration_min: number;
   certificate: string;
   poster_url: string | null;
-  earliest_showtime?: string;
-  min_price_paise?: number;
+}
+
+function formatDuration(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m}m`;
 }
 
 export default function MoviesPage() {
   const navigate = useNavigate();
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(true);
- const [searchParams, setSearchParams] = useSearchParams();
-const city = searchParams.get('city') || 'Kochi';
-const setCity = (next: string) => {
-  const p = new URLSearchParams(searchParams);
-  p.set('city', next);
-  setSearchParams(p);
-};
-const search = searchParams.get('search') || '';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const city = searchParams.get("city") || "Kochi";
+  const search = searchParams.get("search") || "";
+
+  const setCity = (next: string) => {
+    const p = new URLSearchParams(searchParams);
+    p.set("city", next);
+    setSearchParams(p);
+  };
 
   const setSearch = (next: string) => {
     const p = new URLSearchParams(searchParams);
@@ -41,65 +45,28 @@ const search = searchParams.get('search') || '';
   };
 
   useEffect(() => {
-  if (searchParams.get('city')) return;
-  detectCity().then((c) => { if (c) setCity(c); });
-}, []);
+    if (searchParams.get("city")) return;
+    detectCity().then((c) => {
+      if (c) setCity(c);
+    });
+  }, []);
 
   useEffect(() => {
-    const fetchMoviesAndShowtimes = async () => {
+    const fetchMovies = async () => {
       try {
         setLoading(true);
         const today = new Date().toISOString().split("T")[0];
-        const rawMovies = await unwrap<MovieItem[]>(
+        const data = await unwrap<MovieItem[]>(
           api.get(`/movies`, { params: { city, date: today } }),
         );
-
-        const enriched = await Promise.all(
-          rawMovies.map(async (m) => {
-            try {
-              const details = await unwrap<any>(api.get(`/movies/${m.id}`));
-              let minPrice = 29000;
-              let earliest: string | null = null;
-
-              if (details.venues && details.venues.length > 0) {
-                const allSlots = details.venues.flatMap(
-                  (v: any) => v.showtimes || [],
-                );
-                if (allSlots.length > 0) {
-                  const sorted = allSlots.sort(
-                    (a: any, b: any) =>
-                      new Date(a.starts_at).getTime() -
-                      new Date(b.starts_at).getTime(),
-                  );
-                  earliest = new Date(sorted[0].starts_at).toLocaleTimeString(
-                    [],
-                    {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    },
-                  );
-                }
-              }
-
-              return {
-                ...m,
-                earliest_showtime: earliest || "N/A",
-                min_price_paise: minPrice,
-              };
-            } catch {
-              return m;
-            }
-          }),
-        );
-
-        setMovies(enriched);
+        setMovies(data);
       } catch (err) {
         console.error("Failed to load movies", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchMoviesAndShowtimes();
+    fetchMovies();
   }, [city]);
 
   const filteredMovies = movies.filter((m) =>
@@ -158,7 +125,8 @@ const search = searchParams.get('search') || '';
             {filteredMovies.map((movie) => (
               <div
                 key={movie.id}
-                className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-[#7B1E3D]/30 hover:shadow-md transition duration-200 flex flex-col"
+                onClick={() => navigate(`/movies/${movie.id}`)}
+                className="group bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-[#7B1E3D]/30 hover:shadow-md transition duration-200 flex flex-col cursor-pointer"
               >
                 <div className="aspect-[2/3] w-full bg-neutral-100 relative overflow-hidden">
                   {movie.poster_url ? (
@@ -182,18 +150,15 @@ const search = searchParams.get('search') || '';
                     <span>{movie.language}</span>
                     <span>•</span>
                     <span>{movie.certificate}</span>
+                    <span>•</span>
+                    <span>{formatDuration(movie.duration_min)}</span>
                   </div>
 
-                  {movie.earliest_showtime &&
-                    movie.earliest_showtime !== "N/A" && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-2">
-                        <Clock className="h-3.5 w-3.5" />
-                        <span>First show {movie.earliest_showtime}</span>
-                      </div>
-                    )}
-
                   <button
-                    onClick={() => navigate(`/movies/${movie.id}`)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/movies/${movie.id}`);
+                    }}
                     className="mt-4 w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white text-sm font-bold rounded-lg py-2.5 transition"
                   >
                     Book Tickets
