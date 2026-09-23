@@ -30,7 +30,7 @@ export function AppRoutes() {
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movies/:id" element={<MovieDetailPage />} />
       <Route path="/terms" element={<TermsAndConditionsPage />} />
-      <Route path="/showtimes/:id/seat-map" element={<PrivateRoute><SeatMapPage /></PrivateRoute>} />
+      <Route path="/showtimes/:id/seat-map" element={<SeatMapPage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/restaurants" element={<RestaurantsPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
