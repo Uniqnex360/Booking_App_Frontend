@@ -1,8 +1,10 @@
+// src/pages/SeatMapPage.tsx
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
+import AuthModal from "@/components/AuthModal";
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
@@ -37,6 +39,14 @@ interface SeatMapDetail {
   language?: string;
 }
 
+function isUserLoggedIn(): boolean {
+  // Matches tokens set by setTokens() in @/api/client
+  return Boolean(
+    localStorage.getItem("access_token") ||
+      localStorage.getItem("vyhbz_access_token")
+  );
+}
+
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -56,6 +66,9 @@ export default function SeatMapPage() {
   const [holdId, setHoldId] = useState<string | null>(null);
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
+
+  // BMS Auth modal — only on Pay, not on seat click
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
 
@@ -139,14 +152,12 @@ export default function SeatMapPage() {
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
 
-    // Find index of clicked seat in row seats (sorted numerically)
     const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
     const clickedIdx = sortedRow.findIndex(
       (s) => s.seat_ref === clickedSeat.seat_ref
     );
     if (clickedIdx === -1) return;
 
-    // Shift window left if we hit the right boundary or find unavailable seats
     for (let shift = 0; shift < requiredSeatCount; shift++) {
       const startIdx = clickedIdx - shift;
       const endIdx = startIdx + requiredSeatCount;
@@ -168,11 +179,11 @@ export default function SeatMapPage() {
       }
     }
 
-    // Fallback: If contiguous block isn't possible, select just the clicked seat
     setSelectedSeats([clickedSeat]);
     idempotencyKeyRef.current = crypto.randomUUID();
   };
 
+  // Actual hold + commit (runs only after auth is confirmed)
   const handleCheckout = async () => {
     if (selectedSeats.length !== requiredSeatCount) {
       toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
@@ -222,11 +233,40 @@ export default function SeatMapPage() {
       } else if (err.code === "HOLD_EXPIRED") {
         toast.error("Hold expired. Please select seats again.");
         fetchSeatMap();
+      } else if (
+        err?.status === 401 ||
+        err?.code === "UNAUTHORIZED" ||
+        err?.message?.toLowerCase?.().includes("unauthorized")
+      ) {
+        // Token missing/expired mid-flow → open login again
+        setIsAuthModalOpen(true);
+        toast.error("Please sign in to complete your booking.");
       } else {
         toast.error(err.message || "Booking failed.");
       }
       setIsCommitLoading(false);
     }
+  };
+
+  // BMS flow: Pay → login popup (if needed) → then checkout
+  const handlePayClick = () => {
+    if (selectedSeats.length !== requiredSeatCount) {
+      toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
+      return;
+    }
+
+    if (!isUserLoggedIn()) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    handleCheckout();
+  };
+
+  const handleAuthSuccess = () => {
+    setIsAuthModalOpen(false);
+    // Tokens are set; continue booking without losing seat selection
+    handleCheckout();
   };
 
   // Organize rows into price tiers (Expensive on top)
@@ -295,7 +335,8 @@ export default function SeatMapPage() {
                   {mapData?.movie_title || "Select Seats"}
                 </h1>
                 <div className="bg-white/15 border border-white/10 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold tracking-wide shrink-0 text-white">
-                  {requiredSeatCount} {requiredSeatCount === 1 ? "Ticket" : "Tickets"}
+                  {requiredSeatCount}{" "}
+                  {requiredSeatCount === 1 ? "Ticket" : "Tickets"}
                 </div>
               </div>
               {mapData && (
@@ -360,14 +401,12 @@ export default function SeatMapPage() {
             <div className="w-full space-y-10 pb-6 flex flex-col items-center px-2">
               {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full">
-                  {/* Tier Title Header */}
                   <div className="text-center mb-4">
                     <div className="text-[11px] font-semibold text-slate-500 tracking-widest">
                       {tier.name} - {formatRupees(tier.price_paise)}
                     </div>
                   </div>
 
-                  {/* Rows in this tier */}
                   <div className="space-y-2 flex flex-col items-center">
                     {Object.entries(tier.rows).map(([rowLabel, seatList]) => {
                       const midIndex = Math.floor(seatList.length / 2);
@@ -377,12 +416,10 @@ export default function SeatMapPage() {
                           key={rowLabel}
                           className="flex items-center gap-2 sm:gap-3 justify-center"
                         >
-                          {/* Row label left */}
                           <span className="w-4 text-right text-[11px] font-semibold text-slate-500 select-none">
                             {rowLabel}
                           </span>
 
-                          {/* Seats Container */}
                           <div className="flex items-center gap-1 sm:gap-1.5">
                             {seatList.map((seat, idx) => {
                               const isSelected = selectedSeats.some(
@@ -410,8 +447,10 @@ export default function SeatMapPage() {
                                 >
                                   {isAisle && <div className="w-4 sm:w-6" />}
                                   <button
-                                    disabled={!seat.is_available}
-                                    onClick={() => handleSeatClick(seat, seatList)}
+                                    disabled={!seat.is_available || Boolean(holdId)}
+                                    onClick={() =>
+                                      handleSeatClick(seat, seatList)
+                                    }
                                     title={
                                       seat.is_available
                                         ? `Seat ${seat.code} • ${formatRupees(seat.price_paise)}`
@@ -426,7 +465,6 @@ export default function SeatMapPage() {
                             })}
                           </div>
 
-                          {/* Row label right */}
                           <span className="w-4 text-left text-[11px] font-semibold text-slate-500 select-none">
                             {rowLabel}
                           </span>
@@ -438,7 +476,7 @@ export default function SeatMapPage() {
               ))}
             </div>
 
-            {/* ─── SCREEN AT BOTTOM (BMS style projection) ─── */}
+            {/* ─── SCREEN AT BOTTOM (BMS style) ─── */}
             <div className="w-full max-w-2xl flex flex-col items-center mt-12 mb-6">
               <div
                 className="w-full h-4 relative"
@@ -494,7 +532,7 @@ export default function SeatMapPage() {
             </div>
 
             <button
-              onClick={handleCheckout}
+              onClick={handlePayClick}
               disabled={isCommitLoading || !canProceed}
               className={`font-bold px-8 sm:px-12 py-3.5 rounded-md transition text-sm sm:text-base flex items-center gap-2 shrink-0 ${
                 canProceed && !isCommitLoading
@@ -513,6 +551,13 @@ export default function SeatMapPage() {
           </div>
         </div>
       )}
+
+      {/* ─── AUTH MODAL (BMS: only on Pay) ─── */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
 
       <Footer />
     </div>
