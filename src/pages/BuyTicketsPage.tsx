@@ -235,7 +235,7 @@ export default function BuyTicketsPage() {
       <Header />
 
       {/* ─── Dedicated BMS Style Buy Tickets Header ─── */}
-      <div className="bg-[#333338] pt-[72px] lg:pt-[104px] pb-6">
+     <div className="bg-[#333338] pt-[120px] lg:pt-[136px] pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
           <h1 className="text-[32px] font-bold text-white leading-tight">
             {movie.title} - {movie.language}
@@ -266,7 +266,8 @@ export default function BuyTicketsPage() {
       ) : (
         <>
           {/* ─── Date Strip ─── */}
-          <div className="sticky top-[64px] lg:top-[104px] z-30 bg-white shadow-sm border-b border-gray-200">
+          <div className="sticky top-[104px] lg:top-[112px] z-30 bg-white shadow-sm border-b border-gray-200">
+
             <div className="max-w-[1240px] mx-auto px-4">
               <div className="flex overflow-x-auto scrollbar-none">
                 {dateKeys.map((dk) => {
