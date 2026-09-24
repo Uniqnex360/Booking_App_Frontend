@@ -1,4 +1,3 @@
-// src/components/Footer.tsx
 import { Link } from 'react-router-dom';
 import { Wine, Facebook, Twitter, Instagram, Youtube, HeadphonesIcon, TicketIcon, MailIcon } from 'lucide-react';
 
@@ -13,7 +12,6 @@ const footerSections = [
   },
   {
     title: 'Help & Support',
-    // Notice the updated path for Terms & Conditions
     links: [
       { name: 'About Us', path: '#' },
       { name: 'Contact Us', path: '#' },
@@ -36,7 +34,6 @@ export function Footer() {
     <footer className="bg-[#313035] text-[#cccccc] pt-8 pb-12 mt-auto">
       <div className="mx-auto max-w-[1280px] px-4 sm:px-6">
         
-        {/* BMS Style Top Strip: Support & Contact */}
         <div className="flex flex-col md:flex-row items-center justify-around py-6 border-b border-[#444444] gap-6 mb-8 text-center">
           <div className="flex flex-col items-center group cursor-pointer">
             <div className="text-[#888888] group-hover:text-white transition-colors mb-2">
@@ -58,7 +55,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Links Grid */}
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 pb-10">
           <div className="lg:col-span-1">
             <p className="mb-4 text-xs font-bold uppercase tracking-wider text-white">
@@ -67,7 +63,6 @@ export function Footer() {
             <p className="max-w-xs text-xs leading-relaxed text-[#888888] mb-5">
               Your gateway to premium cinema experiences, IMAX shows, live concerts, and fine dining reservations.
             </p>
-            {/* App badges */}
             <div className="flex flex-col gap-2">
               <a href="#" className="flex items-center gap-2 rounded-md border border-[#444444] px-3 py-2 hover:border-white transition max-w-[140px]">
                 <span className="text-[10px] leading-tight">
@@ -108,18 +103,19 @@ export function Footer() {
           ))}
         </div>
 
-        {/* BMS Centered Logo & Socials with Horizontal Lines */}
-        <div className="relative flex items-center justify-center py-6 my-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-[#444444]"></div>
-          </div>
-          <div className="relative bg-[#313035] px-6 flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7B1E3D]">
-              <Wine className="h-5 w-5 text-white" strokeWidth={2} />
-            </div>
-            <span className="text-2xl font-bold tracking-wide text-white">Vyhbz</span>
-          </div>
-        </div>
+
+<div className="relative flex items-center justify-center py-6 my-4">
+  <div className="absolute inset-0 flex items-center">
+    <div className="w-full border-t border-[#444444]"></div>
+  </div>
+  <div className="relative bg-[#313035] px-6 flex items-center gap-2">
+    <img 
+      src="/logo.png" 
+      alt="Vyhbz Logo" 
+      className="h-12 w-auto object-contain bg-white rounded-lg p-1"
+    />
+  </div>
+</div>
 
         <div className="flex justify-center gap-4 mb-8">
           {socials.map((s, i) => (
@@ -133,7 +129,6 @@ export function Footer() {
           ))}
         </div>
 
-        {/* Copyright & Bottom Links */}
         <div className="flex flex-col items-center justify-center text-[11px] text-[#888888] text-center">
           <p className="mb-2">
             Copyright {new Date().getFullYear()} © Vyhbz Entertainment Pvt. Ltd. All Rights Reserved.

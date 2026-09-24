@@ -1,18 +1,23 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { withCity } from '@/lib/cityLink';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useRef } from "react";
+import {
+  Link,
+  useNavigate,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
+import { withCity } from "@/lib/cityLink";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { api, unwrap } from '@/api/client';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { api, unwrap } from "@/api/client";
 import {
   Menu,
   MonitorPlay,
@@ -30,15 +35,15 @@ import {
   Music,
   Loader2,
   ChevronRight,
-} from 'lucide-react';
-import { detectCity, SUPPORTED_CITIES } from '@/utils/geolocation';
+} from "lucide-react";
+import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
 
-const CITY_STORAGE_KEY = 'vyhbz_selected_city';
+const CITY_STORAGE_KEY = "vyhbz_selected_city";
 
 const navLinks = [
-  { href: '/movies', label: 'Movies' },
-  { href: '/events', label: 'Events' },
-  { href: '/restaurants', label: 'Dining' },
+  { href: "/movies", label: "Movies" },
+  { href: "/events", label: "Events" },
+  { href: "/restaurants", label: "Dining" },
 ];
 
 interface SearchResults {
@@ -58,9 +63,7 @@ function getStoredCity(): string | null {
 function storeCity(city: string) {
   try {
     localStorage.setItem(CITY_STORAGE_KEY, city);
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 export function Header() {
@@ -71,49 +74,45 @@ export function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Priority: URL param → localStorage → default
-  const cityFromUrl = searchParams.get('city');
-  const city = cityFromUrl || getStoredCity() || 'Kochi';
+  const cityFromUrl = searchParams.get("city");
+  const city = cityFromUrl || getStoredCity() || "Kochi";
 
   const setCity = (next: string) => {
     storeCity(next);
     const p = new URLSearchParams(searchParams);
-    p.set('city', next);
+    p.set("city", next);
     setSearchParams(p, { replace: true });
   };
 
-  // Sync URL ↔ storage. Never let IP override a stored/manual choice.
   useEffect(() => {
     if (cityFromUrl) {
-      // URL wins — remember it
       storeCity(cityFromUrl);
       return;
     }
 
     const stored = getStoredCity();
     if (stored) {
-      // Restore user's last choice into the URL (no IP)
       const p = new URLSearchParams(searchParams);
-      p.set('city', stored);
+      p.set("city", stored);
       setSearchParams(p, { replace: true });
       return;
     }
 
-    // First visit only: try geolocation once
     detectCity().then((c) => {
       if (!c) return;
-      // Only apply if user still has no stored city
-      if (!getStoredCity() && !new URLSearchParams(window.location.search).get('city')) {
+      if (
+        !getStoredCity() &&
+        !new URLSearchParams(window.location.search).get("city")
+      ) {
         storeCity(c);
         const p = new URLSearchParams(window.location.search);
-        p.set('city', c);
+        p.set("city", c);
         setSearchParams(p, { replace: true });
       }
     });
-  }, []); // run once on mount
+  }, []);
 
-  // Global Search State
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [results, setResults] = useState<SearchResults>({
@@ -132,12 +131,15 @@ export function Header() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -153,19 +155,23 @@ export function Header() {
 
     const timer = setTimeout(async () => {
       try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split("T")[0];
         const [moviesRes, eventsRes] = await Promise.all([
-          unwrap<any[]>(api.get('/movies', { params: { city, date: today } })).catch(() => []),
-          unwrap<any>(api.get('/events')).catch(() => []),
+          unwrap<any[]>(
+            api.get("/movies", { params: { city, date: today } }),
+          ).catch(() => []),
+          unwrap<any>(api.get("/events")).catch(() => []),
         ]);
 
-        const rawEvents = Array.isArray(eventsRes) ? eventsRes : eventsRes.items || [];
+        const rawEvents = Array.isArray(eventsRes)
+          ? eventsRes
+          : eventsRes.items || [];
 
         const filteredMovies = moviesRes
           .filter(
             (m: any) =>
               m.title.toLowerCase().includes(q) ||
-              (m.language && m.language.toLowerCase().includes(q))
+              (m.language && m.language.toLowerCase().includes(q)),
           )
           .slice(0, 4);
 
@@ -173,7 +179,7 @@ export function Header() {
           .filter(
             (e: any) =>
               e.title.toLowerCase().includes(q) ||
-              (e.category && e.category.toLowerCase().includes(q))
+              (e.category && e.category.toLowerCase().includes(q)),
           )
           .slice(0, 4);
 
@@ -183,7 +189,7 @@ export function Header() {
           restaurants: [],
         });
       } catch (err) {
-        console.error('Global search error', err);
+        console.error("Global search error", err);
       } finally {
         setIsSearching(false);
       }
@@ -197,33 +203,37 @@ export function Header() {
     results.events.length > 0 ||
     results.restaurants.length > 0;
 
-  const initials = (user?.full_name || user?.email || 'U')
-    .split(' ')
+  const initials = (user?.full_name || user?.email || "U")
+    .split(" ")
     .map((w) => w[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
-      {/* ── TIER 1: PRIMARY NAV ── */}
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16">
-        <Link to={withCity('/', city)} className="flex items-center gap-2 shrink-0">
-          <MonitorPlay className="h-7 w-7 text-[#7B1E3D]" />
-          <span className="text-[22px] font-bold tracking-tight text-[#333333] hidden sm:block mt-0.5">
-            Vyhbz
-          </span>
-        </Link>
+        <Link to={withCity('/', city)} className="flex items-center shrink-0">
+  <img 
+    src="/logo.png" 
+    alt="Vyhbz" 
+    className="h-10 sm:h-12 w-auto object-contain rounded-lg hover:scale-105 transition-transform"
+  />
+</Link>
 
-        {/* Desktop Search */}
-        <div className="relative hidden md:flex flex-1 max-w-[600px] ml-4" ref={dropdownRef}>
+        <div
+          className="relative hidden md:flex flex-1 max-w-[600px] ml-4"
+          ref={dropdownRef}
+        >
           <div className="flex w-full items-center bg-gray-50 focus-within:bg-white border border-gray-200 focus-within:border-[#7B1E3D]/50 rounded-md transition shadow-inner shadow-gray-100/50">
             <Search className="h-4 w-4 text-gray-400 ml-3 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => searchQuery.trim().length >= 2 && setShowDropdown(true)}
+              onFocus={() =>
+                searchQuery.trim().length >= 2 && setShowDropdown(true)
+              }
               placeholder="Search for Movies, Events, Plays, Sports and Activities"
               className="flex-1 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
             />
@@ -232,7 +242,7 @@ export function Header() {
             ) : searchQuery ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery('')}
+                onClick={() => setSearchQuery("")}
                 className="p-2 text-gray-400 hover:text-gray-600"
               >
                 <X className="h-3.5 w-3.5" />
@@ -326,17 +336,19 @@ export function Header() {
           )}
         </div>
 
-        {/* Right side */}
         <div className="flex items-center gap-4 shrink-0 ml-auto md:ml-4">
           <button
             type="button"
             className="md:hidden text-gray-600 hover:text-gray-900 transition"
             onClick={() => setMobileSearchOpen((v) => !v)}
           >
-            {mobileSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+            {mobileSearchOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5" />
+            )}
           </button>
 
-          {/* City picker — user choice always wins */}
           <div className="relative hidden md:flex items-center">
             <select
               value={city}
@@ -362,7 +374,7 @@ export function Header() {
                     </AvatarFallback>
                   </Avatar>
                   <span className="hidden sm:block text-sm font-medium text-gray-800 max-w-[80px] truncate">
-                    {user.full_name?.split(' ')[0] || 'Hi, Guest'}
+                    {user.full_name?.split(" ")[0] || "Hi, Guest"}
                   </span>
                   <ChevronDown className="h-3 w-3 text-gray-500 hidden sm:block" />
                 </button>
@@ -372,50 +384,53 @@ export function Header() {
                 className="w-56 rounded-xl border-gray-200 bg-white text-gray-900 shadow-xl p-1"
               >
                 <div className="px-3 py-2">
-                  <p className="text-sm font-bold">{user.full_name || 'Member'}</p>
+                  <p className="text-sm font-bold">
+                    {user.full_name || "Member"}
+                  </p>
                   <p className="truncate text-xs text-gray-500">{user.email}</p>
                 </div>
                 <DropdownMenuSeparator className="bg-gray-100" />
                 <DropdownMenuItem
-                  onClick={() => navigate(withCity('/profile', city))}
+                  onClick={() => navigate(withCity("/profile", city))}
                   className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm"
                 >
                   <User className="mr-2 h-4 w-4" /> Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => navigate(withCity('/profile', city))}
+                  onClick={() => navigate(withCity("/profile", city))}
                   className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm"
                 >
                   <Calendar className="mr-2 h-4 w-4" /> My Bookings
                 </DropdownMenuItem>
 
-                {user.role === 'PARTNER' && (
+                {user.role === "PARTNER" && (
                   <DropdownMenuItem
-                    onClick={() => navigate('/partner/dashboard')}
+                    onClick={() => navigate("/partner/dashboard")}
                     className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                   >
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Partner Dashboard
+                    <LayoutDashboard className="mr-2 h-4 w-4" /> Partner
+                    Dashboard
                   </DropdownMenuItem>
                 )}
-                {user.role !== 'PARTNER' && user.role !== 'ADMIN' && (
+                {user.role !== "PARTNER" && user.role !== "ADMIN" && (
                   <DropdownMenuItem
-                    onClick={() => navigate('/partner/become')}
+                    onClick={() => navigate("/partner/become")}
                     className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                   >
                     <Sparkles className="mr-2 h-4 w-4" /> Become a Partner
                   </DropdownMenuItem>
                 )}
-                {user.role === 'ADMIN' && (
+                {user.role === "ADMIN" && (
                   <>
                     <DropdownMenuSeparator className="bg-gray-100" />
                     <DropdownMenuItem
-                      onClick={() => navigate('/admin/partners')}
+                      onClick={() => navigate("/admin/partners")}
                       className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                     >
                       <Users className="mr-2 h-4 w-4" /> Partner Verification
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => navigate('/admin/moderation')}
+                      onClick={() => navigate("/admin/moderation")}
                       className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                     >
                       <ShieldCheck className="mr-2 h-4 w-4" /> Event Moderation
@@ -433,7 +448,7 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <Button
-              onClick={() => navigate(withCity('/login', city))}
+              onClick={() => navigate(withCity("/login", city))}
               className="rounded text-xs font-semibold h-7 px-4 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-none"
             >
               Sign in
@@ -446,7 +461,10 @@ export function Header() {
                 <Menu className="h-6 w-6" />
               </button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] border-gray-200 bg-white p-0">
+            <SheetContent
+              side="right"
+              className="w-[300px] border-gray-200 bg-white p-0"
+            >
               <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 bg-[#333338] text-white">
                 <span className="text-lg font-bold">Hey!</span>
                 <button onClick={() => setMobileOpen(false)}>
@@ -498,7 +516,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* ── TIER 2: SECONDARY NAV ── */}
       <div className="hidden lg:block bg-[#F5F5FA] border-t border-gray-200">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-4 h-10">
           <div className="flex items-center gap-6">
@@ -508,8 +525,8 @@ export function Header() {
                 to={withCity(link.href, city)}
                 className={`text-[13px] font-medium transition-colors hover:text-[#7B1E3D] ${
                   location.pathname.startsWith(link.href)
-                    ? 'text-[#7B1E3D]'
-                    : 'text-gray-600'
+                    ? "text-[#7B1E3D]"
+                    : "text-gray-600"
                 }`}
               >
                 {link.label}
@@ -525,7 +542,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile search */}
       {mobileSearchOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white p-3 shadow-md">
           <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
