@@ -9,7 +9,7 @@ import { getBookings } from "@/api/booking.api";
 import {
   getExtendedProfile,
   updateProfile,
-} from "@/api/profile.api"; // ← adjust path if different
+} from "@/api/profile.api";
 import type { Booking } from "@/types/booking.types";
 import type {
   ExtendedProfile,
@@ -56,7 +56,7 @@ export default function ProfilePage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Account fields (from auth user)
+  // Account fields
   const [editingPhone, setEditingPhone] = useState(false);
   const [editingEmail, setEditingEmail] = useState(false);
   const [phone, setPhone] = useState("");
@@ -65,12 +65,15 @@ export default function ProfilePage() {
   // Personal fields
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState(""); // yyyy-mm-dd for input[type=date]
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
   const [preferredLanguage, setPreferredLanguage] = useState("en");
   const [bio, setBio] = useState("");
 
-  // ---- Load auth user into form ----
+  // Today's date YYYY-MM-DD for datepicker max check
+  const todayDateStr = new Date().toISOString().split("T")[0];
+
+  // Load auth user into form
   useEffect(() => {
     if (!user) return;
     const parts = (user.full_name || "").trim().split(/\s+/);
@@ -80,7 +83,7 @@ export default function ProfilePage() {
     setEmail(user.email || "");
   }, [user]);
 
-  // ---- Load extended profile ----
+  // Load extended profile
   useEffect(() => {
     const load = async () => {
       try {
@@ -91,7 +94,6 @@ export default function ProfilePage() {
         setPreferredLanguage(data.preferred_language || "en");
         setBio(data.bio || "");
       } catch {
-        // Profile row may not exist yet — form still usable
         setProfile(null);
       } finally {
         setProfileLoading(false);
@@ -100,7 +102,7 @@ export default function ProfilePage() {
     if (user) load();
   }, [user]);
 
-  // ---- Load bookings ----
+  // Load bookings
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -138,13 +140,85 @@ export default function ProfilePage() {
     navigate("/");
   };
 
-  const handleSaveProfile = async () => {
-    if (!firstName.trim()) {
-      toast.error("First name is required");
-      return;
+  // Form Validation Logic
+  const validateForm = (): boolean => {
+    // 1. First Name validation
+    const cleanFirstName = firstName.trim();
+    if (!cleanFirstName) {
+      toast.error("First name is required.");
+      return false;
+    }
+    if (cleanFirstName.length < 2) {
+      toast.error("First name must be at least 2 characters long.");
+      return false;
+    }
+    if (!/^[a-zA-Z\s'-]+$/.test(cleanFirstName)) {
+      toast.error("First name should only contain letters.");
+      return false;
     }
 
-    const payload: ProfileUpdatePayload = {
+    // 2. Last Name validation (Optional)
+    const cleanLastName = lastName.trim();
+    if (cleanLastName && !/^[a-zA-Z\s'-]+$/.test(cleanLastName)) {
+      toast.error("Last name should only contain letters.");
+      return false;
+    }
+
+    // 3. Email validation
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      toast.error("Email address is required.");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      toast.error("Please enter a valid email address.");
+      return false;
+    }
+
+    // 4. Phone validation (Optional)
+    const cleanPhone = phone.trim();
+    if (cleanPhone) {
+      const phoneDigits = cleanPhone.replace(/[\s-]/g, "");
+      const phoneRegex = /^(\+?\d{1,3})?[6-9]\d{9}$/; // Standard 10-digit Indian numbers or with country code
+      if (!phoneRegex.test(phoneDigits)) {
+        toast.error("Please enter a valid 10-digit mobile number.");
+        return false;
+      }
+    }
+
+    // 5. Birthday validation
+    if (dateOfBirth) {
+      const selectedDate = new Date(dateOfBirth);
+      const today = new Date();
+      if (selectedDate > today) {
+        toast.error("Birthday cannot be a future date.");
+        return false;
+      }
+    }
+
+    // 6. Bio length validation
+    if (bio.trim().length > 250) {
+      toast.error("Bio cannot exceed 250 characters.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSaveProfile = async () => {
+    if (!validateForm()) return;
+
+    const full_name = `${firstName.trim()} ${lastName.trim()}`.trim();
+
+    const payload: ProfileUpdatePayload & {
+      full_name?: string;
+      email?: string;
+      phone?: string;
+    } = {
+      full_name,
+      email: email.trim() || undefined,
+      phone: phone.trim() || undefined,
       date_of_birth: dateOfBirth || undefined,
       gender: gender || undefined,
       preferred_language: preferredLanguage || undefined,
@@ -153,11 +227,12 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      const updated = await updateProfile(payload);
+      const updated = await updateProfile(payload as any);
       setProfile(updated);
 
-      // Keep local fields in sync with server response
-      setDateOfBirth(updated.date_of_birth ? updated.date_of_birth.slice(0, 10) : "");
+      if (updated.date_of_birth) {
+        setDateOfBirth(updated.date_of_birth.slice(0, 10));
+      }
       setGender(updated.gender || "");
       setPreferredLanguage(updated.preferred_language || "en");
       setBio(updated.bio || "");
@@ -169,7 +244,7 @@ export default function ProfilePage() {
         await refreshUser();
       }
 
-      toast.success("Profile updated successfully");
+      toast.success("Profile updated successfully!");
     } catch (err: any) {
       const msg =
         err?.response?.data?.message ||
@@ -181,8 +256,14 @@ export default function ProfilePage() {
     }
   };
 
-  // Detect dirty extended-profile fields
+  // Check if any field changed
+  const currentFullName = (user.full_name || "").trim();
+  const newFullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+
   const hasChanges =
+    currentFullName !== newFullName ||
+    phone.trim() !== (user.phone || "") ||
+    email.trim() !== (user.email || "") ||
     (dateOfBirth || "") !== (profile?.date_of_birth?.slice(0, 10) || "") ||
     (gender || "") !== (profile?.gender || "") ||
     (preferredLanguage || "") !== (profile?.preferred_language || "en") ||
@@ -244,7 +325,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <>
-                  {/* Header row */}
+                  {/* Avatar & Header */}
                   <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
                     <div className="h-28 w-28 rounded-full bg-gray-200 flex items-end justify-center overflow-hidden shrink-0 border border-gray-100 shadow-sm">
                       {profile?.avatar_url ? (
@@ -258,7 +339,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center sm:text-left">
-                      {user.full_name || "Member"}
+                      {newFullName || user.full_name || "Member"}
                     </h1>
                   </div>
 
@@ -268,7 +349,7 @@ export default function ProfilePage() {
                       Account Details
                     </h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      {/* Phone (display from auth — see note) */}
+                      {/* Phone */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
                           <label className="text-sm font-medium text-gray-600">
@@ -303,7 +384,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
-                      {/* Email (display from auth — see note) */}
+                      {/* Email */}
                       <div>
                         <div className="flex justify-between items-center mb-2">
                           <label className="text-sm font-medium text-gray-600">
@@ -337,9 +418,6 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     </div>
-                    <p className="mt-3 text-xs text-gray-400">
-                      Mobile &amp; email are managed by your login account. Contact support to change verified credentials if required.
-                    </p>
                   </div>
 
                   {/* Personal Details */}
@@ -348,6 +426,7 @@ export default function ProfilePage() {
                       Personal Details
                     </h2>
 
+                    {/* First & Last Name */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
@@ -356,8 +435,9 @@ export default function ProfilePage() {
                         <input
                           type="text"
                           value={firstName}
-                          disabled
-                          className="w-full border border-gray-200 rounded-lg p-3.5 text-gray-800 text-sm font-medium bg-gray-50"
+                          onChange={(e) => setFirstName(e.target.value)}
+                          placeholder="First Name"
+                          className="w-full border border-gray-200 rounded-lg p-3.5 text-gray-800 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#7B1E3D]/30 focus:border-[#7B1E3D]"
                         />
                       </div>
                       <div>
@@ -367,8 +447,9 @@ export default function ProfilePage() {
                         <input
                           type="text"
                           value={lastName}
-                          disabled
-                          className="w-full border border-gray-200 rounded-lg p-3.5 text-gray-800 text-sm font-medium bg-gray-50"
+                          onChange={(e) => setLastName(e.target.value)}
+                          placeholder="Last Name"
+                          className="w-full border border-gray-200 rounded-lg p-3.5 text-gray-800 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#7B1E3D]/30 focus:border-[#7B1E3D]"
                         />
                       </div>
                     </div>
@@ -382,6 +463,7 @@ export default function ProfilePage() {
                         <div className="relative">
                           <input
                             type="date"
+                            max={todayDateStr}
                             value={dateOfBirth}
                             onChange={(e) => setDateOfBirth(e.target.value)}
                             className="w-full border border-gray-200 rounded-lg p-3.5 text-gray-800 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#7B1E3D]/30 focus:border-[#7B1E3D]"
@@ -390,7 +472,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
 
-                      {/* Identity / Gender — BMS pill buttons */}
+                      {/* Identity / Gender */}
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
                           Identity (Optional)
@@ -441,11 +523,21 @@ export default function ProfilePage() {
 
                     {/* Bio */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-600 mb-2">
-                        Bio (Optional)
-                      </label>
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="block text-sm font-medium text-gray-600">
+                          Bio (Optional)
+                        </label>
+                        <span
+                          className={`text-xs ${
+                            bio.length > 250 ? "text-red-500 font-bold" : "text-gray-400"
+                          }`}
+                        >
+                          {bio.length}/250
+                        </span>
+                      </div>
                       <textarea
                         value={bio}
+                        maxLength={250}
                         onChange={(e) => setBio(e.target.value)}
                         rows={3}
                         placeholder="A short bio about you"
@@ -459,7 +551,7 @@ export default function ProfilePage() {
                       type="button"
                       disabled={saving || !hasChanges}
                       onClick={handleSaveProfile}
-                      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold px-8 rounded-lg disabled:opacity-50"
+                      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold px-8 rounded-lg disabled:opacity-50 transition"
                     >
                       {saving ? (
                         <>
@@ -476,7 +568,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* ORDERS — same as before */}
+          {/* ORDERS */}
           {activeTab === "orders" && (
             <div className="animate-in fade-in duration-300">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Orders</h2>
@@ -528,6 +620,7 @@ export default function ProfilePage() {
             </div>
           )}
 
+          {/* SAVED */}
           {activeTab === "saved" && (
             <div className="animate-in fade-in duration-300 text-center py-20">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
