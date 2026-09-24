@@ -275,14 +275,10 @@ export default function MovieDetailPage() {
                 {movie.title}
               </h1>
 
-              <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
-                {movie.rating_count && movie.rating_count > 0 ? (
+                            <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
+                {movie.external_rating != null ? (
                   <>
-                    <button
-                      type="button"
-                      onClick={goToReviews}
-                      className="flex items-center gap-3 text-left"
-                    >
+                    <div className="flex items-center gap-3">
                       <Star
                         className="text-[#F5C518]"
                         fill="#F5C518"
@@ -290,13 +286,13 @@ export default function MovieDetailPage() {
                       />
                       <div>
                         <p className="text-white font-bold text-lg leading-tight">
-                          {movie.rating}/10
+                          {movie.external_rating}/10
                         </p>
-                        <p className="text-gray-300 text-xs flex items-center gap-1">
-                          {movie.rating_count} Votes <ChevronRight size={12} />
+                        <p className="text-gray-400 text-[10px] tracking-wide uppercase">
+                          Rating by TMDB
                         </p>
                       </div>
-                    </button>
+                    </div>
                     <button
                       type="button"
                       onClick={handleRateNow}

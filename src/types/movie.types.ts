@@ -28,6 +28,7 @@ export interface MovieDetail {
   trailer_url?: string | null;
   synopsis?: string | null;
   rating_count?:number|null
+  external_rating?:number|null
   rating?:number|null
   genre: string;
   release_date: string;
