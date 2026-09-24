@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import {
   Link,
@@ -8,22 +9,12 @@ import {
 import { withCity } from "@/lib/cityLink";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { api, unwrap } from "@/api/client";
 import {
   Menu,
-  MonitorPlay,
   User,
-  LogOut,
-  Calendar,
   LayoutDashboard,
   ShieldCheck,
   Users,
@@ -35,6 +26,8 @@ import {
   Music,
   Loader2,
   ChevronRight,
+  Ticket,
+  Heart,
 } from "lucide-react";
 import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
 
@@ -72,6 +65,7 @@ export function Header() {
   const { user, signOut } = useAuth();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false); // Added for new Profile Sheet
   const [searchParams, setSearchParams] = useSearchParams();
 
   const cityFromUrl = searchParams.get("city");
@@ -84,7 +78,7 @@ export function Header() {
     setSearchParams(p, { replace: true });
   };
 
-    useEffect(() => {
+  useEffect(() => {
     const DISCOVERY_PATHS = ["/", "/movies", "/events", "/restaurants"];
     const onDiscovery = DISCOVERY_PATHS.some((p) =>
       p === "/" ? location.pathname === "/" : location.pathname.startsWith(p),
@@ -216,17 +210,23 @@ export function Header() {
     .join("")
     .toUpperCase();
 
+  const handleProfileNavigation = (path: string) => {
+    setProfileOpen(false);
+    navigate(path);
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16">
-        <Link to={withCity('/', city)} className="flex items-center shrink-0">
-  <img 
-    src="/logo.png" 
-    alt="Vyhbz" 
-    className="h-10 sm:h-12 w-auto object-contain rounded-lg hover:scale-105 transition-transform"
-  />
-</Link>
+        <Link to={withCity("/", city)} className="flex items-center shrink-0">
+          <img
+            src="/logo.png"
+            alt="Vyhbz"
+            className="h-10 sm:h-12 w-auto object-contain rounded-lg hover:scale-105 transition-transform"
+          />
+        </Link>
 
+        {/* Search Bar */}
         <div
           className="relative hidden md:flex flex-1 max-w-[600px] ml-4"
           ref={dropdownRef}
@@ -256,6 +256,7 @@ export function Header() {
             ) : null}
           </div>
 
+          {/* Search Dropdown */}
           {showDropdown && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50 max-h-[480px] overflow-y-auto">
               {!isSearching && !hasResults ? (
@@ -355,6 +356,7 @@ export function Header() {
             )}
           </button>
 
+          {/* City Selector */}
           <div className="relative hidden md:flex items-center">
             <select
               value={city}
@@ -370,9 +372,10 @@ export function Header() {
             <ChevronDown className="h-3.5 w-3.5 text-gray-500 absolute right-0 pointer-events-none" />
           </div>
 
+          {/* Profile / Auth Section */}
           {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <Sheet open={profileOpen} onOpenChange={setProfileOpen}>
+              <SheetTrigger asChild>
                 <button className="flex items-center gap-2 rounded-full hover:bg-gray-100 p-1 pr-3 transition">
                   <Avatar className="h-7 w-7 border border-gray-200">
                     <AvatarFallback className="bg-[#7B1E3D]/10 text-xs font-bold text-[#7B1E3D]">
@@ -382,76 +385,100 @@ export function Header() {
                   <span className="hidden sm:block text-sm font-medium text-gray-800 max-w-[80px] truncate">
                     {user.full_name?.split(" ")[0] || "Hi, Guest"}
                   </span>
-                  <ChevronDown className="h-3 w-3 text-gray-500 hidden sm:block" />
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="w-56 rounded-xl border-gray-200 bg-white text-gray-900 shadow-xl p-1"
-              >
-                <div className="px-3 py-2">
-                  <p className="text-sm font-bold">
-                    {user.full_name || "Member"}
-                  </p>
-                  <p className="truncate text-xs text-gray-500">{user.email}</p>
-                </div>
-                <DropdownMenuSeparator className="bg-gray-100" />
-                <DropdownMenuItem
-                  onClick={() => navigate(withCity("/profile", city))}
-                  className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm"
-                >
-                  <User className="mr-2 h-4 w-4" /> Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate(withCity("/profile", city))}
-                  className="hover:bg-gray-50 cursor-pointer rounded-md font-medium text-sm"
-                >
-                  <Calendar className="mr-2 h-4 w-4" /> My Bookings
-                </DropdownMenuItem>
+              </SheetTrigger>
 
-                {user.role === "PARTNER" && (
-                  <DropdownMenuItem
-                    onClick={() => navigate("/partner/dashboard")}
-                    className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
-                  >
-                    <LayoutDashboard className="mr-2 h-4 w-4" /> Partner
-                    Dashboard
-                  </DropdownMenuItem>
-                )}
-                {user.role !== "PARTNER" && user.role !== "ADMIN" && (
-                  <DropdownMenuItem
-                    onClick={() => navigate("/partner/become")}
-                    className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" /> Become a Partner
-                  </DropdownMenuItem>
-                )}
-                {user.role === "ADMIN" && (
-                  <>
-                    <DropdownMenuSeparator className="bg-gray-100" />
-                    <DropdownMenuItem
-                      onClick={() => navigate("/admin/partners")}
-                      className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
-                    >
-                      <Users className="mr-2 h-4 w-4" /> Partner Verification
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/admin/moderation")}
-                      className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
-                    >
-                      <ShieldCheck className="mr-2 h-4 w-4" /> Event Moderation
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator className="bg-gray-100" />
-                <DropdownMenuItem
-                  onClick={() => signOut()}
-                  className="cursor-pointer text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-md font-medium text-sm"
+              <SheetContent
+                side="right"
+                className="w-full sm:w-[400px] p-0 flex flex-col bg-white border-l border-gray-200 z-[100]"
+              >
+                {/* BMS Style Profile Header */}
+                <div 
+                  className="p-6 flex items-center justify-between border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition mt-6"
+                  onClick={() => handleProfileNavigation(withCity("/profile", city))}
                 >
-                  <LogOut className="mr-2 h-4 w-4" /> Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {user.full_name?.split(" ")[0] || "Hi, Guest"}
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1 flex items-center gap-1 hover:text-[#7B1E3D] transition">
+                      Edit Profile <ChevronRight size={14} />
+                    </p>
+                  </div>
+                  <Avatar className="h-12 w-12 border border-gray-200 shadow-sm">
+                    <AvatarFallback className="bg-gray-100 text-gray-600 font-bold">
+                      <User size={24} className="text-gray-400" />
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+
+                {/* Body / Menu Items */}
+                <div className="flex-1 overflow-y-auto py-2">
+                  <ProfileMenuItem
+                    icon={Ticket}
+                    title="Your Orders"
+                    subtitle="View all your bookings & purchases"
+                    onClick={() => handleProfileNavigation(withCity("/profile", city))}
+                  />
+                  
+                  <ProfileMenuItem
+                    icon={Heart}
+                    title="Your Wishlist"
+                    subtitle="View your saved events and movies"
+                    onClick={() => handleProfileNavigation(withCity("/profile", city))}
+                  />
+
+                  {user.role === "PARTNER" && (
+                    <ProfileMenuItem
+                      icon={LayoutDashboard}
+                      title="Partner Dashboard"
+                      subtitle="Manage your listings and venues"
+                      onClick={() => handleProfileNavigation("/partner/dashboard")}
+                    />
+                  )}
+
+                  {user.role !== "PARTNER" && user.role !== "ADMIN" && (
+                    <ProfileMenuItem
+                      icon={Sparkles}
+                      title="Become a Partner"
+                      subtitle="List your events and venues"
+                      onClick={() => handleProfileNavigation("/partner/become")}
+                    />
+                  )}
+
+                  {user.role === "ADMIN" && (
+                    <>
+                      <ProfileMenuItem
+                        icon={Users}
+                        title="Partner Verification"
+                        subtitle="Verify partner requests"
+                        onClick={() => handleProfileNavigation("/admin/partners")}
+                      />
+                      <ProfileMenuItem
+                        icon={ShieldCheck}
+                        title="Event Moderation"
+                        subtitle="Review and approve events"
+                        onClick={() => handleProfileNavigation("/admin/moderation")}
+                      />
+                    </>
+                  )}
+                </div>
+
+                {/* Footer Sign Out */}
+                <div className="p-4 border-t border-gray-100 bg-white">
+                  <Button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      signOut();
+                    }}
+                    variant="outline"
+                    className="w-full border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg h-12 font-semibold bg-white"
+                  >
+                    Sign out
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           ) : (
             <Button
               onClick={() => navigate(withCity("/login", city))}
@@ -461,9 +488,10 @@ export function Header() {
             </Button>
           )}
 
+          {/* Mobile Menu */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <button className="lg:hidden text-gray-700 hover:text-gray-900">
+              <button className="lg:hidden text-gray-700 hover:text-gray-900 ml-2">
                 <Menu className="h-6 w-6" />
               </button>
             </SheetTrigger>
@@ -522,6 +550,7 @@ export function Header() {
         </div>
       </div>
 
+      {/* Sub Navigation Bar */}
       <div className="hidden lg:block bg-[#F5F5FA] border-t border-gray-200">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-4 h-10">
           <div className="flex items-center gap-6">
@@ -548,6 +577,7 @@ export function Header() {
         </div>
       </div>
 
+      {/* Mobile Search Overlay */}
       {mobileSearchOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white p-3 shadow-md">
           <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
@@ -594,5 +624,26 @@ export function Header() {
         </div>
       )}
     </header>
+  );
+}
+
+// Reusable menu item component for the profile sheet
+function ProfileMenuItem({ icon: Icon, title, subtitle, onClick }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition border-b border-gray-50 last:border-none group"
+    >
+      <div className="flex items-start gap-4">
+        <Icon className="w-5 h-5 text-gray-500 mt-0.5 group-hover:text-gray-700 transition" />
+        <div className="text-left">
+          <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+          {subtitle && (
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          )}
+        </div>
+      </div>
+      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition" />
+    </button>
   );
 }
