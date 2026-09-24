@@ -276,52 +276,62 @@ export default function MovieDetailPage() {
               </h1>
 
                             <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
-                {movie.external_rating != null ? (
-                  <>
-                    <div className="flex items-center gap-3">
+                <div className="flex items-center gap-5">
+                  {movie.external_rating != null && (
+                    <div className="flex items-center gap-2">
                       <Star
                         className="text-[#F5C518]"
                         fill="#F5C518"
-                        size={26}
+                        size={22}
                       />
                       <div>
-                        <p className="text-white font-bold text-lg leading-tight">
+                        <p className="text-white font-bold text-base leading-tight">
                           {movie.external_rating}/10
                         </p>
                         <p className="text-gray-400 text-[10px] tracking-wide uppercase">
-                          Rating by TMDB
+                          TMDB
                         </p>
                       </div>
                     </div>
+                  )}
+
+                  {movie.rating_count != null && movie.rating_count > 0 && (
                     <button
                       type="button"
-                      onClick={handleRateNow}
-                      className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
+                      onClick={goToReviews}
+                      className="flex items-center gap-2 text-left"
                     >
-                      Rate Now
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3">
                       <Star
                         className="text-[#F5C518]"
                         fill="#F5C518"
-                        size={26}
+                        size={22}
                       />
+                      <div>
+                        <p className="text-white font-bold text-base leading-tight">
+                          {movie.rating}/10
+                        </p>
+                        <p className="text-gray-300 text-[10px] flex items-center gap-1">
+                          {movie.rating_count} Votes <ChevronRight size={10} />
+                        </p>
+                      </div>
+                    </button>
+                  )}
+
+                  {movie.external_rating == null &&
+                    (!movie.rating_count || movie.rating_count === 0) && (
                       <p className="text-white text-sm">
                         Add your rating &amp; review
                       </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRateNow}
-                      className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
-                    >
-                      Rate Now
-                    </button>
-                  </>
-                )}
+                    )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleRateNow}
+                  className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition shrink-0"
+                >
+                  Rate Now
+                </button>
               </div>
 
               <div className="flex flex-wrap gap-2 mt-5">
