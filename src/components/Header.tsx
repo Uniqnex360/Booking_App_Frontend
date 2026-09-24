@@ -84,7 +84,13 @@ export function Header() {
     setSearchParams(p, { replace: true });
   };
 
-  useEffect(() => {
+    useEffect(() => {
+    const DISCOVERY_PATHS = ["/", "/movies", "/events", "/restaurants"];
+    const onDiscovery = DISCOVERY_PATHS.some((p) =>
+      p === "/" ? location.pathname === "/" : location.pathname.startsWith(p),
+    );
+    if (!onDiscovery) return;
+
     if (cityFromUrl) {
       storeCity(cityFromUrl);
       return;
@@ -110,7 +116,7 @@ export function Header() {
         setSearchParams(p, { replace: true });
       }
     });
-  }, []);
+  }, [location.pathname]);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
