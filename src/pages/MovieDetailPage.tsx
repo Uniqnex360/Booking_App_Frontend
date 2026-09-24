@@ -324,7 +324,6 @@ export default function MovieDetailPage() {
                 </span>
               </div>
 
-              {/* Duration / Genre / Certificate */}
               <div className="flex flex-wrap items-center gap-2 text-sm text-white/90 mt-5">
                 <span>{formatDuration(movie.duration_min)}</span>
                 <span className="text-white/40">•</span>
@@ -343,9 +342,7 @@ export default function MovieDetailPage() {
                 >
                   Book tickets
                 </button>
-                <button className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition ml-2">
-                  <Heart className="h-5 w-5" />
-                </button>
+                
                 <button
                   onClick={handleShare}
                   className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
