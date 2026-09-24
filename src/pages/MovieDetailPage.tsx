@@ -4,9 +4,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
-import { Heart, Play, Share2, Star, X, ChevronRight } from "lucide-react";
+import { Heart, Play, Share2, Star, X, ChevronRight, ArrowLeft, Check } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { SeatVehicle } from "./SeatVehicle";
+import { toast } from "sonner";
 
 interface MovieDetail {
   id: string;
@@ -18,7 +19,7 @@ interface MovieDetail {
   synopsis: string;
   genre: string;
   release_date: string;
-  venues?: any[]; // Not heavily used on this page anymore
+  venues?: any[]; 
 }
 
 const MAX_TICKETS = 10;
@@ -43,14 +44,55 @@ export default function MovieDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const city = searchParams.get("city") || "Kochi";
+    const [copied, setCopied] = useState(false);
 
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  
 
-  // Ticket Modal States
+  
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketCount, setTicketCount] = useState(2);
+const getShareUrl = () => {
+    const path = withCity(`/movies/${id}`, city);
+    
+    if (path.startsWith("http")) return path;
+    return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
+  };
 
+  const handleShare = async () => {
+    const url = getShareUrl();
+    const title = movie?.title ?? "Movie";
+    const text = `Watch ${title} on Vyhbz`;
+
+    try {
+      
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+    } catch {
+      
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast?.success?.("Link copied!") ?? console.log("Copied", url);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      
+      const input = document.createElement("input");
+      input.value = url;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      setCopied(true);
+      toast?.success?.("Link copied!") ?? alert("Link copied!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
   useEffect(() => {
     const fetchMovie = async () => {
       try {
@@ -124,6 +166,14 @@ export default function MovieDetailPage() {
         )}
 
         <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
+            <button
+            type="button"
+            onClick={() => navigate(withCity("/movies", city))}
+            className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition mb-5 group"
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition" />
+            Back to Movies
+          </button>
           <div className="flex gap-8 items-start">
             <div className="hidden sm:block w-[240px] shrink-0">
               <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer">
@@ -208,9 +258,19 @@ export default function MovieDetailPage() {
                 <button className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition ml-2">
                   <Heart className="h-5 w-5" />
                 </button>
-                <button className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
-                  <Share2 className="h-5 w-5" />
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition relative"
+                  title="Copy movie link"
+                >
+                  {copied ? (
+                    <Check className="h-5 w-5 text-green-400" />
+                  ) : (
+                    <Share2 className="h-5 w-5" />
+                  )}
                 </button>
+
               </div>
             </div>
           </div>
