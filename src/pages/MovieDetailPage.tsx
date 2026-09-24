@@ -1,5 +1,10 @@
 import { useEffect, useState, useMemo } from "react";
-import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
@@ -19,40 +24,12 @@ import { toast } from "sonner";
 import { getMovieById } from "@/api/movie.api";
 import RatingModal from "./RatingModal";
 import { MovieDetail } from "@/types/movie.types";
-
+import { formatDuration, formatReleaseDate, getEmbedTrailerUrl } from "@/utils/moviesHelper";
+import { useAuth } from "@/hooks/useAuth";
 
 const MAX_TICKETS = 10;
 
-function formatDuration(mins: number): string {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${h}h ${m}m`;
-}
 
-function formatReleaseDate(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function getEmbedTrailerUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.includes("youtube.com/watch")) {
-    const v = new URLSearchParams(url.split("?")[1]).get("v");
-    return v ? `https://www.youtube.com/embed/${v}?autoplay=1` : url;
-  }
-  if (url.includes("youtu.be/")) {
-    const id = url.split("youtu.be/")[1]?.split("?")[0];
-    return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : url;
-  }
-  if (url.includes("youtube.com/embed/")) {
-    return url.includes("autoplay=1") ? url : `${url}?autoplay=1`;
-  }
-  return url;
-}
 
 export default function MovieDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,8 +39,7 @@ export default function MovieDetailPage() {
 
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Synopsis Read More toggle state
+  const { user } = useAuth();
   const [isSynopsisExpanded, setIsSynopsisExpanded] = useState(false);
 
   // Modal States
@@ -76,39 +52,39 @@ export default function MovieDetailPage() {
   const [ticketCount, setTicketCount] = useState(2);
   const [copied, setCopied] = useState(false);
 
-const location = useLocation();
+  const location = useLocation();
 
-const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
 
-const fetchMovie = async () => {
-  if (!id) return;
-  try {
-    const data = await getMovieById(id);
-    setMovie(data);
-  } catch (err) {
-    console.error('Failed to load movie', err);
-  } finally {
-    setLoading(false);
-  }
-};
+  const fetchMovie = async () => {
+    if (!id) return;
+    try {
+      const data = await getMovieById(id);
+      setMovie(data);
+    } catch (err) {
+      console.error("Failed to load movie", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => {
-  fetchMovie();
-}, [id]);
+  useEffect(() => {
+    fetchMovie();
+  }, [id]);
 
-const handleRateNow = () => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    // Go to login, come back to this exact page (keeps ?city= too)
-    navigate('/login', { state: { from: location.pathname + location.search } });
-    return;
-  }
-  setIsRatingModalOpen(true);
-};
+  const handleRateNow = () => {
+    if (!user) {
+      navigate("/login", {
+        state: { from: location.pathname + location.search },
+      });
+      return;
+    }
+    setIsRatingModalOpen(true);
+  };
 
-const goToReviews = () => {
-  navigate(`/movies/${id}/reviews${location.search}`);
-};
+  const goToReviews = () => {
+    navigate(`/movies/${id}/reviews${location.search}`);
+  };
 
   const langFormatMap = useMemo(() => {
     const map: Record<string, Set<string>> = {};
@@ -116,7 +92,11 @@ const goToReviews = () => {
     if (movie?.venues) {
       movie.venues.forEach((v) => {
         v.showtimes?.forEach((s: any) => {
-          const lang = (s.language || movie.language || "ENGLISH").toUpperCase();
+          const lang = (
+            s.language ||
+            movie.language ||
+            "ENGLISH"
+          ).toUpperCase();
           const fmt = (s.format || "2D").toUpperCase();
           if (!map[lang]) map[lang] = new Set();
           map[lang].add(fmt);
@@ -130,7 +110,7 @@ const goToReviews = () => {
     }
 
     return Object.fromEntries(
-      Object.entries(map).map(([lang, formats]) => [lang, Array.from(formats)])
+      Object.entries(map).map(([lang, formats]) => [lang, Array.from(formats)]),
     );
   }, [movie]);
 
@@ -189,8 +169,8 @@ const goToReviews = () => {
     navigate(
       withCity(
         `/buytickets/${movie.id}?qty=${ticketCount}&filter=${encodeURIComponent(filterQuery)}`,
-        city
-      )
+        city,
+      ),
     );
   };
 
@@ -222,22 +202,22 @@ const goToReviews = () => {
     }
   };
 
-  const synopsisText = movie.synopsis || "No synopsis available for this movie.";
+  const synopsisText =
+    movie.synopsis || "No synopsis available for this movie.";
   const shouldTruncate = synopsisText.length > 250;
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      {/* ─── Hero Banner ─── */}
       <div
         className="relative pt-16 lg:pt-[104px] bg-[#1A1A2E] overflow-hidden"
         style={{
           backgroundImage: movie.banner_url
             ? `linear-gradient(90deg, #1A1A2E 0%, rgba(26,26,46,0.85) 45%, rgba(26,26,46,0.5) 100%), url(${movie.banner_url})`
             : movie.poster_url
-            ? `linear-gradient(90deg, rgba(26,26,46,0.98) 0%, rgba(26,26,46,0.85) 50%, rgba(26,26,46,0.98) 100%)`
-            : undefined,
+              ? `linear-gradient(90deg, rgba(26,26,46,0.98) 0%, rgba(26,26,46,0.85) 50%, rgba(26,26,46,0.98) 100%)`
+              : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -260,7 +240,6 @@ const goToReviews = () => {
           </button>
 
           <div className="flex gap-8 items-start">
-            {/* Poster & Trailer Button */}
             <div className="hidden sm:block w-[240px] shrink-0">
               <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl relative group bg-slate-800">
                 {movie.poster_url ? (
@@ -274,7 +253,7 @@ const goToReviews = () => {
                     No Poster
                   </div>
                 )}
-                
+
                 <div
                   onClick={() => {
                     if (movie.trailer_url) {
@@ -291,67 +270,75 @@ const goToReviews = () => {
               </div>
             </div>
 
-            {/* Movie Details */}
             <div className="flex-1 min-w-0 text-white">
               <h1 className="text-[32px] lg:text-[40px] font-bold leading-tight drop-shadow-md">
                 {movie.title}
               </h1>
 
-              {/* Rating Card */}
-              {/* Rating box */}
-<div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
-  {movie.rating_count && movie.rating_count > 0 ? (
-    <>
-      <button
-        type="button"
-        onClick={goToReviews}
-        className="flex items-center gap-3 text-left"
-      >
-        <Star className="text-[#F5C518]" fill="#F5C518" size={26} />
-        <div>
-          <p className="text-white font-bold text-lg leading-tight">
-            {movie.rating}/10
-          </p>
-          <p className="text-gray-300 text-xs flex items-center gap-1">
-            {movie.rating_count} Votes <ChevronRight size={12} />
-          </p>
-        </div>
-      </button>
-      <button
-        type="button"
-        onClick={handleRateNow}
-        className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
-      >
-        Rate Now
-      </button>
-    </>
-  ) : (
-    <>
-      <div className="flex items-center gap-3">
-        <Star className="text-[#F5C518]" fill="#F5C518" size={26} />
-        <p className="text-white text-sm">Add your rating &amp; review</p>
-      </div>
-      <button
-        type="button"
-        onClick={handleRateNow}
-        className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
-      >
-        Rate Now
-      </button>
-    </>
-  )}
-</div>
+              <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
+                {movie.rating_count && movie.rating_count > 0 ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={goToReviews}
+                      className="flex items-center gap-3 text-left"
+                    >
+                      <Star
+                        className="text-[#F5C518]"
+                        fill="#F5C518"
+                        size={26}
+                      />
+                      <div>
+                        <p className="text-white font-bold text-lg leading-tight">
+                          {movie.rating}/10
+                        </p>
+                        <p className="text-gray-300 text-xs flex items-center gap-1">
+                          {movie.rating_count} Votes <ChevronRight size={12} />
+                        </p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRateNow}
+                      className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
+                    >
+                      Rate Now
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-3">
+                      <Star
+                        className="text-[#F5C518]"
+                        fill="#F5C518"
+                        size={26}
+                      />
+                      <p className="text-white text-sm">
+                        Add your rating &amp; review
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRateNow}
+                      className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
+                    >
+                      Rate Now
+                    </button>
+                  </>
+                )}
+              </div>
 
-              {/* Formats & Languages */}
               <div className="flex flex-wrap gap-2 mt-5">
-                {Object.values(langFormatMap).flat().map((fmt, idx) => (
-                  <span
-                    key={idx}
-                    className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded"
-                  >
-                    {fmt}
-                  </span>
-                ))}
+                {Object.values(langFormatMap)
+                  .flat()
+                  .map((fmt, idx) => (
+                    <span
+                      key={idx}
+                      className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded"
+                    >
+                      {fmt}
+                    </span>
+                  ))}
                 <span className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded">
                   {movie.language}
                 </span>
@@ -367,7 +354,6 @@ const goToReviews = () => {
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
 
-              {/* Action CTAs */}
               <div className="flex items-center gap-3 mt-8">
                 <button
                   onClick={handleBookTicketsClick}
@@ -375,7 +361,7 @@ const goToReviews = () => {
                 >
                   Book tickets
                 </button>
-                
+
                 <button
                   onClick={handleShare}
                   className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
@@ -393,7 +379,6 @@ const goToReviews = () => {
         </div>
       </div>
 
-      {/* ─── BMS Style "About the movie" Section ─── */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
           <h2 className="text-xl font-bold text-gray-900 mb-3">
@@ -417,7 +402,6 @@ const goToReviews = () => {
 
       <Footer />
 
-      {/* ─── TRAILER VIDEO MODAL ─── */}
       {showTrailerModal && movie.trailer_url && (
         <div
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
@@ -434,7 +418,9 @@ const goToReviews = () => {
               <X size={20} />
             </button>
 
-            {embedTrailerUrl && (embedTrailerUrl.includes("youtube.com") || embedTrailerUrl.includes("youtu.be")) ? (
+            {embedTrailerUrl &&
+            (embedTrailerUrl.includes("youtube.com") ||
+              embedTrailerUrl.includes("youtu.be")) ? (
               <iframe
                 src={embedTrailerUrl}
                 title={`${movie.title} Trailer`}
@@ -454,7 +440,6 @@ const goToReviews = () => {
         </div>
       )}
 
-      {/* ─── BMS SELECT LANGUAGE AND FORMAT MODAL ─── */}
       {showLangFormatModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
@@ -513,7 +498,6 @@ const goToReviews = () => {
         </div>
       )}
 
-      {/* ─── BMS HOW MANY SEATS MODAL (With Vehicle Animation) ─── */}
       {showTicketModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 sm:p-0 animate-in fade-in duration-200"
@@ -555,7 +539,7 @@ const goToReviews = () => {
                     >
                       {n}
                     </button>
-                  )
+                  ),
                 )}
               </div>
 
@@ -572,12 +556,11 @@ const goToReviews = () => {
         </div>
       )}
       <RatingModal
-  isOpen={isRatingModalOpen}
-  onClose={() => setIsRatingModalOpen(false)}
-  movieId={movie.id}
-  onSubmitSuccess={fetchMovie}   // refreshes rating + rating_count in the hero
-/>
+        isOpen={isRatingModalOpen}
+        onClose={() => setIsRatingModalOpen(false)}
+        movieId={movie.id}
+        onSubmitSuccess={fetchMovie} 
+      />
     </div>
-    
   );
 }
