@@ -15,13 +15,10 @@ import {
   MapPin,
   Users,
   ArrowRight,
-  Clock,
-  CheckCircle2,
-  Heart,
   Settings,
-  Bell,
   Star,
-  TrendingUp,
+  Ticket,
+  ChevronRight,
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { formatDate, isUpcoming } from "@/utils/dateFormatter";
@@ -47,9 +44,9 @@ export default function ProfilePage() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-[#F5F5FA]">
         <Header />
-        <div className="flex justify-center py-20">
+        <div className="flex justify-center py-40">
           <Loader className="h-8 w-8" />
         </div>
       </div>
@@ -69,137 +66,98 @@ export default function ProfilePage() {
       isUpcoming(b.starts_at ?? b.booking_date),
   );
   const past = bookings.filter((b) => !upcoming.some((u) => u.id === b.id));
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#F5F5FA] font-sans">
       <Header />
 
-      {/* Header banner */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718] lg:h-56">
-        <div className="absolute inset-0 " />
-        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
-      </div>
-
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        {/* Profile header */}
-        <div className="-mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="flex items-end gap-4">
-            <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-              <AvatarFallback className="bg-[#7B1E3D] font-serif text-2xl font-semibold text-white">
+      <main className="mx-auto max-w-[1000px] w-full px-4 pt-28 lg:pt-[120px] pb-16">
+        {/* Profile Card */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
+              <AvatarFallback className="bg-[#7B1E3D] text-2xl font-bold text-white">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="pb-2">
-              <h1 className="font-serif text-3xl font-semibold text-slate-900">
-                {user.full_name || "Member"}
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                Hi, {user.full_name || "Member"}
               </h1>
-              <p className="text-sm text-slate-500">{user.email}</p>
+              <p className="text-sm text-gray-500 mb-1">{user.email}</p>
               {user.phone && (
-                <p className="mt-0.5 text-sm text-slate-500">{user.phone}</p>
+                <p className="text-sm text-gray-500">{user.phone}</p>
               )}
             </div>
           </div>
-          <div className="flex gap-2 pb-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full border-slate-200 bg-white"
-            >
-              <Link to="/profile/edit">
-                <Settings className="mr-2 h-4 w-4" />
-              </Link>
-              Edit profile
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-full border-slate-200 bg-white"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="mt-8 grid grid-cols-3 gap-4">
-          {[
-            { label: "Total bookings", value: bookings.length, icon: Calendar },
-            { label: "Upcoming", value: upcoming.length, icon: Clock },
-            { label: "Member since", value: "2026", icon: Star },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-soft"
-            >
-              <stat.icon className="mx-auto mb-2 h-5 w-5 text-[#7B1E3D]" />
-              <p className="font-serif text-2xl font-semibold text-slate-900">
-                {stat.value}
-              </p>
-              <p className="text-xs text-slate-500">{stat.label}</p>
-            </div>
-          ))}
+          <Button
+            variant="outline"
+            className="rounded-lg border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 sm:w-auto w-full"
+            asChild
+          >
+            <Link to="/profile/edit">
+              <Settings className="mr-2 h-4 w-4" />
+              Edit Profile
+            </Link>
+          </Button>
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="bookings" className="mt-10" id="bookings">
-          <TabsList className="grid w-full max-w-md grid-cols-3 rounded-xl bg-slate-50 p-1">
+        <Tabs defaultValue="bookings" className="mt-8">
+          <TabsList className="flex w-full justify-start rounded-none border-b border-gray-200 bg-transparent p-0">
             <TabsTrigger
               value="bookings"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
+              className="rounded-none border-b-2 border-transparent px-6 py-3 text-sm font-semibold text-gray-500 hover:text-gray-700 data-[state=active]:border-[#7B1E3D] data-[state=active]:text-[#7B1E3D] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
-              Bookings
+              Your Orders
             </TabsTrigger>
             <TabsTrigger
               value="saved"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
+              className="rounded-none border-b-2 border-transparent px-6 py-3 text-sm font-semibold text-gray-500 hover:text-gray-700 data-[state=active]:border-[#7B1E3D] data-[state=active]:text-[#7B1E3D] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
               Saved
             </TabsTrigger>
             <TabsTrigger
               value="activity"
-              className="rounded-lg text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-soft"
+              className="rounded-none border-b-2 border-transparent px-6 py-3 text-sm font-semibold text-gray-500 hover:text-gray-700 data-[state=active]:border-[#7B1E3D] data-[state=active]:text-[#7B1E3D] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
               Activity
             </TabsTrigger>
           </TabsList>
 
           {/* Bookings tab */}
-          <TabsContent value="bookings" className="mt-6 space-y-8">
+          <TabsContent value="bookings" className="mt-6 space-y-6">
             {bookingsLoading ? (
               <div className="flex justify-center py-12">
                 <Loader className="h-6 w-6" />
               </div>
             ) : bookings.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
-                  <Calendar className="h-7 w-7 text-[#7B1E3D]" />
+              <div className="rounded-xl border border-gray-200 bg-white py-16 text-center shadow-sm">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
+                  <Ticket className="h-8 w-8 text-gray-400" />
                 </div>
-                <h3 className="font-serif text-xl font-semibold text-slate-900">
-                  No bookings yet
+                <h3 className="text-xl font-bold text-gray-900">
+                  No bookings found
                 </h3>
-                <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-                  When you book an experience, it&apos;ll show up here for easy
-                  access.
+                <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+                  Looks like you haven't booked anything yet. Explore movies and
+                  events around you.
                 </p>
                 <Button
                   asChild
-                  className="mt-6 rounded-full bg-[#7B1E3D] px-6 text-sm font-semibold shadow-sm hover:bg-[#5C0F2A]"
+                  className="mt-6 rounded-lg bg-[#7B1E3D] px-8 py-2 text-sm font-bold text-white hover:bg-[#5C0F2A]"
                 >
-                  <Link to="/">
-                    Browse experiences
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
+                  <Link to="/">Explore Now</Link>
                 </Button>
               </div>
             ) : (
-              <>
+              <div className="space-y-8">
                 {upcoming.length > 0 && (
                   <div>
-                    <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-slate-900">
-                      <Clock className="h-5 w-5 text-[#7B1E3D]" />
-                      Upcoming
+                    <h3 className="mb-4 text-lg font-bold text-gray-900 uppercase tracking-wide">
+                      Upcoming Bookings
                     </h3>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4">
                       {upcoming.map((booking) => (
                         <BookingCard key={booking.id} booking={booking} />
                       ))}
@@ -208,31 +166,30 @@ export default function ProfilePage() {
                 )}
                 {past.length > 0 && (
                   <div>
-                    <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-slate-900">
-                      <CheckCircle2 className="h-5 w-5 text-slate-500" />
-                      Past experiences
+                    <h3 className="mb-4 text-lg font-bold text-gray-900 uppercase tracking-wide">
+                      Past Bookings
                     </h3>
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4">
                       {past.map((booking) => (
                         <BookingCard key={booking.id} booking={booking} past />
                       ))}
                     </div>
                   </div>
                 )}
-              </>
+              </div>
             )}
           </TabsContent>
 
           {/* Saved tab */}
           <TabsContent value="saved" className="mt-6">
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-16 text-center">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
-                <Heart className="h-7 w-7 text-[#7B1E3D]" />
+            <div className="rounded-xl border border-gray-200 bg-white py-16 text-center shadow-sm">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
+                <Star className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="font-serif text-xl font-semibold text-slate-900">
+              <h3 className="text-xl font-bold text-gray-900">
                 Nothing saved yet
               </h3>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-slate-500">
+              <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
                 Tap the heart icon on any experience to save it for later.
               </p>
             </div>
@@ -240,31 +197,34 @@ export default function ProfilePage() {
 
           {/* Activity tab */}
           <TabsContent value="activity" className="mt-6">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
-              <h3 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-slate-900">
-                <TrendingUp className="h-5 w-5 text-[#7B1E3D]" />
-                Recent activity
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+              <h3 className="mb-4 text-lg font-bold text-gray-900">
+                Recent Activity
               </h3>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 border-b border-slate-200 pb-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1E3D]/5">
+                <div className="flex items-start gap-4 border-b border-gray-100 pb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7B1E3D]/10">
                     <Wine className="h-5 w-5 text-[#7B1E3D]" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">Joined Booking App</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="font-semibold text-gray-900">
+                      Joined Vyhbz Platform
+                    </p>
+                    <p className="text-sm text-gray-500">
                       Welcome to the community
                     </p>
                   </div>
                 </div>
                 {bookings.length > 0 && (
-                  <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#7B1E3D]/5">
-                      <Calendar className="h-5 w-5 text-[#7B1E3D]" />
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#7B1E3D]/10">
+                      <Ticket className="h-5 w-5 text-[#7B1E3D]" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">First booking made</p>
-                      <p className="text-xs text-slate-500">
+                      <p className="font-semibold text-gray-900">
+                        First booking made
+                      </p>
+                      <p className="text-sm text-gray-500">
                         {bookings[bookings.length - 1]?.title}
                       </p>
                     </div>
@@ -274,12 +234,11 @@ export default function ProfilePage() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
-
-      <div className="h-20" />
+      </main>
     </div>
   );
 }
+
 function BookingCard({
   booking,
   past = false,
@@ -288,120 +247,144 @@ function BookingCard({
   past?: boolean;
 }) {
   const isMovie = booking.type === "MOVIE" && !!booking.starts_at;
+  const bookingDate = new Date(booking.starts_at || booking.booking_date);
 
   return (
     <div
-      className={`group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft transition-all hover:shadow-soft-lg ${
-        past ? "opacity-80" : ""
+      className={`group flex flex-col sm:flex-row overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md ${
+        past ? "opacity-75" : ""
       }`}
     >
-      <div className="relative aspect-[16/9] overflow-hidden">
+      {/* Left Image Section (Poster style like BMS) */}
+      <div className="relative w-full sm:w-36 shrink-0 aspect-video sm:aspect-[2/3] bg-gray-100">
         {booking.image_url ? (
           <img
             src={booking.image_url}
             alt={booking.movie_title ?? booking.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#5C0F2A] to-[#7B1E3D]">
-            <Wine className="h-10 w-10 text-wine-400" />
+          <div className="flex h-full w-full items-center justify-center bg-gray-200">
+            <Ticket className="h-10 w-10 text-gray-400" />
           </div>
         )}
-        <div className="absolute right-3 top-3">
-          <Badge
-            className={`rounded-full text-xs font-semibold ${
-              past ? "bg-muted text-slate-500" : "bg-[#7B1E3D] text-white"
-            }`}
-          >
-            {past ? "Completed" : "Confirmed"}
-          </Badge>
-        </div>
       </div>
 
-      <div className="p-4">
-        {isMovie ? (
-          <>
-            <h4 className="font-serif text-lg font-semibold text-slate-900">
-              {booking.movie_title ?? booking.title}
-            </h4>
+      {/* Right Details Section */}
+      <div className="flex flex-1 flex-col justify-between p-5">
+        <div>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h4 className="text-lg font-bold text-gray-900 leading-tight">
+                {booking.movie_title ?? booking.title}
+              </h4>
 
-            {(booking.certificate || booking.format || booking.language) && (
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 mt-0.5">
-                {[booking.certificate, booking.format, booking.language]
-                  .filter(Boolean)
-                  .join(" • ")}
-              </p>
-            )}
-
-            {(booking.cinema_name || booking.screen_name) && (
-              <p className="text-sm font-medium text-slate-700 mt-2">
-                {booking.cinema_name}
-                {booking.screen_name ? `, ${booking.screen_name}` : ""}
-              </p>
-            )}
-
-            <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
-              <Calendar className="h-3 w-3" />
-              {new Date(booking.starts_at!).toLocaleString([], {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-
-            {booking.seat_codes && booking.seat_codes.length > 0 && (
-              <p className="text-xs text-slate-500 mt-1">
-                {booking.seat_codes.length}{" "}
-                {booking.seat_codes.length === 1 ? "Ticket" : "Tickets"}:{" "}
-                {booking.seat_codes.join(", ")}
-              </p>
-            )}
-
-            {booking.ref_code && (
-              <p className="text-[10px] font-mono text-slate-400 mt-1">
-                Ref: {booking.ref_code}
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <h4 className="font-serif text-lg font-semibold text-slate-900">
-              {booking.title}
-            </h4>
-            <p className="text-xs text-slate-500">{booking.venue}</p>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {formatDate(booking.booking_date)}
-              </span>
-              {booking.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {booking.location}
-                </span>
+              {isMovie ? (
+                <>
+                  {(booking.language || booking.format) && (
+                    <p className="mt-1 text-sm text-gray-500 font-medium">
+                      {[booking.language, booking.format]
+                        .filter(Boolean)
+                        .join(" • ")}
+                    </p>
+                  )}
+                  {(booking.cinema_name || booking.screen_name) && (
+                    <p className="mt-3 text-sm font-semibold text-gray-800">
+                      {booking.cinema_name}
+                      {booking.screen_name ? `: ${booking.screen_name}` : ""}
+                    </p>
+                  )}
+                  <p className="mt-1 text-sm text-gray-600">
+                    {bookingDate.toLocaleString("en-IN", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                    {" | "}
+                    {bookingDate.toLocaleString("en-IN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 text-sm text-gray-500 font-medium">
+                    {booking.venue}
+                  </p>
+                  <p className="mt-3 text-sm font-semibold text-gray-800">
+                    {formatDate(booking.booking_date)}
+                  </p>
+                  {booking.location && (
+                    <p className="mt-1 text-sm text-gray-600 flex items-center gap-1">
+                      <MapPin className="h-3 w-3" />
+                      {booking.location}
+                    </p>
+                  )}
+                </>
               )}
-              <span className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                {booking.guests} {booking.guests === 1 ? "guest" : "guests"}
-              </span>
             </div>
-          </>
-        )}
 
-        <div className="mt-3 flex items-center justify-between border-t border-slate-200 pt-3">
-          <span className="font-serif text-xl font-semibold text-slate-800">
-            {formatCurrency(booking.total_price)}
-          </span>
+            {/* Status Badge */}
+            <Badge
+              className={`whitespace-nowrap px-3 py-1 rounded text-xs font-bold uppercase tracking-wider ${
+                past
+                  ? "bg-gray-100 text-gray-600 hover:bg-gray-100"
+                  : "bg-green-100 text-green-700 hover:bg-green-100"
+              }`}
+            >
+              {past ? "Completed" : "Confirmed"}
+            </Badge>
+          </div>
+
+          {/* Seats Info */}
+          {isMovie && booking.seat_codes && booking.seat_codes.length > 0 ? (
+            <p className="mt-4 text-sm font-semibold text-gray-800 bg-gray-50 inline-block px-3 py-1.5 rounded-md border border-gray-100">
+              <span className="text-gray-500 font-normal">Ticket(s):</span>{" "}
+              {booking.seat_codes.join(", ")}
+            </p>
+          ) : !isMovie && booking.guests ? (
+            <p className="mt-4 text-sm font-semibold text-gray-800 bg-gray-50 inline-block px-3 py-1.5 rounded-md border border-gray-100">
+              <span className="text-gray-500 font-normal">Guests:</span>{" "}
+              <Users className="h-3 w-3 inline mr-1" />
+              {booking.guests}
+            </p>
+          ) : null}
+        </div>
+
+        {/* Footer (Price & Actions) */}
+        <div className="mt-5 flex flex-wrap items-center justify-between border-t border-gray-100 pt-4 gap-4">
+          <div className="flex gap-8">
+            {booking.ref_code && (
+              <div>
+                <p className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-0.5">
+                  Booking ID
+                </p>
+                <p className="font-mono text-sm font-bold text-gray-900">
+                  {booking.ref_code}
+                </p>
+              </div>
+            )}
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wider font-medium mb-0.5">
+                Total Amount
+              </p>
+              <p className="text-sm font-bold text-gray-900">
+                {formatCurrency(booking.total_price)}
+              </p>
+            </div>
+          </div>
+
           {!past && (
             <Button
               asChild
-              size="sm"
-              variant="outline"
-              className="rounded-full border-[#7B1E3D]/30 text-xs text-[#7B1E3D] hover:bg-[#7B1E3D]/5"
+              variant="link"
+              className="text-[#7B1E3D] hover:text-[#5C0F2A] font-bold p-0 h-auto gap-1"
             >
-              <Link to={`/bookings/${booking.id}`}>View details</Link>
+              <Link to={`/bookings/${booking.id}`}>
+                View Details <ChevronRight className="h-4 w-4" />
+              </Link>
             </Button>
           )}
         </div>
