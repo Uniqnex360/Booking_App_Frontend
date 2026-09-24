@@ -4,6 +4,7 @@ import { api, unwrap } from "@/api/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { toast } from "sonner";
+import { forgotPassword } from "@/api/booking.api";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -14,17 +15,12 @@ export default function ForgotPasswordPage() {
   e.preventDefault();
   setLoading(true);
   try {
-    await unwrap(api.post("/auth/forgot-password", { email }));
+    await forgotPassword(email);
     setSent(true);
   } catch (err: any) {
-    const status = err?.response?.status;
-    const detail = err?.response?.data?.detail;
-    if (status === 404) {
-      toast.error(detail ?? "No account found with that email.");
-    } else {
-      toast.error("Something went wrong. Try again.");
-    }
-  } finally {
+  const detail = err?.response?.data?.detail;
+  toast.error(detail ?? "Something went wrong. Try again.");
+} finally {
     setLoading(false);
   }
 };

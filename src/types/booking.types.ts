@@ -54,6 +54,30 @@ export interface BookingDetail extends Booking {
   unit_price_paise?: number | null;
 }
 
+export interface ForgotPasswordResponse {
+  status: string;
+  code: number;
+  data: null;
+  message: string;
+}
+
+export interface ValidateResetTokenResponse {
+  valid: boolean;
+}
+
+export interface ResetPasswordResponse {
+  status: string;
+  code: number;
+  data: null;
+  message: string;
+}
+export interface ForgotPasswordResponse {
+  status: string;
+  code: number;
+  data: null;
+  message: string;
+}
+
 export interface CreateBookingPayload {
   type: BookingType;
   ref_id: string;

@@ -4,6 +4,7 @@ import { api, unwrap } from "@/api/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { toast } from "sonner";
+import { resetPassword, validateResetToken } from "@/api/booking.api";
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -15,12 +16,12 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!token) {
       setValid(false);
       return;
     }
-    unwrap<{ valid: boolean }>(api.post("/auth/reset-password/validate", { token }))
+    validateResetToken(token)
       .then((r) => setValid(r.valid))
       .catch(() => setValid(false));
   }, [token]);
@@ -32,12 +33,13 @@ export default function ResetPasswordPage() {
       return;
     }
     setLoading(true);
-    try {
-      await unwrap(api.post("/auth/reset-password", { token, new_password: password }));
+        try {
+      await resetPassword(token, password);
       toast.success("Password updated. Please sign in.");
       navigate("/login");
     } catch (err: any) {
-      toast.error(err?.error?.message ?? "Could not reset password");
+      const detail = err?.response?.data?.detail;
+      toast.error(typeof detail === "string" && detail ? detail : "Could not reset password");
     } finally {
       setLoading(false);
     }
