@@ -29,6 +29,7 @@ export interface Event {
   status: EventStatus;                 
   poster_image_url?: string;
   rating?: number;
+  external_rating?: number;
   reviews_count?: number;
   tags?: string[];
 }

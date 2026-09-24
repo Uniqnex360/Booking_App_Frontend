@@ -27,13 +27,8 @@ interface MovieItem {
   poster_url: string | null;
   genre?: string;
   rating?: number;
+  external_rating?: number;
   votes_count?: number;
-}
-
-function formatDuration(mins: number): string {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${h}h ${m}m`;
 }
 
 export default function MoviesPage() {
@@ -85,7 +80,7 @@ export default function MoviesPage() {
       try {
         setLoading(true);
         const data = await unwrap<MovieItem[]>(
-          api.get(`/movies`, { params: { city } })
+          api.get(`/movies`, { params: { city } }),
         );
         setMovies(data);
       } catch (err) {
@@ -130,7 +125,7 @@ export default function MoviesPage() {
       if (selectedGenres.length > 0) {
         const movieGenres = m.genre?.split(",").map((g) => g.trim()) || [];
         const hasMatchingGenre = selectedGenres.some((g) =>
-          movieGenres.includes(g)
+          movieGenres.includes(g),
         );
         if (!hasMatchingGenre) return false;
       }
@@ -140,13 +135,13 @@ export default function MoviesPage() {
 
   const toggleLanguageFilter = (lang: string) => {
     setSelectedLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
+      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang],
     );
   };
 
   const toggleGenreFilter = (genre: string) => {
     setSelectedGenres((prev) =>
-      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre]
+      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
     );
   };
 
@@ -163,8 +158,7 @@ export default function MoviesPage() {
     <div className="min-h-screen bg-[#F5F5F7] text-[#333333] flex flex-col font-sans">
       <Header />
 
-        <main className="flex-grow max-w-[1240px] w-full mx-auto px-4 pt-28 lg:pt-[120px] pb-16">
-
+      <main className="flex-grow max-w-[1240px] w-full mx-auto px-4 pt-28 lg:pt-[120px] pb-16">
         {/* ─── Top Filter / Subheader Strip ─── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200">
           <div>
@@ -394,7 +388,9 @@ export default function MoviesPage() {
                 {filteredMovies.map((movie) => (
                   <div
                     key={movie.id}
-                    onClick={() => navigate(withCity(`/movies/${movie.id}`, city))}
+                    onClick={() =>
+                      navigate(withCity(`/movies/${movie.id}`, city))
+                    }
                     className="group cursor-pointer flex flex-col"
                   >
                     {/* Poster Card */}
@@ -411,20 +407,21 @@ export default function MoviesPage() {
                         </div>
                       )}
 
-                      {/* BMS Bottom Rating Bar Overlay */}
-                      <div className="absolute bottom-0 inset-x-0 bg-black/80 px-2.5 py-1.5 flex items-center justify-between text-white text-[11px]">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 text-[#7B1E3D] fill-[#7B1E3D]" />
-                          <span className="font-bold">
-                            {movie.rating ? `${movie.rating}/10` : "8.5/10"}
-                          </span>
+                      {(movie.rating != null || movie.external_rating != null) && (
+                        <div className="absolute bottom-0 inset-x-0 bg-black/80 px-2.5 py-1.5 flex items-center justify-between text-white text-[11px]">
+                          <div className="flex items-center gap-1">
+                            <Star className="h-3 w-3 text-[#7B1E3D] fill-[#7B1E3D]" />
+                            <span className="font-bold">
+                              {movie.rating != null
+                                ? `${movie.rating}/10`
+                                : `${movie.external_rating}/10`}
+                            </span>
+                            {movie.rating == null && movie.external_rating != null && (
+                              <span className="text-[10px] text-gray-400">TMDB</span>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-[10px] text-gray-300">
-                          {movie.votes_count
-                            ? `${(movie.votes_count / 1000).toFixed(1)}k votes`
-                            : "1.2k votes"}
-                        </span>
-                      </div>
+                      )}
                     </div>
 
                     {/* Movie Info */}
