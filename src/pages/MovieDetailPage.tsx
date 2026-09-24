@@ -27,7 +27,7 @@ interface MovieDetail {
   poster_url: string | null;
   banner_url?: string | null;
   trailer_url?: string | null;
-  synopsis: string;
+  synopsis?: string | null;
   genre: string;
   release_date: string;
   venues?: any[];
@@ -50,7 +50,6 @@ function formatReleaseDate(dateStr: string): string {
   });
 }
 
-// Helper to convert YouTube links into embed URLs for the iframe player
 function getEmbedTrailerUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   if (url.includes("youtube.com/watch")) {
@@ -76,11 +75,14 @@ export default function MovieDetailPage() {
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Synopsis Read More toggle state
+  const [isSynopsisExpanded, setIsSynopsisExpanded] = useState(false);
+
   // Modal States
   const [showLangFormatModal, setShowLangFormatModal] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showTrailerModal, setShowTrailerModal] = useState(false);
-  
+
   const [selectedLang, setSelectedLang] = useState<string>("");
   const [selectedFormat, setSelectedFormat] = useState<string>("");
   const [ticketCount, setTicketCount] = useState(2);
@@ -101,7 +103,6 @@ export default function MovieDetailPage() {
     fetchMovie();
   }, [id]);
 
-  // Group showtime formats by language (BMS Style)
   const langFormatMap = useMemo(() => {
     const map: Record<string, Set<string>> = {};
 
@@ -116,7 +117,6 @@ export default function MovieDetailPage() {
       });
     }
 
-    // Fallback if no venues / default language
     if (Object.keys(map).length === 0 && movie) {
       const defaultLang = (movie.language || "ENGLISH").toUpperCase();
       map[defaultLang] = new Set(["2D", "IMAX 2D"]);
@@ -154,16 +154,13 @@ export default function MovieDetailPage() {
   const genres = movie.genre.split(",").map((g) => g.trim());
   const embedTrailerUrl = getEmbedTrailerUrl(movie.trailer_url);
 
-  // Handle "Book tickets" click
   const handleBookTicketsClick = () => {
     const langCount = Object.keys(langFormatMap).length;
     const totalFormats = Object.values(langFormatMap).flat().length;
 
-    // If multiple options exist, show Language & Format modal first
     if (langCount > 1 || totalFormats > 1) {
       setShowLangFormatModal(true);
     } else {
-      // Otherwise skip directly to seat selection
       const defaultLang = Object.keys(langFormatMap)[0] || movie.language;
       const defaultFormat = langFormatMap[defaultLang]?.[0] || "2D";
       setSelectedLang(defaultLang);
@@ -172,15 +169,13 @@ export default function MovieDetailPage() {
     }
   };
 
-  // When user selects a format pill in the language modal
   const handleSelectLangFormat = (lang: string, format: string) => {
     setSelectedLang(lang);
     setSelectedFormat(format);
     setShowLangFormatModal(false);
-    setShowTicketModal(true); // Open "How many seats?" modal
+    setShowTicketModal(true);
   };
 
-  // Final confirmation to view showtimes
   const handleTicketConfirm = () => {
     setShowTicketModal(false);
     const filterQuery = `${selectedLang} - ${selectedFormat}`;
@@ -192,7 +187,6 @@ export default function MovieDetailPage() {
     );
   };
 
-  // Share functionality
   const getShareUrl = () => {
     const path = withCity(`/movies/${id}`, city);
     return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
@@ -208,9 +202,7 @@ export default function MovieDetailPage() {
         await navigator.share({ title, text, url });
         return;
       }
-    } catch {
-      // User cancelled, fall through to copy
-    }
+    } catch {}
 
     try {
       await navigator.clipboard.writeText(url);
@@ -222,6 +214,9 @@ export default function MovieDetailPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const synopsisText = movie.synopsis || "No synopsis available for this movie.";
+  const shouldTruncate = synopsisText.length > 250;
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -240,7 +235,6 @@ export default function MovieDetailPage() {
           backgroundPosition: "center",
         }}
       >
-        {/* Soft background glow if banner is missing */}
         {!movie.banner_url && movie.poster_url && (
           <div
             className="absolute inset-0 opacity-20 bg-cover bg-center blur-2xl pointer-events-none"
@@ -249,7 +243,6 @@ export default function MovieDetailPage() {
         )}
 
         <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-          {/* Back to Movies */}
           <button
             type="button"
             onClick={() => navigate(withCity("/movies", city))}
@@ -275,7 +268,6 @@ export default function MovieDetailPage() {
                   </div>
                 )}
                 
-                {/* BMS Style "Trailers" Pill Overlay */}
                 <div
                   onClick={() => {
                     if (movie.trailer_url) {
@@ -317,7 +309,7 @@ export default function MovieDetailPage() {
                 </button>
               </div>
 
-              {/* Language & Formats */}
+              {/* Formats & Languages */}
               <div className="flex flex-wrap gap-2 mt-5">
                 {Object.values(langFormatMap).flat().map((fmt, idx) => (
                   <span
@@ -332,7 +324,7 @@ export default function MovieDetailPage() {
                 </span>
               </div>
 
-              {/* Meta Info */}
+              {/* Duration / Genre / Certificate */}
               <div className="flex flex-wrap items-center gap-2 text-sm text-white/90 mt-5">
                 <span>{formatDuration(movie.duration_min)}</span>
                 <span className="text-white/40">•</span>
@@ -343,7 +335,7 @@ export default function MovieDetailPage() {
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action CTAs */}
               <div className="flex items-center gap-3 mt-8">
                 <button
                   onClick={handleBookTicketsClick}
@@ -371,15 +363,25 @@ export default function MovieDetailPage() {
         </div>
       </div>
 
-      {/* ─── About Section ─── */}
+      {/* ─── BMS Style "About the movie" Section ─── */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1240px] mx-auto px-4 py-10">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+        <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
+          <h2 className="text-xl font-bold text-gray-900 mb-3">
             About the movie
           </h2>
-          <p className="text-gray-700 text-sm leading-relaxed max-w-4xl">
-            {movie.synopsis}
+          <p className="text-gray-700 text-sm leading-relaxed max-w-4xl whitespace-pre-line">
+            {shouldTruncate && !isSynopsisExpanded
+              ? `${synopsisText.slice(0, 250)}...`
+              : synopsisText}
           </p>
+          {shouldTruncate && (
+            <button
+              onClick={() => setIsSynopsisExpanded(!isSynopsisExpanded)}
+              className="text-[#7B1E3D] text-xs font-bold hover:underline mt-2 inline-block"
+            >
+              {isSynopsisExpanded ? "Show Less" : "Read More"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -432,7 +434,6 @@ export default function MovieDetailPage() {
             className="bg-white rounded-2xl w-full max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="px-6 pt-5 pb-4 flex items-start justify-between border-b border-gray-100">
               <div>
                 <p className="text-xs text-gray-500 font-medium mb-0.5">
@@ -450,7 +451,6 @@ export default function MovieDetailPage() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-100">
               {Object.entries(langFormatMap).map(([lang, formats]) => (
                 <div key={lang} className="py-2">
@@ -493,7 +493,6 @@ export default function MovieDetailPage() {
             className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-gray-100">
               <h3 className="text-gray-900 font-bold text-lg">
                 How many seats?
@@ -507,12 +506,10 @@ export default function MovieDetailPage() {
             </div>
 
             <div className="px-6 pt-6 pb-8 bg-white">
-              {/* Vehicle SVG based on count */}
               <div className="flex items-center justify-center h-28 mb-6">
                 <SeatVehicle count={ticketCount} />
               </div>
 
-              {/* Number pills */}
               <div className="flex items-center justify-center gap-2 flex-wrap px-1">
                 {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
                   (n) => (
