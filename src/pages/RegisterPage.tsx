@@ -69,7 +69,6 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-       <Header />
 
       <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-br from-[#1A1A2E] via-[#2D121D] to-[#1A1A2E] lg:flex lg:items-center lg:justify-center p-12">
         <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-[#7B1E3D]/30 blur-3xl pointer-events-none" />

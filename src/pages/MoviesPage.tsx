@@ -163,7 +163,8 @@ export default function MoviesPage() {
     <div className="min-h-screen bg-[#F5F5F7] text-[#333333] flex flex-col font-sans">
       <Header />
 
-      <main className="flex-grow max-w-[1240px] w-full mx-auto px-4 pt-20 lg:pt-[88px] pb-16">
+        <main className="flex-grow max-w-[1240px] w-full mx-auto px-4 pt-28 lg:pt-[120px] pb-16">
+
         {/* ─── Top Filter / Subheader Strip ─── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200">
           <div>

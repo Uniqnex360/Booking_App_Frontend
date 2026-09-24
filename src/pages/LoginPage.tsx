@@ -135,7 +135,6 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-       <Header />
 
       {/* Left Banner Section with Logo */}
       <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-br from-[#1A1A2E] via-[#2D121D] to-[#1A1A2E] lg:flex lg:items-center lg:justify-center p-12">
