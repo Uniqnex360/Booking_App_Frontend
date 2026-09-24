@@ -23,6 +23,7 @@ import TermsAndConditionsPage from "@/components/TermsAndConditionsPage";
 import ConfirmationPage from "@/pages/ConfirmationPage";
 import MovieReviewsPage from "@/pages/MovieReviewsPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 
 export function AppRoutes() {
   return (
