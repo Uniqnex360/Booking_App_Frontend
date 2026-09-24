@@ -65,7 +65,7 @@ export default function ContentModeration() {
                 <p className="text-sm text-slate-500">{event.venue_name} • {event.city}</p>
                 <p className="text-sm mt-2 line-clamp-2">{event.description}</p>
                 <div className="mt-2 flex gap-2">
-                   <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-md font-medium">
+                   <span className="text-xs bg-[#7B1E3D]/5 text-[#7B1E3D] px-2 py-1 rounded-md font-medium">
                       Category: {event.category}
                    </span>
                 </div>

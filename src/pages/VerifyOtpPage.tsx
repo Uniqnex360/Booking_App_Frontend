@@ -94,7 +94,7 @@ const phone = searchParams.get('phone'); // keep, phone path unaffected
           
           <Button 
             type="submit" 
-            className="w-full h-12 bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-xl font-semibold"
+            className="w-full h-12 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white rounded-xl font-semibold"
             disabled={loading || code.length !== 6}
           >
             {loading ? <Loader2 className="animate-spin" /> : "Verify Identity"}

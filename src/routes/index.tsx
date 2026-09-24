@@ -22,6 +22,7 @@ import BuyTicketsPage from "@/pages/BuyTicketsPage";
 import TermsAndConditionsPage from "@/components/TermsAndConditionsPage";
 import ConfirmationPage from "@/pages/ConfirmationPage";
 import MovieReviewsPage from "@/pages/MovieReviewsPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 
 export function AppRoutes() {
   return (
@@ -30,6 +31,8 @@ export function AppRoutes() {
       <Route path="/confirmation" element={<ConfirmationPage />} />
     <Route path="/movies/:id/reviews" element={<MovieReviewsPage />} />
 
+<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+<Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/movies" element={<MoviesPage />} />

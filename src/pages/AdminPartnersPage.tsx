@@ -67,7 +67,7 @@ const partnerTypeMeta: Record<
 
 const statusBadge: Record<PartnerStatus, string> = {
   PENDING_APPROVAL:
-    'bg-amber-100 text-amber-700 border-amber-200',
+    'bg-[#7B1E3D]/10 text-[#7B1E3D] border-[#7B1E3D]/30',
   APPROVED: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   REJECTED: 'bg-red-100 text-red-700 border-red-200',
   SUSPENDED: 'bg-red-100 text-red-700 border-red-200',
@@ -171,7 +171,7 @@ export default function AdminPartnersPage() {
             onClick={() => {}}
             className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-slate-900 flex items-center gap-2"
           >
-            <Users className="h-4 w-4 text-amber-700" />
+            <Users className="h-4 w-4 text-[#7B1E3D]" />
             Partner Verification
           </button>
           <a
@@ -184,8 +184,8 @@ export default function AdminPartnersPage() {
         </div>
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50">
-            <Users className="h-6 w-6 text-amber-700" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
+            <Users className="h-6 w-6 text-[#7B1E3D]" />
           </div>
           <div>
             <h1 className="font-serif text-3xl font-semibold text-slate-900">
@@ -262,8 +262,8 @@ export default function AdminPartnersPage() {
             </div>
           ) : partners.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50">
-                <Users className="h-6 w-6 text-amber-600" />
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
+                <Users className="h-6 w-6 text-[#7B1E3D]" />
               </div>
               <p className="font-serif text-lg font-semibold text-slate-900">
                 No partners found
@@ -308,8 +308,8 @@ export default function AdminPartnersPage() {
                       >
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50">
-                              <TypeIcon className="h-4 w-4 text-amber-600" />
+                            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[#7B1E3D]/5">
+                              <TypeIcon className="h-4 w-4 text-[#7B1E3D]" />
                             </div>
                             <div>
                               <p className="text-sm font-semibold text-slate-900">

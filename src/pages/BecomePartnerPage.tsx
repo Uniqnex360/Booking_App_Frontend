@@ -146,7 +146,7 @@ export default function BecomePartnerPage() {
    if (checking) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-700" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#7B1E3D]" />
       </div>
     );
   }
@@ -156,10 +156,10 @@ export default function BecomePartnerPage() {
       <div className="min-h-screen bg-slate-50">
         <Header />
         <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-          <Clock className="mx-auto h-16 w-16 text-amber-500 mb-4" />
+          <Clock className="mx-auto h-16 w-16 text-[#7B1E3D] mb-4" />
           <h1 className="text-3xl font-serif font-bold">Application Under Review</h1>
           <p className="text-slate-500 mt-2">You have already submitted an application for <strong>{existingPartner.business_name}</strong>.</p>
-          <Button asChild className="mt-6 bg-amber-500">
+          <Button asChild className="mt-6 bg-[#7B1E3D]">
             <Link to="/partner/dashboard">Go to Dashboard</Link>
           </Button>
         </div>
@@ -171,9 +171,9 @@ export default function BecomePartnerPage() {
       <Header />
 
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718]">
         <div className="absolute inset-0 " />
-        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
+        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
         <div className="relative mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
@@ -203,7 +203,7 @@ export default function BecomePartnerPage() {
   )}
         <Link
           to="/"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-[#5C0F2A]"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to home
@@ -243,7 +243,7 @@ export default function BecomePartnerPage() {
                           return (
                             <SelectItem key={key} value={key}>
                               <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4 text-amber-600" />
+                                <Icon className="h-4 w-4 text-[#7B1E3D]" />
                                 <span>{meta.label}</span>
                                 <span className="text-xs text-slate-500">
                                   — {meta.desc}
@@ -389,7 +389,7 @@ export default function BecomePartnerPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
+              className="h-11 w-full rounded-xl bg-[#7B1E3D] text-sm font-semibold shadow-sm transition-all hover:bg-[#5C0F2A] hover:shadow-md"
             >
               {submitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

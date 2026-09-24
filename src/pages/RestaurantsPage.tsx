@@ -164,7 +164,7 @@ export default function RestaurantsPage() {
                       {r.tags.slice(0, 1).map((tag) => (
                         <span
                           key={tag}
-                          className="rounded-full bg-amber-500 px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-sm"
+                          className="rounded-full bg-[#7B1E3D] px-2.5 py-1 text-xs font-semibold text-white shadow-sm"
                         >
                           {tag}
                         </span>
@@ -174,7 +174,7 @@ export default function RestaurantsPage() {
                   <div className="p-4">
                     <div className="mb-1.5 flex items-center justify-between">
                       <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-wine-500 text-amber-500" />
+                        <Star className="h-3.5 w-3.5 fill-wine-500 text-[#7B1E3D]" />
                         <span className="text-xs font-semibold">
                           {r.rating}
                         </span>
@@ -182,7 +182,7 @@ export default function RestaurantsPage() {
                           ({r.reviews_count})
                         </span>
                       </div>
-                      <span className="text-xs font-semibold text-amber-700">
+                      <span className="text-xs font-semibold text-[#7B1E3D]">
                         {r.price_range}
                       </span>
                     </div>
@@ -206,7 +206,7 @@ export default function RestaurantsPage() {
                           <Link
                             key={time}
                             to={`/booking/restaurant/${r.id}`}
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-900/80 transition-all hover:border-wine-300 hover:bg-amber-50 hover:text-amber-700"
+                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-white/80 transition-all hover:border-wine-300 hover:bg-[#7B1E3D]/5 hover:text-[#5C0F2A]"
                           >
                             {time}
                           </Link>

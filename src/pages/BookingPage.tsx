@@ -146,7 +146,7 @@ export default function BookingPage() {
         contact: user?.phone || '9999999999',
       },
       theme: {
-        color: '#f59e0b',
+        color: '#7B1E3D',
       },
       modal: {
         ondismiss: function () {
@@ -207,7 +207,7 @@ export default function BookingPage() {
             <p className="mt-2 text-sm text-slate-500">
               Your reservation for <strong className="text-slate-900">{itemData?.title}</strong> has been secured.
             </p>
-            <p className="mt-4 text-xs text-amber-500 font-semibold">
+            <p className="mt-4 text-xs text-[#7B1E3D] font-semibold">
               Redirecting to your profile...
             </p>
           </div>
@@ -259,7 +259,7 @@ export default function BookingPage() {
               </p>
               <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-amber-500" />
+                  <MapPin className="h-3.5 w-3.5 text-[#7B1E3D]" />
                   {itemData?.location}
                 </span>
               </div>
@@ -275,7 +275,7 @@ export default function BookingPage() {
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-3 items-center">
                   <span className="text-base font-bold text-slate-700">Total</span>
-                  <span className="text-2xl font-black text-amber-400">
+                  <span className="text-2xl font-black text-[#7B1E3D]">
                     {formatRupees(totalPricePaise)}
                   </span>
                 </div>
@@ -287,7 +287,7 @@ export default function BookingPage() {
           <form onSubmit={handleBooking} className="space-y-5 bg-white border border-slate-200 p-6 rounded-2xl">
             <div className="space-y-2">
               <Label htmlFor="date" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <Calendar className="mr-1 inline h-4 w-4 text-amber-500" /> Event Date
+                <Calendar className="mr-1 inline h-4 w-4 text-[#7B1E3D]" /> Event Date
               </Label>
               <Input
                 id="date"
@@ -302,9 +302,9 @@ export default function BookingPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="guests" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  <Users className="mr-1 inline h-4 w-4 text-amber-500" /> Number of Tickets
+                  <Users className="mr-1 inline h-4 w-4 text-[#7B1E3D]" /> Number of Tickets
                 </Label>
-                <span className="text-[11px] font-semibold text-amber-400">
+                <span className="text-[11px] font-semibold text-[#7B1E3D]">
                   Max: {maxAllowedGuests} per booking
                 </span>
               </div>
@@ -361,7 +361,7 @@ export default function BookingPage() {
             <Button
               type="submit"
               disabled={isProcessing}
-              className="h-12 w-full rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-base font-extrabold shadow-lg transition-all"
+              className="h-12 w-full rounded-xl bg-[#7B1E3D] hover:bg-[#5C0F2A] text-black text-base font-extrabold shadow-lg transition-all"
             >
               {isProcessing ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

@@ -118,8 +118,8 @@ export default function AdminModerationPage() {
       <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50">
-              <ShieldCheck className="h-6 w-6 text-amber-700" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
+              <ShieldCheck className="h-6 w-6 text-[#7B1E3D]" />
             </div>
             <div>
               <h1 className="font-serif text-3xl font-semibold text-slate-900">
@@ -147,7 +147,7 @@ export default function AdminModerationPage() {
             onClick={() => {}}
             className="pb-3 text-sm font-semibold border-b-2 border-wine-700 text-slate-900 flex items-center gap-2"
           >
-            <CalendarClock className="h-4 w-4 text-amber-700" />
+            <CalendarClock className="h-4 w-4 text-[#7B1E3D]" />
             Event Moderation
           </button>
         </div>
@@ -169,7 +169,7 @@ export default function AdminModerationPage() {
               >
                 <div className="flex flex-col gap-4 p-5 sm:flex-row">
                   {/* Poster */}
-                  <div className="h-32 w-full flex-shrink-0 overflow-hidden rounded-xl bg-amber-50 sm:h-24 sm:w-24">
+                  <div className="h-32 w-full flex-shrink-0 overflow-hidden rounded-xl bg-[#7B1E3D]/5 sm:h-24 sm:w-24">
                     {event.poster_image_url ? (
                       <img
                         src={event.poster_image_url}
@@ -194,7 +194,7 @@ export default function AdminModerationPage() {
                           {event.venue_name}
                         </p>
                       </div>
-                      <Badge className="border bg-amber-100 text-amber-700 border-amber-200">
+                      <Badge className="border bg-[#7B1E3D]/10 text-[#7B1E3D] border-[#7B1E3D]/30">
                         <Clock className="mr-1 h-3 w-3" />
                         Pending
                       </Badge>
@@ -347,8 +347,8 @@ export default function AdminModerationPage() {
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50">
-        <ShieldCheck className="h-8 w-8 text-amber-600" />
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
+        <ShieldCheck className="h-8 w-8 text-[#7B1E3D]" />
       </div>
       <h3 className="font-serif text-xl font-semibold text-slate-900">
         No Pending Approvals

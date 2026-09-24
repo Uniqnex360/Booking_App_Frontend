@@ -73,9 +73,9 @@
     return (
       <div className="flex min-h-screen flex-col lg:flex-row">
         {/* Left visual panel */}
-        <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 lg:block">
+        <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718] lg:block">
           <div className="absolute inset-0 " />
-          <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-amber-500/20 blur-3xl" />
+          <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
           <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-wine-400/10 blur-3xl" />
           <div className="relative flex h-full flex-col justify-between p-12 text-slate-900">
             {/* <Link to="/" className="flex items-center gap-2.5">
@@ -120,7 +120,7 @@
           <div className="w-full max-w-md">
             <Link
               to="/"
-              className="mb-8 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
+              className="mb-8 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-[#5C0F2A]"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to home
@@ -128,7 +128,7 @@
 
             <div className="mb-6 lg:hidden">
               <Link to="/" className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-orange-500">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718]">
                   <Wine className="h-5 w-5 text-slate-900" strokeWidth={2.2} />
                 </div>
                 <span className="font-serif text-2xl font-semibold text-slate-900">
@@ -144,7 +144,7 @@
               Already have an account?{' '}
               <Link
                 to="/login"
-                className="font-medium text-amber-700 hover:text-slate-900"
+                className="font-medium text-[#7B1E3D] hover:text-slate-900"
               >
                 Sign in
               </Link>
@@ -160,7 +160,7 @@
                 type="button"
                 onClick={handleGoogleAction}
                 variant="outline" 
-                className="w-full h-11 rounded-xl border-amber-100 hover:bg-amber-50 gap-3 shadow-sm transition-all"
+                className="w-full h-11 rounded-xl border-[#7B1E3D]/20 hover:bg-[#7B1E3D]/5 gap-3 shadow-sm transition-all"
                 disabled={loading}
               >
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="Google" />
@@ -272,7 +272,7 @@
               <Button
                 type="submit"
                 disabled={loading}
-                className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
+                className="h-11 w-full rounded-xl bg-[#7B1E3D] text-sm font-semibold shadow-sm transition-all hover:bg-[#5C0F2A] hover:shadow-md"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -287,11 +287,11 @@
 
             {/* <p className="mt-8 text-center text-xs text-slate-500">
               By creating an account, you agree to our{' '}
-              <Link to="#" className="underline hover:text-amber-700">
+              <Link to="#" className="underline hover:text-[#5C0F2A]">
                 Terms
               </Link>{' '}
               and{' '}
-              <Link to="#" className="underline hover:text-amber-700">
+              <Link to="#" className="underline hover:text-[#5C0F2A]">
                 Privacy Policy
               </Link>
               .

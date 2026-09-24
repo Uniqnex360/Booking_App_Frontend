@@ -237,7 +237,7 @@ export default function PartnerEventCreatePage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Link
             to="/partner/dashboard"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
+            className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-[#5C0F2A]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to dashboard
@@ -264,9 +264,9 @@ export default function PartnerEventCreatePage() {
                   <div
                     className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 transition-all ${
                       isActive
-                        ? "border-wine-700 bg-amber-500 text-slate-900"
+                        ? "border-wine-700 bg-[#7B1E3D] text-white"
                         : isDone
-                          ? "border-wine-700 bg-amber-50 text-amber-700"
+                          ? "border-wine-700 bg-[#7B1E3D]/5 text-[#7B1E3D]"
                           : "border-slate-200 bg-white text-slate-500"
                     }`}
                   >
@@ -278,7 +278,7 @@ export default function PartnerEventCreatePage() {
                   </div>
                   <span
                     className={`text-xs font-medium ${
-                      isActive ? "text-amber-700" : "text-slate-500"
+                      isActive ? "text-[#7B1E3D]" : "text-slate-500"
                     }`}
                   >
                     {s.label}
@@ -287,7 +287,7 @@ export default function PartnerEventCreatePage() {
                 {i < steps.length - 1 && (
                   <div
                     className={`mx-2 h-0.5 flex-1 rounded-full transition-all ${
-                      step > s.id ? "bg-amber-500" : "bg-border"
+                      step > s.id ? "bg-[#7B1E3D]" : "bg-border"
                     }`}
                   />
                 )}
@@ -347,7 +347,7 @@ export default function PartnerEventCreatePage() {
                                 return (
                                   <SelectItem key={value} value={value}>
                                     <span className="flex items-center gap-2">
-                                      <Icon className="h-4 w-4 text-amber-600" />
+                                      <Icon className="h-4 w-4 text-[#7B1E3D]" />
                                       {meta.label}
                                     </span>
                                   </SelectItem>
@@ -691,7 +691,7 @@ export default function PartnerEventCreatePage() {
                 <Button
                   type="button"
                   onClick={nextStep}
-                  className="rounded-xl bg-amber-500 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-600"
+                  className="rounded-xl bg-[#7B1E3D] text-sm font-semibold text-white shadow-sm hover:bg-[#5C0F2A]"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
@@ -700,7 +700,7 @@ export default function PartnerEventCreatePage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="rounded-xl bg-amber-500 text-sm font-semibold text-slate-900 shadow-sm hover:bg-amber-600"
+                  className="rounded-xl bg-[#7B1E3D] text-sm font-semibold text-white shadow-sm hover:bg-[#5C0F2A]"
                 >
                   {submitting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

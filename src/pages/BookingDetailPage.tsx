@@ -97,7 +97,7 @@ export default function BookingDetailPage() {
 
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
           {/* Header strip */}
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4 flex items-center justify-between">
+          <div className="bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718] px-6 py-4 flex items-center justify-between">
             <div className="text-white">
               <p className="text-[11px] font-bold uppercase tracking-wider opacity-90">
                 {booking.status === 'CONFIRMED' ? 'Confirmed ticket' : booking.status}
@@ -141,7 +141,7 @@ export default function BookingDetailPage() {
                   )}
                   {showtime && (
                     <p className="text-sm font-semibold text-slate-800 mt-3 flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4 text-amber-500" />
+                      <Calendar className="h-4 w-4 text-[#7B1E3D]" />
                       {showtime.toLocaleString([], {
                         weekday: 'short', day: 'numeric', month: 'short',
                         hour: '2-digit', minute: '2-digit',
@@ -185,7 +185,7 @@ export default function BookingDetailPage() {
                   {(booking.category || booking.age_restriction) && (
                     <div className="flex flex-wrap gap-2 mt-2">
                       {booking.category && (
-                        <Badge className="rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-bold uppercase">
+                        <Badge className="rounded-md bg-[#7B1E3D]/5 text-[#7B1E3D] border border-[#7B1E3D]/30 text-[11px] font-bold uppercase">
                           {booking.category}
                         </Badge>
                       )}
@@ -198,7 +198,7 @@ export default function BookingDetailPage() {
                   )}
                   {showtime && (
                     <p className="text-sm font-semibold text-slate-800 mt-3 flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4 text-amber-500" />
+                      <Calendar className="h-4 w-4 text-[#7B1E3D]" />
                       {showtime.toLocaleString([], {
                         weekday: 'short', day: 'numeric', month: 'short',
                         hour: '2-digit', minute: '2-digit',
@@ -250,7 +250,7 @@ export default function BookingDetailPage() {
                   {seats.map((code) => (
                     <Badge
                       key={code}
-                      className="rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-2.5 py-1"
+                      className="rounded-md bg-[#7B1E3D]/5 text-[#7B1E3D] border border-[#7B1E3D]/30 text-xs font-bold px-2.5 py-1"
                     >
                       {code}
                     </Badge>

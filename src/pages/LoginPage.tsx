@@ -157,9 +157,9 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 lg:block">
+      <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-br from-wine-800 via-wine-700 to-wine-900 lg:block">
         <div className="absolute inset-0 " />
-        <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-amber-500/20 blur-3xl" />
+        <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
         <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-wine-400/10 blur-3xl" />
         {/* <div className="relative flex h-full flex-col justify-between p-12 text-slate-900">
           <Link to="/" className="flex items-center gap-2.5">
@@ -184,7 +184,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
               {['A', 'M', 'J'].map((i) => (
                 <div
                   key={i}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-wine-800 bg-amber-500 text-xs font-semibold"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-wine-800 bg-[#7B1E3D] text-xs font-semibold"
                 >
                   {i}
                 </div>
@@ -199,7 +199,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
         <div className="w-full max-w-md">
           <Link
             to="/"
-            className="mb-8 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-amber-700"
+            className="mb-8 inline-flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-[#5C0F2A]"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to home
@@ -212,7 +212,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             {/* New to Vyhbz App?{' '} */}
             <Link
               to="/register"
-              className="font-medium text-amber-700 hover:text-slate-900"
+              className="font-medium text-[#7B1E3D] hover:text-slate-900"
             >
               Create an account
             </Link>
@@ -229,7 +229,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             <Button
               onClick={handleGoogleAction}
               variant="outline"
-              className="w-full h-11 rounded-xl border-amber-100 hover:bg-amber-50 gap-3"
+              className="w-full h-11 rounded-xl border-[#7B1E3D]/20 hover:bg-[#7B1E3D]/5 gap-3"
               disabled={loading}
             >
               <img
@@ -280,6 +280,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
                   <Label htmlFor="email" className="text-sm font-medium">
                     Email address
                   </Label>
+                  
                   <div className="relative">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <Input
@@ -294,28 +295,34 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-sm font-medium">
-                      Password
-                    </Label>
-                  </div>
-                  <div className="relative">
-                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="h-11 rounded-xl pl-10"
-                    />
-                  </div>
-                </div>
+  <div className="flex items-center justify-between">
+    <Label htmlFor="password" className="text-sm font-medium">
+      Password
+    </Label>
+    <Link
+      to="/forgot-password"
+      className="text-xs font-medium text-[#7B1E3D] hover:text-slate-900"
+    >
+      Forgot password?
+    </Link>
+  </div>
+  <div className="relative">
+    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+    <Input
+      id="password"
+      type="password"
+      required
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      placeholder="••••••••"
+      className="h-11 rounded-xl pl-10"
+    />
+  </div>
+</div>
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="h-11 w-full rounded-xl bg-amber-500 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
+                  className="h-11 w-full rounded-xl bg-[#7B1E3D] text-sm font-semibold shadow-sm transition-all hover:bg-[#5C0F2A] hover:shadow-md"
                 >
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

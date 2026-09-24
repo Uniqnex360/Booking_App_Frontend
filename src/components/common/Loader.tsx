@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 export function Loader({ className }: { className?: string }) {
   return (
     <Loader2
-      className={cn('h-6 w-6 animate-spin text-amber-700', className)}
+      className={cn('h-6 w-6 animate-spin text-[#7B1E3D]', className)}
     />
   );
 }

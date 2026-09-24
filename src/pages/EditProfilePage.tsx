@@ -343,9 +343,9 @@ export default function EditProfilePage() {
       <Header />
 
       {/* Banner */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-r from-amber-500 to-orange-500 lg:h-56">
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718] lg:h-56">
         <div className="absolute inset-0 " />
-        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
+        <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
       </div>
 
@@ -354,7 +354,7 @@ export default function EditProfilePage() {
         <div className="-mt-16 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-4">
             <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-              <AvatarFallback className="bg-amber-500 font-serif text-2xl font-semibold text-slate-900">
+              <AvatarFallback className="bg-[#7B1E3D] font-serif text-2xl font-semibold text-white">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -373,7 +373,7 @@ export default function EditProfilePage() {
           </div>
           <Link
             to="/profile"
-            className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 transition-colors hover:text-slate-900"
+            className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#7B1E3D] transition-colors hover:text-slate-900"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to profile
@@ -412,8 +412,8 @@ export default function EditProfilePage() {
               {/* Identity header (read-only) */}
               <div className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 ring-1 ring-wine-100">
-                    <User className="h-7 w-7 text-amber-600" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7B1E3D]/5 ring-1 ring-wine-100">
+                    <User className="h-7 w-7 text-[#7B1E3D]" />
                   </div>
                   <div>
                     <p className="font-serif text-xl font-semibold text-slate-900">
@@ -427,7 +427,7 @@ export default function EditProfilePage() {
                 </div>
                 <Badge
                   variant="outline"
-                  className="w-fit border-amber-200 bg-amber-50 text-amber-700"
+                  className="w-fit border-[#7B1E3D]/30 bg-[#7B1E3D]/5 text-[#7B1E3D]"
                 >
                   {user?.role || "USER"}
                 </Badge>
@@ -543,7 +543,7 @@ export default function EditProfilePage() {
                   <Button
                     type="submit"
                     disabled={saving}
-                    className="h-11 rounded-xl bg-amber-500 px-6 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
+                    className="h-11 rounded-xl bg-[#7B1E3D] px-6 text-sm font-semibold shadow-sm transition-all hover:bg-[#5C0F2A] hover:shadow-md"
                   >
                     {saving ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -583,7 +583,7 @@ export default function EditProfilePage() {
                 </div>
                 <Button
                   onClick={openAddAddress}
-                  className="rounded-full bg-amber-500 px-5 text-sm font-semibold shadow-sm transition-all hover:bg-amber-600 hover:shadow-md"
+                  className="rounded-full bg-[#7B1E3D] px-5 text-sm font-semibold shadow-sm transition-all hover:bg-[#5C0F2A] hover:shadow-md"
                 >
                   <Plus className="h-4 w-4" />
                   Add New
@@ -594,8 +594,8 @@ export default function EditProfilePage() {
               <div className="mt-6 space-y-4">
                 {addresses.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
-                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50">
-                      <MapPin className="h-7 w-7 text-amber-600" />
+                    <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
+                      <MapPin className="h-7 w-7 text-[#7B1E3D]" />
                     </div>
                     <h3 className="font-serif text-lg font-semibold text-slate-900">
                       No saved addresses
@@ -608,14 +608,14 @@ export default function EditProfilePage() {
                   addresses.map((addr) => (
                     <div
                       key={addr.id}
-                      className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all hover:border-amber-200 hover:shadow-soft sm:flex-row sm:items-start sm:justify-between"
+                      className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all hover:border-[#7B1E3D]/30 hover:shadow-soft sm:flex-row sm:items-start sm:justify-between"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#7B1E3D]/5">
                           {addr.label.toLowerCase().includes("office") ? (
-                            <Building2 className="h-5 w-5 text-amber-600" />
+                            <Building2 className="h-5 w-5 text-[#7B1E3D]" />
                           ) : (
-                            <Home className="h-5 w-5 text-amber-600" />
+                            <Home className="h-5 w-5 text-[#7B1E3D]" />
                           )}
                         </div>
                         <div>
@@ -624,7 +624,7 @@ export default function EditProfilePage() {
                               {addr.label}
                             </p>
                             {addr.is_default && (
-                              <Badge className="rounded-full bg-amber-500 text-xs font-semibold text-slate-900">
+                              <Badge className="rounded-full bg-[#7B1E3D] text-xs font-semibold text-white">
                                 <Star className="mr-1 h-3 w-3 fill-white" />
                                 Default
                               </Badge>
@@ -646,7 +646,7 @@ export default function EditProfilePage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleSetDefault(addr.id)}
-                            className="rounded-full border-amber-200 text-xs font-medium text-amber-700 hover:bg-amber-50"
+                            className="rounded-full border-[#7B1E3D]/30 text-xs font-medium text-[#7B1E3D] hover:bg-[#7B1E3D]/5"
                           >
                             <Check className="h-3.5 w-3.5" />
                             Set Default
@@ -709,7 +709,7 @@ export default function EditProfilePage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full border-dashed border-wine-300 text-amber-700 hover:bg-amber-50 hover:border-wine-500 transition-all"
+              className="w-full border-dashed border-wine-300 text-[#7B1E3D] hover:bg-[#7B1E3D]/5 hover:border-wine-500 transition-all"
               onClick={detectLocation}
             >
               <MapPin className="mr-2 h-4 w-4" />
@@ -860,7 +860,7 @@ export default function EditProfilePage() {
               <Button
                 type="submit"
                 disabled={addressSaving}
-                className="rounded-xl bg-amber-500 text-sm font-semibold shadow-sm hover:bg-amber-600"
+                className="rounded-xl bg-[#7B1E3D] text-sm font-semibold shadow-sm hover:bg-[#5C0F2A]"
               >
                 {addressSaving ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
