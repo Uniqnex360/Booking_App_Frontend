@@ -1,9 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
-import { api, unwrap } from "@/api/client";
 import {
   Heart,
   Play,
@@ -17,21 +16,10 @@ import {
 import { withCity } from "@/lib/cityLink";
 import { SeatVehicle } from "./SeatVehicle";
 import { toast } from "sonner";
+import { getMovieById } from "@/api/movie.api";
+import RatingModal from "./RatingModal";
+import { MovieDetail } from "@/types/movie.types";
 
-interface MovieDetail {
-  id: string;
-  title: string;
-  language: string;
-  duration_min: number;
-  certificate: string;
-  poster_url: string | null;
-  banner_url?: string | null;
-  trailer_url?: string | null;
-  synopsis?: string | null;
-  genre: string;
-  release_date: string;
-  venues?: any[];
-}
 
 const MAX_TICKETS = 10;
 
@@ -88,20 +76,39 @@ export default function MovieDetailPage() {
   const [ticketCount, setTicketCount] = useState(2);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const fetchMovie = async () => {
-      try {
-        setLoading(true);
-        const data = await unwrap<MovieDetail>(api.get(`/movies/${id}`));
-        setMovie(data);
-      } catch (err) {
-        console.error("Failed to load movie", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMovie();
-  }, [id]);
+const location = useLocation();
+
+const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+
+const fetchMovie = async () => {
+  if (!id) return;
+  try {
+    const data = await getMovieById(id);
+    setMovie(data);
+  } catch (err) {
+    console.error('Failed to load movie', err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchMovie();
+}, [id]);
+
+const handleRateNow = () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    // Go to login, come back to this exact page (keeps ?city= too)
+    navigate('/login', { state: { from: location.pathname + location.search } });
+    return;
+  }
+  setIsRatingModalOpen(true);
+};
+
+const goToReviews = () => {
+  navigate(`/movies/${id}/reviews${location.search}`);
+};
 
   const langFormatMap = useMemo(() => {
     const map: Record<string, Set<string>> = {};
@@ -291,23 +298,49 @@ export default function MovieDetailPage() {
               </h1>
 
               {/* Rating Card */}
-              <div className="mt-4 bg-[#333338]/90 backdrop-blur rounded-xl px-5 py-3 inline-flex items-center gap-4 shadow-lg border border-white/10">
-                <div className="flex items-center gap-2">
-                  <Star className="h-6 w-6 text-[#F5C518] fill-[#F5C518]" />
-                  <div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-bold text-xl">8.5</span>
-                      <span className="text-sm text-gray-400">/10</span>
-                    </div>
-                    <div className="text-[11px] text-gray-400">
-                      142.5K Votes
-                    </div>
-                  </div>
-                </div>
-                <button className="bg-white/10 hover:bg-white/20 border border-white/20 rounded-md px-4 py-2 text-xs font-medium transition">
-                  Rate now
-                </button>
-              </div>
+              {/* Rating box */}
+<div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
+  {movie.rating_count && movie.rating_count > 0 ? (
+    <>
+      <button
+        type="button"
+        onClick={goToReviews}
+        className="flex items-center gap-3 text-left"
+      >
+        <Star className="text-[#F5C518]" fill="#F5C518" size={26} />
+        <div>
+          <p className="text-white font-bold text-lg leading-tight">
+            {movie.rating}/10
+          </p>
+          <p className="text-gray-300 text-xs flex items-center gap-1">
+            {movie.rating_count} Votes <ChevronRight size={12} />
+          </p>
+        </div>
+      </button>
+      <button
+        type="button"
+        onClick={handleRateNow}
+        className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
+      >
+        Rate Now
+      </button>
+    </>
+  ) : (
+    <>
+      <div className="flex items-center gap-3">
+        <Star className="text-[#F5C518]" fill="#F5C518" size={26} />
+        <p className="text-white text-sm">Add your rating &amp; review</p>
+      </div>
+      <button
+        type="button"
+        onClick={handleRateNow}
+        className="bg-white text-black px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-gray-200 transition"
+      >
+        Rate Now
+      </button>
+    </>
+  )}
+</div>
 
               {/* Formats & Languages */}
               <div className="flex flex-wrap gap-2 mt-5">
@@ -538,6 +571,13 @@ export default function MovieDetailPage() {
           </div>
         </div>
       )}
+      <RatingModal
+  isOpen={isRatingModalOpen}
+  onClose={() => setIsRatingModalOpen(false)}
+  movieId={movie.id}
+  onSubmitSuccess={fetchMovie}   // refreshes rating + rating_count in the hero
+/>
     </div>
+    
   );
 }

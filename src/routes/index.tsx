@@ -21,12 +21,14 @@ import VerifyOtpPage from "@/pages/VerifyOtpPage";
 import BuyTicketsPage from "@/pages/BuyTicketsPage";
 import TermsAndConditionsPage from "@/components/TermsAndConditionsPage";
 import ConfirmationPage from "@/pages/ConfirmationPage";
+import MovieReviewsPage from "@/pages/MovieReviewsPage";
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/confirmation" element={<ConfirmationPage />} />
+    <Route path="/movies/:id/reviews" element={<MovieReviewsPage />} />
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
