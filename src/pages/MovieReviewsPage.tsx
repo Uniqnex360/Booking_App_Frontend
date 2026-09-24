@@ -4,6 +4,7 @@ import { Star, ThumbsUp, ThumbsDown, Share2, ChevronRight, Loader2 } from 'lucid
 import type { Movie, MovieReview } from '@/types/movie.types';
 import RatingModal from './RatingModal';
 import { getMovieById, getMovieReviews } from '@/api/movie.api';
+import { useAuth } from '@/hooks/useAuth';
 
 const MovieReviewsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,7 +14,7 @@ const MovieReviewsPage: React.FC = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [reviews, setReviews] = useState<MovieReview[]>([]);
   const [loading, setLoading] = useState(true);
-  
+  const { user } = useAuth()
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'user' | 'critic'>('user');
 
@@ -49,8 +50,7 @@ const MovieReviewsPage: React.FC = () => {
   }, [reviews]);
 
   const handleRateClick = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!user) {
       navigate('/login', { state: { from: location.pathname } });
       return;
     }
