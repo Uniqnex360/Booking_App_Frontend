@@ -222,9 +222,13 @@ export default function SeatMapPage() {
       );
       toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
       navigate(`/profile`);
-    } else {
+       } else {
       toast.success(`Booking confirmed successfully!`);
-      navigate(`/profile`);
+      if (isUserLoggedIn()) {
+        navigate(`/profile`);
+      } else {
+        navigate(`/confirmation?id=${res.id}`);
+      }
     }
   } catch (err: any) {
     if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
