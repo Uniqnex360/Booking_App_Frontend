@@ -399,23 +399,18 @@ export default function BuyTicketsPage() {
             </div>
           </div>
 
-          {/* ─── Legend ─── */}
-          <div className="bg-[#F5F5FA] border-b border-gray-200">
-            <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-end gap-5 text-[11px] text-gray-600 font-medium">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full border-2 border-[#1EA83C]" />
-                AVAILABLE
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full border-2 border-[#FFB000] bg-[#FFB000]/20" />
-                FAST FILLING
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full border-2 border-gray-400" />
-                SUBTITLES LANGUAGE
-              </span>
-            </div>
-          </div>
+         <div className="bg-[#F5F5FA] border-b border-gray-200">
+  <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-end gap-5 text-[11px] text-gray-600 font-medium">
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-full border-2 border-[#1EA83C]" />
+      AVAILABLE
+    </span>
+    <span className="flex items-center gap-1.5">
+      <span className="h-2.5 w-2.5 rounded-full border-2 border-[#FFB000] bg-[#FFB000]/20" />
+      FAST FILLING
+    </span>
+  </div>
+</div>
 
           {/* ─── Venue List ─── */}
           <div className="max-w-[1240px] mx-auto px-4 py-6">
