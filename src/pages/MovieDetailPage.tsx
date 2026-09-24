@@ -1,10 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
-import { Heart, Play, Share2, Star, X, ChevronRight, ArrowLeft, Check } from "lucide-react";
+import {
+  Heart,
+  Play,
+  Share2,
+  Star,
+  X,
+  ChevronRight,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { SeatVehicle } from "./SeatVehicle";
 import { toast } from "sonner";
@@ -19,7 +28,7 @@ interface MovieDetail {
   synopsis: string;
   genre: string;
   release_date: string;
-  venues?: any[]; 
+  venues?: any[];
 }
 
 const MAX_TICKETS = 10;
@@ -44,55 +53,19 @@ export default function MovieDetailPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const city = searchParams.get("city") || "Kochi";
-    const [copied, setCopied] = useState(false);
 
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  
 
-  
+  // Booking Flow States
+  const [showLangFormatModal, setShowLangFormatModal] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
+  
+  const [selectedLang, setSelectedLang] = useState<string>("");
+  const [selectedFormat, setSelectedFormat] = useState<string>("");
   const [ticketCount, setTicketCount] = useState(2);
-const getShareUrl = () => {
-    const path = withCity(`/movies/${id}`, city);
-    
-    if (path.startsWith("http")) return path;
-    return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
-  };
+  const [copied, setCopied] = useState(false);
 
-  const handleShare = async () => {
-    const url = getShareUrl();
-    const title = movie?.title ?? "Movie";
-    const text = `Watch ${title} on Vyhbz`;
-
-    try {
-      
-      if (navigator.share) {
-        await navigator.share({ title, text, url });
-        return;
-      }
-    } catch {
-      
-    }
-
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast?.success?.("Link copied!") ?? console.log("Copied", url);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      
-      const input = document.createElement("input");
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-      setCopied(true);
-      toast?.success?.("Link copied!") ?? alert("Link copied!");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
   useEffect(() => {
     const fetchMovie = async () => {
       try {
@@ -107,6 +80,32 @@ const getShareUrl = () => {
     };
     fetchMovie();
   }, [id]);
+
+  // Group showtime formats by language (BMS Style)
+  const langFormatMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+
+    if (movie?.venues) {
+      movie.venues.forEach((v) => {
+        v.showtimes?.forEach((s: any) => {
+          const lang = (s.language || movie.language || "ENGLISH").toUpperCase();
+          const fmt = (s.format || "2D").toUpperCase();
+          if (!map[lang]) map[lang] = new Set();
+          map[lang].add(fmt);
+        });
+      });
+    }
+
+    // Fallback if no venues / default language
+    if (Object.keys(map).length === 0 && movie) {
+      const defaultLang = (movie.language || "ENGLISH").toUpperCase();
+      map[defaultLang] = new Set(["2D", "IMAX 2D"]);
+    }
+
+    return Object.fromEntries(
+      Object.entries(map).map(([lang, formats]) => [lang, Array.from(formats)])
+    );
+  }, [movie]);
 
   if (loading) {
     return (
@@ -134,25 +133,81 @@ const getShareUrl = () => {
 
   const genres = movie.genre.split(",").map((g) => g.trim());
 
-  const allFormats = movie.venues
-    ? Array.from(
-        new Set(
-          movie.venues.flatMap((v) => v.showtimes.map((s: any) => s.format)),
-        ),
-      )
-    : ["2D"];
+  // Handle "Book tickets" click
+  const handleBookTicketsClick = () => {
+    const langCount = Object.keys(langFormatMap).length;
+    const totalFormats = Object.values(langFormatMap).flat().length;
 
+    // If multiple options exist, show Language & Format modal first
+    if (langCount > 1 || totalFormats > 1) {
+      setShowLangFormatModal(true);
+    } else {
+      // Otherwise skip directly to seat selection
+      const defaultLang = Object.keys(langFormatMap)[0] || movie.language;
+      const defaultFormat = langFormatMap[defaultLang]?.[0] || "2D";
+      setSelectedLang(defaultLang);
+      setSelectedFormat(defaultFormat);
+      setShowTicketModal(true);
+    }
+  };
+
+  // When user selects a format pill in the modal
+  const handleSelectLangFormat = (lang: string, format: string) => {
+    setSelectedLang(lang);
+    setSelectedFormat(format);
+    setShowLangFormatModal(false);
+    setShowTicketModal(true); // Open "How many seats?" modal
+  };
+
+  // Final confirmation to view showtimes
   const handleTicketConfirm = () => {
     setShowTicketModal(false);
-    navigate(withCity(`/buytickets/${movie.id}?qty=${ticketCount}`, city));
+    const filterQuery = `${selectedLang} - ${selectedFormat}`;
+    navigate(
+      withCity(
+        `/buytickets/${movie.id}?qty=${ticketCount}&filter=${encodeURIComponent(filterQuery)}`,
+        city
+      )
+    );
+  };
+
+  const getShareUrl = () => {
+    const path = withCity(`/movies/${id}`, city);
+    return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
+  };
+
+  const handleShare = async () => {
+    const url = getShareUrl();
+    const title = movie?.title ?? "Movie";
+    const text = `Watch ${title} on Vyhbz`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+    } catch {
+      // User cancelled
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("Link copied!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
+      {/* Hero Banner */}
       <div
-        className="relative pt-16 lg:pt-[72px]"
+        className="relative pt-16 lg:pt-[104px]"
         style={{
           background:
             "linear-gradient(90deg, rgba(26,26,46,0.98) 0%, rgba(26,26,46,0.85) 50%, rgba(26,26,46,0.98) 100%)",
@@ -166,7 +221,8 @@ const getShareUrl = () => {
         )}
 
         <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-            <button
+          {/* Back to Movies */}
+          <button
             type="button"
             onClick={() => navigate(withCity("/movies", city))}
             className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition mb-5 group"
@@ -174,7 +230,9 @@ const getShareUrl = () => {
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition" />
             Back to Movies
           </button>
+
           <div className="flex gap-8 items-start">
+            {/* Poster */}
             <div className="hidden sm:block w-[240px] shrink-0">
               <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer">
                 {movie.poster_url ? (
@@ -201,6 +259,7 @@ const getShareUrl = () => {
               </div>
             </div>
 
+            {/* Details */}
             <div className="flex-1 min-w-0 text-white">
               <h1 className="text-[32px] lg:text-[40px] font-bold leading-tight">
                 {movie.title}
@@ -225,9 +284,9 @@ const getShareUrl = () => {
               </div>
 
               <div className="flex flex-wrap gap-2 mt-5">
-                {allFormats.map((fmt) => (
+                {Object.values(langFormatMap).flat().map((fmt, idx) => (
                   <span
-                    key={fmt}
+                    key={idx}
                     className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded"
                   >
                     {fmt}
@@ -250,17 +309,17 @@ const getShareUrl = () => {
 
               <div className="flex items-center gap-3 mt-8">
                 <button
-                  onClick={() => setShowTicketModal(true)}
+                  onClick={handleBookTicketsClick}
                   className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/20"
                 >
                   Book tickets
                 </button>
-               
+                <button className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition ml-2">
+                  <Heart className="h-5 w-5" />
+                </button>
                 <button
-                  type="button"
                   onClick={handleShare}
-                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition relative"
-                  title="Copy movie link"
+                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
                 >
                   {copied ? (
                     <Check className="h-5 w-5 text-green-400" />
@@ -268,7 +327,6 @@ const getShareUrl = () => {
                     <Share2 className="h-5 w-5" />
                   )}
                 </button>
-
               </div>
             </div>
           </div>
@@ -288,13 +346,75 @@ const getShareUrl = () => {
 
       <Footer />
 
+      {/* ─── 1. BMS SELECT LANGUAGE AND FORMAT MODAL ─── */}
+      {showLangFormatModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+          onClick={() => setShowLangFormatModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4 flex items-start justify-between border-b border-gray-100">
+              <div>
+                <p className="text-xs text-gray-500 font-medium mb-0.5">
+                  {movie.title}
+                </p>
+                <h3 className="text-lg font-bold text-gray-900">
+                  Select language and format
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowLangFormatModal(false)}
+                className="text-gray-400 hover:text-gray-700 transition p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-100">
+              {Object.entries(langFormatMap).map(([lang, formats]) => (
+                <div key={lang} className="py-2">
+                  <div className="bg-slate-100/70 px-6 py-2 text-[11px] font-bold text-slate-600 tracking-wider uppercase">
+                    {lang}
+                  </div>
+                  <div className="p-4 px-6 flex flex-wrap gap-2.5">
+                    {formats.map((fmt) => (
+                      <button
+                        key={fmt}
+                        onClick={() => handleSelectLangFormat(lang, fmt)}
+                        className="border border-slate-200 hover:border-[#7B1E3D] hover:bg-[#7B1E3D]/5 text-[#7B1E3D] font-semibold text-xs rounded-full px-5 py-2 transition-all shadow-sm"
+                      >
+                        {fmt}
+                      </button>
+                    ))}
+                    {formats.length > 1 && (
+                      <button
+                        onClick={() => handleSelectLangFormat(lang, formats[0])}
+                        className="text-xs font-semibold text-[#7B1E3D] hover:underline px-2 py-2"
+                      >
+                        Select all
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── 2. BMS HOW MANY SEATS MODAL (With Vehicle Animation) ─── */}
       {showTicketModal && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 sm:p-0"
+          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 sm:p-0 animate-in fade-in duration-200"
           onClick={() => setShowTicketModal(false)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[420px] overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -311,10 +431,12 @@ const getShareUrl = () => {
             </div>
 
             <div className="px-6 pt-6 pb-8 bg-white">
+              {/* Vehicle SVG based on count */}
               <div className="flex items-center justify-center h-28 mb-6">
                 <SeatVehicle count={ticketCount} />
               </div>
 
+              {/* Number pills */}
               <div className="flex items-center justify-center gap-2 flex-wrap px-1">
                 {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
                   (n) => (
@@ -330,7 +452,7 @@ const getShareUrl = () => {
                     >
                       {n}
                     </button>
-                  ),
+                  )
                 )}
               </div>
 
