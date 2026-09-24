@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { api, unwrap } from "@/api/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { toast } from "sonner";
 import { resetPassword, validateResetToken } from "@/api/booking.api";
+import { validatePassword } from "@/utils/validators";
+import { Check } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams();
@@ -25,9 +26,14 @@ export default function ResetPasswordPage() {
       .then((r) => setValid(r.valid))
       .catch(() => setValid(false));
   }, [token]);
+  const { checks } = validatePassword(password);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!checks.every((c) => c.met)) {
+  toast.error("Password doesn't meet the requirements");
+  return;
+}
     if (password !== confirm) {
       toast.error("Passwords don't match");
       return;
@@ -79,15 +85,39 @@ export default function ResetPasswordPage() {
       <main className="flex-grow flex items-center justify-center p-6">
         <form onSubmit={submit} className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 space-y-5">
           <h1 className="text-2xl font-bold">Set a new password</h1>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="New password"
-            className="w-full px-4 py-3 border border-slate-300 rounded-lg"
-            minLength={8}
-            required
-          />
+          <div>
+  <input
+    id="password"
+    type="password"
+    required
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    placeholder="Create a strong password"
+    className="w-full px-4 py-3 border border-slate-300 rounded-lg"
+    minLength={8}
+  />
+  {password.length > 0 && (
+    <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+      {checks.map((check) => (
+        <span
+          key={check.label}
+          className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
+            check.met
+              ? "bg-emerald-50 text-emerald-600"
+              : "bg-muted text-slate-500"
+          }`}
+        >
+          {check.met ? (
+            <Check className="h-3 w-3" />
+          ) : (
+            <span className="h-3 w-3 rounded-full border border-current" />
+          )}
+          {check.label}
+        </span>
+      ))}
+    </div>
+  )}
+</div>  
           <input
             type="password"
             value={confirm}
