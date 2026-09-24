@@ -11,17 +11,23 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await unwrap(api.post("/auth/forgot-password", { email }));
-      setSent(true);
-    } catch {
+  e.preventDefault();
+  setLoading(true);
+  try {
+    await unwrap(api.post("/auth/forgot-password", { email }));
+    setSent(true);
+  } catch (err: any) {
+    const status = err?.response?.status;
+    const detail = err?.response?.data?.detail;
+    if (status === 404) {
+      toast.error(detail ?? "No account found with that email.");
+    } else {
       toast.error("Something went wrong. Try again.");
-    } finally {
-      setLoading(false);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5FA]">
