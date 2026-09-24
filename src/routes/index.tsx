@@ -30,11 +30,11 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/confirmation" element={<ConfirmationPage />} />
-    <Route path="/movies/:id/reviews" element={<MovieReviewsPage />} />
-<Route path="/forgot-password" element={<PrivateRoute guest><ForgotPasswordPage /></PrivateRoute>} />
-<Route path="/reset-password"  element={<PrivateRoute guest><ResetPasswordPage  /></PrivateRoute>} />
-<Route path="/login"           element={<PrivateRoute guest><LoginPage           /></PrivateRoute>} />
-<Route path="/register"        element={<PrivateRoute guest><RegisterPage        /></PrivateRoute>} />
+      <Route path="/movies/:id/reviews" element={<MovieReviewsPage />} />
+      <Route path="/forgot-password" element={<PrivateRoute guest><ForgotPasswordPage /></PrivateRoute>} />
+      <Route path="/reset-password" element={<PrivateRoute guest><ResetPasswordPage /></PrivateRoute>} />
+      <Route path="/login" element={<PrivateRoute guest><LoginPage /></PrivateRoute>} />
+      <Route path="/register" element={<PrivateRoute guest><RegisterPage /></PrivateRoute>} />
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movies/:id" element={<MovieDetailPage />} />
       <Route path="/terms" element={<TermsAndConditionsPage />} />
@@ -42,7 +42,7 @@ export function AppRoutes() {
       <Route path="/events" element={<EventsPage />} />
       <Route path="/restaurants" element={<RestaurantsPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
-        <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
+      <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
 
       <Route
         path="/booking/:type/:id"
@@ -53,13 +53,13 @@ export function AppRoutes() {
         }
       />
       <Route
-  path="/bookings/:id"
-  element={
-    <PrivateRoute>
-      <BookingDetailPage />
-    </PrivateRoute>
-  }
-/>
+        path="/bookings/:id"
+        element={
+          <PrivateRoute>
+            <BookingDetailPage />
+          </PrivateRoute>
+        }
+      />
       <Route
         path="/profile"
         element={
