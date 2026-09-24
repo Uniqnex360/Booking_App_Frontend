@@ -1,5 +1,5 @@
 import { ApiResponse } from '@/types';
-import api, { setTokens, clearTokens } from './client';
+import api, { setTokens, clearTokens, getRefreshToken } from './client';
 import type {
   AuthTokens,
   LoginPayload,
@@ -56,7 +56,8 @@ export async function getCurrentUser(): Promise<UserResponse> {
 
 export async function logout(): Promise<void> {
   try {
-    await api.post('/auth/logout');
+     const refresh = getRefreshToken();
+  await api.post('/auth/logout', { refresh_token: refresh });
   } catch {
   }
   clearTokens();
