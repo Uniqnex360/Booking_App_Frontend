@@ -6,6 +6,7 @@ import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
 import { Heart, Play, Share2, Star, X, ChevronRight } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
+import { SeatVehicle } from "./SeatVehicle";
 
 interface MovieDetail {
   id: string;
@@ -45,7 +46,7 @@ export default function MovieDetailPage() {
 
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  
+
   // Ticket Modal States
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketCount, setTicketCount] = useState(2);
@@ -90,15 +91,17 @@ export default function MovieDetailPage() {
   }
 
   const genres = movie.genre.split(",").map((g) => g.trim());
-  
-  // Extract unique formats if available from venues (or fallback to generic 2D/3D)
-  const allFormats = movie.venues 
-    ? Array.from(new Set(movie.venues.flatMap((v) => v.showtimes.map((s: any) => s.format))))
+
+  const allFormats = movie.venues
+    ? Array.from(
+        new Set(
+          movie.venues.flatMap((v) => v.showtimes.map((s: any) => s.format)),
+        ),
+      )
     : ["2D"];
 
   const handleTicketConfirm = () => {
     setShowTicketModal(false);
-    // Redirect to the dedicated Buy Tickets page with the pre-selected ticket count
     navigate(withCity(`/buytickets/${movie.id}?qty=${ticketCount}`, city));
   };
 
@@ -106,7 +109,6 @@ export default function MovieDetailPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      {/* ─── Hero Banner ─── */}
       <div
         className="relative pt-16 lg:pt-[72px]"
         style={{
@@ -123,7 +125,6 @@ export default function MovieDetailPage() {
 
         <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
           <div className="flex gap-8 items-start">
-            {/* Poster */}
             <div className="hidden sm:block w-[240px] shrink-0">
               <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer">
                 {movie.poster_url ? (
@@ -150,13 +151,11 @@ export default function MovieDetailPage() {
               </div>
             </div>
 
-            {/* Movie Info */}
             <div className="flex-1 min-w-0 text-white">
               <h1 className="text-[32px] lg:text-[40px] font-bold leading-tight">
                 {movie.title}
               </h1>
 
-              {/* Rating Card */}
               <div className="mt-4 bg-[#333338] rounded-xl px-5 py-3 inline-flex items-center gap-4 shadow-lg">
                 <div className="flex items-center gap-2">
                   <Star className="h-6 w-6 text-[#F5C518] fill-[#F5C518]" />
@@ -175,7 +174,6 @@ export default function MovieDetailPage() {
                 </button>
               </div>
 
-              {/* Format pills */}
               <div className="flex flex-wrap gap-2 mt-5">
                 {allFormats.map((fmt) => (
                   <span
@@ -190,7 +188,6 @@ export default function MovieDetailPage() {
                 </span>
               </div>
 
-              {/* Meta row */}
               <div className="flex flex-wrap items-center gap-2 text-sm text-white mt-5">
                 <span>{formatDuration(movie.duration_min)}</span>
                 <span className="text-white/40">•</span>
@@ -201,7 +198,6 @@ export default function MovieDetailPage() {
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
 
-              {/* Action buttons */}
               <div className="flex items-center gap-3 mt-8">
                 <button
                   onClick={() => setShowTicketModal(true)}
@@ -221,7 +217,6 @@ export default function MovieDetailPage() {
         </div>
       </div>
 
-      {/* ─── About section ─── */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-[1240px] mx-auto px-4 py-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -235,70 +230,58 @@ export default function MovieDetailPage() {
 
       <Footer />
 
-      {/* ─── Global Ticket Selection Modal ─── */}
       {showTicketModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 sm:p-0"
           onClick={() => setShowTicketModal(false)}
         >
           <div
-            className="bg-white rounded-2xl w-full sm:max-w-[440px] overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[420px] overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-white px-6 pt-6 pb-4 relative border-b border-gray-100 flex items-center justify-between">
+            {/* Header */}
+            <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-gray-100">
               <h3 className="text-gray-900 font-bold text-lg">
-                How Many Seats?
+                How many seats?
               </h3>
               <button
                 onClick={() => setShowTicketModal(false)}
-                className="text-gray-400 hover:text-gray-700 transition"
+                className="text-gray-400 hover:text-gray-700 transition p-1"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="px-6 py-8 bg-white">
-              <div className="flex items-center justify-center mb-8">
-                <div className="w-40 h-24 relative flex items-end justify-center">
-                  <div className="flex items-end gap-1">
-                    {Array.from({ length: ticketCount }, (_, i) => (
-                      <div
-                        key={i}
-                        className="w-6 h-10 bg-[#7B1E3D] rounded-t-full relative"
-                        style={{
-                          background:
-                            "linear-gradient(180deg, #7B1E3D 0%, #5C0F2A 100%)",
-                        }}
-                      >
-                        <div className="w-4 h-4 bg-[#FDBB9C] rounded-full absolute -top-3 left-1/2 -translate-x-1/2" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="px-6 pt-6 pb-8 bg-white">
+              <div className="flex items-center justify-center h-28 mb-6">
+                <SeatVehicle count={ticketCount} />
               </div>
 
-              {/* Number pills */}
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setTicketCount(n)}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border transition ${
-                      ticketCount === n
-                        ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-lg shadow-[#7B1E3D]/20"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
+              <div className="flex items-center justify-center gap-2 flex-wrap px-1">
+                {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
+                  (n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setTicketCount(n)}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border transition-all ${
+                        ticketCount === n
+                          ? "bg-[#7B1E3D] text-white border-[#7B1E3D] scale-110 shadow-lg shadow-[#7B1E3D]/25"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-[#7B1E3D]/50 hover:text-[#7B1E3D]"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ),
+                )}
               </div>
 
               <button
+                type="button"
                 onClick={handleTicketConfirm}
                 className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-lg py-3.5 mt-8 transition flex items-center justify-center gap-2 shadow-lg shadow-[#7B1E3D]/20"
               >
-                Select Showtimes
+                Select Seats
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
