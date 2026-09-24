@@ -430,7 +430,6 @@ export default function BuyTicketsPage() {
                   <div key={venue.venue_id} className="bg-white rounded-lg px-5 py-5 flex items-start gap-6 border-b border-dashed border-gray-200">
                     <div className="w-[280px] shrink-0">
                       <div className="flex items-start gap-2">
-                        <Heart className="h-4 w-4 text-gray-300 hover:text-[#7B1E3D] cursor-pointer transition mt-0.5 shrink-0" />
                         <div className="min-w-0">
                           <h3 className="text-[15px] font-medium text-gray-800 leading-snug">{venue.venue_name}</h3>
                         </div>

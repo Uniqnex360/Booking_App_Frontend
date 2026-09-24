@@ -255,9 +255,7 @@ const getShareUrl = () => {
                 >
                   Book tickets
                 </button>
-                <button className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition ml-2">
-                  <Heart className="h-5 w-5" />
-                </button>
+               
                 <button
                   type="button"
                   onClick={handleShare}
