@@ -6,15 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
+import { RecaptchaVerifier } from "firebase/auth";
 
 import {
-  Wine,
   Mail,
   Lock,
   Phone,
@@ -35,16 +29,16 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("email");
-  const [phoneLoading, setPhoneLoading] = useState(false);
+  const [, setPhoneLoading] = useState(false);
   const clientId = import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID;
-  console.log("CLIENT)D", clientId);
+
   const handleGoogleAction = async () => {
     setError(null);
     setLoading(true);
     try {
       const res: any = await continueWithGoogle();
       if (res?.cancelled) {
-        return; // User closed popup; reset spinner cleanly
+        return;
       }
       if (res?.error) {
         setError(res.error);
@@ -68,61 +62,44 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     const { error: apiError } = await signIn({ email, password });
-    
+
     if (apiError) {
       setError(apiError);
-      setLoading(false)
+      setLoading(false);
     } else {
-      const currentUser=await getCurrentUser()
-      setLoading(false)
-      if(currentUser.role=='ADMIN')
-      {
-        navigate('/admin/partners')
-      }
-      else
-      {
-      navigate("/profile");
-
+      const currentUser = await getCurrentUser();
+      setLoading(false);
+      if (currentUser.role === "ADMIN") {
+        navigate("/admin/partners");
+      } else {
+        navigate("/profile");
       }
     }
   };
- useEffect(() => {
-  if (activeTab === "phone") {
-    (window as any).phoneEmailListener = async (userObj: any) => {
-      const userJsonUrl = userObj.user_json_url;
-      if (userJsonUrl) {
-        setLoading(true);
-        const { error } = await signInWithPhoneEmail({ url: userJsonUrl });
-        setLoading(false);
-        if (error) setError(error);
-        else navigate("/profile");
-      }
-    };
-
-    const script = document.createElement("script");
-    script.src = "https://www.phone.email/sign_in_button_v1.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-      delete (window as any).phoneEmailListener;
-    };
-  }
-}, [activeTab]);
 
   useEffect(() => {
     if (activeTab === "phone") {
+      (window as any).phoneEmailListener = async (userObj: any) => {
+        const userJsonUrl = userObj.user_json_url;
+        if (userJsonUrl) {
+          setLoading(true);
+          const { error } = await signInWithPhoneEmail({ url: userJsonUrl });
+          setLoading(false);
+          if (error) setError(error);
+          else navigate("/profile");
+        }
+      };
+
       const script = document.createElement("script");
-script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async = true;
+      script.src = "https://www.phone.email/sign_in_button_v1.js";
+      script.async = true;
       document.body.appendChild(script);
 
       return () => {
         if (document.body.contains(script)) {
           document.body.removeChild(script);
         }
+        delete (window as any).phoneEmailListener;
       };
     }
   }, [activeTab]);
@@ -142,13 +119,13 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
         "recaptcha-container",
         {
           size: "normal",
-        },
+        }
       );
 
       navigate(`/verify-otp?phone=${encodeURIComponent(phone)}`);
-    } catch (err: any) {
+    } catch {
       setError(
-        "Failed to send SMS. Make sure to include country code (e.g. +91)",
+        "Failed to send SMS. Make sure to include country code (e.g. +91)"
       );
     } finally {
       setPhoneLoading(false);
@@ -157,44 +134,24 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-br from-wine-800 via-wine-700 to-wine-900 lg:block">
-        <div className="absolute inset-0 " />
-        <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
-        <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-wine-400/10 blur-3xl" />
-        {/* <div className="relative flex h-full flex-col justify-between p-12 text-slate-900">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur">
-              <Wine className="h-5 w-5 text-slate-900" strokeWidth={2.2} />
-            </div>
-            <span className="font-serif text-2xl font-semibold">Vyhbz App</span>
-          </Link>
-          <div>
-            <h2 className="font-serif text-5xl font-semibold leading-tight">
-              Welcome back.
-              <br />
-              <em className="italic text-wine-200">Your table awaits.</em>
-            </h2>
-            <p className="mt-4 max-w-sm text-wine-100/70">
-              Sign in to manage your bookings, discover new experiences, and
-              pick up right where you left off.
-            </p>
+      {/* Left Banner Section with Logo */}
+      <div className="relative hidden flex-1 overflow-hidden bg-gradient-to-br from-[#1A1A2E] via-[#2D121D] to-[#1A1A2E] lg:flex lg:items-center lg:justify-center p-12">
+        {/* Glow Effects */}
+        <div className="absolute -right-20 top-20 h-96 w-96 rounded-full bg-[#7B1E3D]/30 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -left-10 h-80 w-80 rounded-full bg-[#7B1E3D]/20 blur-3xl pointer-events-none" />
+
+        <div className="absolute inset-0 flex items-center justify-center p-8">
+          <div className="relative z-10 rounded-3xl bg-white p-8 shadow-2xl max-w-md w-full flex items-center justify-center border border-white/20 transition-transform duration-300 hover:scale-[1.01]">
+            <img
+              src="/logo.png"
+              alt="Vyhbz Logo"
+              className="w-full h-auto object-contain max-h-[480px]"
+            />
           </div>
-          <div className="flex items-center gap-3 text-sm text-wine-100/50">
-            <div className="flex -space-x-2">
-              {['A', 'M', 'J'].map((i) => (
-                <div
-                  key={i}
-                  className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-wine-800 bg-[#7B1E3D] text-xs font-semibold"
-                >
-                  {i}
-                </div>
-              ))}
-            </div>
-            <span>50,000+ happy guests</span>
-          </div>
-        </div> */}
+        </div>
       </div>
 
+      {/* Right Login Form Section */}
       <div className="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12 sm:px-6">
         <div className="w-full max-w-md">
           <Link
@@ -209,7 +166,6 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             Sign in
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            {/* New to Vyhbz App?{' '} */}
             <Link
               to="/register"
               className="font-medium text-[#7B1E3D] hover:text-slate-900"
@@ -234,6 +190,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             >
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
                 className="w-5 h-5"
               />
               Continue with Google
@@ -280,7 +237,7 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
                   <Label htmlFor="email" className="text-sm font-medium">
                     Email address
                   </Label>
-                  
+
                   <div className="relative">
                     <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <Input
@@ -295,30 +252,30 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
                   </div>
                 </div>
                 <div className="space-y-2">
-  <div className="flex items-center justify-between">
-    <Label htmlFor="password" className="text-sm font-medium">
-      Password
-    </Label>
-    <Link
-      to="/forgot-password"
-      className="text-xs font-medium text-[#7B1E3D] hover:text-slate-900"
-    >
-      Forgot password?
-    </Link>
-  </div>
-  <div className="relative">
-    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-    <Input
-      id="password"
-      type="password"
-      required
-      value={password}
-      onChange={(e) => setPassword(e.target.value)}
-      placeholder="••••••••"
-      className="h-11 rounded-xl pl-10"
-    />
-  </div>
-</div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-sm font-medium">
+                      Password
+                    </Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-xs font-medium text-[#7B1E3D] hover:text-slate-900"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="h-11 rounded-xl pl-10"
+                    />
+                  </div>
+                </div>
                 <Button
                   type="submit"
                   disabled={loading}
@@ -337,18 +294,18 @@ script.src = "https://www.phone.email/sign_in_button_v1.js";      script.async =
             </TabsContent>
 
             <TabsContent value="phone" className="mt-6" key={activeTab}>
-  <div className="flex flex-col items-center justify-center space-y-4 min-h-[120px]">
-    <p className="text-sm text-slate-500 text-center">
-      Click below to sign in securely with your phone number.
-    </p>
-    
-    <div 
-        className="pe_signin_button" 
-      data-client-id={clientId}
-      style={{ display: 'block', minHeight: '40px', minWidth: '200px' }}
-    ></div>
-  </div>
-</TabsContent>
+              <div className="flex flex-col items-center justify-center space-y-4 min-h-[120px]">
+                <p className="text-sm text-slate-500 text-center">
+                  Click below to sign in securely with your phone number.
+                </p>
+
+                <div
+                  className="pe_signin_button"
+                  data-client-id={clientId}
+                  style={{ display: "block", minHeight: "40px", minWidth: "200px" }}
+                ></div>
+              </div>
+            </TabsContent>
           </Tabs>
 
           <div id="recaptcha-container"></div>
