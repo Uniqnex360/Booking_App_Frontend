@@ -82,7 +82,7 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#F5F5FA]">
       <Header />
-      <main className="flex-grow flex items-center justify-center p-6">
+           <main className="flex-grow flex items-center justify-center p-6 pt-28 lg:pt-36 pb-12">
         <form onSubmit={submit} className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 space-y-5">
           <h1 className="text-2xl font-bold">Set a new password</h1>
           <div>
