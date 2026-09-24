@@ -57,7 +57,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex flex-col bg-[#F5F5FA]">
         <Header />
-        <main className="flex-grow flex items-center justify-center p-6">
+           <main className="flex-grow flex items-center justify-center p-6 pt-28 lg:pt-36 pb-12">
           <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
             <h1 className="text-xl font-bold mb-2">Link expired</h1>
             <p className="text-slate-500 text-sm mb-6">
