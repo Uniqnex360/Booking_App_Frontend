@@ -111,12 +111,12 @@ const MovieReviewsPage: React.FC = () => {
           >
             User reviews ({totalReviews})
           </button>
-          <button 
+          {/* <button 
             className={`flex-1 py-3 text-center font-medium ${activeTab === 'critic' ? 'text-[#7B1E3D] border-b-2 border-[#7B1E3D]' : 'text-gray-500'}`}
             onClick={() => setActiveTab('critic')}
           >
             Critic reviews (0)
-          </button>
+          </button> */}
         </div>
 
         {activeTab === 'user' && (
