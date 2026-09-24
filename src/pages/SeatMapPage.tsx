@@ -1,4 +1,4 @@
-// src/pages/SeatMapPage.tsx
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -40,7 +40,7 @@ interface SeatMapDetail {
 }
 
 function isUserLoggedIn(): boolean {
-  // Matches tokens set by setTokens() in @/api/client
+  
   return Boolean(
     localStorage.getItem("access_token") ||
       localStorage.getItem("vyhbz_access_token")
@@ -52,7 +52,7 @@ export default function SeatMapPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Enforce seat count from URL param (default to 2)
+  
   const requiredSeatCount = Math.min(
     10,
     Math.max(1, parseInt(searchParams.get("qty") || "2", 10) || 2)
@@ -67,7 +67,7 @@ export default function SeatMapPage() {
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
 
-  // BMS Auth modal — only on Pay, not on seat click
+  
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
@@ -127,7 +127,7 @@ export default function SeatMapPage() {
     mapData?.fetched_at &&
     Date.now() - new Date(mapData.fetched_at).getTime() > 60000;
 
-  // Flatten seats
+  
   const allSeats: SeatItem[] = [];
   if (mapData?.seats && Array.isArray(mapData.seats) && mapData.seats.length > 0) {
     allSeats.push(...mapData.seats);
@@ -148,7 +148,6 @@ export default function SeatMapPage() {
     });
   }
 
-  // ─── BOOKMYSHOW SIGNATURE BLOCK-SELECTION ENGINE ───
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
 
@@ -183,95 +182,91 @@ export default function SeatMapPage() {
     idempotencyKeyRef.current = crypto.randomUUID();
   };
 
-  // Actual hold + commit (runs only after auth is confirmed)
-  const handleCheckout = async () => {
-    if (selectedSeats.length !== requiredSeatCount) {
-      toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
-      return;
-    }
-    setIsCommitLoading(true);
+  const handleCheckout = async (contact?: { email?: string; phone?: string }) => {
+  if (selectedSeats.length !== requiredSeatCount) {
+    toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
+    return;
+  }
+  setIsCommitLoading(true);
 
-    try {
-      const res = await unwrap<any>(
-        api.post(
-          `/bookings/hold`,
-          {
-            showtime_id: id,
-            seat_ids: selectedSeats.map((s) => s.seat_ref),
-            seat_codes: selectedSeats.map(
-              (s) => s.code || `${s.row_label}${s.number}`
-            ),
-          },
-          {
-            headers: {
-              "Idempotency-Key": idempotencyKeyRef.current,
-            },
-          }
-        )
+  const saved = contact
+    ?? JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
+
+  try {
+    const res = await unwrap<any>(
+      api.post(
+        `/bookings/hold`,
+        {
+          showtime_id: id,
+          seat_ids: selectedSeats.map((s) => s.seat_ref),
+          seat_codes: selectedSeats.map(
+            (s) => s.code || `${s.row_label}${s.number}`
+          ),
+          contact_email: saved.email ?? null,
+          contact_phone: saved.phone ?? null,
+        },
+        {
+          headers: { "Idempotency-Key": idempotencyKeyRef.current },
+        }
+      )
+    );
+
+    if (res.status === "HELD") {
+      setHoldId(res.id);
+      setHeldUntil(new Date(res.held_until));
+
+      const commitRes = await unwrap<any>(
+        api.post(`/bookings/${res.id}/commit`, {
+          payment_ref: `no-payment-${crypto.randomUUID()}`,
+        })
       );
-
-      if (res.status === "HELD") {
-        setHoldId(res.id);
-        setHeldUntil(new Date(res.held_until));
-
-        const commitRes = await unwrap<any>(
-          api.post(`/bookings/${res.id}/commit`, {
-            payment_ref: `no-payment-${crypto.randomUUID()}`,
-          })
-        );
-
-        toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
-        navigate(`/profile`);
-      } else {
-        toast.success(`Booking confirmed successfully!`);
-        navigate(`/profile`);
-      }
-    } catch (err: any) {
-      if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
-        toast.error("One or more selected seats were just taken. Refreshing...");
-        fetchSeatMap();
-      } else if (err.code === "HOLD_EXPIRED") {
-        toast.error("Hold expired. Please select seats again.");
-        fetchSeatMap();
-      } else if (
-        err?.status === 401 ||
-        err?.code === "UNAUTHORIZED" ||
-        err?.message?.toLowerCase?.().includes("unauthorized")
-      ) {
-        // Token missing/expired mid-flow → open login again
-        setIsAuthModalOpen(true);
-        toast.error("Please sign in to complete your booking.");
-      } else {
-        toast.error(err.message || "Booking failed.");
-      }
-      setIsCommitLoading(false);
+      toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
+      navigate(`/profile`);
+    } else {
+      toast.success(`Booking confirmed successfully!`);
+      navigate(`/profile`);
     }
-  };
-
-    const handlePayClick = () => {
-    if (selectedSeats.length !== requiredSeatCount) {
-      toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
-      return;
-    }
-
-    const savedContact = localStorage.getItem('vyhbz_contact_details');
-    if (!savedContact) {
+  } catch (err: any) {
+    if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
+      toast.error("One or more selected seats were just taken. Refreshing...");
+      fetchSeatMap();
+    } else if (err.code === "HOLD_EXPIRED") {
+      toast.error("Hold expired. Please select seats again.");
+      fetchSeatMap();
+    } else if (err.code === "VALIDATION_ERROR") {
+      
       setIsAuthModalOpen(true);
     } else {
-      handleCheckout();
+      toast.error(err.message || "Booking failed.");
     }
-  };
+    setIsCommitLoading(false);
+  }
+};
 
-  // 2. Submit Handler for the Contact Modal
-  const handleContactSubmit = (details: { email: string; phone: string }) => {
-    setIsAuthModalOpen(false);
-    toast.success(`Booking confirmation will be sent to ${details.email}`);
-    handleCheckout();
-  };
+    const handlePayClick = () => {
+  if (selectedSeats.length !== requiredSeatCount) {
+    toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
+    return;
+  }
+
+  const savedContact = localStorage.getItem("vyhbz_contact_details");
+  if (!savedContact) {
+    setIsAuthModalOpen(true);
+    return;
+  }
+  
+  handleCheckout(JSON.parse(savedContact));
+};
+
+ const handleContactSubmit = (details: { email: string; phone: string }) => {
+  setIsAuthModalOpen(false);
+  toast.success(`Booking confirmation will be sent to ${details.email}`);
+  handleCheckout(details);
+};
 
   
 
-  // Organize rows into price tiers (Expensive on top)
+  
   const tiers: {
     name: string;
     price_paise: number;
@@ -320,7 +315,6 @@ export default function SeatMapPage() {
     <div className="min-h-screen bg-[#F5F5FA] text-slate-900 flex flex-col font-sans select-none pb-32 overflow-x-hidden">
       <Header />
 
-      {/* ─── BMS SUB-HEADER ─── */}
      <div className="bg-[#333338] text-white pt-[112px] lg:pt-[120px] sticky top-0 z-20 shadow-md">
 
         <div className="max-w-[1240px] mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
@@ -400,7 +394,6 @@ export default function SeatMapPage() {
           </div>
         ) : (
           <div className="w-full max-w-4xl flex flex-col items-center">
-            {/* SEAT TIERS */}
             <div className="w-full space-y-10 pb-6 flex flex-col items-center px-2">
               {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full">
@@ -479,7 +472,6 @@ export default function SeatMapPage() {
               ))}
             </div>
 
-            {/* ─── SCREEN AT BOTTOM (BMS style) ─── */}
             <div className="w-full max-w-2xl flex flex-col items-center mt-12 mb-6">
               <div
                 className="w-full h-4 relative"
@@ -496,7 +488,6 @@ export default function SeatMapPage() {
               </div>
             </div>
 
-            {/* SEAT STATUS LEGEND */}
             <div className="flex items-center justify-center gap-6 mt-4 text-xs text-slate-600">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-sm border border-[#1EA83C] bg-white" />
@@ -515,7 +506,6 @@ export default function SeatMapPage() {
         )}
       </main>
 
-      {/* ─── BMS FLOATING BOTTOM CHECKOUT BAR ─── */}
       {selectedSeats.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 z-40 animate-in fade-in slide-in-from-bottom duration-200">
           <div className="max-w-[1240px] mx-auto flex items-center justify-between gap-4">

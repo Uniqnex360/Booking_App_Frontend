@@ -28,10 +28,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
     const contactData = { email, phone };
     localStorage.setItem('vyhbz_contact_details', JSON.stringify(contactData));
     
-    // Create a mock/guest session token if your backend needs access_token
-    if (!localStorage.getItem('access_token')) {
-      localStorage.setItem('access_token', `guest_${crypto.randomUUID()}`);
-    }
+   
 
     onSubmit(contactData);
     onClose();
