@@ -70,10 +70,9 @@ export default function ProfilePage() {
   const [preferredLanguage, setPreferredLanguage] = useState("en");
   const [bio, setBio] = useState("");
 
-  // Today's date YYYY-MM-DD for datepicker max check
   const todayDateStr = new Date().toISOString().split("T")[0];
 
-  // Load auth user into form
+  // Sync auth user details
   useEffect(() => {
     if (!user) return;
     const parts = (user.full_name || "").trim().split(/\s+/);
@@ -83,38 +82,54 @@ export default function ProfilePage() {
     setEmail(user.email || "");
   }, [user]);
 
-  // Load extended profile
+  // Load Extended Profile (Memory-Leak Safe)
   useEffect(() => {
+    let isMounted = true;
+
     const load = async () => {
       try {
         const data = await getExtendedProfile();
-        setProfile(data);
-        setDateOfBirth(data.date_of_birth ? data.date_of_birth.slice(0, 10) : "");
-        setGender(data.gender || "");
-        setPreferredLanguage(data.preferred_language || "en");
-        setBio(data.bio || "");
+        if (isMounted) {
+          setProfile(data);
+          setDateOfBirth(data.date_of_birth ? data.date_of_birth.slice(0, 10) : "");
+          setGender(data.gender || "");
+          setPreferredLanguage(data.preferred_language || "en");
+          setBio(data.bio || "");
+        }
       } catch {
-        setProfile(null);
+        if (isMounted) setProfile(null);
       } finally {
-        setProfileLoading(false);
+        if (isMounted) setProfileLoading(false);
       }
     };
+
     if (user) load();
+
+    return () => {
+      isMounted = false; // Prevents updating state after component unmount
+    };
   }, [user]);
 
-  // Load bookings
+  // Load Bookings (Memory-Leak Safe)
   useEffect(() => {
+    let isMounted = true;
+
     const fetchBookings = async () => {
       try {
         const data = await getBookings();
-        setBookings(data);
+        if (isMounted) setBookings(data);
       } catch {
-        setBookings([]);
+        if (isMounted) setBookings([]);
       } finally {
-        setBookingsLoading(false);
+        if (isMounted) setBookingsLoading(false);
       }
     };
+
     if (user) fetchBookings();
+
+    return () => {
+      isMounted = false; // Prevents updating state after component unmount
+    };
   }, [user]);
 
   if (loading || !user) {
@@ -140,16 +155,15 @@ export default function ProfilePage() {
     navigate("/");
   };
 
-  // Form Validation Logic
+  // Form Validation
   const validateForm = (): boolean => {
-    // 1. First Name validation
     const cleanFirstName = firstName.trim();
     if (!cleanFirstName) {
       toast.error("First name is required.");
       return false;
     }
     if (cleanFirstName.length < 2) {
-      toast.error("First name must be at least 2 characters long.");
+      toast.error("First name must be at least 2 characters.");
       return false;
     }
     if (!/^[a-zA-Z\s'-]+$/.test(cleanFirstName)) {
@@ -157,14 +171,12 @@ export default function ProfilePage() {
       return false;
     }
 
-    // 2. Last Name validation (Optional)
     const cleanLastName = lastName.trim();
     if (cleanLastName && !/^[a-zA-Z\s'-]+$/.test(cleanLastName)) {
       toast.error("Last name should only contain letters.");
       return false;
     }
 
-    // 3. Email validation
     const cleanEmail = email.trim();
     if (!cleanEmail) {
       toast.error("Email address is required.");
@@ -176,18 +188,16 @@ export default function ProfilePage() {
       return false;
     }
 
-    // 4. Phone validation (Optional)
     const cleanPhone = phone.trim();
     if (cleanPhone) {
       const phoneDigits = cleanPhone.replace(/[\s-]/g, "");
-      const phoneRegex = /^(\+?\d{1,3})?[6-9]\d{9}$/; // Standard 10-digit Indian numbers or with country code
+      const phoneRegex = /^(\+?\d{1,3})?[6-9]\d{9}$/;
       if (!phoneRegex.test(phoneDigits)) {
         toast.error("Please enter a valid 10-digit mobile number.");
         return false;
       }
     }
 
-    // 5. Birthday validation
     if (dateOfBirth) {
       const selectedDate = new Date(dateOfBirth);
       const today = new Date();
@@ -197,7 +207,6 @@ export default function ProfilePage() {
       }
     }
 
-    // 6. Bio length validation
     if (bio.trim().length > 250) {
       toast.error("Bio cannot exceed 250 characters.");
       return false;
@@ -228,8 +237,8 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       const updated = await updateProfile(payload as any);
+      
       setProfile(updated);
-
       if (updated.date_of_birth) {
         setDateOfBirth(updated.date_of_birth.slice(0, 10));
       }
@@ -256,7 +265,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Check if any field changed
   const currentFullName = (user.full_name || "").trim();
   const newFullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
@@ -325,7 +333,7 @@ export default function ProfilePage() {
                 </div>
               ) : (
                 <>
-                  {/* Avatar & Header */}
+                  {/* Header */}
                   <div className="flex flex-col sm:flex-row items-center gap-6 mb-12">
                     <div className="h-28 w-28 rounded-full bg-gray-200 flex items-end justify-center overflow-hidden shrink-0 border border-gray-100 shadow-sm">
                       {profile?.avatar_url ? (
@@ -426,7 +434,6 @@ export default function ProfilePage() {
                       Personal Details
                     </h2>
 
-                    {/* First & Last Name */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
@@ -501,7 +508,7 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    {/* Preferred language */}
+                    {/* Preferred Language */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-600 mb-2">
