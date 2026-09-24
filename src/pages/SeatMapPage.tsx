@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -6,12 +5,7 @@ import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
-import {
-  ArrowLeft,
-  RefreshCw,
-  AlertCircle,
-  Clock,
-} from "lucide-react";
+import { ArrowLeft, RefreshCw, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import AuthModal from "./AuthModal";
 
@@ -40,10 +34,9 @@ interface SeatMapDetail {
 }
 
 function isUserLoggedIn(): boolean {
-  
   return Boolean(
     localStorage.getItem("access_token") ||
-      localStorage.getItem("vyhbz_access_token")
+    localStorage.getItem("vyhbz_access_token"),
   );
 }
 
@@ -52,10 +45,9 @@ export default function SeatMapPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  
   const requiredSeatCount = Math.min(
     10,
-    Math.max(1, parseInt(searchParams.get("qty") || "2", 10) || 2)
+    Math.max(1, parseInt(searchParams.get("qty") || "2", 10) || 2),
   );
 
   const [mapData, setMapData] = useState<SeatMapDetail | null>(null);
@@ -67,7 +59,6 @@ export default function SeatMapPage() {
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
 
-  
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
@@ -76,7 +67,7 @@ export default function SeatMapPage() {
     setLoading(true);
     try {
       const data = await unwrap<SeatMapDetail>(
-        api.get(`/showtimes/${id}/seat-map`)
+        api.get(`/showtimes/${id}/seat-map`),
       );
       setMapData(data);
       setSelectedSeats([]);
@@ -96,7 +87,7 @@ export default function SeatMapPage() {
     const interval = setInterval(() => {
       const remaining = Math.max(
         0,
-        Math.floor((heldUntil.getTime() - Date.now()) / 1000)
+        Math.floor((heldUntil.getTime() - Date.now()) / 1000),
       );
       setCountdown(remaining);
       if (remaining === 0) {
@@ -122,14 +113,18 @@ export default function SeatMapPage() {
     );
   }
 
-  const isSourceUnavailable = mapData?.code === "SOURCE_UNAVAILABLE" || !mapData;
+  const isSourceUnavailable =
+    mapData?.code === "SOURCE_UNAVAILABLE" || !mapData;
   const isStale =
     mapData?.fetched_at &&
     Date.now() - new Date(mapData.fetched_at).getTime() > 60000;
 
-  
   const allSeats: SeatItem[] = [];
-  if (mapData?.seats && Array.isArray(mapData.seats) && mapData.seats.length > 0) {
+  if (
+    mapData?.seats &&
+    Array.isArray(mapData.seats) &&
+    mapData.seats.length > 0
+  ) {
     allSeats.push(...mapData.seats);
   } else if (mapData?.rows && Array.isArray(mapData.rows)) {
     mapData.rows.forEach((r: any) => {
@@ -153,7 +148,7 @@ export default function SeatMapPage() {
 
     const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
     const clickedIdx = sortedRow.findIndex(
-      (s) => s.seat_ref === clickedSeat.seat_ref
+      (s) => s.seat_ref === clickedSeat.seat_ref,
     );
     if (clickedIdx === -1) return;
 
@@ -182,102 +177,108 @@ export default function SeatMapPage() {
     idempotencyKeyRef.current = crypto.randomUUID();
   };
 
-  const handleCheckout = async (contact?: { email?: string; phone?: string }) => {
-  if (selectedSeats.length !== requiredSeatCount) {
-    toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
-    return;
-  }
-  setIsCommitLoading(true);
-
-  const saved = contact
-    ?? JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
-
-  try {
-    const res = await unwrap<any>(
-      api.post(
-        `/bookings/hold`,
-        {
-          showtime_id: id,
-          seat_ids: selectedSeats.map((s) => s.seat_ref),
-          seat_codes: selectedSeats.map(
-            (s) => s.code || `${s.row_label}${s.number}`
-          ),
-          contact_email: saved.email ?? null,
-          contact_phone: saved.phone ?? null,
-        },
-        {
-          headers: { "Idempotency-Key": idempotencyKeyRef.current },
-        }
-      )
-    );
-
-    if (res.status === "HELD") {
-      setHoldId(res.id);
-      setHeldUntil(new Date(res.held_until));
-
-      const commitRes = await unwrap<any>(
-        api.post(`/bookings/${res.id}/commit`, {
-          payment_ref: `no-payment-${crypto.randomUUID()}`,
-        })
+  const handleCheckout = async (contact?: {
+    email?: string;
+    phone?: string;
+  }) => {
+    if (selectedSeats.length !== requiredSeatCount) {
+      toast.warning(
+        `Please select exactly ${requiredSeatCount} contiguous seats.`,
       );
-      toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
-      navigate(`/profile`);
-       } else {
-      toast.success(`Booking confirmed successfully!`);
-      if (isUserLoggedIn()) {
-        navigate(`/profile`);
+      return;
+    }
+    setIsCommitLoading(true);
+
+    const saved =
+      contact ??
+      JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
+
+    try {
+      const res = await unwrap<any>(
+        api.post(
+          `/bookings/hold`,
+          {
+            showtime_id: id,
+            seat_ids: selectedSeats.map((s) => s.seat_ref),
+            seat_codes: selectedSeats.map(
+              (s) => s.code || `${s.row_label}${s.number}`,
+            ),
+            contact_email: saved.email ?? null,
+            contact_phone: saved.phone ?? null,
+          },
+          {
+            headers: { "Idempotency-Key": idempotencyKeyRef.current },
+          },
+        ),
+      );
+
+      if (res.status === "HELD") {
+        setHoldId(res.id);
+        setHeldUntil(new Date(res.held_until));
+
+        const commitRes = await unwrap<any>(
+          api.post(`/bookings/${res.id}/commit`, {
+            payment_ref: `no-payment-${crypto.randomUUID()}`,
+          }),
+        );
+        toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
+        if (isUserLoggedIn()) {
+          navigate(`/profile`);
+        } else {
+          navigate(
+            `/confirmation?ref=${encodeURIComponent(commitRes.ref_code ?? "")}&id=${res.id}`,
+          );
+        }
+      } 
+    } catch (err: any) {
+      if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
+        toast.error(
+          "One or more selected seats were just taken. Refreshing...",
+        );
+        fetchSeatMap();
+      } else if (err.code === "HOLD_EXPIRED") {
+        toast.error("Hold expired. Please select seats again.");
+        fetchSeatMap();
+      } else if (err.code === "VALIDATION_ERROR") {
+        setIsAuthModalOpen(true);
       } else {
-        navigate(`/confirmation?id=${res.id}`);
+        toast.error(err.message || "Booking failed.");
       }
+      setIsCommitLoading(false);
     }
-  } catch (err: any) {
-    if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
-      toast.error("One or more selected seats were just taken. Refreshing...");
-      fetchSeatMap();
-    } else if (err.code === "HOLD_EXPIRED") {
-      toast.error("Hold expired. Please select seats again.");
-      fetchSeatMap();
-    } else if (err.code === "VALIDATION_ERROR") {
-      
+  };
+
+  const handlePayClick = () => {
+    if (selectedSeats.length !== requiredSeatCount) {
+      toast.warning(
+        `Please select exactly ${requiredSeatCount} contiguous seats.`,
+      );
+      return;
+    }
+
+    const savedContact = localStorage.getItem("vyhbz_contact_details");
+    if (!savedContact) {
       setIsAuthModalOpen(true);
-    } else {
-      toast.error(err.message || "Booking failed.");
+      return;
     }
-    setIsCommitLoading(false);
-  }
-};
 
-    const handlePayClick = () => {
-  if (selectedSeats.length !== requiredSeatCount) {
-    toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
-    return;
-  }
+    handleCheckout(JSON.parse(savedContact));
+  };
 
-  const savedContact = localStorage.getItem("vyhbz_contact_details");
-  if (!savedContact) {
-    setIsAuthModalOpen(true);
-    return;
-  }
-  
-  handleCheckout(JSON.parse(savedContact));
-};
+  const handleContactSubmit = (details: { email: string; phone: string }) => {
+    setIsAuthModalOpen(false);
+    toast.success(`Booking confirmation will be sent to ${details.email}`);
+    handleCheckout(details);
+  };
 
- const handleContactSubmit = (details: { email: string; phone: string }) => {
-  setIsAuthModalOpen(false);
-  toast.success(`Booking confirmation will be sent to ${details.email}`);
-  handleCheckout(details);
-};
-
-  
-
-  
   const tiers: {
     name: string;
     price_paise: number;
     rows: Record<string, SeatItem[]>;
   }[] = [];
 
-  const rawRows: Record<string, { price_paise: number; seats: SeatItem[] }> = {};
+  const rawRows: Record<string, { price_paise: number; seats: SeatItem[] }> =
+    {};
   allSeats.forEach((seat) => {
     if (!rawRows[seat.row_label]) {
       rawRows[seat.row_label] = { price_paise: seat.price_paise, seats: [] };
@@ -302,7 +303,7 @@ export default function SeatMapPage() {
       tiers.push(existingTier);
     }
     existingTier.rows[rowLabel] = rowData.seats.sort(
-      (a, b) => a.number - b.number
+      (a, b) => a.number - b.number,
     );
   });
 
@@ -310,7 +311,7 @@ export default function SeatMapPage() {
 
   const totalPricePaise = selectedSeats.reduce(
     (acc, s) => acc + (s.price_paise || 0),
-    0
+    0,
   );
 
   const canProceed = selectedSeats.length === requiredSeatCount;
@@ -319,8 +320,7 @@ export default function SeatMapPage() {
     <div className="min-h-screen bg-[#F5F5FA] text-slate-900 flex flex-col font-sans select-none pb-32 overflow-x-hidden">
       <Header />
 
-     <div className="bg-[#333338] text-white pt-[112px] lg:pt-[120px] sticky top-0 z-20 shadow-md">
-
+      <div className="bg-[#333338] text-white pt-[112px] lg:pt-[120px] sticky top-0 z-20 shadow-md">
         <div className="max-w-[1240px] mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -423,7 +423,7 @@ export default function SeatMapPage() {
                           <div className="flex items-center gap-1 sm:gap-1.5">
                             {seatList.map((seat, idx) => {
                               const isSelected = selectedSeats.some(
-                                (s) => s.seat_ref === seat.seat_ref
+                                (s) => s.seat_ref === seat.seat_ref,
                               );
                               const isAisle =
                                 idx === midIndex && seatList.length > 8;
@@ -447,7 +447,9 @@ export default function SeatMapPage() {
                                 >
                                   {isAisle && <div className="w-4 sm:w-6" />}
                                   <button
-                                    disabled={!seat.is_available || Boolean(holdId)}
+                                    disabled={
+                                      !seat.is_available || Boolean(holdId)
+                                    }
                                     onClick={() =>
                                       handleSeatClick(seat, seatList)
                                     }
