@@ -18,6 +18,9 @@ export interface ProfileUpdatePayload {
   gender?: Gender;
   preferred_language?: string;
   bio?: string;
+  full_name?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface Address {
