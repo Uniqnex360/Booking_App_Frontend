@@ -25,6 +25,8 @@ interface MovieDetail {
   duration_min: number;
   certificate: string;
   poster_url: string | null;
+  banner_url?: string | null;
+  trailer_url?: string | null;
   synopsis: string;
   genre: string;
   release_date: string;
@@ -48,6 +50,23 @@ function formatReleaseDate(dateStr: string): string {
   });
 }
 
+// Helper to convert YouTube links into embed URLs for the iframe player
+function getEmbedTrailerUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.includes("youtube.com/watch")) {
+    const v = new URLSearchParams(url.split("?")[1]).get("v");
+    return v ? `https://www.youtube.com/embed/${v}?autoplay=1` : url;
+  }
+  if (url.includes("youtu.be/")) {
+    const id = url.split("youtu.be/")[1]?.split("?")[0];
+    return id ? `https://www.youtube.com/embed/${id}?autoplay=1` : url;
+  }
+  if (url.includes("youtube.com/embed/")) {
+    return url.includes("autoplay=1") ? url : `${url}?autoplay=1`;
+  }
+  return url;
+}
+
 export default function MovieDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -57,9 +76,10 @@ export default function MovieDetailPage() {
   const [movie, setMovie] = useState<MovieDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Booking Flow States
+  // Modal States
   const [showLangFormatModal, setShowLangFormatModal] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
+  const [showTrailerModal, setShowTrailerModal] = useState(false);
   
   const [selectedLang, setSelectedLang] = useState<string>("");
   const [selectedFormat, setSelectedFormat] = useState<string>("");
@@ -132,6 +152,7 @@ export default function MovieDetailPage() {
   }
 
   const genres = movie.genre.split(",").map((g) => g.trim());
+  const embedTrailerUrl = getEmbedTrailerUrl(movie.trailer_url);
 
   // Handle "Book tickets" click
   const handleBookTicketsClick = () => {
@@ -151,7 +172,7 @@ export default function MovieDetailPage() {
     }
   };
 
-  // When user selects a format pill in the modal
+  // When user selects a format pill in the language modal
   const handleSelectLangFormat = (lang: string, format: string) => {
     setSelectedLang(lang);
     setSelectedFormat(format);
@@ -171,6 +192,7 @@ export default function MovieDetailPage() {
     );
   };
 
+  // Share functionality
   const getShareUrl = () => {
     const path = withCity(`/movies/${id}`, city);
     return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
@@ -187,7 +209,7 @@ export default function MovieDetailPage() {
         return;
       }
     } catch {
-      // User cancelled
+      // User cancelled, fall through to copy
     }
 
     try {
@@ -205,17 +227,23 @@ export default function MovieDetailPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      {/* Hero Banner */}
+      {/* ─── Hero Banner ─── */}
       <div
-        className="relative pt-16 lg:pt-[104px]"
+        className="relative pt-16 lg:pt-[104px] bg-[#1A1A2E] overflow-hidden"
         style={{
-          background:
-            "linear-gradient(90deg, rgba(26,26,46,0.98) 0%, rgba(26,26,46,0.85) 50%, rgba(26,26,46,0.98) 100%)",
+          backgroundImage: movie.banner_url
+            ? `linear-gradient(90deg, #1A1A2E 0%, rgba(26,26,46,0.85) 45%, rgba(26,26,46,0.5) 100%), url(${movie.banner_url})`
+            : movie.poster_url
+            ? `linear-gradient(90deg, rgba(26,26,46,0.98) 0%, rgba(26,26,46,0.85) 50%, rgba(26,26,46,0.98) 100%)`
+            : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
-        {movie.poster_url && (
+        {/* Soft background glow if banner is missing */}
+        {!movie.banner_url && movie.poster_url && (
           <div
-            className="absolute inset-0 opacity-20 bg-cover bg-center blur-2xl"
+            className="absolute inset-0 opacity-20 bg-cover bg-center blur-2xl pointer-events-none"
             style={{ backgroundImage: `url(${movie.poster_url})` }}
           />
         )}
@@ -232,9 +260,9 @@ export default function MovieDetailPage() {
           </button>
 
           <div className="flex gap-8 items-start">
-            {/* Poster */}
+            {/* Poster & Trailer Button */}
             <div className="hidden sm:block w-[240px] shrink-0">
-              <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer">
+              <div className="w-full aspect-[2/3] rounded-xl overflow-hidden shadow-2xl relative group bg-slate-800">
                 {movie.poster_url ? (
                   <img
                     src={movie.poster_url}
@@ -242,30 +270,36 @@ export default function MovieDetailPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-700 flex items-center justify-center text-gray-400 text-sm">
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                     No Poster
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                      <Play className="h-6 w-6 text-white fill-white ml-0.5" />
-                    </div>
-                    <span className="text-white text-xs font-medium">
-                      Watch Trailer
-                    </span>
-                  </div>
+                
+                {/* BMS Style "Trailers" Pill Overlay */}
+                <div
+                  onClick={() => {
+                    if (movie.trailer_url) {
+                      setShowTrailerModal(true);
+                    } else {
+                      toast.info("Trailer coming soon!");
+                    }
+                  }}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 hover:bg-black/90 backdrop-blur-md text-white text-xs font-semibold px-4 py-2 rounded-full flex items-center gap-2 border border-white/20 shadow-lg cursor-pointer transition transform hover:scale-105"
+                >
+                  <Play size={13} className="fill-white" />
+                  <span>Trailers</span>
                 </div>
               </div>
             </div>
 
-            {/* Details */}
+            {/* Movie Details */}
             <div className="flex-1 min-w-0 text-white">
-              <h1 className="text-[32px] lg:text-[40px] font-bold leading-tight">
+              <h1 className="text-[32px] lg:text-[40px] font-bold leading-tight drop-shadow-md">
                 {movie.title}
               </h1>
 
-              <div className="mt-4 bg-[#333338] rounded-xl px-5 py-3 inline-flex items-center gap-4 shadow-lg">
+              {/* Rating Card */}
+              <div className="mt-4 bg-[#333338]/90 backdrop-blur rounded-xl px-5 py-3 inline-flex items-center gap-4 shadow-lg border border-white/10">
                 <div className="flex items-center gap-2">
                   <Star className="h-6 w-6 text-[#F5C518] fill-[#F5C518]" />
                   <div>
@@ -283,6 +317,7 @@ export default function MovieDetailPage() {
                 </button>
               </div>
 
+              {/* Language & Formats */}
               <div className="flex flex-wrap gap-2 mt-5">
                 {Object.values(langFormatMap).flat().map((fmt, idx) => (
                   <span
@@ -297,7 +332,8 @@ export default function MovieDetailPage() {
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-sm text-white mt-5">
+              {/* Meta Info */}
+              <div className="flex flex-wrap items-center gap-2 text-sm text-white/90 mt-5">
                 <span>{formatDuration(movie.duration_min)}</span>
                 <span className="text-white/40">•</span>
                 <span>{genres.join(", ")}</span>
@@ -307,10 +343,11 @@ export default function MovieDetailPage() {
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
 
+              {/* Action Buttons */}
               <div className="flex items-center gap-3 mt-8">
                 <button
                   onClick={handleBookTicketsClick}
-                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/20"
+                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/30"
                 >
                   Book tickets
                 </button>
@@ -320,6 +357,7 @@ export default function MovieDetailPage() {
                 <button
                   onClick={handleShare}
                   className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
+                  title="Share movie"
                 >
                   {copied ? (
                     <Check className="h-5 w-5 text-green-400" />
@@ -333,6 +371,7 @@ export default function MovieDetailPage() {
         </div>
       </div>
 
+      {/* ─── About Section ─── */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-[1240px] mx-auto px-4 py-10">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -346,7 +385,44 @@ export default function MovieDetailPage() {
 
       <Footer />
 
-      {/* ─── 1. BMS SELECT LANGUAGE AND FORMAT MODAL ─── */}
+      {/* ─── TRAILER VIDEO MODAL ─── */}
+      {showTrailerModal && movie.trailer_url && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowTrailerModal(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowTrailerModal(false)}
+              className="absolute top-4 right-4 z-20 p-2 text-white/80 hover:text-white bg-black/60 rounded-full transition"
+            >
+              <X size={20} />
+            </button>
+
+            {embedTrailerUrl && (embedTrailerUrl.includes("youtube.com") || embedTrailerUrl.includes("youtu.be")) ? (
+              <iframe
+                src={embedTrailerUrl}
+                title={`${movie.title} Trailer`}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <video
+                src={movie.trailer_url}
+                controls
+                autoPlay
+                className="w-full h-full"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── BMS SELECT LANGUAGE AND FORMAT MODAL ─── */}
       {showLangFormatModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
@@ -407,7 +483,7 @@ export default function MovieDetailPage() {
         </div>
       )}
 
-      {/* ─── 2. BMS HOW MANY SEATS MODAL (With Vehicle Animation) ─── */}
+      {/* ─── BMS HOW MANY SEATS MODAL (With Vehicle Animation) ─── */}
       {showTicketModal && (
         <div
           className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 sm:p-0 animate-in fade-in duration-200"
