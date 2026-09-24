@@ -24,12 +24,14 @@ import { toast } from "sonner";
 import { getMovieById } from "@/api/movie.api";
 import RatingModal from "./RatingModal";
 import { MovieDetail } from "@/types/movie.types";
-import { formatDuration, formatReleaseDate, getEmbedTrailerUrl } from "@/utils/moviesHelper";
+import {
+  formatDuration,
+  formatReleaseDate,
+  getEmbedTrailerUrl,
+} from "@/utils/moviesHelper";
 import { useAuth } from "@/hooks/useAuth";
 
 const MAX_TICKETS = 10;
-
-
 
 export default function MovieDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -565,7 +567,7 @@ export default function MovieDetailPage() {
         isOpen={isRatingModalOpen}
         onClose={() => setIsRatingModalOpen(false)}
         movieId={movie.id}
-        onSubmitSuccess={fetchMovie} 
+        onSubmitSuccess={fetchMovie}
       />
     </div>
   );
