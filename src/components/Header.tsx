@@ -209,7 +209,7 @@ export function Header() {
       {/* ── TIER 1: PRIMARY NAV ── */}
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16">
         <Link to={withCity('/', city)} className="flex items-center gap-2 shrink-0">
-          <MonitorPlay className="h-7 w-7 text-[#F84464]" />
+          <MonitorPlay className="h-7 w-7 text-[#7B1E3D]" />
           <span className="text-[22px] font-bold tracking-tight text-[#333333] hidden sm:block mt-0.5">
             Vyhbz
           </span>
@@ -217,7 +217,7 @@ export function Header() {
 
         {/* Desktop Search */}
         <div className="relative hidden md:flex flex-1 max-w-[600px] ml-4" ref={dropdownRef}>
-          <div className="flex w-full items-center bg-gray-50 focus-within:bg-white border border-gray-200 focus-within:border-[#F84464]/50 rounded-md transition shadow-inner shadow-gray-100/50">
+          <div className="flex w-full items-center bg-gray-50 focus-within:bg-white border border-gray-200 focus-within:border-[#7B1E3D]/50 rounded-md transition shadow-inner shadow-gray-100/50">
             <Search className="h-4 w-4 text-gray-400 ml-3 shrink-0" />
             <input
               type="text"
@@ -272,7 +272,7 @@ export function Header() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#F84464]">
+                              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#7B1E3D]">
                                 {m.title}
                               </p>
                               <p className="text-[11px] text-gray-500 truncate">
@@ -308,7 +308,7 @@ export function Header() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#F84464]">
+                              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#7B1E3D]">
                                 {e.title}
                               </p>
                               <p className="text-[11px] text-gray-500 truncate">
@@ -341,7 +341,7 @@ export function Header() {
             <select
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              className="appearance-none bg-transparent border-none outline-none cursor-pointer text-sm font-medium text-gray-700 hover:text-[#F84464] pr-4 transition-colors z-10 relative"
+              className="appearance-none bg-transparent border-none outline-none cursor-pointer text-sm font-medium text-gray-700 hover:text-[#7B1E3D] pr-4 transition-colors z-10 relative"
             >
               {SUPPORTED_CITIES.map((c) => (
                 <option key={c} value={c}>
@@ -357,7 +357,7 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 rounded-full hover:bg-gray-100 p-1 pr-3 transition">
                   <Avatar className="h-7 w-7 border border-gray-200">
-                    <AvatarFallback className="bg-[#F84464]/10 text-xs font-bold text-[#F84464]">
+                    <AvatarFallback className="bg-[#7B1E3D]/10 text-xs font-bold text-[#7B1E3D]">
                       {initials}
                     </AvatarFallback>
                   </Avatar>
@@ -392,7 +392,7 @@ export function Header() {
                 {user.role === 'PARTNER' && (
                   <DropdownMenuItem
                     onClick={() => navigate('/partner/dashboard')}
-                    className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                    className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                   >
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Partner Dashboard
                   </DropdownMenuItem>
@@ -400,7 +400,7 @@ export function Header() {
                 {user.role !== 'PARTNER' && user.role !== 'ADMIN' && (
                   <DropdownMenuItem
                     onClick={() => navigate('/partner/become')}
-                    className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                    className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                   >
                     <Sparkles className="mr-2 h-4 w-4" /> Become a Partner
                   </DropdownMenuItem>
@@ -410,13 +410,13 @@ export function Header() {
                     <DropdownMenuSeparator className="bg-gray-100" />
                     <DropdownMenuItem
                       onClick={() => navigate('/admin/partners')}
-                      className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                      className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                     >
                       <Users className="mr-2 h-4 w-4" /> Partner Verification
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => navigate('/admin/moderation')}
-                      className="hover:bg-gray-50 text-[#F84464] cursor-pointer rounded-md font-medium text-sm"
+                      className="hover:bg-gray-50 text-[#7B1E3D] cursor-pointer rounded-md font-medium text-sm"
                     >
                       <ShieldCheck className="mr-2 h-4 w-4" /> Event Moderation
                     </DropdownMenuItem>
@@ -434,7 +434,7 @@ export function Header() {
           ) : (
             <Button
               onClick={() => navigate(withCity('/login', city))}
-              className="rounded text-xs font-semibold h-7 px-4 bg-[#F84464] hover:bg-[#E8375A] text-white shadow-none"
+              className="rounded text-xs font-semibold h-7 px-4 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-none"
             >
               Sign in
             </Button>
@@ -477,7 +477,7 @@ export function Header() {
                     key={`${link.href}-${i}`}
                     to={withCity(link.href, city)}
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#F84464] flex items-center justify-between"
+                    className="px-5 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-[#7B1E3D] flex items-center justify-between"
                   >
                     {link.label}
                     <ChevronRight className="h-4 w-4 text-gray-400" />
@@ -487,7 +487,7 @@ export function Header() {
                 <Link
                   to="/partner/become"
                   onClick={() => setMobileOpen(false)}
-                  className="px-5 py-3 text-sm font-medium text-[#F84464] hover:bg-gray-50 flex items-center justify-between"
+                  className="px-5 py-3 text-sm font-medium text-[#7B1E3D] hover:bg-gray-50 flex items-center justify-between"
                 >
                   List Your Show
                   <ChevronRight className="h-4 w-4 text-gray-400" />
@@ -506,9 +506,9 @@ export function Header() {
               <Link
                 key={`${link.href}-${i}`}
                 to={withCity(link.href, city)}
-                className={`text-[13px] font-medium transition-colors hover:text-[#F84464] ${
+                className={`text-[13px] font-medium transition-colors hover:text-[#7B1E3D] ${
                   location.pathname.startsWith(link.href)
-                    ? 'text-[#F84464]'
+                    ? 'text-[#7B1E3D]'
                     : 'text-gray-600'
                 }`}
               >
@@ -518,7 +518,7 @@ export function Header() {
           </div>
           <Link
             to="/partner/become"
-            className="text-[13px] font-medium text-gray-600 hover:text-[#F84464] transition-colors"
+            className="text-[13px] font-medium text-gray-600 hover:text-[#7B1E3D] transition-colors"
           >
             List Your Show
           </Link>
@@ -548,7 +548,7 @@ export function Header() {
                   onClick={() => setMobileSearchOpen(false)}
                   className="flex items-center gap-3 p-2.5 hover:bg-gray-50"
                 >
-                  <Film className="h-4 w-4 text-[#F84464] shrink-0" />
+                  <Film className="h-4 w-4 text-[#7B1E3D] shrink-0" />
                   <span className="text-sm font-medium text-gray-800 truncate">
                     {m.title}
                   </span>
@@ -561,7 +561,7 @@ export function Header() {
                   onClick={() => setMobileSearchOpen(false)}
                   className="flex items-center gap-3 p-2.5 hover:bg-gray-50"
                 >
-                  <Music className="h-4 w-4 text-[#F84464] shrink-0" />
+                  <Music className="h-4 w-4 text-[#7B1E3D] shrink-0" />
                   <span className="text-sm font-medium text-gray-800 truncate">
                     {e.title}
                   </span>

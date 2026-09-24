@@ -69,7 +69,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full pl-10 pr-4 py-3 text-sm text-slate-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#F84464] focus:border-[#F84464]"
+                className="w-full pl-10 pr-4 py-3 text-sm text-slate-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#7B1E3D] focus:border-[#7B1E3D]"
                 required
                 autoFocus
               />
@@ -95,7 +95,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                 placeholder="9876543210"
-                className="w-full pl-20 pr-4 py-3 text-sm text-slate-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#F84464] focus:border-[#F84464]"
+                className="w-full pl-20 pr-4 py-3 text-sm text-slate-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#7B1E3D] focus:border-[#7B1E3D]"
                 required
               />
             </div>
@@ -113,7 +113,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
           {/* Action Button */}
           <button
             type="submit"
-            className="w-full bg-[#F84464] hover:bg-[#e03c5a] text-white font-bold py-3.5 rounded-lg transition shadow-md text-sm mt-2"
+            className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3.5 rounded-lg transition shadow-md text-sm mt-2"
           >
             Continue to Payment
           </button>

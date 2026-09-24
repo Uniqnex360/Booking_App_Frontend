@@ -114,7 +114,7 @@ export function Footer() {
             <div className="w-full border-t border-[#444444]"></div>
           </div>
           <div className="relative bg-[#313035] px-6 flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F84464]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#7B1E3D]">
               <Wine className="h-5 w-5 text-white" strokeWidth={2} />
             </div>
             <span className="text-2xl font-bold tracking-wide text-white">Vyhbz</span>

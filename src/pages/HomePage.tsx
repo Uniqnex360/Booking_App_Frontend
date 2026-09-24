@@ -301,10 +301,10 @@ export default function HomePage() {
                   to={withCity(cat.link, city)}
                   className="group flex flex-col items-center gap-2"
                 >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 group-hover:bg-[#F84464]/10 transition-colors">
-                    <cat.icon className="h-6 w-6 text-gray-600 group-hover:text-[#F84464]" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 group-hover:bg-[#7B1E3D]/10 transition-colors">
+                    <cat.icon className="h-6 w-6 text-gray-600 group-hover:text-[#7B1E3D]" />
                   </div>
-                  <span className="font-medium text-gray-700 text-sm group-hover:text-[#F84464] transition-colors">
+                  <span className="font-medium text-gray-700 text-sm group-hover:text-[#7B1E3D] transition-colors">
                     {cat.title}
                   </span>
                 </Link>
@@ -321,7 +321,7 @@ export default function HomePage() {
             </h2>
             <Link
               to={withCity('/movies', city)}
-              className="text-sm font-semibold text-[#F84464] hover:underline flex items-center"
+              className="text-sm font-semibold text-[#7B1E3D] hover:underline flex items-center"
             >
               See All <ChevronRightIcon className="h-4 w-4 ml-0.5" />
             </Link>
@@ -382,7 +382,7 @@ export default function HomePage() {
             className="rounded-xl bg-[#2B314B] px-6 py-6 md:px-10 md:py-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-md cursor-pointer hover:shadow-lg transition"
           >
             <div className="flex items-center gap-4">
-              <div className="bg-[#F84464] w-12 h-12 rounded-full flex items-center justify-center shrink-0">
+              <div className="bg-[#7B1E3D] w-12 h-12 rounded-full flex items-center justify-center shrink-0">
                 <Film className="h-6 w-6 text-white ml-0.5" />
               </div>
               <div>
@@ -403,7 +403,7 @@ export default function HomePage() {
             <h2 className="text-2xl font-bold text-[#333333]">The Best Events</h2>
             <Link
               to={withCity('/events', city)}
-              className="text-sm font-semibold text-[#F84464] hover:underline flex items-center"
+              className="text-sm font-semibold text-[#7B1E3D] hover:underline flex items-center"
             >
               See All <ChevronRightIcon className="h-4 w-4 ml-0.5" />
             </Link>

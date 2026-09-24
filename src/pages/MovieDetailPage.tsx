@@ -205,7 +205,7 @@ export default function MovieDetailPage() {
               <div className="flex items-center gap-3 mt-8">
                 <button
                   onClick={() => setShowTicketModal(true)}
-                  className="bg-[#F84464] hover:bg-[#E8375A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#F84464]/20"
+                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/20"
                 >
                   Book tickets
                 </button>
@@ -264,10 +264,10 @@ export default function MovieDetailPage() {
                     {Array.from({ length: ticketCount }, (_, i) => (
                       <div
                         key={i}
-                        className="w-6 h-10 bg-[#F84464] rounded-t-full relative"
+                        className="w-6 h-10 bg-[#7B1E3D] rounded-t-full relative"
                         style={{
                           background:
-                            "linear-gradient(180deg, #F84464 0%, #C73854 100%)",
+                            "linear-gradient(180deg, #7B1E3D 0%, #5C0F2A 100%)",
                         }}
                       >
                         <div className="w-4 h-4 bg-[#FDBB9C] rounded-full absolute -top-3 left-1/2 -translate-x-1/2" />
@@ -285,7 +285,7 @@ export default function MovieDetailPage() {
                     onClick={() => setTicketCount(n)}
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border transition ${
                       ticketCount === n
-                        ? "bg-[#F84464] text-white border-[#F84464] shadow-lg shadow-[#F84464]/20"
+                        ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-lg shadow-[#7B1E3D]/20"
                         : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                     }`}
                   >
@@ -296,7 +296,7 @@ export default function MovieDetailPage() {
 
               <button
                 onClick={handleTicketConfirm}
-                className="w-full bg-[#F84464] hover:bg-[#E8375A] text-white font-bold rounded-lg py-3.5 mt-8 transition flex items-center justify-center gap-2 shadow-lg shadow-[#F84464]/20"
+                className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-lg py-3.5 mt-8 transition flex items-center justify-center gap-2 shadow-lg shadow-[#7B1E3D]/20"
               >
                 Select Showtimes
                 <ChevronRight className="h-5 w-5" />

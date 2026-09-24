@@ -280,8 +280,8 @@ export default function BuyTicketsPage() {
                       onClick={() => setSelectedDate(dk)}
                       className={`shrink-0 flex flex-col items-center justify-center min-w-[88px] py-3.5 px-4 border-b-[3px] transition-all ${
                         isActive
-                          ? "border-[#F84464] text-[#F84464]"
-                          : "border-transparent text-gray-700 hover:text-[#F84464]"
+                          ? "border-[#7B1E3D] text-[#7B1E3D]"
+                          : "border-transparent text-gray-700 hover:text-[#7B1E3D]"
                       }`}
                     >
                       <span className="text-[13px] font-semibold uppercase">
@@ -304,10 +304,10 @@ export default function BuyTicketsPage() {
           <div className="bg-white border-b border-gray-200">
             <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
               {/* Ticket Count Pill (BMS Style) */}
-              <div className="flex items-center gap-2 bg-[#F84464]/10 text-[#F84464] px-4 py-1.5 rounded-full border border-[#F84464]/20 text-xs font-semibold cursor-pointer group" onClick={() => { setTempTicketCount(ticketCount); setShowTicketModal(true); }}>
+              <div className="flex items-center gap-2 bg-[#7B1E3D]/10 text-[#7B1E3D] px-4 py-1.5 rounded-full border border-[#7B1E3D]/20 text-xs font-semibold cursor-pointer group" onClick={() => { setTempTicketCount(ticketCount); setShowTicketModal(true); }}>
                 <Users className="h-3.5 w-3.5" />
                 <span>{ticketCount} Tickets</span>
-                <span className="underline text-[10px] ml-1 group-hover:text-[#C73854]">
+                <span className="underline text-[10px] ml-1 group-hover:text-[#5C0F2A]">
                   Edit
                 </span>
               </div>
@@ -320,7 +320,7 @@ export default function BuyTicketsPage() {
                   onClick={() => toggleDropdown("langFormat")}
                   className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
                     langFormatFilter !== "all"
-                      ? "bg-[#F84464] text-white border-[#F84464]"
+                      ? "bg-[#7B1E3D] text-white border-[#7B1E3D]"
                       : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                   }`}
                 >
@@ -331,7 +331,7 @@ export default function BuyTicketsPage() {
                   <div className="absolute left-0 z-20 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[220px]">
                     <button
                       onClick={() => { setLangFormatFilter("all"); setOpenDropdown(null); }}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === "all" ? "text-[#F84464] font-medium" : "text-gray-700"}`}
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === "all" ? "text-[#7B1E3D] font-medium" : "text-gray-700"}`}
                     >
                       All Languages
                     </button>
@@ -339,7 +339,7 @@ export default function BuyTicketsPage() {
                       <button
                         key={opt}
                         onClick={() => { setLangFormatFilter(opt); setOpenDropdown(null); }}
-                        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === opt ? "text-[#F84464] font-medium" : "text-gray-700"}`}
+                        className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${langFormatFilter === opt ? "text-[#7B1E3D] font-medium" : "text-gray-700"}`}
                       >
                         {opt}
                       </button>
@@ -354,7 +354,7 @@ export default function BuyTicketsPage() {
                   onClick={() => toggleDropdown("time")}
                   className={`flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-full border transition ${
                     preferredTime !== "any"
-                      ? "bg-[#F84464] text-white border-[#F84464]"
+                      ? "bg-[#7B1E3D] text-white border-[#7B1E3D]"
                       : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                   }`}
                 >
@@ -375,7 +375,7 @@ export default function BuyTicketsPage() {
                         <button
                           key={key}
                           onClick={() => { setPreferredTime(key); setOpenDropdown(null); }}
-                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${preferredTime === key ? "text-[#F84464] font-medium" : "text-gray-700"}`}
+                          className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 ${preferredTime === key ? "text-[#7B1E3D] font-medium" : "text-gray-700"}`}
                         >
                           {labels[key]}
                         </button>
@@ -393,7 +393,7 @@ export default function BuyTicketsPage() {
                   placeholder="Search cinemas"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 pr-3 py-1.5 text-xs bg-white border border-gray-300 rounded-full w-56 focus:outline-none focus:border-[#F84464]"
+                  className="pl-9 pr-3 py-1.5 text-xs bg-white border border-gray-300 rounded-full w-56 focus:outline-none focus:border-[#7B1E3D]"
                 />
               </div>
             </div>
@@ -430,7 +430,7 @@ export default function BuyTicketsPage() {
                   <div key={venue.venue_id} className="bg-white rounded-lg px-5 py-5 flex items-start gap-6 border-b border-dashed border-gray-200">
                     <div className="w-[280px] shrink-0">
                       <div className="flex items-start gap-2">
-                        <Heart className="h-4 w-4 text-gray-300 hover:text-[#F84464] cursor-pointer transition mt-0.5 shrink-0" />
+                        <Heart className="h-4 w-4 text-gray-300 hover:text-[#7B1E3D] cursor-pointer transition mt-0.5 shrink-0" />
                         <div className="min-w-0">
                           <h3 className="text-[15px] font-medium text-gray-800 leading-snug">{venue.venue_name}</h3>
                         </div>
@@ -500,8 +500,8 @@ export default function BuyTicketsPage() {
                     {Array.from({ length: tempTicketCount }, (_, i) => (
                       <div
                         key={i}
-                        className="w-6 h-10 bg-[#F84464] rounded-t-full relative"
-                        style={{ background: "linear-gradient(180deg, #F84464 0%, #C73854 100%)" }}
+                        className="w-6 h-10 bg-[#7B1E3D] rounded-t-full relative"
+                        style={{ background: "linear-gradient(180deg, #7B1E3D 0%, #5C0F2A 100%)" }}
                       >
                         <div className="w-4 h-4 bg-[#FDBB9C] rounded-full absolute -top-3 left-1/2 -translate-x-1/2" />
                       </div>
@@ -517,7 +517,7 @@ export default function BuyTicketsPage() {
                     onClick={() => setTempTicketCount(n)}
                     className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border transition ${
                       tempTicketCount === n
-                        ? "bg-[#F84464] text-white border-[#F84464] shadow-lg shadow-[#F84464]/20"
+                        ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-lg shadow-[#7B1E3D]/20"
                         : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                     }`}
                   >
@@ -528,7 +528,7 @@ export default function BuyTicketsPage() {
 
               <button
                 onClick={handleTicketChangeConfirm}
-                className="w-full bg-[#F84464] hover:bg-[#E8375A] text-white font-bold rounded-lg py-3.5 mt-8 transition flex items-center justify-center"
+                className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-lg py-3.5 mt-8 transition flex items-center justify-center"
               >
                 Update Selection
               </button>

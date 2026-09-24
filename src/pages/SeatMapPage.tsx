@@ -366,13 +366,13 @@ export default function SeatMapPage() {
             {isStale && !isSourceUnavailable && (
               <button
                 onClick={fetchSeatMap}
-                className="text-[#F84464] bg-white/10 border border-white/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-white/20 transition"
+                className="text-[#7B1E3D] bg-white/10 border border-white/20 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-white/20 transition"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
               </button>
             )}
             {holdId && countdown > 0 && (
-              <div className="bg-[#F84464] text-white px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-lg animate-pulse">
+              <div className="bg-[#7B1E3D] text-white px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1 shadow-lg animate-pulse">
                 <Clock className="h-3.5 w-3.5" /> {Math.floor(countdown / 60)}:
                 {(countdown % 60).toString().padStart(2, "0")}
               </div>
@@ -384,7 +384,7 @@ export default function SeatMapPage() {
       <main className="flex-grow max-w-[1240px] w-full mx-auto px-4 py-8 flex flex-col items-center">
         {isSourceUnavailable ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200 rounded-2xl max-w-lg mx-auto text-center px-6 mt-8">
-            <AlertCircle className="h-12 w-12 text-[#F84464] mb-3" />
+            <AlertCircle className="h-12 w-12 text-[#7B1E3D] mb-3" />
             <h2 className="text-xl font-bold mb-2">
               Availability temporarily unavailable
             </h2>
@@ -393,7 +393,7 @@ export default function SeatMapPage() {
             </p>
             <button
               onClick={fetchSeatMap}
-              className="mt-6 bg-[#F84464] hover:bg-[#E8375A] text-white font-bold py-2.5 px-6 rounded-lg text-sm transition"
+              className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-2.5 px-6 rounded-lg text-sm transition"
             >
               Retry Connection
             </button>
@@ -539,7 +539,7 @@ export default function SeatMapPage() {
               disabled={isCommitLoading || !canProceed}
               className={`font-bold px-8 sm:px-12 py-3.5 rounded-md transition text-sm sm:text-base flex items-center gap-2 shrink-0 ${
                 canProceed && !isCommitLoading
-                  ? "bg-[#F84464] hover:bg-[#E8375A] text-white cursor-pointer shadow-lg shadow-[#F84464]/20"
+                  ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer shadow-lg shadow-[#7B1E3D]/20"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }`}
             >

@@ -184,7 +184,7 @@ export default function MoviesPage() {
                 placeholder="Search for Movies..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#F84464] focus:ring-1 focus:ring-[#F84464]/30"
+                className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#7B1E3D] focus:ring-1 focus:ring-[#7B1E3D]/30"
               />
               {search && (
                 <button
@@ -201,7 +201,7 @@ export default function MoviesPage() {
               <select
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
-                className="bg-white border border-gray-200 text-gray-700 font-medium rounded-lg py-2 pl-3 pr-8 text-xs sm:text-sm focus:outline-none focus:border-[#F84464] appearance-none cursor-pointer"
+                className="bg-white border border-gray-200 text-gray-700 font-medium rounded-lg py-2 pl-3 pr-8 text-xs sm:text-sm focus:outline-none focus:border-[#7B1E3D] appearance-none cursor-pointer"
               >
                 {SUPPORTED_CITIES.map((c) => (
                   <option key={c} value={c}>
@@ -217,10 +217,10 @@ export default function MoviesPage() {
               onClick={() => setIsMobileFilterOpen(true)}
               className="lg:hidden flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 shadow-sm"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-[#F84464]" />
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[#7B1E3D]" />
               Filters
               {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-[#F84464]" />
+                <span className="w-2 h-2 rounded-full bg-[#7B1E3D]" />
               )}
             </button>
           </div>
@@ -235,7 +235,7 @@ export default function MoviesPage() {
               {hasActiveFilters && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-xs text-[#F84464] font-medium flex items-center gap-1 hover:underline"
+                  className="text-xs text-[#7B1E3D] font-medium flex items-center gap-1 hover:underline"
                 >
                   <RotateCcw className="h-3 w-3" />
                   Clear All
@@ -251,14 +251,14 @@ export default function MoviesPage() {
               >
                 <span className="flex items-center gap-2">
                   <ChevronDown
-                    className={`h-4 w-4 text-[#F84464] transition-transform duration-200 ${
+                    className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
                       openSections.languages ? "rotate-0" : "-rotate-90"
                     }`}
                   />
                   Languages
                 </span>
                 {selectedLanguages.length > 0 && (
-                  <span className="text-[11px] font-bold text-[#F84464] bg-[#F84464]/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
                     {selectedLanguages.length}
                   </span>
                 )}
@@ -274,8 +274,8 @@ export default function MoviesPage() {
                         onClick={() => toggleLanguageFilter(lang)}
                         className={`text-xs px-3 py-1.5 rounded-md border transition ${
                           isSelected
-                            ? "bg-[#F84464] border-[#F84464] text-white font-medium"
-                            : "bg-white border-gray-200 text-gray-700 hover:border-[#F84464] hover:text-[#F84464]"
+                            ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                            : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                         }`}
                       >
                         {lang}
@@ -295,14 +295,14 @@ export default function MoviesPage() {
                 >
                   <span className="flex items-center gap-2">
                     <ChevronDown
-                      className={`h-4 w-4 text-[#F84464] transition-transform duration-200 ${
+                      className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
                         openSections.genres ? "rotate-0" : "-rotate-90"
                       }`}
                     />
                     Genres
                   </span>
                   {selectedGenres.length > 0 && (
-                    <span className="text-[11px] font-bold text-[#F84464] bg-[#F84464]/10 px-2 py-0.5 rounded-full">
+                    <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
                       {selectedGenres.length}
                     </span>
                   )}
@@ -318,8 +318,8 @@ export default function MoviesPage() {
                           onClick={() => toggleGenreFilter(g)}
                           className={`text-xs px-3 py-1.5 rounded-md border transition ${
                             isSelected
-                              ? "bg-[#F84464] border-[#F84464] text-white font-medium"
-                              : "bg-white border-gray-200 text-gray-700 hover:border-[#F84464] hover:text-[#F84464]"
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                              : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                           }`}
                         >
                           {g}
@@ -340,7 +340,7 @@ export default function MoviesPage() {
                 onClick={() => setSelectedLanguages([])}
                 className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
                   selectedLanguages.length === 0
-                    ? "bg-[#F84464] text-white"
+                    ? "bg-[#7B1E3D] text-white"
                     : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
                 }`}
               >
@@ -354,7 +354,7 @@ export default function MoviesPage() {
                     onClick={() => toggleLanguageFilter(lang)}
                     className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
                       isSelected
-                        ? "bg-[#F84464] text-white shadow-sm"
+                        ? "bg-[#7B1E3D] text-white shadow-sm"
                         : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -382,7 +382,7 @@ export default function MoviesPage() {
                 {hasActiveFilters && (
                   <button
                     onClick={clearAllFilters}
-                    className="mt-4 bg-[#F84464] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#d83552] transition"
+                    className="mt-4 bg-[#7B1E3D] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#d83552] transition"
                   >
                     Reset All Filters
                   </button>
@@ -413,7 +413,7 @@ export default function MoviesPage() {
                       {/* BMS Bottom Rating Bar Overlay */}
                       <div className="absolute bottom-0 inset-x-0 bg-black/80 px-2.5 py-1.5 flex items-center justify-between text-white text-[11px]">
                         <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 text-[#F84464] fill-[#F84464]" />
+                          <Star className="h-3 w-3 text-[#7B1E3D] fill-[#7B1E3D]" />
                           <span className="font-bold">
                             {movie.rating ? `${movie.rating}/10` : "8.5/10"}
                           </span>
@@ -429,7 +429,7 @@ export default function MoviesPage() {
                     {/* Movie Info */}
                     <div className="pt-2.5 flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-1 group-hover:text-[#F84464] transition leading-snug">
+                        <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-1 group-hover:text-[#7B1E3D] transition leading-snug">
                           {movie.title}
                         </h3>
                         <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
@@ -485,7 +485,7 @@ export default function MoviesPage() {
                         onClick={() => toggleLanguageFilter(lang)}
                         className={`text-xs px-3 py-1.5 rounded-md border ${
                           isSelected
-                            ? "bg-[#F84464] border-[#F84464] text-white"
+                            ? "bg-[#7B1E3D] border-[#7B1E3D] text-white"
                             : "bg-white border-gray-200 text-gray-700"
                         }`}
                       >
@@ -511,7 +511,7 @@ export default function MoviesPage() {
                           onClick={() => toggleGenreFilter(g)}
                           className={`text-xs px-3 py-1.5 rounded-md border ${
                             isSelected
-                              ? "bg-[#F84464] border-[#F84464] text-white"
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white"
                               : "bg-white border-gray-200 text-gray-700"
                           }`}
                         >
@@ -533,7 +533,7 @@ export default function MoviesPage() {
               </button>
               <button
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="flex-1 py-3 text-xs font-bold text-white bg-[#F84464] rounded-lg shadow-sm"
+                className="flex-1 py-3 text-xs font-bold text-white bg-[#7B1E3D] rounded-lg shadow-sm"
               >
                 Apply
               </button>
