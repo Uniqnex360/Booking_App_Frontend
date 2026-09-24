@@ -167,13 +167,13 @@ const MovieReviewsPage: React.FC = () => {
                         ))}
                       </div>
                       <div className="flex items-center justify-between text-gray-500 text-sm pt-4 border-t">
-                        <div className="flex items-center gap-4">
+                        {/* <div className="flex items-center gap-4">
                           <button className="flex items-center gap-1 hover:text-gray-800"><ThumbsUp size={16} /> 0</button>
                           <button className="flex items-center gap-1 hover:text-gray-800"><ThumbsDown size={16} /></button>
-                        </div>
+                        </div> */}
                         <div className="flex items-center gap-4">
                           <span>{new Date(review.created_at).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                          <button className="hover:text-gray-800"><Share2 size={16} /></button>
+                          {/* <button className="hover:text-gray-800"><Share2 size={16} /></button> */}
                         </div>
                       </div>
                     </div>
