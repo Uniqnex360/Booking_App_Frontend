@@ -580,7 +580,7 @@ export default function EventsPage() {
                           {/* Event Date Badge on Bottom Left */}
                           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2.5 pt-6">
                             <span className="text-white text-[12px] font-medium tracking-tight">
-                              {format(parseISO(event.starts_at), 'EEE, d MMM onwards')}
+                              {event.starts_at ? `${format(parseISO(event.starts_at), 'EEE, d MMM')} onwards` : ''}
                             </span>
                           </div>
                         </div>
