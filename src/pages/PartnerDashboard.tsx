@@ -20,7 +20,6 @@ import type { EventItem } from "@/types/event.types";
 
 import {
   Store,
-  Film,
   Phone,
   MapPin,
   Clock,
@@ -309,12 +308,11 @@ export default function PartnerDashboard() {
                 {partner?.contact_phone}
               </span>
               <span className="flex items-center gap-1">
-                <Store className="h-3.5 w-3.5 text-[#7B1E3D]" />{" "}
-                {
-                  partnerTypeMeta[partner?.partner_type || "event_organiser"]
-                    .label
-                }
-              </span>
+  <Store className="h-3.5 w-3.5 text-[#7B1E3D]" />{" "}
+  {partner?.partner_type
+    ? partnerTypeMeta[partner.partner_type]?.label ?? partner.partner_type
+    : "Partner"}
+</span>
             </div>
           </div>
           {partner?.status !== "APPROVED" ? (
