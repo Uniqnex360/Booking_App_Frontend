@@ -16,7 +16,6 @@ import {
   Search,
   MapPin,
   Calendar,
-  Clock,
   ArrowRight,
   Music,
   Mic,
@@ -29,7 +28,6 @@ import {
   Filter,
   X,
 } from 'lucide-react';
-import { formatCurrency } from '@/utils/currencyFormatter';
 import { getEvents } from '@/api/event.api';
 import type { EventItem, EventCategory } from '@/types/event.types';
 import {
