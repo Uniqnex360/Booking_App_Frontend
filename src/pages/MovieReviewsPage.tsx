@@ -5,6 +5,7 @@ import type { Movie, MovieReview } from '@/types/movie.types';
 import RatingModal from './RatingModal';
 import { getMovieById, getMovieReviews } from '@/api/movie.api';
 import { useAuth } from '@/hooks/useAuth';
+import { LoadingPage } from './LoadingPage';
 
 const MovieReviewsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -58,12 +59,8 @@ const MovieReviewsPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 pt-[104px] flex items-center justify-center">
-        <Loader2 className="animate-spin text-[#7B1E3D]" size={48} />
-      </div>
-    );
-  }
+  return <LoadingPage showFooter={false} />;
+}
 
   if (!movie) {
     return <div className="min-h-screen pt-[104px] text-center p-8">Movie not found.</div>;

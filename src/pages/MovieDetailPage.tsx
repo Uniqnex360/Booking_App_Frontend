@@ -30,6 +30,7 @@ import {
   getEmbedTrailerUrl,
 } from "@/utils/moviesHelper";
 import { useAuth } from "@/hooks/useAuth";
+import { LoadingPage } from "./LoadingPage";
 
 const MAX_TICKETS = 10;
 
@@ -116,16 +117,8 @@ export default function MovieDetailPage() {
     );
   }, [movie]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <Header />
-        <div className="flex-grow flex justify-center items-center py-20">
-          <Loader />
-        </div>
-        <Footer />
-      </div>
-    );
+   if (loading) {
+     return <LoadingPage showFooter={false} />;
   }
 
   if (!movie) {

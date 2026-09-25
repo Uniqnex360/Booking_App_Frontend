@@ -57,6 +57,7 @@ import {
   Settings,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingPage } from "./LoadingPage";
 
 const profileSchema = z.object({
   bio: z
@@ -321,14 +322,7 @@ export default function EditProfilePage() {
   // --- Render ---
 
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <Header />
-        <div className="flex justify-center py-20">
-          <Loader className="h-8 w-8" />
-        </div>
-      </div>
-    );
+    return <LoadingPage showFooter={false} />;
   }
 
   const initials = (user?.full_name || user?.email || "U")

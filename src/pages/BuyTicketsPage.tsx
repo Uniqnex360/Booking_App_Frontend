@@ -15,6 +15,7 @@ import {
   Info
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
+import { LoadingPage } from "./LoadingPage";
 
 // --- Interfaces & Utility functions ---
 interface ShowtimeSlot {
@@ -166,16 +167,9 @@ export default function BuyTicketsPage() {
     return Array.from(set).sort();
   }, [venuesInCity, activeDate, now]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
-        <Header />
-        <div className="flex-grow flex justify-center items-center py-20">
-          <Loader />
-        </div>
-      </div>
-    );
-  }
+if (loading) {
+  return <LoadingPage showFooter={false} />;
+}
 
   if (!movie) {
     return (

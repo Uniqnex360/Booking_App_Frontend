@@ -57,6 +57,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { LoadingPage } from './LoadingPage';
 
 const partnerTypeMeta: Record<
   PartnerType,
@@ -224,17 +225,9 @@ useEffect(() => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-        <Header />
-        <div className="flex-grow flex items-center justify-center">
-          <Loader />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+ if (loading) {
+  return <LoadingPage showFooter={false} />;
+}
 
   const now = new Date();
   const activeEvents = events.filter((e) => e.status === 'PUBLISHED' && new Date(e.ends_at) >= now);

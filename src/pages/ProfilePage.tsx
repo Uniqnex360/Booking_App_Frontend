@@ -34,6 +34,7 @@ import {
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { formatDate, isUpcoming } from "@/utils/dateFormatter";
 import { toast } from "sonner";
+import { LoadingPage } from "./LoadingPage";
 
 type Tab = "profile" | "orders" | "saved";
 
@@ -133,14 +134,7 @@ export default function ProfilePage() {
   }, [user]);
 
   if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-[#F5F5FA]">
-        <Header />
-        <div className="flex justify-center py-40">
-          <Loader className="h-8 w-8" />
-        </div>
-      </div>
-    );
+     return <LoadingPage showFooter={false} />;
   }
 
   const upcoming = bookings.filter(

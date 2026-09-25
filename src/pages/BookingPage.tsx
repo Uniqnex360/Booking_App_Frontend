@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { formatRupees } from '@/utils/currencyFormatter';
 import { toast } from 'sonner';
+import { LoadingPage } from './LoadingPage';
 
 function loadScript(src: string): Promise<boolean> {
   return new Promise((resolve) => {
@@ -183,16 +184,8 @@ export default function BookingPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
-        <Header />
-        <div className="flex-grow flex items-center justify-center">
-          <Loader />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  return <LoadingPage showFooter={true} />;
+}
 
   if (success) {
     return (

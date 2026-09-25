@@ -4,6 +4,7 @@ import { Event } from '@/types/api.types';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Check, X, Eye, AlertCircle } from 'lucide-react';
+import { LoadingPage } from '../LoadingPage';
 
 export default function ContentModeration() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -40,7 +41,9 @@ export default function ContentModeration() {
     }
   };
 
-  if (loading) return <div className="p-10 text-center">Loading submissions...</div>;
+  if (loading) {
+  return <LoadingPage showFooter={false} />;
+}
 
   return (
     <div className="p-8 max-w-7xl mx-auto">

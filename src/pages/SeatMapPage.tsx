@@ -8,6 +8,7 @@ import { formatRupees } from "@/utils/currencyFormatter";
 import { ArrowLeft, RefreshCw, AlertCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import AuthModal from "./AuthModal";
+import { LoadingPage } from "./LoadingPage";
 
 interface SeatItem {
   seat_ref: string;
@@ -101,17 +102,9 @@ export default function SeatMapPage() {
     return () => clearInterval(interval);
   }, [heldUntil]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white text-slate-900 flex flex-col">
-        <Header />
-        <div className="flex-grow flex items-center justify-center">
-          <Loader />
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+if (loading) {
+  return <LoadingPage showFooter={true} />;
+}
 
   const isSourceUnavailable =
     mapData?.code === "SOURCE_UNAVAILABLE" || !mapData;
