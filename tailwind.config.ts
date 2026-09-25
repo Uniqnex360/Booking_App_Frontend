@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ['Cormorant Garamond', 'Georgia', 'serif'],
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        serif: ['Roboto', 'sans-serif'],
+        sans: ['Roboto', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -24,6 +24,12 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        'primary-wine': {
+          DEFAULT: 'var(--primary-wine, #7B1E3D)',
+          hover: 'var(--primary-wine-hover, #5C0F2A)',
+          light: 'var(--primary-wine-light, #FDF2F4)',
+          muted: 'var(--primary-wine-muted, #A33A5C)',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
