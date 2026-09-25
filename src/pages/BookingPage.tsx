@@ -1,376 +1,301 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Loader } from '@/components/common/Loader';
 import { useAuth } from '@/hooks/useAuth';
 import { api, unwrap } from '@/api/client';
 import {
   Calendar,
+  Clock,
+  Hourglass,
   Users,
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  CheckCircle2,
+  Languages,
+  Tag,
   MapPin,
-  ShieldCheck,
-  AlertCircle,
+  Share2,
+  ThumbsUp,
+  ArrowRight,
+  ExternalLink,
 } from 'lucide-react';
-import { formatRupees } from '@/utils/currencyFormatter';
+import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { LoadingPage } from './LoadingPage';
 
-function loadScript(src: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const existing = document.querySelector(`script[src="${src}"]`);
-    if (existing) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = src;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-}
+const categoryLabels: Record<string, string> = {
+  concert: 'Music Shows',
+  comedy: 'Comedy Shows',
+  sports: 'Sports',
+  workshop: 'Workshops',
+  theatre: 'Performances',
+  exhibition: 'Exhibitions',
+  other: 'Events',
+};
 
 export default function BookingPage() {
   const { type, id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [itemData, setItemData] = useState<any>(null);
-  const [guests, setGuests] = useState(1);
-  const [date, setDate] = useState('');
+  const [eventData, setEventData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  const [interestedCount, setInterestedCount] = useState(16);
+  const [isInterested, setIsInterested] = useState(false);
 
   useEffect(() => {
-    const fetchDetails = async () => {
+    const fetchEventDetails = async () => {
       setLoading(true);
       try {
         if (type?.toLowerCase() === 'event') {
           const res = await unwrap<any>(api.get(`/events/${id}`));
-          const tier = res.ticket_categories?.[0];
-          const maxAllowed = tier?.max_per_booking || 6;
-          setItemData({
-            event_id: res.id,
-            tier_id: tier?.id,
-            title: res.title,
-            venue: res.venue_name,
-            location: res.city,
-            price_paise: tier?.price_paise || 50000,
-            max_per_booking: maxAllowed,
-            image: res.poster_image_url || 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop&q=80',
-          });
-          setDate(res.starts_at?.split('T')[0] || '');
-          setGuests(Math.min(2, maxAllowed));
-        } else if (type?.toLowerCase() === 'restaurant') {
-          const res = await unwrap<any>(api.get(`/restaurants/${id}`).catch(() => null));
-          setItemData({
-            title: res?.name || 'Gourmet Table Reservation',
-            venue: res?.name || 'Exclusive Dining',
-            location: res?.city || 'Kochi',
-            price_paise: 25000,
-            max_per_booking: 10,
-            image: res?.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80',
-          });
-          setGuests(2);
+          setEventData(res);
         }
       } catch {
-        setItemData({
-          title: 'Experience Booking',
-          venue: 'Vyhbz Venue',
-          location: 'Kochi',
-          price_paise: 50000,
-          max_per_booking: 6,
-          image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800&auto=format&fit=crop&q=80',
-        });
+        toast.error('Failed to load event details');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDetails();
+    fetchEventDetails();
   }, [type, id]);
 
-  const maxAllowedGuests = itemData?.max_per_booking || 6;
-  const pricePaisePerPerson = itemData?.price_paise || 50000;
-  const totalPricePaise = pricePaisePerPerson * guests;
-
-  const startRazorpayPayment = async () => {
-    const isLoaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
-    if (!isLoaded) {
-      toast.error('Failed to load payment gateway. Please retry.');
-      setIsProcessing(false);
+  const handleBookNow = () => {
+    if (!user) {
+      toast.error('Please login to book tickets');
+      navigate('/login', { state: { from: `/booking/event/${id}` } });
       return;
     }
-
-    const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_VyBhZExTMTk5';
-
-    const options = {
-      key: rzpKey,
-      amount: totalPricePaise,
-      currency: 'INR',
-      name: 'Vyhbz Experiences',
-      description: `${itemData?.title || 'Experience'} (${guests} Tickets)`,
-      handler: async function (response: any) {
-        toast.info('Payment verified! Confirming booking...');
-        try {
-          if (type?.toLowerCase() === 'event' && itemData?.tier_id) {
-            await unwrap<any>(api.post('/bookings', {
-              event_id: itemData.event_id || id,
-              tier_id: itemData.tier_id,
-              quantity: guests,
-              idempotency_key: idempotencyKeyRef.current,
-            }));
-          }
-          setSuccess(true);
-          setTimeout(() => navigate('/profile'), 2000);
-        } catch (err: any) {
-          toast.error(err.message || 'Booking confirmation failed.');
-        } finally {
-          setIsProcessing(false);
-        }
-      },
-      prefill: {
-        name: user?.full_name || 'Customer',
-        email: user?.email || 'customer@vybhz.com',
-        contact: user?.phone || '9999999999',
-      },
-      theme: {
-        color: '#7B1E3D',
-      },
-      modal: {
-        ondismiss: function () {
-          toast.warning('Payment canceled.');
-          setIsProcessing(false);
-        },
-      },
-    };
-
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
+    navigate(`/buytickets/${id}`);
   };
 
-  const handleBooking = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    // Pre-payment validation
-    if (guests > maxAllowedGuests) {
-      const msg = `Maximum ${maxAllowedGuests} tickets allowed per booking.`;
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      await startRazorpayPayment();
-    } catch {
-      setError('Checkout failed. Please try again.');
-      setIsProcessing(false);
-    }
+  const handleInterested = () => {
+    setIsInterested(!isInterested);
+    setInterestedCount((prev) => (isInterested ? prev - 1 : prev + 1));
   };
 
   if (loading) {
-  return <LoadingPage showFooter={true} />;
-}
+    return <LoadingPage showFooter={true} />;
+  }
 
-  if (success) {
+  if (!eventData) {
     return (
-      <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col">
+      <div className="min-h-screen bg-white">
         <Header />
-        <div className="flex flex-grow items-center justify-center px-4">
-          <div className="text-center bg-white border border-slate-200 p-8 rounded-2xl max-w-md w-full shadow-2xl">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-              <CheckCircle2 className="h-10 w-10" />
-            </div>
-            <h1 className="text-2xl font-black">Booking Confirmed!</h1>
-            <p className="mt-2 text-sm text-slate-500">
-              Your reservation for <strong className="text-slate-900">{itemData?.title}</strong> has been secured.
-            </p>
-            <p className="mt-4 text-xs text-[#7B1E3D] font-semibold">
-              Redirecting to your profile...
-            </p>
-          </div>
+        <div className="flex items-center justify-center py-20">
+          <p className="text-gray-500">Event not found</p>
         </div>
         <Footer />
       </div>
     );
   }
 
+  const eventDate = parseISO(eventData.starts_at);
+  const minPrice = eventData.ticket_categories?.length
+    ? Math.min(...eventData.ticket_categories.map((t: any) => t.price_paise))
+    : 0;
+
+  const tags = [
+    categoryLabels[eventData.category] || 'Event',
+    'Live Performance',
+    eventData.city,
+  ].filter(Boolean);
+
   return (
-    <div className="min-h-screen bg-neutral-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-white">
       <Header />
 
-      <main className="flex-grow max-w-4xl w-full mx-auto px-4 pt-24 pb-12 sm:px-6 lg:px-8">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back
-        </Link>
+      <main className="mx-auto max-w-[1240px] px-4 pt-6 pb-16">
+        {/* Event Title */}
+        <div className="mb-6 flex items-start justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">
+            {eventData.title.toUpperCase()}
+          </h1>
+          <button className="p-2 hover:bg-gray-100 rounded-full transition">
+            <Share2 className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
 
-        <h1 className="mt-4 text-3xl md:text-4xl font-black tracking-tight">
-          Complete your booking
-        </h1>
-
-        {error && (
-          <div className="mt-6 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        <div className="mt-8 grid gap-8 lg:grid-cols-2 items-start">
-          {/* Summary Card */}
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-soft">
-            <div className="relative aspect-[16/9] overflow-hidden bg-neutral-100">
-              <img
-                src={itemData?.image}
-                alt={itemData?.title}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="p-6">
-              <h2 className="text-2xl font-bold">
-                {itemData?.title}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {itemData?.venue}
-              </p>
-              <div className="mt-3 flex items-center gap-3 text-xs text-slate-500">
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-[#7B1E3D]" />
-                  {itemData?.location}
-                </span>
-              </div>
-
-              <div className="mt-6 space-y-3 border-t border-slate-200 pt-4">
-                <div className="flex justify-between text-sm text-slate-500">
-                  <span>Price per ticket</span>
-                  <span className="font-bold text-slate-900">{formatRupees(pricePaisePerPerson)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-slate-500">
-                  <span>Quantity</span>
-                  <span className="font-bold text-slate-900">{guests} {guests === 1 ? 'ticket' : 'tickets'}</span>
-                </div>
-                <div className="flex justify-between border-t border-slate-200 pt-3 items-center">
-                  <span className="text-base font-bold text-slate-700">Total</span>
-                  <span className="text-2xl font-black text-[#7B1E3D]">
-                    {formatRupees(totalPricePaise)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleBooking} className="space-y-5 bg-white border border-slate-200 p-6 rounded-2xl">
-            <div className="space-y-2">
-              <Label htmlFor="date" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                <Calendar className="mr-1 inline h-4 w-4 text-[#7B1E3D]" /> Event Date
-              </Label>
-              <Input
-                id="date"
-                type="date"
-                required
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-11 rounded-xl bg-neutral-50 border-slate-200 text-slate-900"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="guests" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  <Users className="mr-1 inline h-4 w-4 text-[#7B1E3D]" /> Number of Tickets
-                </Label>
-                <span className="text-[11px] font-semibold text-[#7B1E3D]">
-                  Max: {maxAllowedGuests} per booking
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disabled={guests <= 1}
-                  className="h-11 w-11 rounded-xl bg-neutral-50 border-slate-200 text-slate-900 hover:bg-neutral-100 disabled:opacity-40"
-                  onClick={() => setGuests((g) => Math.max(1, g - 1))}
-                >
-                  -
-                </Button>
-                <Input
-                  id="guests"
-                  type="number"
-                  min={1}
-                  max={maxAllowedGuests}
-                  value={guests}
-                  onChange={(e) => {
-                    const val = Number(e.target.value) || 1;
-                    setGuests(Math.min(maxAllowedGuests, Math.max(1, val)));
-                  }}
-                  className="h-11 rounded-xl text-center bg-neutral-50 border-slate-200 text-slate-900 font-bold"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disabled={guests >= maxAllowedGuests}
-                  className="h-11 w-11 rounded-xl bg-neutral-50 border-slate-200 text-slate-900 hover:bg-neutral-100 disabled:opacity-40"
-                  onClick={() => setGuests((g) => Math.min(maxAllowedGuests, g + 1))}
-                >
-                  +
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Contact Details</Label>
-              <div className="rounded-xl border border-slate-200 bg-neutral-50 p-4 text-sm">
-                <p className="font-bold text-slate-900">
-                  {user?.full_name || 'Customer'}
-                </p>
-                <p className="text-slate-500 text-xs mt-0.5">{user?.email}</p>
-                {user?.phone && (
-                  <p className="text-slate-500 text-xs mt-0.5">{user.phone}</p>
+        <div className="grid gap-8 lg:grid-cols-3">
+          {/* Left Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Event Banner */}
+            <div className="relative overflow-hidden rounded-xl bg-gray-100">
+              <div className="aspect-[16/9] overflow-hidden">
+                {eventData.poster_image_url ? (
+                  <img
+                    src={eventData.poster_image_url}
+                    alt={eventData.title}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                    <span className="text-gray-400">No Image</span>
+                  </div>
                 )}
               </div>
             </div>
 
-            <Button
-              type="submit"
-              disabled={isProcessing}
-              className="h-12 w-full rounded-xl bg-[#7B1E3D] hover:bg-[#5C0F2A] text-black text-base font-extrabold shadow-lg transition-all"
-            >
-              {isProcessing ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  Pay {formatRupees(totalPricePaise)}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
-
-            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 pt-2">
-              <ShieldCheck className="h-4 w-4 text-emerald-500" />
-              Secured by Razorpay Sandbox
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag, i) => (
+                <Badge
+                  key={i}
+                  className="bg-[#333338] text-white text-xs font-medium px-3 py-1.5 rounded"
+                >
+                  {tag}
+                </Badge>
+              ))}
             </div>
-          </form>
+
+            {/* Interest Section */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <ThumbsUp className="h-5 w-5 text-green-600" />
+                <span className="text-sm text-gray-700">
+                  <strong>{interestedCount}</strong> are interested
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleInterested}
+                className={`rounded-full border-[#E91E63] text-sm px-4 py-2 ${
+                  isInterested
+                    ? 'bg-[#E91E63] text-white hover:bg-[#C2185B]'
+                    : 'text-[#E91E63] hover:bg-[#E91E63]/10'
+                }`}
+              >
+                {isInterested ? "I'm Interested" : "I'm Interested"}
+              </Button>
+            </div>
+
+            {/* About Section */}
+            <div className="space-y-3">
+              <h2 className="text-2xl font-bold text-gray-900">
+                About The Event
+              </h2>
+              <div className="text-gray-700 leading-relaxed">
+                {eventData.description ? (
+                  <p className="whitespace-pre-line">{eventData.description}</p>
+                ) : (
+                  <p>
+                    {eventData.title} - A {categoryLabels[eventData.category] || 'special'} experience in {eventData.city}.
+                    Join us for an unforgettable event at {eventData.venue_name}.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            {eventData.venue_address && (
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Venue Details
+                </h2>
+                <div className="flex items-start gap-2 text-gray-700">
+                  <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div>
+                    <p className="font-medium">{eventData.venue_name}</p>
+                    <p className="text-sm">{eventData.venue_address}</p>
+                    <p className="text-sm">{eventData.city}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Booking Card */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-[120px] rounded-xl border border-gray-200 p-5 shadow-sm">
+              {/* Date & Time Info */}
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Calendar className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm">
+                    {format(eventDate, 'EEE d MMM yyyy')}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Clock className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm">
+                    {format(eventDate, 'h:mm a')}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Hourglass className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm">2 Hours</span>
+                </div>
+
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Users className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm">All age groups</span>
+                </div>
+
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Languages className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm">
+                    {eventData.language || 'English'}
+                  </span>
+                </div>
+
+                {eventData.category && (
+                  <div className="flex items-start gap-3 text-gray-700">
+                    <Tag className="h-5 w-5 text-gray-500 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="leading-relaxed">
+                        {categoryLabels[eventData.category]}, Live Music, 
+                        Contemporary, Folk, Regional
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3 text-gray-700">
+                  <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div className="text-sm flex items-center gap-1">
+                    <span>{eventData.venue_name}</span>
+                    <ExternalLink className="h-3 w-3 text-blue-500" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Price & Book Button */}
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-lg font-bold text-gray-900">
+                      ₹{Math.round(minPrice / 100)}
+                    </p>
+                    <p className="text-xs text-green-600 font-medium">
+                      Available
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleBookNow}
+                    className="bg-[#E91E63] hover:bg-[#C2185B] text-white font-semibold px-6 py-3 rounded-lg text-sm"
+                  >
+                    Book Now
+                  </Button>
+                </div>
+
+                {/* Additional Info */}
+                <div className="space-y-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                    <span>Instant confirmation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                    <span>e-Ticket on email & SMS</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
