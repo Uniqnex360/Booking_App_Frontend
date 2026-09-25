@@ -176,10 +176,10 @@ export default function BecomePartnerPage() {
           <div className="mx-auto mb-4  flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
             <Sparkles className="h-8 w-8 text-slate-900" />
           </div>
-          <h1 className="font-serif text-4xl font-semibold text-slate-900 sm:text-5xl">
+          <h1 className="font-serif text-4xl font-semibold text-white-900 sm:text-5xl">
             Become a Partner
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-black-100/70">
+          <p className="mx-auto mt-3 max-w-xl text-white-100/70">
             Join Vyhbz App and reach thousands of guests. List your business,
             manage bookings, and grow with us.
           </p>
