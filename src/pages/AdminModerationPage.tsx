@@ -116,7 +116,8 @@ export default function AdminModerationPage() {
 
       {/* Header */}
       <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 pt-32 pb-8 sm:px-6 lg:px-8">
+
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
               <ShieldCheck className="h-6 w-6 text-[#7B1E3D]" />
@@ -133,7 +134,8 @@ export default function AdminModerationPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 pt-32 pb-8 sm:px-6 lg:px-8">
+
         {/* Admin Navigation Tabs */}
         <div className="flex border-b border-slate-200/60 gap-4 mb-6">
           <a
