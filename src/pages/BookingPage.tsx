@@ -60,7 +60,15 @@ export default function BookingPage() {
     fetchEventDetails();
   }, [type, id]);
 
+  const isEventEnded = Boolean(
+    eventData?.ends_at && new Date(eventData.ends_at) < new Date()
+  );
+
   const handleBookNow = () => {
+    if (isEventEnded) {
+      toast.error('This event has already ended and cannot be booked.');
+      return;
+    }
     if (!user) {
       toast.error('Please login to book tickets');
       navigate('/login', { state: { from: `/booking/event/${id}` } });
@@ -169,10 +177,10 @@ export default function BookingPage() {
               <Button
                 variant="outline"
                 onClick={handleInterested}
-                className={`rounded-full border-[#E91E63] text-sm px-4 py-2 ${
+                className={`rounded-full border-[#7B1E3D] text-sm px-4 py-2 ${
                   isInterested
-                    ? 'bg-[#E91E63] text-white hover:bg-[#C2185B]'
-                    : 'text-[#E91E63] hover:bg-[#E91E63]/10'
+                    ? 'bg-[#7B1E3D] text-white hover:bg-[#5C0F2A]'
+                    : 'text-[#7B1E3D] hover:bg-[#7B1E3D]/10'
                 }`}
               >
                 I'm Interested
@@ -283,16 +291,31 @@ export default function BookingPage() {
                     <p className="text-lg font-bold text-gray-900">
                       ₹{Math.round(minPrice / 100)}
                     </p>
-                    <p className="text-xs text-green-600 font-medium">
-                      Available
-                    </p>
+                    {isEventEnded ? (
+                      <p className="text-xs text-rose-700 font-semibold">
+                        Event Concluded
+                      </p>
+                    ) : (
+                      <p className="text-xs text-green-600 font-medium">
+                        Available
+                      </p>
+                    )}
                   </div>
-                  <Button
-                    onClick={handleBookNow}
-                    className="bg-[#E91E63] hover:bg-[#C2185B] text-white font-semibold px-6 py-3 rounded-lg text-sm"
-                  >
-                    Book Now
-                  </Button>
+                  {isEventEnded ? (
+                    <Button
+                      disabled
+                      className="bg-slate-200 text-slate-500 cursor-not-allowed font-semibold px-6 py-3 rounded-lg text-sm"
+                    >
+                      Event Ended
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleBookNow}
+                      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors"
+                    >
+                      Book Now
+                    </Button>
+                  )}
                 </div>
 
                 {/* Additional Info */}

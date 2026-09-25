@@ -554,10 +554,12 @@ export default function EventsPage() {
                         ? Math.min(...event.ticket_categories.map((t) => t.price_paise / 100))
                         : null;
 
+                    const isEnded = Boolean(event.ends_at && new Date(event.ends_at) < new Date());
+
                     return (
                       <div
                         key={event.id}
-                        onClick={() => navigate(`/events/${event.id}`)}
+                        onClick={() => navigate(`/booking/event/${event.id}`)}
                         className="cursor-pointer group flex flex-col"
                       >
                         {/* Event Poster Card */}
@@ -566,7 +568,9 @@ export default function EventsPage() {
                             <img
                               src={event.poster_image_url}
                               alt={event.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+                                isEnded ? 'grayscale-[40%]' : ''
+                              }`}
                             />
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
@@ -574,6 +578,12 @@ export default function EventsPage() {
                               <span className="text-[11px] font-medium tracking-tight leading-tight">
                                 No Poster Available
                               </span>
+                            </div>
+                          )}
+
+                          {isEnded && (
+                            <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow">
+                              Ended
                             </div>
                           )}
 
