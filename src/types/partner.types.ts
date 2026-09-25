@@ -1,6 +1,6 @@
 import { PaginationMeta } from ".";
 
-export type PartnerType = 'restaurant' | 'cinema' | 'event_organiser';
+export type PartnerType = 'restaurant'  | 'event_organiser';
 export type PartnerStatus =
   | 'PENDING_APPROVAL'
   | 'APPROVED'

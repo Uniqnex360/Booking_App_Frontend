@@ -40,7 +40,7 @@ const partnerSchema = z.object({
   business_name: z
     .string()
     .min(2, 'Business name must be at least 2 characters'),
-  partner_type: z.enum(['restaurant', 'cinema', 'event_organiser'], {
+  partner_type: z.enum(['restaurant', 'event_organiser'], {
     errorMap: () => ({ message: 'Please select a partner type' }),
   }),
   contact_name: z
@@ -62,7 +62,6 @@ const partnerTypeMeta: Record<
   { label: string; icon: typeof Store; desc: string }
 > = {
   restaurant: { label: 'Restaurant', icon: Store, desc: 'List your dining venue' },
-  cinema: { label: 'Cinema', icon: Film, desc: 'Screen movies & shows' },
   event_organiser: {
     label: 'Event Organizer',
     icon: CalendarDays,

@@ -61,7 +61,6 @@ const partnerTypeMeta: Record<
   { label: string; icon: typeof Store }
 > = {
   restaurant: { label: 'Restaurant', icon: Store },
-  cinema: { label: 'Cinema', icon: Film },
   event_organiser: { label: 'Event Organizer', icon: CalendarDays },
 };
 
@@ -245,7 +244,6 @@ export default function AdminPartnersPage() {
                 <SelectContent>
                   <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="restaurant">Restaurant</SelectItem>
-                  <SelectItem value="cinema">Cinema</SelectItem>
                   <SelectItem value="event_organiser">
                     Event Organizer
                   </SelectItem>
