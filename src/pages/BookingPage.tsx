@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader } from '@/components/common/Loader';
 import { useAuth } from '@/hooks/useAuth';
 import { api, unwrap } from '@/api/client';
 import {
@@ -17,10 +16,9 @@ import {
   MapPin,
   Share2,
   ThumbsUp,
-  ArrowRight,
   ExternalLink,
 } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInHours, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
 import { LoadingPage } from './LoadingPage';
 
@@ -76,6 +74,20 @@ export default function BookingPage() {
     setInterestedCount((prev) => (isInterested ? prev - 1 : prev + 1));
   };
 
+  // Calculate duration dynamically
+  const getDuration = () => {
+    if (!eventData?.starts_at || !eventData?.ends_at) return null;
+    const start = parseISO(eventData.starts_at);
+    const end = parseISO(eventData.ends_at);
+    const hours = differenceInHours(end, start);
+    const minutes = differenceInMinutes(end, start) % 60;
+    
+    if (hours > 0 && minutes > 0) return `${hours} Hours ${minutes} Mins`;
+    if (hours > 0) return `${hours} Hours`;
+    if (minutes > 0) return `${minutes} Mins`;
+    return null;
+  };
+
   if (loading) {
     return <LoadingPage showFooter={true} />;
   }
@@ -97,17 +109,15 @@ export default function BookingPage() {
     ? Math.min(...eventData.ticket_categories.map((t: any) => t.price_paise))
     : 0;
 
-  const tags = [
-    categoryLabels[eventData.category] || 'Event',
-    'Live Performance',
-    eventData.city,
-  ].filter(Boolean);
+  const duration = getDuration();
+  const categoryLabel = categoryLabels[eventData.category] || 'Event';
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
-  <main className="mx-auto max-w-[1240px] px-4 pt-28 lg:pt-[136px] pb-16">
+      {/* pt-32 to clear fixed header */}
+      <main className="mx-auto max-w-[1240px] px-4 pt-32 pb-16">
         {/* Event Title */}
         <div className="mb-6 flex items-start justify-between">
           <h1 className="text-3xl font-bold text-gray-900">
@@ -140,14 +150,12 @@ export default function BookingPage() {
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag, i) => (
-                <Badge
-                  key={i}
-                  className="bg-[#333338] text-white text-xs font-medium px-3 py-1.5 rounded"
-                >
-                  {tag}
-                </Badge>
-              ))}
+              <Badge className="bg-[#333338] text-white text-xs font-medium px-3 py-1.5 rounded">
+                {categoryLabel}
+              </Badge>
+              <Badge className="bg-[#333338] text-white text-xs font-medium px-3 py-1.5 rounded">
+                {eventData.city}
+              </Badge>
             </div>
 
             {/* Interest Section */}
@@ -167,7 +175,7 @@ export default function BookingPage() {
                     : 'text-[#E91E63] hover:bg-[#E91E63]/10'
                 }`}
               >
-                {isInterested ? "I'm Interested" : "I'm Interested"}
+                I'm Interested
               </Button>
             </div>
 
@@ -180,15 +188,12 @@ export default function BookingPage() {
                 {eventData.description ? (
                   <p className="whitespace-pre-line">{eventData.description}</p>
                 ) : (
-                  <p>
-                    {eventData.title} - A {categoryLabels[eventData.category] || 'special'} experience in {eventData.city}.
-                    Join us for an unforgettable event at {eventData.venue_name}.
-                  </p>
+                  <p className="text-gray-500">No description available.</p>
                 )}
               </div>
             </div>
 
-            {/* Additional Info */}
+            {/* Venue Details (Only if address exists) */}
             {eventData.venue_address && (
               <div className="space-y-3">
                 <h2 className="text-2xl font-bold text-gray-900">
@@ -208,9 +213,10 @@ export default function BookingPage() {
 
           {/* Right Booking Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-[120px] rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="sticky top-[136px] rounded-xl border border-gray-200 p-5 shadow-sm">
               {/* Date & Time Info */}
               <div className="space-y-4 mb-6">
+                {/* Date */}
                 <div className="flex items-center gap-3 text-gray-700">
                   <Calendar className="h-5 w-5 text-gray-500" />
                   <span className="text-sm">
@@ -218,6 +224,7 @@ export default function BookingPage() {
                   </span>
                 </div>
 
+                {/* Time */}
                 <div className="flex items-center gap-3 text-gray-700">
                   <Clock className="h-5 w-5 text-gray-500" />
                   <span className="text-sm">
@@ -225,35 +232,41 @@ export default function BookingPage() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3 text-gray-700">
-                  <Hourglass className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm">2 Hours</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-gray-700">
-                  <Users className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm">All age groups</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-gray-700">
-                  <Languages className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm">
-                    {eventData.language || 'English'}
-                  </span>
-                </div>
-
-                {eventData.category && (
-                  <div className="flex items-start gap-3 text-gray-700">
-                    <Tag className="h-5 w-5 text-gray-500 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="leading-relaxed">
-                        {categoryLabels[eventData.category]}, Live Music, 
-                        Contemporary, Folk, Regional
-                      </p>
-                    </div>
+                {/* Duration (Dynamic) */}
+                {duration && (
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <Hourglass className="h-5 w-5 text-gray-500" />
+                    <span className="text-sm">{duration}</span>
                   </div>
                 )}
 
+                {/* Age Restriction (Dynamic) */}
+                <div className="flex items-center gap-3 text-gray-700">
+                  <Users className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm">
+                    {eventData.certificate || 'All age groups'}
+                  </span>
+                </div>
+
+                {/* Language (Dynamic) */}
+                {eventData.language && (
+                  <div className="flex items-center gap-3 text-gray-700">
+                    <Languages className="h-5 w-5 text-gray-500" />
+                    <span className="text-sm">{eventData.language}</span>
+                  </div>
+                )}
+
+                {/* Category/Genres (Dynamic) */}
+                <div className="flex items-start gap-3 text-gray-700">
+                  <Tag className="h-5 w-5 text-gray-500 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="leading-relaxed">
+                      {categoryLabel}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Venue Link */}
                 <div className="flex items-start gap-3 text-gray-700">
                   <MapPin className="h-5 w-5 text-gray-500 mt-0.5" />
                   <div className="text-sm flex items-center gap-1">
