@@ -134,7 +134,7 @@ export default function AdminModerationPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 pt-32 pb-8 sm:px-6 lg:px-8">
+<div className="mx-auto max-w-6xl px-4 pt-8 pb-8 sm:px-6 lg:px-8">
 
         {/* Admin Navigation Tabs */}
         <div className="flex border-b border-slate-200/60 gap-4 mb-6">
