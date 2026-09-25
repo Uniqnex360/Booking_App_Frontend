@@ -169,6 +169,16 @@ export default function PartnerDashboard() {
     venue_name: "",
     city: "",
     poster_image_url: "",
+    language: "",
+    tags: [] as string[],
+    is_online: false,
+    is_outdoor: false,
+    is_fast_filling: false,
+    is_must_attend: false,
+    is_unmissable: false,
+    is_kids_allowed: false,
+    is_masterclass: false,
+    is_new_year_party: false,
   });
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -200,6 +210,16 @@ export default function PartnerDashboard() {
       venue_name: event.venue_name,
       city: event.city,
       poster_image_url: event.poster_image_url || "",
+      language: event.language || "",
+      tags: event.tags || [],
+      is_online: Boolean(event.is_online),
+      is_outdoor: Boolean(event.is_outdoor),
+      is_fast_filling: Boolean(event.is_fast_filling),
+      is_must_attend: Boolean(event.is_must_attend),
+      is_unmissable: Boolean(event.is_unmissable),
+      is_kids_allowed: Boolean(event.is_kids_allowed),
+      is_masterclass: Boolean(event.is_masterclass),
+      is_new_year_party: Boolean(event.is_new_year_party),
     });
   };
   useEffect(() => {
@@ -617,6 +637,105 @@ export default function PartnerDashboard() {
                   className="bg-slate-50 border-slate-200 mt-1 rounded-xl"
                   placeholder="https://..."
                 />
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-600">
+                  Language
+                </Label>
+                <select
+                  value={editForm.language}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, language: e.target.value })
+                  }
+                  className="w-full h-10 px-3 mt-1 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#7B1E3D]"
+                >
+                  <option value="">None / Not Specified</option>
+                  <option value="english">English</option>
+                  <option value="malayalam">Malayalam</option>
+                  <option value="hindi">Hindi</option>
+                  <option value="tamil">Tamil</option>
+                  <option value="telugu">Telugu</option>
+                  <option value="kannada">Kannada</option>
+                  <option value="multi">Multilingual</option>
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-600">Tags</Label>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {[
+                    { key: "outdoor", label: "Outdoor" },
+                    { key: "fast_filling", label: "Fast Filling" },
+                    { key: "must_attend", label: "Must Attend" },
+                    { key: "unmissable", label: "Unmissable" },
+                    { key: "kids_allowed", label: "Kids Allowed" },
+                    { key: "masterclass", label: "Masterclass" },
+                    { key: "new_year_party", label: "New Year Party" },
+                  ].map((t) => {
+                    const isSelected = editForm.tags.includes(t.key);
+                    return (
+                      <button
+                        key={t.key}
+                        type="button"
+                        onClick={() => {
+                          const nextTags = isSelected
+                            ? editForm.tags.filter((x) => x !== t.key)
+                            : [...editForm.tags, t.key];
+                          setEditForm({ ...editForm, tags: nextTags });
+                        }}
+                        className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
+                          isSelected
+                            ? "bg-[#7B1E3D] text-white border-[#7B1E3D] font-medium"
+                            : "bg-white text-slate-700 border-slate-200 hover:border-[#7B1E3D]"
+                        }`}
+                      >
+                        {isSelected ? "✓ " : "+ "}{t.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-600">Attributes & Flags</Label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {[
+                    { key: "is_online", label: "Online Event" },
+                    { key: "is_outdoor", label: "Outdoor Event" },
+                    { key: "is_fast_filling", label: "Fast Filling" },
+                    { key: "is_must_attend", label: "Must Attend" },
+                    { key: "is_unmissable", label: "Unmissable" },
+                    { key: "kids_allowed", label: "Kids Allowed" },
+                    { key: "masterclass", label: "Masterclass" },
+                    { key: "new_year_party", label: "New Year Party" },
+                  ].map((flag) => {
+                    const checked = Boolean((editForm as any)[flag.key]);
+                    return (
+                      <label
+                        key={flag.key}
+                        className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition-colors ${
+                          checked
+                            ? "bg-[#FDF2F4] border-[#7B1E3D] text-[#7B1E3D] font-medium"
+                            : "bg-white border-slate-200 text-slate-700"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setEditForm({
+                              ...editForm,
+                              [flag.key]: e.target.checked,
+                            })
+                          }
+                          className="rounded border-slate-300 text-[#7B1E3D] focus:ring-[#7B1E3D]"
+                        />
+                        <span>{flag.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
               <DialogFooter className="gap-2 pt-2">
                 <Button

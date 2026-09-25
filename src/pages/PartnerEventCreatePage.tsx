@@ -105,6 +105,16 @@ const eventSchema = z
     ends_at: z.string().min(1, "End date is required"),
     poster_image_url: z.string().url("Must be a valid URL"),
     description: z.string().optional(),
+    language: z.string().optional(),
+    tags: z.array(z.string()).default([]),
+    is_online: z.boolean().default(false),
+    is_outdoor: z.boolean().default(false),
+    is_fast_filling: z.boolean().default(false),
+    is_must_attend: z.boolean().default(false),
+    is_unmissable: z.boolean().default(false),
+    is_kids_allowed: z.boolean().default(false),
+    is_masterclass: z.boolean().default(false),
+    is_new_year_party: z.boolean().default(false),
     ticket_categories: z
       .array(ticketSchema)
       .min(1, "Add at least one ticket tier"),
@@ -156,6 +166,15 @@ useEffect(() => {
     resolver: zodResolver(eventSchema),
     mode: "onChange",
     defaultValues: {
+      tags: [],
+      is_online: false,
+      is_outdoor: false,
+      is_fast_filling: false,
+      is_must_attend: false,
+      is_unmissable: false,
+      is_kids_allowed: false,
+      is_masterclass: false,
+      is_new_year_party: false,
       ticket_categories: [
         { name: "", price_paise: 0, capacity: 0, max_per_booking: 1 },
       ],
@@ -225,6 +244,16 @@ useEffect(() => {
         ends_at: new Date(data.ends_at).toISOString(),
         poster_image_url: data.poster_image_url,
         description: data.description || undefined,
+        language: data.language || undefined,
+        tags: data.tags || [],
+        is_online: Boolean(data.is_online),
+        is_outdoor: Boolean(data.is_outdoor),
+        is_fast_filling: Boolean(data.is_fast_filling),
+        is_must_attend: Boolean(data.is_must_attend),
+        is_unmissable: Boolean(data.is_unmissable),
+        is_kids_allowed: Boolean(data.is_kids_allowed),
+        is_masterclass: Boolean(data.is_masterclass),
+        is_new_year_party: Boolean(data.is_new_year_party),
         ticket_categories: data.ticket_categories.map((t) => ({
           ...t,
           price_paise: Math.round(t.price_paise * 100),
@@ -546,6 +575,112 @@ useEffect(() => {
                       className="min-h-[120px] rounded-xl"
                       {...register("description")}
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Language</Label>
+                    <Controller
+                      control={control}
+                      name="language"
+                      render={({ field }) => (
+                        <Select
+                          value={field.value || ""}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger className="h-11 rounded-xl">
+                            <SelectValue placeholder="Select language (optional)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="english">English</SelectItem>
+                            <SelectItem value="malayalam">Malayalam</SelectItem>
+                            <SelectItem value="hindi">Hindi</SelectItem>
+                            <SelectItem value="tamil">Tamil</SelectItem>
+                            <SelectItem value="telugu">Telugu</SelectItem>
+                            <SelectItem value="kannada">Kannada</SelectItem>
+                            <SelectItem value="multi">Multilingual</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Tags</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { key: "outdoor", label: "Outdoor" },
+                        { key: "fast_filling", label: "Fast Filling" },
+                        { key: "must_attend", label: "Must Attend" },
+                        { key: "unmissable", label: "Unmissable" },
+                        { key: "kids_allowed", label: "Kids Allowed" },
+                        { key: "masterclass", label: "Masterclass" },
+                        { key: "new_year_party", label: "New Year Party" },
+                      ].map((t) => {
+                        const currentTags = watch("tags") || [];
+                        const isSelected = currentTags.includes(t.key);
+                        return (
+                          <button
+                            key={t.key}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setValue(
+                                  "tags",
+                                  currentTags.filter((x: string) => x !== t.key)
+                                );
+                              } else {
+                                setValue("tags", [...currentTags, t.key]);
+                              }
+                            }}
+                            className={`px-3 py-1.5 text-xs rounded-full border transition-all ${
+                              isSelected
+                                ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-sm font-semibold"
+                                : "bg-white text-slate-700 border-slate-200 hover:border-[#7B1E3D]"
+                            }`}
+                          >
+                            {isSelected ? "✓ " : "+ "}{t.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Event Attributes & Flags</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+                      {[
+                        { id: "is_online", label: "Online Event" },
+                        { id: "is_outdoor", label: "Outdoor Event" },
+                        { id: "is_fast_filling", label: "Fast Filling" },
+                        { id: "is_must_attend", label: "Must Attend" },
+                        { id: "is_unmissable", label: "Unmissable" },
+                        { id: "is_kids_allowed", label: "Kids Allowed" },
+                        { id: "is_masterclass", label: "Masterclass" },
+                        { id: "is_new_year_party", label: "New Year Party" },
+                      ].map((flag) => {
+                        const checked = Boolean(watch(flag.id as any));
+                        return (
+                          <label
+                            key={flag.id}
+                            className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer text-xs transition-colors ${
+                              checked
+                                ? "bg-[#FDF2F4] border-[#7B1E3D] text-[#7B1E3D] font-medium"
+                                : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) =>
+                                setValue(flag.id as any, e.target.checked)
+                              }
+                              className="rounded border-slate-300 text-[#7B1E3D] focus:ring-[#7B1E3D]"
+                            />
+                            <span>{flag.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                 </motion.div>
               )}
