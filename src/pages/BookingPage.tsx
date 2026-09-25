@@ -107,7 +107,7 @@ export default function BookingPage() {
     <div className="min-h-screen bg-white">
       <Header />
 
-      <main className="mx-auto max-w-[1240px] px-4 pt-6 pb-16">
+  <main className="mx-auto max-w-[1240px] px-4 pt-28 lg:pt-[136px] pb-16">
         {/* Event Title */}
         <div className="mb-6 flex items-start justify-between">
           <h1 className="text-3xl font-bold text-gray-900">
