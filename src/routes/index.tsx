@@ -41,18 +41,12 @@ export function AppRoutes() {
       <Route path="/terms" element={<TermsAndConditionsPage />} />
       <Route path="/showtimes/:id/seat-map" element={<SeatMapPage />} />
       <Route path="/events" element={<EventsPage />} />
+      <Route path="/events/:id" element={<BookingPage />} />
       <Route path="/restaurants" element={<RestaurantsPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
     <Route path="/venues" element={<VenuesPage />} />
-      <Route
-        path="/booking/:type/:id"
-        element={
-          <PrivateRoute>
-            <BookingPage />
-          </PrivateRoute>
-        }
-      />
+      <Route path="/booking/:type/:id" element={<BookingPage />} />
       <Route
         path="/bookings/:id"
         element={
