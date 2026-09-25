@@ -34,6 +34,7 @@ import {
   Clock,
   AlertCircle,
 } from 'lucide-react';
+import { LoadingPage } from './LoadingPage';
 
 const partnerSchema = z.object({
   business_name: z
@@ -125,6 +126,7 @@ export default function BecomePartnerPage() {
           navigate('/partner/dashboard', { replace: true });
         }
         
+        // If they exist (Pending or Rejected), pre-fill the form with their old data
         reset({
           business_name: partner.business_name,
           partner_type: partner.partner_type,
@@ -145,7 +147,7 @@ export default function BecomePartnerPage() {
    if (checking) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#7B1E3D]" />
+        <LoadingPage />
       </div>
     );
   }
@@ -154,7 +156,7 @@ export default function BecomePartnerPage() {
     return (
       <div className="min-h-screen bg-slate-50">
         <Header />
-        <div className="mx-auto max-w-2xl px-4 py-20 text-center">
+        <div className="mx-auto max-w-2xl px-4 pt-32 pb-20 text-center">
           <Clock className="mx-auto h-16 w-16 text-[#7B1E3D] mb-4" />
           <h1 className="text-3xl font-serif font-bold">Application Under Review</h1>
           <p className="text-slate-500 mt-2">You have already submitted an application for <strong>{existingPartner.business_name}</strong>.</p>
@@ -170,7 +172,7 @@ export default function BecomePartnerPage() {
       <Header />
 
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#FDF2F4] to-white pt-16 lg:pt-[104px] pb-8">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718]">
         <div className="absolute inset-0 " />
         <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
