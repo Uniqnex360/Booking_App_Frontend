@@ -116,7 +116,7 @@ export default function AdminModerationPage() {
 
       {/* Header */}
       <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
-        <div className="mx-auto max-w-6xl px-4 pt-32 pb-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4  pb-8 sm:px-6 lg:px-8">
 
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
