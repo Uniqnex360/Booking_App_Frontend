@@ -144,13 +144,16 @@ export default function BecomePartnerPage() {
     }
     checkStatus();
   }, [navigate, reset]);
-   if (checking) {
-    return (
-      <div className="flex h-screen items-center justify-center">
+  if (checking) {
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <Header />
+      <div className="flex items-center justify-center pt-32">
         <LoadingPage />
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   if (existingPartner?.status === 'PENDING_APPROVAL') {
     return (
