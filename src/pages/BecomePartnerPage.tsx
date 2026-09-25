@@ -172,8 +172,8 @@ export default function BecomePartnerPage() {
         <div className="absolute inset-0 " />
         <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
-        <div className="relative mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
+        <div className="relative mx-auto max-w-4xl pt-32 px-4 py-16 text-center sm:px-6 lg:px-8">
+          <div className="mx-auto mb-4  flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
             <Sparkles className="h-8 w-8 text-slate-900" />
           </div>
           <h1 className="font-serif text-4xl font-semibold text-slate-900 sm:text-5xl">
