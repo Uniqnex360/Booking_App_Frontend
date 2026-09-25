@@ -412,121 +412,111 @@ export default function EventsPage() {
               )}
 
               {/* Events Grid */}
-              {loading ? (
-                <div className="flex justify-center py-20">
-                  <Loader className="h-8 w-8" />
-                </div>
-              ) : filtered.length === 0 ? (
-                <EmptyState onClearAll={handleClearAllFilters} />
+              {/* Events Grid */}
+{loading ? (
+  <div className="flex justify-center py-20">
+    <Loader className="h-8 w-8" />
+  </div>
+) : filtered.length === 0 ? (
+  <EmptyState onClearAll={handleClearAllFilters} />
+) : (
+  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    {filtered.map((event, i) => {
+      const CatIcon =
+        categoryMeta[event.category]?.icon || Sparkles;
+      const minPrice = event.ticket_categories?.length
+        ? Math.min(
+            ...event.ticket_categories.map((t) => t.price_paise)
+          )
+        : null;
+      const eventDate = parseISO(event.starts_at);
+
+      return (
+        <motion.div
+          key={event.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: i * 0.05 }}
+          className="group cursor-pointer"
+          onClick={() => navigate(`/booking/event/${event.id}`)}
+        >
+          <div className="overflow-hidden rounded-lg bg-white shadow-sm border border-gray-200 transition-all hover:shadow-md hover:border-[#E91E63]/30">
+            {/* Poster */}
+            <div className="relative aspect-[2/3] overflow-hidden bg-gray-100">
+              {event.poster_image_url ? (
+                <img
+                  src={event.poster_image_url}
+                  alt={event.title}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
               ) : (
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filtered.map((event, i) => {
-                    const CatIcon =
-                      categoryMeta[event.category]?.icon || Sparkles;
-                    const minPrice = event.ticket_categories?.length
-                      ? Math.min(
-                          ...event.ticket_categories.map((t) => t.price_paise)
-                        )
-                      : null;
-                    const eventDate = parseISO(event.starts_at);
-
-                    return (
-                      <motion.div
-                        key={event.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: i * 0.05 }}
-                        className="group cursor-pointer"
-                        onClick={() => navigate(`/booking/event/${event.id}`)}
-                      >
-                        <div className="overflow-hidden rounded-lg bg-white shadow-sm border border-gray-200 transition-all hover:shadow-md">
-                          {/* Poster */}
-                          <div className="relative aspect-[2/3] overflow-hidden bg-gray-100">
-                            {event.poster_image_url ? (
-                              <img
-                                src={event.poster_image_url}
-                                alt={event.title}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-                                <ImageOff className="h-12 w-12 text-gray-400" />
-                              </div>
-                            )}
-
-                            {/* Date Badge */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                              <div className="flex items-center gap-1 text-white text-xs">
-                                <Calendar className="h-3 w-3" />
-                                <span>
-                                  {format(eventDate, 'EEE, d MMM')}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Category Badge */}
-                            <div className="absolute top-2 left-2">
-                              <Badge
-                                className="bg-white/90 text-gray-800 text-xs font-medium shadow-sm"
-                                style={{
-                                  color: categoryMeta[event.category]?.color,
-                                }}
-                              >
-                                <CatIcon className="mr-1 h-3 w-3" />
-                                {categoryMeta[event.category]?.label || 'Event'}
-                              </Badge>
-                            </div>
-                          </div>
-
-                          {/* Info */}
-                          <div className="p-3">
-                            <h3 className="font-semibold text-sm text-gray-900 line-clamp-2 group-hover:text-[#E91E63] transition">
-                              {event.title}
-                            </h3>
-                            <p className="mt-1 text-xs text-gray-500 line-clamp-1">
-                              {event.venue_name}
-                            </p>
-                            <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
-                              <MapPin className="h-3 w-3" />
-                              <span className="line-clamp-1">{event.city}</span>
-                            </div>
-                            <div className="mt-2 flex items-center justify-between">
-                              <div>
-                                {minPrice !== null ? (
-                                  <div>
-                                    <span className="text-base font-bold text-gray-900">
-                                      ₹{Math.round(minPrice / 100)}
-                                    </span>
-                                    <span className="text-xs text-gray-500">
-                                      {' '}
-                                      onwards
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-gray-500">
-                                    Pricing TBD
-                                  </span>
-                                )}
-                              </div>
-                              <Button
-                                size="sm"
-                                className="bg-[#E91E63] hover:bg-[#C2185B] text-white text-xs font-semibold rounded"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/booking/event/${event.id}`);
-                                }}
-                              >
-                                Book
-                                <ArrowRight className="ml-1 h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
+                  <ImageOff className="h-12 w-12 text-gray-400" />
                 </div>
               )}
+
+              {/* Date Badge */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+                <div className="flex items-center gap-1 text-white text-xs">
+                  <Calendar className="h-3 w-3" />
+                  <span>
+                    {format(eventDate, 'EEE, d MMM')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Category Badge */}
+              <div className="absolute top-2 left-2">
+                <Badge
+                  className="bg-white/90 text-gray-800 text-xs font-medium shadow-sm"
+                  style={{
+                    color: categoryMeta[event.category]?.color,
+                  }}
+                >
+                  <CatIcon className="mr-1 h-3 w-3" />
+                  {categoryMeta[event.category]?.label || 'Event'}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-3">
+              <h3 className="font-semibold text-sm text-gray-900 line-clamp-2 group-hover:text-[#E91E63] transition">
+                {event.title}
+              </h3>
+              <p className="mt-1 text-xs text-gray-500 line-clamp-1">
+                {event.venue_name}
+              </p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
+                <MapPin className="h-3 w-3" />
+                <span className="line-clamp-1">{event.city}</span>
+              </div>
+              
+              {/* Price Only - No Book Button */}
+              <div className="mt-3">
+                {minPrice !== null ? (
+                  <div>
+                    <span className="text-base font-bold text-gray-900">
+                      ₹{Math.round(minPrice / 100)}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {' '}
+                      onwards
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-gray-500">
+                    Pricing TBD
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      );
+    })}
+  </div>
+)}
             </main>
           </div>
         </div>
