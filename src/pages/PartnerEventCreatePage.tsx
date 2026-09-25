@@ -62,9 +62,9 @@ const ticketSchema = z
   .object({
     name: z.string().min(2, "Tier name is required"),
     price_paise: z.coerce
-  .number({ invalid_type_error: "Price must be a number" })
-  .positive("Price must be positive")
-  .min(1, "Price must be at least ₹1"),
+      .number({ invalid_type_error: "Price must be a number" })
+      .positive("Price must be positive")
+      .min(1, "Price must be at least ₹1"),
     capacity: z
       .number()
       .int("Capacity must be a whole number")
@@ -130,25 +130,36 @@ export default function PartnerEventCreatePage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
+  const [currentMin, setCurrentMin] = useState("");
 
+useEffect(() => {
+  const updateMin = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    setCurrentMin(now.toISOString().slice(0, 16));
+  };
+  
+  updateMin();
+  const interval = setInterval(updateMin, 60000); 
+  return () => clearInterval(interval);
+}, []);
   const {
-  register,
-  handleSubmit,
-  control,
-  trigger,
-  watch,
-  setValue,
-  getValues,
-  formState: { errors, touchedFields },
+    register,
+    handleSubmit,
+    control,
+    trigger,
+    watch,
+    setValue,
+    getValues,
+    formState: { errors, touchedFields },
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
     mode: "onChange",
     defaultValues: {
-  ticket_categories: [
-       { name: "", price_paise: 0, capacity: 0, max_per_booking: 1 },
-
-  ],
-},
+      ticket_categories: [
+        { name: "", price_paise: 0, capacity: 0, max_per_booking: 1 },
+      ],
+    },
   });
 
   const {
@@ -160,27 +171,45 @@ export default function PartnerEventCreatePage() {
     name: "ticket_categories",
   });
 
- const nextStep = async () => {
-  const fieldsByStep: Record<number, (keyof EventFormData)[]> = {
-    1: ["title", "category", "venue_name", "city", "venue_address", "starts_at", "ends_at"],
-    2: ["poster_image_url"],
-    3: ["ticket_categories"],
+  const nextStep = async () => {
+    const fieldsByStep: Record<number, (keyof EventFormData)[]> = {
+      1: [
+        "title",
+        "category",
+        "venue_name",
+        "city",
+        "venue_address",
+        "starts_at",
+        "ends_at",
+      ],
+      2: ["poster_image_url"],
+      3: ["ticket_categories"],
+    };
+
+    const valid = await trigger(fieldsByStep[step], { shouldFocus: true });
+
+    if (!valid && step === 3) {
+      const tickets = getValues("ticket_categories");
+      tickets.forEach((_, i) => {
+        setValue(`ticket_categories.${i}.name`, tickets[i].name, {
+          shouldTouch: true,
+        });
+        setValue(`ticket_categories.${i}.price_paise`, tickets[i].price_paise, {
+          shouldTouch: true,
+        });
+        setValue(`ticket_categories.${i}.capacity`, tickets[i].capacity, {
+          shouldTouch: true,
+        });
+        setValue(
+          `ticket_categories.${i}.max_per_booking`,
+          tickets[i].max_per_booking,
+          { shouldTouch: true },
+        );
+      });
+    }
+
+    if (valid) setStep((s) => Math.min(s + 1, 3));
   };
-  
-  const valid = await trigger(fieldsByStep[step], { shouldFocus: true });
-
-  if (!valid && step === 3) {
-    const tickets = getValues("ticket_categories");
-    tickets.forEach((_, i) => {
-      setValue(`ticket_categories.${i}.name`, tickets[i].name, { shouldTouch: true });
-      setValue(`ticket_categories.${i}.price_paise`, tickets[i].price_paise, { shouldTouch: true });
-      setValue(`ticket_categories.${i}.capacity`, tickets[i].capacity, { shouldTouch: true });
-      setValue(`ticket_categories.${i}.max_per_booking`, tickets[i].max_per_booking, { shouldTouch: true });
-    });
-  }
-
-  if (valid) setStep((s) => Math.min(s + 1, 3));
-};
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
@@ -196,39 +225,40 @@ export default function PartnerEventCreatePage() {
         ends_at: new Date(data.ends_at).toISOString(),
         poster_image_url: data.poster_image_url,
         description: data.description || undefined,
-        ticket_categories: data.ticket_categories.map(t => ({
-  ...t,
-  price_paise: Math.round(t.price_paise * 100)
-}))
+        ticket_categories: data.ticket_categories.map((t) => ({
+          ...t,
+          price_paise: Math.round(t.price_paise * 100),
+        })),
       });
       toast.success("Event created successfully!", {
         description: "It is now pending admin approval.",
       });
       navigate("/partner/dashboard");
-    }  catch (err: any) {
-  const status = err?.response?.status;
-  if (status === 403) {
-    toast.error("Account not approved", {
-      description: "Your partner account must be approved before hosting events.",
-    });
-    navigate("/partner/dashboard");
-  } else {
-    toast.error("Failed to create event", {
-      description: "Please check your details and try again.",
-    });
-  }
-} finally {
-  setSubmitting(false);
-}
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 403) {
+        toast.error("Account not approved", {
+          description:
+            "Your partner account must be approved before hosting events.",
+        });
+        navigate("/partner/dashboard");
+      } else {
+        toast.error("Failed to create event", {
+          description: "Please check your details and try again.",
+        });
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
   const startsAt = watch("starts_at");
   const endsAt = watch("ends_at");
 
   useEffect(() => {
-  if (startsAt || endsAt) {
-    trigger(["starts_at", "ends_at"]);
-  }
-}, [startsAt, endsAt, trigger]);
+    if (startsAt || endsAt) {
+      trigger(["starts_at", "ends_at"]);
+    }
+  }, [startsAt, endsAt, trigger]);
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
@@ -441,13 +471,13 @@ export default function PartnerEventCreatePage() {
                         Start Date & Time *
                       </Label>
                       <Input
-                        type="datetime-local"
-                        className={`h-11 rounded-xl ${
-  errors.ends_at ? "border-destructive focus-visible:ring-destructive" : ""
+  type="datetime-local"
+  className={`h-11 rounded-xl ${
+    errors.starts_at ? "border-destructive focus-visible:ring-destructive" : ""
   }`}
-                        min={new Date().toISOString().slice(0, 16)}
-                        {...register("starts_at")}
-                      />
+  min={currentMin}
+  {...register("starts_at")}
+/>
                       {errors.starts_at && (
                         <p className="text-xs text-rose-600">
                           {errors.starts_at.message}
@@ -460,13 +490,13 @@ export default function PartnerEventCreatePage() {
                         End Date & Time *
                       </Label>
                       <Input
-                        type="datetime-local"
-                        className={`h-11 rounded-xl ${
-    errors.starts_at ? "border-destructive focus-visible:ring-destructive" : ""
+  type="datetime-local"
+  className={`h-11 rounded-xl ${
+    errors.ends_at ? "border-destructive focus-visible:ring-destructive" : ""
   }`}
-                        min={startsAt || new Date().toISOString().slice(0, 16)}
-                        {...register("ends_at")}
-                      />
+  min={startsAt || currentMin}
+  {...register("ends_at")}
+/>
                       {errors.ends_at && (
                         <p className="text-xs text-rose-600">
                           {errors.ends_at.message}
@@ -593,11 +623,12 @@ export default function PartnerEventCreatePage() {
                                 `ticket_categories.${i}.name` as const,
                               )}
                             />
-{errors.ticket_categories?.[i]?.name && touchedFields.ticket_categories?.[i]?.name && (
-                              <p className="text-xs text-rose-600">
-                                {errors.ticket_categories[i]?.name?.message}
-                              </p>
-                            )}
+                            {errors.ticket_categories?.[i]?.name &&
+                              touchedFields.ticket_categories?.[i]?.name && (
+                                <p className="text-xs text-rose-600">
+                                  {errors.ticket_categories[i]?.name?.message}
+                                </p>
+                              )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-medium">
@@ -613,14 +644,16 @@ export default function PartnerEventCreatePage() {
                                 { valueAsNumber: true },
                               )}
                             />
-{errors.ticket_categories?.[i]?.price_paise && touchedFields.ticket_categories?.[i]?.price_paise && (
-                              <p className="text-xs text-rose-600">
-                                {
-                                  errors.ticket_categories[i]?.price_paise
-                                    ?.message
-                                }
-                              </p>
-                            )}
+                            {errors.ticket_categories?.[i]?.price_paise &&
+                              touchedFields.ticket_categories?.[i]
+                                ?.price_paise && (
+                                <p className="text-xs text-rose-600">
+                                  {
+                                    errors.ticket_categories[i]?.price_paise
+                                      ?.message
+                                  }
+                                </p>
+                              )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-medium">
@@ -635,11 +668,16 @@ export default function PartnerEventCreatePage() {
                                 { valueAsNumber: true },
                               )}
                             />
-{errors.ticket_categories?.[i]?.capacity && touchedFields.ticket_categories?.[i]?.capacity && (
-                              <p className="text-xs text-rose-600">
-                                {errors.ticket_categories[i]?.capacity?.message}
-                              </p>
-                            )}
+                            {errors.ticket_categories?.[i]?.capacity &&
+                              touchedFields.ticket_categories?.[i]
+                                ?.capacity && (
+                                <p className="text-xs text-rose-600">
+                                  {
+                                    errors.ticket_categories[i]?.capacity
+                                      ?.message
+                                  }
+                                </p>
+                              )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs font-medium">
@@ -654,14 +692,16 @@ export default function PartnerEventCreatePage() {
                                 { valueAsNumber: true },
                               )}
                             />
-{errors.ticket_categories?.[i]?.max_per_booking && touchedFields.ticket_categories?.[i]?.max_per_booking && (
-                              <p className="text-xs text-rose-600">
-                                {
-                                  errors.ticket_categories[i]?.max_per_booking
-                                    ?.message
-                                }
-                              </p>
-                            )}
+                            {errors.ticket_categories?.[i]?.max_per_booking &&
+                              touchedFields.ticket_categories?.[i]
+                                ?.max_per_booking && (
+                                <p className="text-xs text-rose-600">
+                                  {
+                                    errors.ticket_categories[i]?.max_per_booking
+                                      ?.message
+                                  }
+                                </p>
+                              )}
                           </div>
                         </div>
                       </div>
