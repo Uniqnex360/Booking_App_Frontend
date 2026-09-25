@@ -125,7 +125,6 @@ export default function BecomePartnerPage() {
           navigate('/partner/dashboard', { replace: true });
         }
         
-        // If they exist (Pending or Rejected), pre-fill the form with their old data
         reset({
           business_name: partner.business_name,
           partner_type: partner.partner_type,
@@ -171,7 +170,7 @@ export default function BecomePartnerPage() {
       <Header />
 
       {/* Hero */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-[#5C0F2A] via-[#7B1E3D] to-[#3A0718]">
+      <div className="relative overflow-hidden bg-gradient-to-b from-[#FDF2F4] to-white pt-16 lg:pt-[104px] pb-8">
         <div className="absolute inset-0 " />
         <div className="absolute -right-20 top-0 h-72 w-72 rounded-full bg-[#7B1E3D]/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-10 h-64 w-64 rounded-full bg-wine-400/10 blur-3xl" />
@@ -182,7 +181,7 @@ export default function BecomePartnerPage() {
           <h1 className="font-serif text-4xl font-semibold text-slate-900 sm:text-5xl">
             Become a Partner
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-wine-100/70">
+          <p className="mx-auto mt-3 max-w-xl text-black-100/70">
             Join Vyhbz App and reach thousands of guests. List your business,
             manage bookings, and grow with us.
           </p>
