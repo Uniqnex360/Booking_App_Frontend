@@ -57,14 +57,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { LoadingPage } from "./LoadingPage";
-
-const partnerTypeMeta: Record<
-  PartnerType,
-  { label: string; icon: typeof Store }
-> = {
-  restaurant: { label: "Restaurant", icon: Store },
-  event_organiser: { label: "Event Organizer", icon: CalendarDays },
-};
+import { partnerTypeMeta } from "@/lib/partnerTypeMeta";
 
 // ---------------------------------------------------------------------------
 // Revenue Dashboard Sub-Component
@@ -308,11 +301,12 @@ export default function PartnerDashboard() {
                 {partner?.contact_phone}
               </span>
               <span className="flex items-center gap-1">
-  <Store className="h-3.5 w-3.5 text-[#7B1E3D]" />{" "}
-  {partner?.partner_type
-    ? partnerTypeMeta[partner.partner_type]?.label ?? partner.partner_type
-    : "Partner"}
-</span>
+                <Store className="h-3.5 w-3.5 text-[#7B1E3D]" />{" "}
+                {partner?.partner_type
+                  ? (partnerTypeMeta[partner.partner_type]?.label ??
+                    partner.partner_type)
+                  : "Partner"}
+              </span>
             </div>
           </div>
           {partner?.status !== "APPROVED" ? (

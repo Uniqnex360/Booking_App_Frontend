@@ -55,14 +55,8 @@ import {
 } from 'lucide-react';
 import { getAdminPartners, updatePartnerStatus } from '@/api/admin.api';
 import { PaginatedResponse } from '@/types';
+import { getPartnerTypeMeta, partnerTypeMeta } from '@/lib/partnerTypeMeta';
 
-const partnerTypeMeta: Record<
-  PartnerType,
-  { label: string; icon: typeof Store }
-> = {
-  restaurant: { label: 'Restaurant', icon: Store },
-  event_organiser: { label: 'Event Organizer', icon: CalendarDays },
-};
 
 const statusBadge: Record<PartnerStatus, string> = {
   PENDING_APPROVAL:
@@ -298,8 +292,8 @@ export default function AdminPartnersPage() {
                 </thead>
                 <tbody className="divide-y divide-border/30">
                   {partners.map((partner) => {
-                    const TypeIcon =
-                      partnerTypeMeta[partner.partner_type].icon;
+                    const TypeIcon = getPartnerTypeMeta(partner.partner_type).icon;
+
                     return (
                       <tr
                         key={partner.id}
@@ -322,7 +316,8 @@ export default function AdminPartnersPage() {
                         </td>
                         <td className="hidden px-4 py-4 sm:table-cell">
                           <span className="text-sm text-slate-600">
-                            {partnerTypeMeta[partner.partner_type].label}
+                            {partnerTypeMeta[partner.partner_type]?.label ?? partner.partner_type}
+
                           </span>
                         </td>
                         <td className="hidden px-4 py-4 lg:table-cell">

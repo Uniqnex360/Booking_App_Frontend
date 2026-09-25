@@ -35,6 +35,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { LoadingPage } from './LoadingPage';
+import { partnerTypeMeta } from '@/lib/partnerTypeMeta';
 
 const partnerSchema = z.object({
   business_name: z
@@ -57,17 +58,7 @@ const partnerSchema = z.object({
 
 type PartnerFormData = z.infer<typeof partnerSchema>;
 
-const partnerTypeMeta: Record<
-  PartnerType,
-  { label: string; icon: typeof Store; desc: string }
-> = {
-  restaurant: { label: 'Restaurant', icon: Store, desc: 'List your dining venue' },
-  event_organiser: {
-    label: 'Event Organizer',
-    icon: CalendarDays,
-    desc: 'Host live events',
-  },
-};
+
 
 export default function BecomePartnerPage() {
   const navigate = useNavigate();
@@ -232,23 +223,24 @@ export default function BecomePartnerPage() {
                       <SelectValue placeholder="Select your business type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.keys(partnerTypeMeta) as PartnerType[]).map(
-                        (key) => {
-                          const meta = partnerTypeMeta[key];
-                          const Icon = meta.icon;
-                          return (
-                            <SelectItem key={key} value={key}>
-                              <div className="flex items-center gap-2">
-                                <Icon className="h-4 w-4 text-[#7B1E3D]" />
-                                <span>{meta.label}</span>
-                                <span className="text-xs text-slate-500">
-                                  — {meta.desc}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          );
-                        }
-                      )}
+                      {(Object.keys(partnerTypeMeta) as (keyof typeof partnerTypeMeta)[]).map(
+  (key) => {
+    const meta = partnerTypeMeta[key];
+    if (!meta) return null;
+    const Icon = meta.icon;
+    return (
+      <SelectItem key={key} value={key}>
+        <div className="flex items-center gap-2">
+          <Icon className="h-4 w-4 text-[#7B1E3D]" />
+          <span>{meta.label}</span>
+          <span className="text-xs text-slate-500">
+            — {meta.desc}
+          </span>
+        </div>
+      </SelectItem>
+    );
+  }
+)}
                     </SelectContent>
                   </Select>
                 )}
