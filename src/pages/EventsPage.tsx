@@ -10,7 +10,9 @@ import { Footer } from '@/components/Footer';
 import { getEvents } from '@/api/event.api';
 import type { EventItem } from '@/types/event.types';
 
-// Map for UI labels matching screenshot
+// The exact "Rose" color from BookMyShow
+const ROSE_COLOR = '#F84464';
+
 const DISPLAY_LABELS: Record<string, string> = {
   workshop: 'Workshops',
   concert: 'Music Shows',
@@ -23,15 +25,20 @@ const DISPLAY_LABELS: Record<string, string> = {
   other: 'Role Play',
 };
 
-function FilterAccordion({ title, isOpen, onToggle, children }: { title: string; isOpen: boolean; onToggle: () => void; children?: React.ReactNode }) {
+function FilterAccordion({ title, isOpen, onToggle, children, isRoseTitle }: { title: string; isOpen: boolean; onToggle: () => void; children?: React.ReactNode; isRoseTitle?: boolean }) {
   return (
-    <div className="mb-4 bg-white rounded-[4px] border border-[#f2f2f2] shadow-[0_1px_3px_rgba(0,0,0,0.05)] overflow-hidden">
-      <button onClick={onToggle} className="flex w-full items-center justify-between p-3">
+    <div className="mb-4 bg-white rounded-[4px] border border-[#f2f2f2] shadow-sm overflow-hidden">
+      <button onClick={onToggle} className="flex w-full items-center justify-between p-3 transition-colors hover:bg-gray-50">
         <div className="flex items-center gap-2">
           {isOpen ? <ChevronUp className="h-3 w-3 text-[#999999]" /> : <ChevronDown className="h-3 w-3 text-[#999999]" />}
-          <span className="text-[13px] font-medium text-[#333333] tracking-tight">{title}</span>
+          <span 
+            className="text-[13px] font-normal tracking-tight" 
+            style={{ color: isRoseTitle ? ROSE_COLOR : '#333333' }}
+          >
+            {title}
+          </span>
         </div>
-        <span className="text-[10px] text-[#999999] hover:underline cursor-pointer uppercase font-semibold">Clear</span>
+        <span className="text-[10px] text-[#999999] uppercase font-semibold">Clear</span>
       </button>
       <AnimatePresence initial={false}>
         {isOpen && (
@@ -99,12 +106,14 @@ export default function EventsPage() {
   };
 
   return (
-    // Applied Roboto Font Stack to match BookMyShow exactly
-    <div className="min-h-screen bg-[#F5F5F5]" style={{ fontFamily: "'Roboto', sans-serif" }}>
-      {/* Import Font directly if not available globally */}
-      <style>
-        {`@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');`}
-      </style>
+    <div className="min-h-screen bg-[#F5F5F5]">
+      {/* Force Roboto Font via Google Fonts */}
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+      
+      <style>{`
+        * { font-family: 'Roboto', sans-serif !important; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+      `}</style>
 
       <Header />
 
@@ -112,14 +121,17 @@ export default function EventsPage() {
         <div className="mx-auto max-w-[1240px] px-4 mt-8">
           <div className="flex gap-8">
             
-            {/* Sidebar */}
+            {/* Sidebar Filters */}
             <aside className="hidden lg:block w-[280px] shrink-0">
-              <h2 className="text-[24px] font-bold text-[#333333] mb-6 tracking-tight">Filters</h2>
+              <h1 className="text-[24px] font-bold text-[#333333] mb-[24px] tracking-tight">
+                Filters
+              </h1>
 
               <FilterAccordion
                 title="Categories"
                 isOpen={openFilters.categories}
                 onToggle={() => setOpenFilters(p => ({ ...p, categories: !p.categories }))}
+                isRoseTitle={true}
               >
                 <div className="flex flex-wrap gap-2 pt-2">
                   {dynamicCategories.map((cat) => (
@@ -128,9 +140,14 @@ export default function EventsPage() {
                       onClick={() => updateCategory(cat.key)}
                       className={`px-2 py-1.5 text-[12px] rounded-[4px] border transition-colors ${
                         activeCategory === cat.key
-                          ? 'bg-white border-[#dc3558] text-[#dc3558] font-medium'
-                          : 'bg-white border-[#eeeeee] text-[#dc3558] hover:border-[#dc3558]'
+                          ? `bg-[${ROSE_COLOR}] text-white border-[${ROSE_COLOR}]`
+                          : `bg-white border-[#eeeeee] text-[${ROSE_COLOR}] hover:border-[${ROSE_COLOR}]`
                       }`}
+                      style={{ 
+                        color: activeCategory === cat.key ? '#fff' : ROSE_COLOR,
+                        borderColor: activeCategory === cat.key ? ROSE_COLOR : '#eeeeee',
+                        backgroundColor: activeCategory === cat.key ? ROSE_COLOR : '#fff'
+                      }}
                     >
                       {cat.label}
                     </button>
@@ -150,30 +167,35 @@ export default function EventsPage() {
                 />
               ))}
 
-              <button className="w-full mt-2 py-2 border border-[#dc3558] text-[#dc3558] rounded-[4px] text-[13px] font-medium hover:bg-[#fff5f6] transition-colors">
-                Browse by Venues
-              </button>
+            <button 
+  onClick={() => navigate(`/venues?city=${activeCity}`)}
+  className="w-full mt-2 py-2 border rounded-[4px] text-[13px] font-medium transition-colors"
+  style={{ color: ROSE_COLOR, borderColor: ROSE_COLOR }}
+>
+  Browse by Venues
+</button>
             </aside>
 
-            {/* Main Content */}
+            {/* Main Section */}
             <main className="flex-1">
               <div className="mb-6">
-                <h1 className="text-[24px] font-bold text-[#333333] mb-6 flex items-center tracking-tight">
+                <h1 className="text-[24px] font-bold text-[#333333] mb-[24px] flex items-center tracking-tight">
                   Events In {activeCity}
-                  <span className="ml-0.5 inline-block w-[2px] h-[24px] bg-[#3366cc]" />
+                  <span className="ml-1 inline-block w-[2px] h-[24px] bg-[#3366cc]" />
                 </h1>
 
-                {/* Horizontal Pills */}
+                {/* Horizontal Category Pills */}
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                   {dynamicCategories.map((cat) => (
                     <button
                       key={cat.key}
                       onClick={() => updateCategory(cat.key)}
-                      className={`px-4 py-1.5 text-[12px] border rounded-full whitespace-nowrap transition-colors font-normal ${
-                        activeCategory === cat.key
-                          ? 'bg-white border-[#dc3558] text-[#dc3558]'
-                          : 'bg-white border-[#eeeeee] text-[#dc3558] hover:border-[#dc3558]'
-                      }`}
+                      className="px-4 py-1.5 text-[12px] border rounded-full whitespace-nowrap transition-colors"
+                      style={{ 
+                        color: activeCategory === cat.key ? '#fff' : ROSE_COLOR,
+                        borderColor: activeCategory === cat.key ? ROSE_COLOR : '#eeeeee',
+                        backgroundColor: activeCategory === cat.key ? ROSE_COLOR : '#fff'
+                      }}
                     >
                       {cat.label}
                     </button>
@@ -182,10 +204,8 @@ export default function EventsPage() {
               </div>
 
               {loading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-                  {[1, 2, 3, 4].map(i => (
-                    <div key={i} className="aspect-[2/3.15] bg-gray-200 rounded-lg animate-pulse" />
-                  ))}
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map(i => <div key={i} className="aspect-[2/3] bg-gray-200 rounded-lg animate-pulse" />)}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
@@ -201,7 +221,7 @@ export default function EventsPage() {
                         className="cursor-pointer group flex flex-col"
                         onClick={() => navigate(`/booking/event/${event.id}`)}
                       >
-                        <div className="relative aspect-[2/3.15] rounded-[8px] overflow-hidden bg-gray-100 mb-3 shadow-sm border border-gray-50">
+                        <div className="relative aspect-[2/3.15] rounded-[8px] overflow-hidden bg-gray-100 mb-3 border border-gray-100">
                           <img
                             src={event.poster_image_url}
                             alt={event.title}
@@ -218,7 +238,6 @@ export default function EventsPage() {
                           <div className="absolute bottom-0 left-0 right-0 bg-black py-1.5 px-3">
                             <span className="text-white text-[12px] font-medium tracking-wide">
                               {format(parseISO(event.starts_at), 'EEE, d MMM')}
-                              {i === 3 && ' onwards'}
                             </span>
                           </div>
                         </div>
@@ -233,9 +252,9 @@ export default function EventsPage() {
                           <p className="text-[14px] text-[#666666] font-normal">
                             {DISPLAY_LABELS[event.category] || event.category}
                           </p>
-                          <div className="pt-1.5">
+                          <div className="pt-2">
                             {minPrice !== null ? (
-                              <span className="text-[14px] font-normal text-[#444444]">
+                              <span className="text-[14px] font-normal text-[#333333]">
                                 ₹ {Math.round(minPrice / 100)} onwards
                               </span>
                             ) : (
