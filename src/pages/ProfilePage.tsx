@@ -755,14 +755,20 @@ function BookingCard({
               )}
             </div>
             <Badge
-              className={`whitespace-nowrap px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-                past
-                  ? "bg-gray-100 text-gray-600 hover:bg-gray-100"
-                  : "bg-green-100 text-green-700 hover:bg-green-100"
-              }`}
-            >
-              {past ? "Completed" : "Confirmed"}
-            </Badge>
+  className={`whitespace-nowrap px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+    booking.status === "CANCELLED"
+      ? "bg-red-100 text-red-700 hover:bg-red-100"
+      : past
+        ? "bg-gray-100 text-gray-600 hover:bg-gray-100"
+        : "bg-green-100 text-green-700 hover:bg-green-100"
+  }`}
+>
+  {booking.status === "CANCELLED"
+    ? "Cancelled"
+    : past
+      ? "Completed"
+      : "Confirmed"}
+</Badge>
           </div>
 
           {isMovie && booking.seat_codes?.length ? (
