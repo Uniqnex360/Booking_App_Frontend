@@ -202,7 +202,9 @@ export default function HomePage() {
         const items = Array.isArray(eventsData)
           ? eventsData
           : eventsData.items || [];
-        setEvents(items.slice(0, 8));
+        const now = new Date();
+        const upcomingOrLive = items.filter((e: any) => !e.ends_at || new Date(e.ends_at) >= now);
+        setEvents(upcomingOrLive.slice(0, 8));
       } catch (err) {
         console.error('Failed to load homepage data', err);
       } finally {

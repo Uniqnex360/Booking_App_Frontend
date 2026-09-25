@@ -237,21 +237,27 @@ export default function EventsPage() {
     setSearchParams(next);
   };
 
-  // Dynamic categories found in events
+  // Only upcoming or live events (not past)
+  const upcomingOrLiveEvents = useMemo(() => {
+    const now = new Date();
+    return events.filter((e) => !e.ends_at || new Date(e.ends_at) >= now);
+  }, [events]);
+
+  // Dynamic categories found in upcoming/live events
   const dynamicCategories = useMemo(() => {
     const cats = new Set<string>();
-    events.forEach((e) => {
+    upcomingOrLiveEvents.forEach((e) => {
       if (e.category) cats.add(e.category);
     });
     return Array.from(cats).map((c) => ({
       key: c,
       label: DISPLAY_LABELS[c] || c.charAt(0).toUpperCase() + c.slice(1),
     }));
-  }, [events]);
+  }, [upcomingOrLiveEvents]);
 
   // Client-side filtering logic
   const filteredEvents = useMemo(() => {
-    return events.filter((e) => {
+    return upcomingOrLiveEvents.filter((e) => {
       // Category filter
       const matchesCategory = activeCategory === 'all' || e.category === activeCategory;
       // City filter
@@ -554,7 +560,13 @@ export default function EventsPage() {
                         ? Math.min(...event.ticket_categories.map((t) => t.price_paise / 100))
                         : null;
 
-                    const isEnded = Boolean(event.ends_at && new Date(event.ends_at) < new Date());
+                    const now = new Date();
+                    const isLive = Boolean(
+                      event.starts_at &&
+                      event.ends_at &&
+                      new Date(event.starts_at) <= now &&
+                      new Date(event.ends_at) >= now
+                    );
 
                     return (
                       <div
@@ -568,9 +580,7 @@ export default function EventsPage() {
                             <img
                               src={event.poster_image_url}
                               alt={event.title}
-                              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                                isEnded ? 'grayscale-[40%]' : ''
-                              }`}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             />
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
@@ -581,9 +591,10 @@ export default function EventsPage() {
                             </div>
                           )}
 
-                          {isEnded && (
-                            <div className="absolute top-2 right-2 bg-black/80 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow">
-                              Ended
+                          {isLive && (
+                            <div className="absolute top-2 right-2 bg-[#7B1E3D] text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                              LIVE
                             </div>
                           )}
 
