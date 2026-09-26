@@ -1,13 +1,13 @@
 import { Toaster } from 'sonner';
 import { AppRoutes } from './routes';
-import { BookMyShowAuthModal } from '@/components/auth/BookMyShowAuthModal';
+import { QuickAuthModal } from '@/components/auth/QuickAuthModal';
 
 export default function App() {
   return (
     <>
       <Toaster richColors position="top-right" />
       <AppRoutes />
-      <BookMyShowAuthModal />
+      <QuickAuthModal />
     </>
   )
 }

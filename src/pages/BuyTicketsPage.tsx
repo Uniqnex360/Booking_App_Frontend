@@ -228,7 +228,7 @@ if (loading) {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans">
       <Header />
 
-      {/* ─── Dedicated BMS Style Buy Tickets Header ─── */}
+      {/* ─── Dedicated Buy Tickets Header ─── */}
      <div className="bg-[#333338] pt-[120px] lg:pt-[136px] pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
           <h1 className="text-[32px] font-bold text-white leading-tight">
@@ -297,7 +297,7 @@ if (loading) {
           {/* ─── Filters & Selection Info bar ─── */}
           <div className="bg-white border-b border-gray-200">
             <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center gap-3 flex-wrap">
-              {/* Ticket Count Pill (BMS Style) */}
+              {/* Ticket Count Pill */}
               <div className="flex items-center gap-2 bg-[#7B1E3D]/10 text-[#7B1E3D] px-4 py-1.5 rounded-full border border-[#7B1E3D]/20 text-xs font-semibold cursor-pointer group" onClick={() => { setTempTicketCount(ticketCount); setShowTicketModal(true); }}>
                 <Users className="h-3.5 w-3.5" />
                 <span>{ticketCount} Tickets</span>

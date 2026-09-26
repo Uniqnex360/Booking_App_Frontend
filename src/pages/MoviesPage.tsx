@@ -329,7 +329,7 @@ export default function MoviesPage() {
 
           {/* ─── Right Movie Grid Section ─── */}
           <div className="flex-1 min-w-0">
-            {/* Quick Horizontal Language Filter Bar (BMS Style) */}
+            {/* Quick Horizontal Language Filter Bar */}
             <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none">
               <button
                 onClick={() => setSelectedLanguages([])}

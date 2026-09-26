@@ -376,7 +376,7 @@ export default function SupportPage() {
       {/* Top Main Navigation Header */}
       <Header />
 
-      {/* Main Support Page Content (Exact BMS layout: max-w ~1140px, centered on #efefef) */}
+      {/* Main Support Page Content (max-w ~1140px, centered on #efefef) */}
       <div className="pt-24 sm:pt-28 pb-16 px-3 sm:px-4">
         <div className="max-w-[1140px] mx-auto">
           {/* Header Banner (White rounded top with logo + Support Centre) */}
@@ -401,7 +401,7 @@ export default function SupportPage() {
             </Link>
           </div>
 
-          {/* Red/Wine Solutions Ribbon Bar (Matches BMS crimson red/wine) */}
+          {/* Red/Wine Solutions Ribbon Bar (Matches crimson red/wine) */}
           <nav className="bg-[#7B1E3D] px-6 py-2.5 flex items-center shadow-sm">
             <span className="text-white text-sm font-semibold tracking-wide">
               Solutions
@@ -484,7 +484,7 @@ export default function SupportPage() {
 
           {/* Two-Column Grid: Knowledge Base (Left) + Do you know? (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left Card: Knowledge Base (BMS 2-column topic list) */}
+            {/* Left Card: Knowledge Base (2-column topic list) */}
             <section className="lg:col-span-8 bg-white rounded-md p-6 shadow-sm border border-gray-200">
               <h2 className="text-xl font-bold text-[#049cdb] leading-tight">
                 Knowledge base
@@ -536,7 +536,7 @@ export default function SupportPage() {
               </div>
             </section>
 
-            {/* Right Card: Do you know? (BMS Signature Card) */}
+            {/* Right Card: Do you know? (Signature Card) */}
             <aside className="lg:col-span-4 bg-white rounded-md p-6 shadow-sm border border-gray-200 self-start">
               <h2 className="text-xl font-bold text-[#049cdb] leading-tight">
                 Do you know?
@@ -585,7 +585,7 @@ export default function SupportPage() {
         </div>
       </div>
 
-      {/* Article Detail Modal (Shows full solution steps just like clicking on BMS) */}
+      {/* Article Detail Modal (Shows full solution steps) */}
       <Dialog open={!!activeArticle} onOpenChange={(open) => !open && setActiveArticle(null)}>
         <DialogContent className="sm:max-w-lg bg-white p-6 rounded-lg shadow-xl">
           {activeArticle && (
@@ -636,7 +636,7 @@ export default function SupportPage() {
         </DialogContent>
       </Dialog>
 
-      {/* New Support Ticket Modal (BMS / Freshdesk style) */}
+      {/* New Support Ticket Modal (Ticket submission modal) */}
       <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
         <DialogContent className="sm:max-w-md bg-white p-6 rounded-lg shadow-xl">
           <DialogHeader className="border-b border-gray-100 pb-3 text-left">

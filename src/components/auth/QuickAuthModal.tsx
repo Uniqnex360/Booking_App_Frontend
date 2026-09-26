@@ -17,7 +17,7 @@ export type AuthModalView =
   | "mobile-otp"
   | "password-login";
 
-export function BookMyShowAuthModal() {
+export function QuickAuthModal() {
   const {
     isAuthModalOpen,
     closeAuthModal,

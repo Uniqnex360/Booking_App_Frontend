@@ -556,7 +556,7 @@ export function Header() {
             </Button>
           )}
 
-          {/* BookMyShow Hamburger Menu Trigger (Visible on all devices!) */}
+          {/* Hamburger Menu Trigger (Visible on all devices!) */}
           <button
             onClick={() => {
               setDrawerTab("main");
@@ -644,7 +644,7 @@ export function Header() {
         </div>
       )}
 
-      {/* BookMyShow Style Unified Side Drawer */}
+      {/* Unified Side Drawer */}
       <Sheet open={drawerOpen} onOpenChange={(open) => {
         setDrawerOpen(open);
         if (!open) {
@@ -658,7 +658,7 @@ export function Header() {
           {/* TAB 1: MAIN MENU */}
           {drawerTab === "main" && (
             <div className="flex flex-col h-full animate-in fade-in duration-200">
-              {/* BMS Profile / Guest Header */}
+              {/* Profile / Guest Header */}
               {user ? (
                 <div
                   className="p-6 flex items-center justify-between border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition mt-6"
@@ -1105,7 +1105,7 @@ export function Header() {
             </div>
           )}
 
-          {/* TAB 2: HELP & SUPPORT (BookMyShow Style) */}
+          {/* TAB 2: HELP & SUPPORT */}
           {drawerTab === "help" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
               {/* Help Header */}
@@ -1346,7 +1346,7 @@ export function Header() {
 
                 {/* App Version */}
                 <div className="text-center text-[11px] text-gray-400 pt-4">
-                  <p>Vyhbz Entertainment v1.2.0 (BMS Edition)</p>
+                  <p>Vyhbz Entertainment v1.2.0</p>
                   <p className="mt-0.5">Made with Wine branding</p>
                 </div>
               </div>
@@ -1445,7 +1445,7 @@ export function Header() {
   );
 }
 
-// Reusable menu item component for the BookMyShow side drawer
+// Reusable menu item component for the side drawer
 function DrawerMenuItem({
   icon: Icon,
   title,

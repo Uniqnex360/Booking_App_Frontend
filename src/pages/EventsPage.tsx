@@ -10,7 +10,7 @@ import { Footer } from '@/components/Footer';
 import { getEvents } from '@/api/event.api';
 import type { EventItem } from '@/types/event.types';
 
-// The centralized BookMyShow Wine branding color
+// The centralized Wine branding color
 const WINE_COLOR = '#7B1E3D';
 const WINE_HOVER = '#5C0F2A';
 

@@ -38,7 +38,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden zoom-in-95 animate-in duration-200">
         
-        {/* BMS Header */}
+        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#F8F8FA]">
           <div>
             <h2 className="text-base font-bold text-slate-800">Contact Details</h2>
@@ -52,7 +52,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
           </button>
         </div>
 
-        {/* BMS Form */}
+        {/* Contact Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Email Input */}
           <div>
