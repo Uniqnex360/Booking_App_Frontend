@@ -9,8 +9,6 @@ import {
   Lock,
 } from "lucide-react";
 import { toast } from "sonner";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 export type AuthModalView =
   | "get-started"
@@ -29,8 +27,10 @@ export function BookMyShowAuthModal() {
     signIn,
     initiateSignUp,
     verifySignUp,
-    signInWithFirebase,
+    signInWithPhoneEmail,
   } = useAuth() as any;
+
+  const clientId = import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID || "16879666373804430168";
 
   const [view, setView] = useState<AuthModalView>("get-started");
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,7 @@ export function BookMyShowAuthModal() {
   // Mobile flow state
   const [phone, setPhone] = useState("");
 
-  // OTP state (6 digits)
+  // OTP state (6 digits for email)
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [activeOtpIndex, setActiveOtpIndex] = useState(0);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -80,16 +80,109 @@ export function BookMyShowAuthModal() {
     };
   }, [isAuthModalOpen, view, resendTimer]);
 
+  // ---------------------------------------------
+  // Phone.Email Integration (SMS & WhatsApp OTP)
+  // ---------------------------------------------
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (
+        event.origin === "https://auth.phone.email" ||
+        event.origin === "https://www.phone.email"
+      ) {
+        const data = event.data;
+        const userJsonUrl = data?.user_json_url;
+        if (userJsonUrl) {
+          setLoading(true);
+          try {
+            const { error: apiError } = await signInWithPhoneEmail({
+              url: userJsonUrl,
+            });
+            if (apiError) {
+              setError(apiError);
+              toast.error(apiError);
+            } else {
+              toast.success("Phone verified successfully!");
+              closeAuthModal();
+            }
+          } catch (err: any) {
+            setError(err?.message || "Phone verification failed.");
+          } finally {
+            setLoading(false);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    (window as any).phoneEmailListener = async (userObj: any) => {
+      const userJsonUrl = userObj?.user_json_url;
+      if (userJsonUrl) {
+        setLoading(true);
+        try {
+          const { error: apiError } = await signInWithPhoneEmail({
+            url: userJsonUrl,
+          });
+          if (apiError) {
+            setError(apiError);
+            toast.error(apiError);
+          } else {
+            toast.success("Phone verified successfully!");
+            closeAuthModal();
+          }
+        } catch (err: any) {
+          setError(err?.message || "Phone verification failed.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    // Dynamically load phone.email script
+    if (!document.getElementById("phone-email-script")) {
+      const script = document.createElement("script");
+      script.id = "phone-email-script";
+      script.src = "https://www.phone.email/sign_in_button_v1.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      delete (window as any).phoneEmailListener;
+    };
+  }, [signInWithPhoneEmail, closeAuthModal]);
+
+  const triggerPhoneEmail = (targetPhone?: string) => {
+    setError(null);
+    const currUrl = window.location.origin;
+    const cleanPhone = (targetPhone || phone).replace(/\D/g, "");
+    const phoneParam = cleanPhone ? `&user_phone_no=${encodeURIComponent(cleanPhone)}` : "";
+    const popupUrl = `https://auth.phone.email/sign-in?client_id=${clientId}&auth_type=8&origin=${encodeURIComponent(
+      currUrl
+    )}${phoneParam}`;
+
+    const w = 500;
+    const h = 560;
+    const left = (window.screen.width - w) / 2;
+    const top = (window.screen.height - h) / 2;
+
+    window.open(
+      popupUrl,
+      "peLoginWindow",
+      `toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=${w},height=${h},top=${top},left=${left}`
+    );
+  };
+
   if (!isAuthModalOpen) return null;
 
   // Validation
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const isPhoneValid = /^[6-9]\d{9}$/.test(phone.replace(/\D/g, ""));
   const otpCode = otpDigits.join("");
   const isOtpComplete = otpCode.length === 6;
 
   // ---------------------------------------------
-  // Handlers for OTP inputs
+  // Handlers for Email OTP inputs
   // ---------------------------------------------
   const handleOtpDigitChange = (val: string, index: number) => {
     const clean = val.replace(/\D/g, "");
@@ -105,7 +198,6 @@ export function BookMyShowAuthModal() {
     updated[index] = digit;
     setOtpDigits(updated);
 
-    // Auto advance focus
     if (index < 5) {
       setActiveOtpIndex(index + 1);
       otpInputRefs.current[index + 1]?.focus();
@@ -260,7 +352,6 @@ export function BookMyShowAuthModal() {
     await handleSendEmailOtp();
   };
 
-  // Password Login (Fallback for existing password accounts)
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -281,95 +372,9 @@ export function BookMyShowAuthModal() {
     }
   };
 
-  // ---------------------------------------------
-  // Mobile Flow Handlers (Firebase SMS OTP)
-  // ---------------------------------------------
-  const handleSendPhoneOtp = async () => {
-    const rawDigits = phone.replace(/\D/g, "");
-    if (rawDigits.length !== 10) {
-      setError("Please enter a valid 10-digit mobile number.");
-      return;
-    }
-    setError(null);
-    setLoading(true);
-
-    try {
-      if ((window as any).recaptchaVerifier) {
-        try {
-          (window as any).recaptchaVerifier.clear();
-        } catch {}
-      }
-
-      (window as any).recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "auth-recaptcha-container",
-        {
-          size: "invisible",
-        }
-      );
-
-      const formatted = `+91${rawDigits}`;
-      const confirmation = await signInWithPhoneNumber(
-        auth,
-        formatted,
-        (window as any).recaptchaVerifier
-      );
-      (window as any).confirmationResult = confirmation;
-
-      setOtpDigits(["", "", "", "", "", ""]);
-      setResendTimer(30);
-      setView("mobile-otp");
-      toast.success(`OTP sent to +91 ${rawDigits}`);
-    } catch (err: any) {
-      console.warn("SMS sending error:", err);
-      setOtpDigits(["", "", "", "", "", ""]);
-      setResendTimer(30);
-      setView("mobile-otp");
-      toast.info(`Enter verification code sent to +91 ${rawDigits}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyPhoneOtp = async () => {
-    if (!isOtpComplete) return;
-    setError(null);
-    setLoading(true);
-
-    try {
-      const confirmObj = (window as any).confirmationResult;
-      if (confirmObj) {
-        const result = await confirmObj.confirm(otpCode);
-        const token = await result.user.getIdToken();
-        const res = await signInWithFirebase({ token });
-        if (res.error) {
-          setError(res.error);
-          toast.error(res.error);
-        } else {
-          toast.success("Phone verified successfully!");
-          closeAuthModal();
-        }
-      } else {
-        toast.success("Phone verified successfully!");
-        closeAuthModal();
-      }
-    } catch (err: any) {
-      setError(err?.message || "Invalid OTP code. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendPhoneOtp = async () => {
-    setOtpDigits(["", "", "", "", "", ""]);
-    setResendTimer(30);
-    await handleSendPhoneOtp();
-  };
-
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
       <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-200">
-        <div id="auth-recaptcha-container" className="hidden" />
 
         {/* VIEW 1: GET STARTED */}
         {view === "get-started" && (
@@ -445,8 +450,12 @@ export function BookMyShowAuthModal() {
               </span>
             </div>
 
+            {/* Mobile Number Input with phone.email trigger */}
             <div className="flex items-center border-b border-gray-300 pb-2.5 hover:border-gray-400 focus-within:border-[#7B1E3D] transition">
-              <div className="flex items-center gap-1.5 pr-3 cursor-pointer select-none">
+              <div
+                onClick={() => triggerPhoneEmail(phone)}
+                className="flex items-center gap-1.5 pr-3 cursor-pointer select-none"
+              >
                 <span className="text-lg leading-none">🇮🇳</span>
                 <span className="text-sm font-semibold text-gray-800">+91</span>
                 <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
@@ -457,23 +466,21 @@ export function BookMyShowAuthModal() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && isPhoneValid) {
-                    handleSendPhoneOtp();
+                  if (e.key === "Enter") {
+                    triggerPhoneEmail(phone);
                   }
                 }}
                 placeholder="Continue with mobile number"
-                className="w-full text-sm text-gray-800 outline-none placeholder:text-gray-400 bg-transparent font-medium"
+                className="pe_phone_number w-full text-sm text-gray-800 outline-none placeholder:text-gray-400 bg-transparent font-medium"
               />
-              {phone.length === 10 && (
-                <button
-                  type="button"
-                  onClick={handleSendPhoneOtp}
-                  disabled={loading}
-                  className="text-xs font-bold text-[#7B1E3D] hover:underline shrink-0 ml-2"
-                >
-                  {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Continue"}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => triggerPhoneEmail(phone)}
+                disabled={loading}
+                className="text-xs font-bold text-[#7B1E3D] hover:underline shrink-0 ml-2 cursor-pointer"
+              >
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Continue"}
+              </button>
             </div>
 
             <p className="text-[11px] text-gray-500 text-center leading-relaxed mt-10">
@@ -675,106 +682,6 @@ export function BookMyShowAuthModal() {
             <button
               type="button"
               onClick={handleVerifyEmailOtp}
-              disabled={!isOtpComplete || loading}
-              className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
-                isOtpComplete && !loading
-                  ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
-                  : "bg-[#F7DCE2] text-white/90 cursor-not-allowed"
-              }`}
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Continue"
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* VIEW 4: VERIFY MOBILE OTP */}
-        {view === "mobile-otp" && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setView("get-started");
-                }}
-                className="p-1 -ml-2 text-gray-700 hover:text-gray-900 rounded-full hover:bg-gray-100 transition"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                type="button"
-                onClick={closeAuthModal}
-                className="text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <h2 className="text-xl font-bold text-gray-900 mt-2">
-              Verify your Mobile Number
-            </h2>
-            <p className="text-xs text-gray-500 mt-1 mb-6">
-              Enter OTP sent to{" "}
-              <span className="font-semibold text-gray-800">+91 {phone}</span>
-            </p>
-
-            {error && (
-              <div className="mb-4 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg text-center font-medium border border-red-100">
-                {error}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between gap-2 sm:gap-2.5 my-6">
-              {otpDigits.map((digit, idx) => (
-                <input
-                  key={idx}
-                  ref={(el) => (otpInputRefs.current[idx] = el)}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => handleOtpDigitChange(e.target.value, idx)}
-                  onKeyDown={(e) => handleOtpKeyDown(e, idx)}
-                  onPaste={handleOtpPaste}
-                  onFocus={() => setActiveOtpIndex(idx)}
-                  className={`w-11 h-12 sm:w-12 sm:h-12 border rounded-lg text-center font-bold text-lg text-gray-900 transition outline-none ${
-                    activeOtpIndex === idx
-                      ? "border-red-500 ring-1 ring-red-500/20"
-                      : digit
-                      ? "border-gray-800"
-                      : "border-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <div className="text-center my-6">
-              {resendTimer > 0 ? (
-                <p className="text-xs text-gray-500">
-                  Expect OTP in{" "}
-                  <span className="font-bold text-gray-800">
-                    {resendTimer} seconds
-                  </span>
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleResendPhoneOtp}
-                  disabled={loading}
-                  className="text-xs font-bold text-[#7B1E3D] hover:underline"
-                >
-                  Resend OTP
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleVerifyPhoneOtp}
               disabled={!isOtpComplete || loading}
               className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
                 isOtpComplete && !loading
