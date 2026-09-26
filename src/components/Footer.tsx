@@ -14,10 +14,10 @@ const footerSections = [
     title: 'Help & Support',
     links: [
       { name: 'About Us', path: '#' },
-      { name: 'Contact Us', path: '#' },
+      { name: 'Contact Us', path: '/support' },
       { name: 'Terms & Conditions', path: '/terms' },
       { name: 'Privacy Policy', path: '#' },
-      { name: 'FAQs', path: '#' }
+      { name: 'FAQs', path: '/support' }
     ],
   },
 ];
@@ -35,24 +35,24 @@ export function Footer() {
       <div className="mx-auto max-w-[1280px] px-4 sm:px-6">
         
         <div className="flex flex-col md:flex-row items-center justify-around py-6 border-b border-[#444444] gap-6 mb-8 text-center">
-          <div className="flex flex-col items-center group cursor-pointer">
+          <Link to="/support" className="flex flex-col items-center group cursor-pointer">
             <div className="text-[#888888] group-hover:text-white transition-colors mb-2">
               <HeadphonesIcon size={36} strokeWidth={1.5} />
             </div>
             <span className="text-xs font-semibold text-[#888888] group-hover:text-white transition-colors">24/7 CUSTOMER CARE</span>
-          </div>
-          <div className="flex flex-col items-center group cursor-pointer">
+          </Link>
+          <Link to="/profile" className="flex flex-col items-center group cursor-pointer">
             <div className="text-[#888888] group-hover:text-white transition-colors mb-2">
               <TicketIcon size={36} strokeWidth={1.5} />
             </div>
             <span className="text-xs font-semibold text-[#888888] group-hover:text-white transition-colors">RESEND BOOKING CONFIRMATION</span>
-          </div>
-          <div className="flex flex-col items-center group cursor-pointer">
+          </Link>
+          <Link to="/support" className="flex flex-col items-center group cursor-pointer">
             <div className="text-[#888888] group-hover:text-white transition-colors mb-2">
               <MailIcon size={36} strokeWidth={1.5} />
             </div>
             <span className="text-xs font-semibold text-[#888888] group-hover:text-white transition-colors">SUBSCRIBE TO NEWSLETTER</span>
-          </div>
+          </Link>
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 pb-10">

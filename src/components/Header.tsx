@@ -680,7 +680,7 @@ export function Header() {
                     icon={Headphones}
                     title="Help & Support"
                     subtitle="View commonly asked queries and Chat"
-                    onClick={() => setDrawerTab("help")}
+                    onClick={() => handleProfileNavigation("/support")}
                     badge="24/7"
                   />
 
