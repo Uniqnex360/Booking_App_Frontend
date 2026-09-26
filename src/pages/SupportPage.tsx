@@ -12,699 +12,717 @@ import {
 } from '@/components/ui/dialog';
 import {
   Search,
-  HelpCircle,
-  Headphones,
-  Ticket,
-  CreditCard,
-  RefreshCw,
-  User,
-  Sparkles,
-  ChevronRight,
-  ChevronDown,
+  BookOpen,
+  Plus,
   ArrowLeft,
-  Mail,
-  Phone,
-  MessageSquare,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
+  X,
   ThumbsUp,
   ThumbsDown,
-  X,
-  Send,
+  CheckCircle2,
+  FileText,
   Loader2,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Article {
+interface SolutionArticle {
   id: string;
-  category: string;
-  categoryTitle: string;
+  topicId: string;
   title: string;
-  summary: string;
-  content: string[];
+  solution: string[];
 }
 
-const ARTICLES: Article[] = [
+interface TopicFolder {
+  id: string;
+  title: string;
+  count: number;
+  articles: SolutionArticle[];
+}
+
+const TOPIC_FOLDERS: TopicFolder[] = [
   {
-    id: 'cancel-ticket',
-    category: 'cancellation',
-    categoryTitle: 'Cancellation, Refund & Exchange Request',
-    title: 'Cancellation of a ticket',
-    summary: 'Step-by-step instructions on cancelling your confirmed cinema or event ticket.',
-    content: [
-      'To cancel your tickets, go to your Profile > Your Orders / Purchase History.',
-      'Select the booking you wish to cancel and click on "Cancel Booking".',
-      'Review the refund summary and cancellation charges (if applicable).',
-      'Confirm the cancellation. The refund will be initiated instantly to your original payment method.',
-      'Note: Cancellation eligibility is governed by the cinema or event organizer policy. Live entertainment events that are non-refundable will indicate "Non-Cancellable" on the ticket.',
+    id: 'cancellation',
+    title: 'Cancellation, Refund & Exchange Request',
+    count: 4,
+    articles: [
+      {
+        id: 'cancel-ticket',
+        topicId: 'cancellation',
+        title: 'Cancellation of a ticket',
+        solution: [
+          'Log in to your account and navigate to Profile > Purchase History / Your Orders.',
+          'Select the booking you wish to cancel and click on "Cancel Booking".',
+          'Review the cancellation fee and net refundable amount displayed on the screen.',
+          'Click "Confirm Cancellation". The refund will be initiated instantly to your original payment mode or Vyhbz Cash.',
+          'Note: Cancellation cut-off is typically 2 hours before showtime (subject to cinema/venue policy).',
+        ],
+      },
+      {
+        id: 'pvr-cancel',
+        topicId: 'cancellation',
+        title: 'PVR / Cinema Cancellation policy',
+        solution: [
+          'PVR and major multiplexes permit cancellation up to 20 minutes to 2 hours prior to the show start time.',
+          'A nominal cancellation charge per seat is deducted as specified by the exhibitor.',
+          'Food and beverage vouchers booked along with the ticket are 100% refunded.',
+        ],
+      },
+      {
+        id: 'refund-cancelled',
+        topicId: 'cancellation',
+        title: 'Refund against Cancelled booking',
+        solution: [
+          'Refunds are initiated immediately upon cancellation.',
+          'UPI & Wallet payments: Credited within 24 to 48 hours.',
+          'Credit & Debit cards: Credited within 5 to 7 working days depending on your issuing bank.',
+          'You can track the live refund status and bank RRN number under Profile > Purchase History.',
+        ],
+      },
+      {
+        id: 'event-cancellation',
+        topicId: 'cancellation',
+        title: 'Cancellation/Modification of an event/play/sport/online streaming',
+        solution: [
+          'As per live entertainment guidelines, tickets for concerts, plays, and sports matches are strictly non-cancellable and non-refundable unless the organizer officially cancels or postpones the show.',
+          'If an organizer reschedules or cancels a live event, you will receive a 100% automated refund to your source account.',
+        ],
+      },
     ],
   },
   {
-    id: 'refund-cancelled',
-    category: 'cancellation',
-    categoryTitle: 'Cancellation, Refund & Exchange Request',
-    title: 'Refund against Cancelled booking',
-    summary: 'Refund timelines, modes of refund, and banking turnaround times.',
-    content: [
-      'Once a booking cancellation is confirmed, refunds are processed through the payment gateway.',
-      'Credit/Debit Card & Net Banking refunds typically reflect in 5-7 working days.',
-      'UPI payments (Google Pay, PhonePe, Paytm) are usually refunded within 24 to 48 hours.',
-      'If you have not received your refund after 7 working days, please contact your bank with the refund RRN reference number displayed under your Order details.',
+    id: 'stream',
+    title: 'Vyhbz Stream & Live',
+    count: 20,
+    articles: [
+      {
+        id: 'stream-grievance',
+        topicId: 'stream',
+        title: 'How do I report Vyhbz Stream content grievances?',
+        solution: [
+          'For any content classification, rating, or subtitle grievances, please write to grievance@vyhbz.com.',
+          'Include your registered user email and the title of the streamed movie.',
+          'Our Grievance Redressal Officer will acknowledge within 24 hours and resolve within 15 days.',
+        ],
+      },
+      {
+        id: 'stream-library',
+        topicId: 'stream',
+        title: 'I am unable to view the movie under Stream Library, Please help!',
+        solution: [
+          'Ensure you are logged in using the exact same mobile number/email used during rental/purchase.',
+          'Refresh your browser or app and check under Profile > Stream Library.',
+          'Rented movies are accessible for 30 days, and for 48 hours once playback has commenced.',
+        ],
+      },
+      {
+        id: 'stream-discount',
+        topicId: 'stream',
+        title: "I bought/rented a movie but didn't get the discount. Can I get it now?",
+        solution: [
+          'Discounts and coupons must be applied on the payment page prior to completing the transaction.',
+          'Discounts cannot be applied retroactively after payment is completed.',
+        ],
+      },
+      {
+        id: 'stream-firetv',
+        topicId: 'stream',
+        title: 'How can I stream the movie on Vyhbz Stream App using Fire TV Stick?',
+        solution: [
+          'Download and open the Vyhbz app from the Amazon Fire TV Appstore.',
+          'Go to Settings > Login via Code and pair with your mobile phone.',
+          'All your rented or purchased titles will appear ready for HD playback.',
+        ],
+      },
+      {
+        id: 'stream-cancel',
+        topicId: 'stream',
+        title: 'Can I cancel my Vyhbz Stream transaction and get a refund?',
+        solution: [
+          'Digital stream purchases and rentals are digital consumables and cannot be cancelled or refunded once confirmed.',
+        ],
+      },
     ],
   },
   {
-    id: 'cinema-cancelled-show',
-    category: 'cancellation',
-    categoryTitle: 'Cancellation, Refund & Exchange Request',
-    title: 'Cinema did not play the movie / Show cancelled by venue',
-    summary: 'What happens when a showtime is cancelled by the cinema operator.',
-    content: [
-      'If a show is cancelled due to technical issues, weather conditions, or operational reasons by the cinema, you are entitled to a 100% refund including internet handling fees.',
-      'The refund is triggered automatically by our platform without needing any manual request.',
-      'You will receive an SMS and email notification confirming the show cancellation and refund details.',
+    id: 'payment',
+    title: 'Payment & Refund',
+    count: 4,
+    articles: [
+      {
+        id: 'pay-lazypay',
+        topicId: 'payment',
+        title: 'How does LazyPay / Pay Later work?',
+        solution: [
+          'Select LazyPay / Pay Later on the payment selection page.',
+          'Enter your registered mobile number and authenticate via OTP.',
+          'Your tickets will be booked immediately, and you can settle your LazyPay bill on the 3rd or 18th of the month.',
+        ],
+      },
+      {
+        id: 'pay-failed',
+        topicId: 'payment',
+        title: 'Why is my payment not going through?',
+        solution: [
+          'Check if online transactions and international usage are enabled on your card in your banking app.',
+          'Ensure your OTP or UPI PIN is entered correctly within the allocated 5-minute timeout.',
+          'If bank servers are experiencing high traffic, try paying via UPI QR code or Net Banking.',
+        ],
+      },
+      {
+        id: 'pay-charged-no-ticket',
+        topicId: 'payment',
+        title: "My amount was charged, but I haven't received the SMS/Email confirmation.",
+        solution: [
+          'In rare instances of banking network drops, the transaction may be debited without ticket generation.',
+          'Your bank will automatically reverse the full amount within 2 to 4 business days.',
+          'You can also check Profile > Purchase History to confirm if the booking was generated.',
+        ],
+      },
+      {
+        id: 'refund-delay',
+        topicId: 'payment',
+        title: "It’s more than 5 to 7 days, why haven't I received my refund?",
+        solution: [
+          'Please verify your bank account statement (not just SMS alerts) from the date of cancellation.',
+          'Note down the Bank RRN (Refund Reference Number) from your Purchase History.',
+          'Provide the RRN to your bank customer care to locate the credited funds.',
+        ],
+      },
     ],
   },
   {
-    id: 'event-rescheduled',
-    category: 'cancellation',
-    categoryTitle: 'Cancellation, Refund & Exchange Request',
-    title: 'Cancellation or modification of an event / concert',
-    summary: 'Policies for postponed, rescheduled, or cancelled live events.',
-    content: [
-      'If an event is rescheduled to a new date, your existing tickets remain valid for the new date automatically.',
-      'If you are unable to attend the rescheduled date, a refund window will be opened by the event organizer.',
-      'In case of complete cancellation, 100% refund is initiated back to your source account.',
+    id: 'giftcard',
+    title: 'Vyhbz Gift Card',
+    count: 7,
+    articles: [
+      {
+        id: 'gc-whatis',
+        topicId: 'giftcard',
+        title: 'What is a Vyhbz Gift Card?',
+        solution: [
+          'A Vyhbz Gift Card is a preloaded digital card that can be used to book movie tickets, food & beverages, and live event experiences on Vyhbz.',
+          'Gift cards can be shared with friends and family for birthdays, festivals, and corporate gifts.',
+        ],
+      },
+      {
+        id: 'gc-balance',
+        topicId: 'giftcard',
+        title: 'How do I check the validity/balance of my Vyhbz Gift card?',
+        solution: [
+          'Go to the payment checkout screen and select "Gift Voucher / Card".',
+          'Enter the 16-digit card number and 6-digit PIN and click "Check Balance".',
+          'The remaining balance and expiration date will be shown instantly.',
+        ],
+      },
+      {
+        id: 'gc-delivery',
+        topicId: 'giftcard',
+        title: 'How are Vyhbz Gift Cards delivered? How long does it take?',
+        solution: [
+          'Digital Gift Cards are delivered instantly via Email and WhatsApp to the recipient within 5 minutes of purchase.',
+        ],
+      },
+      {
+        id: 'gc-multiple',
+        topicId: 'giftcard',
+        title: 'Can I use multiple Gift Cards in a transaction?',
+        solution: [
+          'Yes, you can apply up to three Gift Cards in a single transaction on Vyhbz.',
+        ],
+      },
+      {
+        id: 'gc-cash',
+        topicId: 'giftcard',
+        title: 'Can we convert Gift Card amount into cash?',
+        solution: [
+          'As per RBI prepaid instrument regulations, gift cards cannot be transferred to bank accounts or redeemed for cash.',
+        ],
+      },
     ],
   },
   {
-    id: 'no-confirmation',
-    category: 'confirmation',
-    categoryTitle: 'Booking Confirmation & e-Tickets',
-    title: 'I have not received a confirmation SMS / Email',
-    summary: 'How to recover and view tickets if notification delivery is delayed.',
-    content: [
-      'Confirmation SMS and emails are dispatched immediately upon successful transaction.',
-      'In case of mobile network congestion or spam filters, you can always view your confirmed booking by navigating to Profile > Your Orders.',
-      'From Your Orders, you can click "Resend Confirmation" to trigger a fresh SMS and Email with your booking QR code.',
-      'Show the digital booking from the Vyhbz app/website directly at the venue entrance.',
+    id: 'offers',
+    title: 'Offers',
+    count: 1,
+    articles: [
+      {
+        id: 'offers-avail',
+        topicId: 'offers',
+        title: 'Availing Offers & Promo Codes',
+        solution: [
+          'Select your showtime and seats, then proceed to the Payment screen.',
+          'Under the "Unlock Offers or Apply Promocodes" section, enter code VYHBZ20 or select your eligible bank card offer.',
+          'Click "Apply" to reduce the ticket total instantly.',
+        ],
+      },
     ],
   },
   {
-    id: 'lost-ticket',
-    category: 'confirmation',
-    categoryTitle: 'Booking Confirmation & e-Tickets',
-    title: 'Did you lose the confirmation SMS or Email you received?',
-    summary: 'Quickly resend or download your valid e-ticket.',
-    content: [
-      'Do not worry! Your tickets are permanently saved in your Vyhbz account.',
-      'Log in with your registered mobile number or email address.',
-      'Go to Profile > Your Orders, find your event or movie, and tap "View Ticket".',
-      'You can download the ticket PDF or take a screenshot of the QR code.',
+    id: 'cinema-issues',
+    title: "Cinema didn't play the movie",
+    count: 2,
+    articles: [
+      {
+        id: 'cinema-canceled-show',
+        topicId: 'cinema-issues',
+        title: 'My show was canceled! What about the refund?',
+        solution: [
+          'If a show is cancelled by the cinema due to projector faults, power outages, or other causes, 100% refund is initiated automatically.',
+          'Refunds reflect within 5-7 working days. No manual claim is needed.',
+        ],
+      },
+      {
+        id: 'cinema-screening-status',
+        topicId: 'cinema-issues',
+        title: 'I’m not sure if the show that I have booked for is screening or not. Is my show cancelled?',
+        solution: [
+          'If a show is cancelled, an automated SMS/Email is dispatched to all ticket holders immediately.',
+          'You can also check the cinema schedule on the Movies page for that theater.',
+        ],
+      },
     ],
   },
   {
-    id: 'share-tickets',
-    category: 'confirmation',
-    categoryTitle: 'Booking Confirmation & e-Tickets',
-    title: 'How to share tickets with friends and family',
-    summary: 'Transfer or share digital tickets via WhatsApp or Email.',
-    content: [
-      'Open your booking from Your Orders.',
-      'Tap the "Share" icon at the top right of your ticket card.',
-      'You can share the ticket link or PDF directly via WhatsApp, SMS, or Email.',
-      'Each person entering the venue can display their individual ticket QR code.',
-    ],
-  },
-  {
-    id: 'payment-deducted-failed',
-    category: 'payment',
-    categoryTitle: 'Payment & Refunds',
-    title: 'My amount was charged, but booking failed',
-    summary: 'Understanding automatic bank reversals for failed transactions.',
-    content: [
-      'This happens when there is a network timeout between your bank and our ticketing gateway.',
-      'If your account was debited but no booking ID was issued, rest assured that your money is safe.',
-      'The amount will be automatically reversed by your bank within 2 to 4 business days.',
-      'You do not need to raise a dispute—the banking settlement automatically reconciles failed authorizations.',
-    ],
-  },
-  {
-    id: 'payment-not-going-through',
-    category: 'payment',
-    categoryTitle: 'Payment & Refunds',
-    title: 'Why is my payment not going through?',
-    summary: 'Troubleshooting card declines, UPI timeouts, and OTP errors.',
-    content: [
-      'Ensure your card has online domestic transactions enabled in your banking app.',
-      'For UPI payments, verify that you approve the payment mandate in your UPI app (GPay/PhonePe) within the 5-minute countdown.',
-      'Check if your browser has ad-blockers or pop-up blockers interfering with the payment gateway redirect.',
-      'Try an alternative payment method such as Net Banking, UPI QR, or a different card.',
-    ],
-  },
-  {
-    id: 'availing-offers',
-    category: 'offers',
-    categoryTitle: 'Offers, Coupons & Rewards',
-    title: 'How to apply coupon codes & bank discount offers',
-    summary: 'Steps to redeem discount vouchers and cashback promos at checkout.',
-    content: [
-      'On the checkout / payment screen, look for the "Apply Promo Code / Offers" section.',
-      'Enter your coupon code (e.g. VYHBZ20) and click "Apply".',
-      'The discount amount will be deducted from your total payable amount instantly.',
-      'Note: Only one promotional offer or coupon code can be applied per booking.',
-    ],
-  },
-  {
-    id: 'event-entry-rules',
-    category: 'events',
-    categoryTitle: 'Live Events & Venues',
-    title: 'Event entry rules, age restrictions and gates timing',
-    summary: 'Important guidelines for attending concerts, plays, and sports matches.',
-    content: [
-      'Gates typically open 60 to 90 minutes before the scheduled showtime. Please arrive early to clear security.',
-      'Check the age restriction listed on the event page (e.g., 18+, All Ages, Kids Allowed). Valid government photo ID may be required for age-restricted shows.',
-      'Outside food, beverages, recording equipment, and hazardous items are strictly prohibited by venue security.',
-      'Carry your digital ticket QR code with adequate phone battery brightness at the entrance turnstile.',
+    id: 'confirmation',
+    title: 'Confirmation',
+    count: 3,
+    articles: [
+      {
+        id: 'conf-share',
+        topicId: 'confirmation',
+        title: 'Share Tickets',
+        solution: [
+          'Go to Profile > Purchase History.',
+          'Select your booking and click the "Share" icon.',
+          'You can share the booking link, QR code, or PDF directly to WhatsApp, Telegram, or Email.',
+        ],
+      },
+      {
+        id: 'conf-not-received',
+        topicId: 'confirmation',
+        title: 'I have not received a confirmation SMS/WhatsApp/Email. Please help!',
+        solution: [
+          'Check your spam/junk folder in email or WhatsApp messages.',
+          'Your confirmed booking is always present under Profile > Purchase History. Simply show this digital screen at the theater gate.',
+        ],
+      },
+      {
+        id: 'conf-lost',
+        topicId: 'confirmation',
+        title: 'Did you just lose the confirmation SMS/WhatsApp/Email you received?',
+        solution: [
+          'Log in to Vyhbz and open Profile > Purchase History.',
+          'Click "Resend Confirmation" to immediately receive a fresh SMS and Email.',
+        ],
+      },
     ],
   },
 ];
 
 export default function SupportPage() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeArticle, setActiveArticle] = useState<SolutionArticle | null>(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
-  const [chatModalOpen, setChatModalOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { sender: 'bot', text: 'Hello! Welcome to Vyhbz Customer Care. How can I help you today?' },
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
-  const [ticketFormData, setTicketFormData] = useState({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [ticketData, setTicketData] = useState({
     name: '',
     email: '',
     phone: '',
-    category: 'Booking Issue',
-    bookingId: '',
+    category: 'Booking & Cancellation',
     description: '',
   });
 
-  const categories = [
-    { id: 'all', title: 'All Topics', icon: HelpCircle },
-    { id: 'cancellation', title: 'Cancellation & Refund', icon: RefreshCw },
-    { id: 'confirmation', title: 'Confirmation & e-Tickets', icon: Ticket },
-    { id: 'payment', title: 'Payment & Pricing', icon: CreditCard },
-    { id: 'events', title: 'Live Events & Venues', icon: Sparkles },
-    { id: 'offers', title: 'Offers & Coupons', icon: FileText },
-  ];
+  const allArticles = useMemo(() => {
+    return TOPIC_FOLDERS.flatMap((folder) => folder.articles);
+  }, []);
 
-  const filteredArticles = useMemo(() => {
-    return ARTICLES.filter((art) => {
-      const matchesCat = selectedCategory === 'all' || art.category === selectedCategory;
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        art.title.toLowerCase().includes(q) ||
-        art.summary.toLowerCase().includes(q) ||
-        art.content.some((c) => c.toLowerCase().includes(q));
-      return matchesCat && matchesSearch;
-    });
-  }, [selectedCategory, searchQuery]);
+  const searchResults = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return [];
+    return allArticles.filter(
+      (a) =>
+        a.title.toLowerCase().includes(q) ||
+        a.solution.some((s) => s.toLowerCase().includes(q))
+    );
+  }, [allArticles, searchTerm]);
 
   const handleTicketSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ticketFormData.email || !ticketFormData.description) {
+    if (!ticketData.email || !ticketData.description) {
       toast.error('Please enter your email and query description');
       return;
     }
-    setIsSubmittingTicket(true);
+    setIsSubmitting(true);
     setTimeout(() => {
-      setIsSubmittingTicket(false);
+      setIsSubmitting(false);
       setTicketModalOpen(false);
-      const ticketRef = 'VYH-' + Math.floor(100000 + Math.random() * 900000);
+      const ref = 'TICK-' + Math.floor(100000 + Math.random() * 900000);
       toast.success('Support Ticket Created!', {
-        description: `Your ticket reference is ${ticketRef}. Our team will respond within 4 hours.`,
+        description: `Your reference ID is ${ref}. We will respond within 4 hours.`,
       });
-      setTicketFormData({
+      setTicketData({
         name: '',
         email: '',
         phone: '',
-        category: 'Booking Issue',
-        bookingId: '',
+        category: 'Booking & Cancellation',
         description: '',
       });
     }, 1000);
   };
 
-  const handleSendChat = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
-    const userMsg = chatInput;
-    setChatMessages((prev) => [...prev, { sender: 'user', text: userMsg }]);
-    setChatInput('');
-    setTimeout(() => {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: 'bot',
-          text: `Thanks for reaching out regarding: "${userMsg}". A support executive will join this chat in moments. You can also email us at support@vyhbz.com for immediate escalations.`,
-        },
-      ]);
-    }, 800);
-  };
-
   return (
-    <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#efefef] text-[#333333] font-sans antialiased">
+      {/* Top Main Navigation Header */}
       <Header />
 
-      <main className="flex-1 pt-24 sm:pt-28 pb-16">
-        {/* BookMyShow Style Hero Support Banner */}
-        <section className="bg-[#2E3147] text-white py-12 px-4 shadow-md">
-          <div className="max-w-[1240px] mx-auto">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-              <div>
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#F84464] mb-2">
-                  <Headphones className="h-4 w-4 text-[#F84464]" />
-                  <span>24x7 Customer Care</span>
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                  Vyhbz Support Centre
-                </h1>
-                <p className="text-sm text-gray-300 mt-2 max-w-xl">
-                  Get all your ticketing, refund, and live event queries answered instantly.
-                </p>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex flex-wrap gap-3 shrink-0">
-                <Button
-                  onClick={() => setTicketModalOpen(true)}
-                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-xs px-4 py-2.5 rounded-lg shadow-sm transition"
-                >
-                  <FileText className="h-4 w-4 mr-1.5" /> New Support Ticket
-                </Button>
-                <Button
-                  onClick={() => setChatModalOpen(true)}
-                  variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 font-semibold text-xs px-4 py-2.5 rounded-lg transition"
-                >
-                  <MessageSquare className="h-4 w-4 mr-1.5" /> Live Chat
-                </Button>
-              </div>
-            </div>
-
-            {/* Big Search Bar (BookMyShow Style) */}
-            <div className="relative max-w-2xl">
-              <div className="flex items-center bg-white rounded-xl shadow-lg overflow-hidden p-1 border border-white/20">
-                <Search className="h-5 w-5 text-gray-400 ml-4 shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="How can we help you today? (e.g., cancel ticket, refund, missing SMS)"
-                  className="w-full bg-transparent px-3 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+      {/* Main Support Page Content (Exact BMS layout: max-w ~1140px, centered on #efefef) */}
+      <div className="pt-24 sm:pt-28 pb-16 px-3 sm:px-4">
+        <div className="max-w-[1140px] mx-auto">
+          {/* Header Banner (White rounded top with logo + Support Centre) */}
+          <div className="bg-white rounded-t-md px-6 py-4 border-b border-gray-200 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-4">
+              <Link to="/">
+                <img
+                  src="/logo.png"
+                  alt="Vyhbz"
+                  className="h-9 sm:h-11 w-auto object-contain"
                 />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="p-2 text-gray-400 hover:text-gray-600 mr-2"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+              </Link>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#333333] tracking-tight">
+                Vyhbz Support Centre
+              </h1>
             </div>
-          </div>
-        </section>
-
-        {/* Content Area: Two Columns (Do you know? + Knowledge base) */}
-        <div className="max-w-[1240px] mx-auto px-4 mt-8">
-          {/* Breadcrumb / Back button */}
-          <div className="mb-6 flex items-center justify-between">
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-[#7B1E3D] transition"
+              className="text-xs text-[#049cdb] hover:underline font-semibold hidden sm:inline-block"
             >
-              <ArrowLeft className="h-4 w-4" /> Back to Home
+              &larr; Back to Vyhbz Home
             </Link>
-            <span className="text-xs text-gray-500">
-              Showing {filteredArticles.length} solutions
-            </span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left Sidebar: 'Do you know?' (BookMyShow Signature Sidebar) */}
-            <aside className="lg:col-span-4 space-y-6">
-              <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm space-y-4">
-                <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-                  <AlertCircle className="h-5 w-5 text-[#7B1E3D] shrink-0" />
-                  <h2 className="text-base font-bold text-gray-900">
-                    Do you know?
-                  </h2>
-                </div>
+          {/* Red/Wine Solutions Ribbon Bar (Matches BMS crimson red/wine) */}
+          <nav className="bg-[#7B1E3D] px-6 py-2.5 flex items-center shadow-sm">
+            <span className="text-white text-sm font-semibold tracking-wide">
+              Solutions
+            </span>
+          </nav>
 
-                <ul className="space-y-3.5 text-xs text-gray-600 leading-relaxed">
-                  <li className="flex items-start gap-2.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#7B1E3D] mt-1.5 shrink-0" />
-                    <span>
-                      Most of your booking &amp; refund queries can be tracked by logging into{' '}
-                      <strong className="text-gray-900">Profile &gt; Your Orders</strong>.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#7B1E3D] mt-1.5 shrink-0" />
-                    <span>
-                      In case money was deducted and booking failed, your refund is automatically returned by your bank in{' '}
-                      <strong className="text-gray-900">5-7 working days</strong>.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#7B1E3D] mt-1.5 shrink-0" />
-                    <span>
-                      Ticket cancellation is available for most cinemas and events (subject to venue policy). Check your booking receipt for the cancellation cutoff time.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#7B1E3D] mt-1.5 shrink-0" />
-                    <span>
-                      Digital e-tickets on your mobile phone are 100% valid for entry across all cinemas and events. No printout required.
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Direct Helpline Card */}
-              <div className="bg-gradient-to-br from-[#7B1E3D] to-[#5C0F2A] text-white rounded-2xl p-6 shadow-md space-y-4">
-                <div className="flex items-center gap-2.5">
-                  <Headphones className="h-5 w-5 text-white/90" />
-                  <h3 className="font-bold text-sm tracking-wide">Need Urgent Assistance?</h3>
-                </div>
-                <p className="text-xs text-white/80 leading-relaxed">
-                  Our dedicated customer support agents are ready to assist you round the clock.
-                </p>
-                <div className="space-y-2 pt-2 border-t border-white/20 text-xs">
-                  <a
-                    href="mailto:support@vyhbz.com"
-                    className="flex items-center gap-2 text-white hover:text-white/80 font-medium transition"
+          {/* Hero Search Section (White box) */}
+          <section className="bg-white rounded-b-md p-6 sm:p-8 shadow-sm mb-6 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex-1 max-w-2xl">
+                <h2 className="text-xl sm:text-2xl font-bold text-[#049cdb] mb-3">
+                  How can we help you today?
+                </h2>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                  }}
+                  className="flex items-stretch shadow-sm"
+                >
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Enter your search term here..."
+                    className="flex-1 border border-[#cccccc] rounded-l px-4 py-2.5 text-sm text-[#333333] placeholder:text-[#999999] focus:outline-none focus:border-[#7B1E3D]"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-[#4d4d4d] hover:bg-[#333333] text-white px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-r transition"
                   >
-                    <Mail className="h-4 w-4 shrink-0" /> support@vyhbz.com
-                  </a>
-                  <a
-                    href="tel:1800200929"
-                    className="flex items-center gap-2 text-white hover:text-white/80 font-medium transition"
-                  >
-                    <Phone className="h-4 w-4 shrink-0" /> 1800-200-VYHBZ (Toll-Free)
-                  </a>
-                </div>
-              </div>
-            </aside>
-
-            {/* Right Main Content: Knowledge Base & FAQs */}
-            <section className="lg:col-span-8 space-y-6">
-              {/* Category Filter Pills */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                {categories.map((cat) => {
-                  const Icon = cat.icon;
-                  const isSelected = selectedCategory === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setSelectedCategory(cat.id);
-                        setSelectedArticle(null);
-                      }}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 ${
-                        isSelected
-                          ? 'bg-[#7B1E3D] text-white shadow-sm'
-                          : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{cat.title}</span>
-                    </button>
-                  );
-                })}
+                    SEARCH
+                  </button>
+                </form>
               </div>
 
-              {/* Solution Articles List */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm divide-y divide-gray-100 overflow-hidden">
-                <div className="p-5 bg-gray-50/70 border-b border-gray-100 flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                    Recommended Topics &amp; Solutions
-                  </h2>
-                  <span className="text-xs text-gray-500 font-medium">
-                    {filteredArticles.length} Articles
+              {/* + New support ticket button */}
+              <div className="shrink-0 flex items-center md:self-center">
+                <button
+                  onClick={() => setTicketModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#049cdb] hover:text-[#036690] transition hover:underline"
+                >
+                  <span className="h-4 w-4 rounded-full bg-[#049cdb] text-white flex items-center justify-center text-xs font-bold leading-none">
+                    +
                   </span>
+                  <span>New support ticket</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Live Search Results Dropdown */}
+            {searchTerm.trim() && (
+              <div className="mt-4 border border-gray-200 rounded-lg p-4 bg-gray-50 shadow-inner max-h-72 overflow-y-auto space-y-2">
+                <div className="flex items-center justify-between text-xs text-gray-500 font-semibold mb-2">
+                  <span>Search Results ({searchResults.length})</span>
+                  <button onClick={() => setSearchTerm('')} className="text-red-500 hover:underline">
+                    Clear
+                  </button>
                 </div>
-
-                {filteredArticles.length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 space-y-2">
-                    <HelpCircle className="h-10 w-10 text-gray-300 mx-auto" />
-                    <p className="text-base font-semibold text-gray-800">No matching queries found</p>
-                    <p className="text-xs text-gray-400 max-w-sm mx-auto">
-                      Try searching with different keywords like "refund", "booking", or contact our 24x7 support team.
-                    </p>
-                    <Button
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSelectedCategory('all');
-                      }}
-                      variant="outline"
-                      className="mt-3 text-xs border-gray-300"
-                    >
-                      Reset Search
-                    </Button>
-                  </div>
+                {searchResults.length === 0 ? (
+                  <p className="text-xs text-gray-400 py-2">
+                    No articles found matching "{searchTerm}". Try searching for 'refund', 'ticket', or 'payment'.
+                  </p>
                 ) : (
-                  filteredArticles.map((art) => {
-                    const isExpanded = selectedArticle?.id === art.id;
-                    return (
-                      <div key={art.id} className="p-5 hover:bg-gray-50/50 transition">
-                        <div
-                          onClick={() => setSelectedArticle(isExpanded ? null : art)}
-                          className="cursor-pointer flex items-start justify-between gap-4"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-[11px] font-semibold text-[#7B1E3D]">
-                              <span>{art.categoryTitle}</span>
-                            </div>
-                            <h3 className="text-sm font-bold text-gray-900 group-hover:text-[#7B1E3D] transition">
-                              {art.title}
-                            </h3>
-                            <p className="text-xs text-gray-500 leading-relaxed">
-                              {art.summary}
-                            </p>
-                          </div>
-                          <ChevronDown
-                            className={`h-5 w-5 text-gray-400 shrink-0 transition-transform duration-200 mt-1 ${
-                              isExpanded ? 'rotate-180 text-[#7B1E3D]' : ''
-                            }`}
-                          />
-                        </div>
-
-                        {/* Expanded Article Body */}
-                        {isExpanded && (
-                          <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-700 space-y-3 bg-gray-50/60 p-4 rounded-xl animate-in fade-in duration-200">
-                            <p className="font-semibold text-gray-900 text-sm">Solution Steps:</p>
-                            <ol className="list-decimal pl-4 space-y-2 leading-relaxed">
-                              {art.content.map((step, idx) => (
-                                <li key={idx}>{step}</li>
-                              ))}
-                            </ol>
-
-                            <div className="pt-3 border-t border-gray-200 flex items-center justify-between text-xs text-gray-500">
-                              <span>Was this helpful?</span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => toast.success('Thank you for your feedback!')}
-                                  className="p-1.5 rounded hover:bg-gray-200 text-gray-600 transition flex items-center gap-1"
-                                >
-                                  <ThumbsUp className="h-3.5 w-3.5" /> Yes
-                                </button>
-                                <button
-                                  onClick={() => setTicketModalOpen(true)}
-                                  className="p-1.5 rounded hover:bg-gray-200 text-gray-600 transition flex items-center gap-1"
-                                >
-                                  <ThumbsDown className="h-3.5 w-3.5" /> Need more help
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
+                  searchResults.map((res) => (
+                    <div
+                      key={res.id}
+                      onClick={() => setActiveArticle(res)}
+                      className="cursor-pointer p-2.5 bg-white rounded border border-gray-200 hover:border-[#7B1E3D] transition flex items-center justify-between"
+                    >
+                      <span className="text-xs font-semibold text-[#049cdb] hover:underline">
+                        {res.title}
+                      </span>
+                      <ChevronRight className="h-3.5 w-3.5 text-gray-400" />
+                    </div>
+                  ))
                 )}
               </div>
+            )}
+          </section>
+
+          {/* Two-Column Grid: Knowledge Base (Left) + Do you know? (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Card: Knowledge Base (BMS 2-column topic list) */}
+            <section className="lg:col-span-8 bg-white rounded-md p-6 shadow-sm border border-gray-200">
+              <h2 className="text-xl font-bold text-[#049cdb] leading-tight">
+                Knowledge base
+              </h2>
+              {/* Wine underline */}
+              <div className="w-full h-[2px] bg-[#7B1E3D] mt-2 mb-4" />
+
+              <h3 className="text-base font-bold text-[#333333] mb-5">
+                Recommended Topics
+              </h3>
+
+              {/* 2-Column Topics Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-7 text-xs">
+                {TOPIC_FOLDERS.map((folder) => (
+                  <div key={folder.id} className="space-y-2.5">
+                    {/* Folder Title with Item Count */}
+                    <div className="font-bold text-sm text-[#333333] flex items-center gap-1.5 pb-1 border-b border-gray-100">
+                      <span>{folder.title}</span>
+                      <span className="text-[#999999] font-normal">({folder.count})</span>
+                    </div>
+
+                    {/* Article Links with Book Icon */}
+                    <ul className="space-y-2 pt-1">
+                      {folder.articles.slice(0, 5).map((art) => (
+                        <li key={art.id} className="flex items-start gap-2 group">
+                          <span className="text-gray-400 mt-0.5 shrink-0">
+                            📖
+                          </span>
+                          <button
+                            onClick={() => setActiveArticle(art)}
+                            className="text-left text-[#049cdb] hover:text-[#036690] hover:underline transition leading-snug font-normal line-clamp-2"
+                          >
+                            {art.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {folder.count > 5 && (
+                      <button
+                        onClick={() => setActiveArticle(folder.articles[0])}
+                        className="text-[11px] font-semibold text-[#049cdb] hover:underline pt-1 inline-block"
+                      >
+                        &raquo; View all {folder.count}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </section>
+
+            {/* Right Card: Do you know? (BMS Signature Card) */}
+            <aside className="lg:col-span-4 bg-white rounded-md p-6 shadow-sm border border-gray-200 self-start">
+              <h2 className="text-xl font-bold text-[#049cdb] leading-tight">
+                Do you know?
+              </h2>
+              {/* Wine underline */}
+              <div className="w-full h-[2px] bg-[#7B1E3D] mt-2 mb-4" />
+
+              <ul className="space-y-4 text-xs text-[#333333] leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7B1E3D] font-bold text-sm shrink-0">&bull;</span>
+                  <span>
+                    Most of your booking &amp; refund related queries can be answered by logging into your{' '}
+                    <strong className="text-[#222222]">Profile &gt; Purchase History</strong>. Please register and login before the purchase to avoid many booking related issues.
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7B1E3D] font-bold text-sm shrink-0">&bull;</span>
+                  <span>
+                    In case money is deducted and booking failed, please be rest assured that you will receive the refund in{' '}
+                    <strong className="text-[#222222]">max 5-7 working days</strong>. You can check Refund status in the{' '}
+                    <strong className="text-[#222222]">Profile &gt; Purchase History</strong>.
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7B1E3D] font-bold text-sm shrink-0">&bull;</span>
+                  <span>
+                    Opt refund to <strong className="text-[#222222]">&quot;Vyhbz Cash&quot;</strong> to get{' '}
+                    <strong className="text-[#222222]">Instant credit</strong> for future purchases.{' '}
+                    <button onClick={() => setActiveArticle(TOPIC_FOLDERS[2].articles[0])} className="text-[#049cdb] hover:underline">
+                      Know more &gt;&gt;
+                    </button>
+                  </span>
+                </li>
+
+                <li className="flex items-start gap-2">
+                  <span className="text-[#7B1E3D] font-bold text-sm shrink-0">&bull;</span>
+                  <span>
+                    Ticket cancellation is available for most of the cinemas. However, there are certain exceptions such as offer/loyalty points applied, cut-off time exceeded, monthly cancellation limit (3 times) exhausted, etc. which can prevent you from going ahead with the cancellation. Please note that there is no ticket cancellation applicable for Live Entertainment.
+                  </span>
+                </li>
+              </ul>
+            </aside>
           </div>
         </div>
-      </main>
+      </div>
 
-      {/* New Support Ticket Modal (Freshdesk/BMS style) */}
+      {/* Article Detail Modal (Shows full solution steps just like clicking on BMS) */}
+      <Dialog open={!!activeArticle} onOpenChange={(open) => !open && setActiveArticle(null)}>
+        <DialogContent className="sm:max-w-lg bg-white p-6 rounded-lg shadow-xl">
+          {activeArticle && (
+            <>
+              <DialogHeader className="border-b border-gray-100 pb-3 text-left">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#7B1E3D] uppercase tracking-wider mb-1">
+                  <span>Solution Article</span>
+                </div>
+                <DialogTitle className="text-lg font-bold text-[#333333] leading-snug">
+                  {activeArticle.title}
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="py-3 space-y-3 text-xs text-[#444444] leading-relaxed">
+                <p className="font-bold text-sm text-[#222222]">Resolution Steps:</p>
+                <ol className="list-decimal pl-4 space-y-2">
+                  {activeArticle.solution.map((step, idx) => (
+                    <li key={idx}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+
+              <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                <span>Was this article helpful?</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      toast.success('Thank you for your feedback!');
+                      setActiveArticle(null);
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded border border-gray-200 hover:bg-gray-100 transition text-[#333333]"
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" /> Yes
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveArticle(null);
+                      setTicketModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded border border-gray-200 hover:bg-gray-100 transition text-[#333333]"
+                  >
+                    <ThumbsDown className="h-3.5 w-3.5" /> No, need help
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* New Support Ticket Modal (BMS / Freshdesk style) */}
       <Dialog open={ticketModalOpen} onOpenChange={setTicketModalOpen}>
-        <DialogContent className="sm:max-w-lg bg-white p-6 rounded-2xl shadow-xl">
+        <DialogContent className="sm:max-w-md bg-white p-6 rounded-lg shadow-xl">
           <DialogHeader className="border-b border-gray-100 pb-3 text-left">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#7B1E3D] uppercase tracking-wider mb-1">
-              <FileText className="h-4 w-4" />
-              <span>Customer Helpdesk</span>
-            </div>
-            <DialogTitle className="text-xl font-bold text-gray-900">
-              Submit a Support Query
+            <DialogTitle className="text-lg font-bold text-[#333333]">
+              Submit a support ticket
             </DialogTitle>
             <DialogDescription className="text-xs text-gray-500">
-              Provide your details and we will investigate your issue promptly.
+              Fill out this form and our support team will get back to you shortly.
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleTicketSubmit} className="space-y-4 py-2 text-xs">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-semibold text-gray-700 block mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={ticketFormData.name}
-                  onChange={(e) => setTicketFormData({ ...ticketFormData, name: e.target.value })}
-                  placeholder="Your name"
-                  className="w-full p-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
-                />
-              </div>
-              <div>
-                <label className="font-semibold text-gray-700 block mb-1">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={ticketFormData.email}
-                  onChange={(e) => setTicketFormData({ ...ticketFormData, email: e.target.value })}
-                  placeholder="name@example.com"
-                  className="w-full p-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="font-semibold text-gray-700 block mb-1">Phone Number</label>
-                <input
-                  type="tel"
-                  value={ticketFormData.phone}
-                  onChange={(e) => setTicketFormData({ ...ticketFormData, phone: e.target.value })}
-                  placeholder="+91 98765 43210"
-                  className="w-full p-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
-                />
-              </div>
-              <div>
-                <label className="font-semibold text-gray-700 block mb-1">Booking Ref (Optional)</label>
-                <input
-                  type="text"
-                  value={ticketFormData.bookingId}
-                  onChange={(e) => setTicketFormData({ ...ticketFormData, bookingId: e.target.value })}
-                  placeholder="e.g. VYH-9812"
-                  className="w-full p-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
-                />
-              </div>
+          <form onSubmit={handleTicketSubmit} className="space-y-3.5 py-2 text-xs">
+            <div>
+              <label className="font-semibold text-gray-700 block mb-1">Requester Name</label>
+              <input
+                type="text"
+                required
+                value={ticketData.name}
+                onChange={(e) => setTicketData({ ...ticketData, name: e.target.value })}
+                placeholder="Your name"
+                className="w-full p-2 rounded border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
+              />
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 block mb-1">Issue Category</label>
+              <label className="font-semibold text-gray-700 block mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                value={ticketData.email}
+                onChange={(e) => setTicketData({ ...ticketData, email: e.target.value })}
+                placeholder="name@example.com"
+                className="w-full p-2 rounded border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
+              />
+            </div>
+
+            <div>
+              <label className="font-semibold text-gray-700 block mb-1">Phone Number</label>
+              <input
+                type="tel"
+                value={ticketData.phone}
+                onChange={(e) => setTicketData({ ...ticketData, phone: e.target.value })}
+                placeholder="+91 9876543210"
+                className="w-full p-2 rounded border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
+              />
+            </div>
+
+            <div>
+              <label className="font-semibold text-gray-700 block mb-1">Category</label>
               <select
-                value={ticketFormData.category}
-                onChange={(e) => setTicketFormData({ ...ticketFormData, category: e.target.value })}
-                className="w-full p-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D] bg-white"
+                value={ticketData.category}
+                onChange={(e) => setTicketData({ ...ticketData, category: e.target.value })}
+                className="w-full p-2 rounded border border-gray-300 text-xs bg-white focus:outline-none focus:border-[#7B1E3D]"
               >
-                <option value="Booking Issue">Booking &amp; Ticket Delivery</option>
-                <option value="Cancellation & Refund">Cancellation &amp; Refund</option>
-                <option value="Payment Failure">Payment Debited but Failed</option>
-                <option value="Event Inquiry">Live Event / Venue Inquiry</option>
-                <option value="Other">Other Queries</option>
+                <option value="Booking & Cancellation">Booking &amp; Cancellation</option>
+                <option value="Payment & Refund">Payment &amp; Refund</option>
+                <option value="Live Event & Venue">Live Event &amp; Venue</option>
+                <option value="Other">Other</option>
               </select>
             </div>
 
             <div>
-              <label className="font-semibold text-gray-700 block mb-1">Description of Issue</label>
+              <label className="font-semibold text-gray-700 block mb-1">Description</label>
               <textarea
                 rows={4}
                 required
-                value={ticketFormData.description}
-                onChange={(e) => setTicketFormData({ ...ticketFormData, description: e.target.value })}
-                placeholder="Please explain your issue in detail so we can resolve it quickly..."
-                className="w-full p-2.5 rounded-lg border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
+                value={ticketData.description}
+                onChange={(e) => setTicketData({ ...ticketData, description: e.target.value })}
+                placeholder="Please explain your issue in detail..."
+                className="w-full p-2 rounded border border-gray-300 text-xs focus:outline-none focus:border-[#7B1E3D]"
               />
             </div>
 
             <Button
               type="submit"
-              disabled={isSubmittingTicket}
-              className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold py-2.5 rounded-xl transition text-sm"
+              disabled={isSubmitting}
+              className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-2 rounded text-xs transition uppercase tracking-wider"
             >
-              {isSubmittingTicket ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...
                 </>
               ) : (
-                'Submit Support Ticket'
+                'Submit Ticket'
               )}
             </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Live Chat Modal */}
-      <Dialog open={chatModalOpen} onOpenChange={setChatModalOpen}>
-        <DialogContent className="sm:max-w-md bg-white p-6 rounded-2xl shadow-xl flex flex-col h-[520px]">
-          <DialogHeader className="border-b border-gray-100 pb-3 text-left shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse" />
-                <DialogTitle className="text-base font-bold text-gray-900">
-                  Vyhbz Live Assistance
-                </DialogTitle>
-              </div>
-              <span className="text-[11px] text-gray-400">Online</span>
-            </div>
-            <DialogDescription className="text-[11px] text-gray-500">
-              Average response time under 1 minute
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto py-3 space-y-3 text-xs pr-1">
-            {chatMessages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-[#7B1E3D] text-white rounded-tr-none'
-                      : 'bg-gray-100 text-gray-800 rounded-tl-none'
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Chat Input */}
-          <form onSubmit={handleSendChat} className="pt-3 border-t border-gray-100 flex gap-2 shrink-0">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#7B1E3D]"
-            />
-            <button
-              type="submit"
-              className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white p-2.5 rounded-xl transition shadow-sm"
-            >
-              <Send className="h-4 w-4" />
-            </button>
           </form>
         </DialogContent>
       </Dialog>
