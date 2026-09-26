@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { getWishlist, removeFromWishlist, type WishlistItem } from "@/utils/wishlist";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,8 @@ import {
   Check,
   Ticket,
   Loader2,
+  Trash2,
+  Film,
   Calendar as CalendarIcon,
 } from "lucide-react";
 import { formatCurrency } from "@/utils/currencyFormatter";
@@ -47,9 +50,45 @@ const GENDER_OPTIONS: { label: string; value: Gender }[] = [
 
 export default function ProfilePage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading, signOut, refreshUser } = useAuth() as any;
 
-  const [activeTab, setActiveTab] = useState<Tab>("profile");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const tabParam = new URLSearchParams(window.location.search).get("tab");
+    if (tabParam === "orders") return "orders";
+    if (tabParam === "saved" || tabParam === "wishlist") return "saved";
+    return "profile";
+  });
+
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "orders") {
+      setActiveTab("orders");
+    } else if (tabParam === "saved" || tabParam === "wishlist") {
+      setActiveTab("saved");
+    } else if (tabParam === "profile") {
+      setActiveTab("profile");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    setWishlist(getWishlist());
+    const handleWishlistChange = () => setWishlist(getWishlist());
+    window.addEventListener("wishlist-updated", handleWishlistChange);
+    return () => window.removeEventListener("wishlist-updated", handleWishlistChange);
+  }, []);
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
+  const handleRemoveWishlist = (id: string, title: string) => {
+    removeFromWishlist(id);
+    toast.success("Removed \"" + title + "\" from Wishlist");
+  };
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingsLoading, setBookingsLoading] = useState(true);
 
@@ -292,19 +331,19 @@ export default function ProfilePage() {
               icon={User}
               label="Profile"
               active={activeTab === "profile"}
-              onClick={() => setActiveTab("profile")}
+              onClick={() => handleTabChange("profile")}
             />
             <SidebarItem
               icon={ListOrdered}
               label="Your Orders"
               active={activeTab === "orders"}
-              onClick={() => setActiveTab("orders")}
+              onClick={() => handleTabChange("orders")}
             />
             <SidebarItem
               icon={Heart}
               label="Your Wishlist"
               active={activeTab === "saved"}
-              onClick={() => setActiveTab("saved")}
+              onClick={() => handleTabChange("saved")}
             />
             <div className="my-2 border-t border-gray-100 mx-4" />
             <button
@@ -621,16 +660,98 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* SAVED */}
+          {/* SAVED / WISHLIST */}
           {activeTab === "saved" && (
-            <div className="animate-in fade-in duration-300 text-center py-20">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-50">
-                <Heart className="h-8 w-8 text-gray-400" />
+            <div className="animate-in fade-in duration-300">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Your Wishlist</h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Movies and events saved to your personal collection
+                  </p>
+                </div>
+                {wishlist.length > 0 && (
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-[#7B1E3D]/10 text-[#7B1E3D]">
+                    {wishlist.length} item{wishlist.length > 1 ? "s" : ""}
+                  </span>
+                )}
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Your Wishlist is Empty</h3>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-                Save events and movies to find them easily later.
-              </p>
+
+              {wishlist.length === 0 ? (
+                <div className="rounded-xl border border-gray-200 bg-gray-50 py-16 text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
+                    <Heart className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Your Wishlist is Empty</h3>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+                    Save movies and live events you are interested in to find and book them quickly anytime.
+                  </p>
+                  <div className="flex items-center justify-center gap-3 mt-6">
+                    <Button asChild className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white">
+                      <Link to="/movies">Explore Movies</Link>
+                    </Button>
+                    <Button asChild variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                      <Link to="/events">Explore Events</Link>
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {wishlist.map((item) => (
+                    <div
+                      key={item.id}
+                      className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all"
+                    >
+                      <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+                            <Film className="h-10 w-10" />
+                          </div>
+                        )}
+                        <div className="absolute top-2.5 left-2.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-black/75 text-white backdrop-blur-sm">
+                            {item.type}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleRemoveWishlist(item.id, item.title)}
+                          className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-500 hover:text-red-600 flex items-center justify-center shadow transition"
+                          title="Remove from wishlist"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div className="p-4 flex flex-col flex-1 justify-between">
+                        <div>
+                          <h4 className="font-bold text-gray-900 line-clamp-1 group-hover:text-[#7B1E3D] transition">
+                            {item.title}
+                          </h4>
+                          {item.subtitle && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                              {item.subtitle}
+                            </p>
+                          )}
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-gray-100">
+                          <Button
+                            asChild
+                            size="sm"
+                            className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white text-xs font-semibold"
+                          >
+                            <Link to={item.link}>Book Now</Link>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

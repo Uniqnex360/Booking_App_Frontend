@@ -31,6 +31,7 @@ import {
 } from "@/utils/moviesHelper";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingPage } from "./LoadingPage";
+import { isInWishlist, toggleWishlist } from "@/utils/wishlist";
 
 const MAX_TICKETS = 10;
 
@@ -54,6 +55,32 @@ export default function MovieDetailPage() {
   const [selectedFormat, setSelectedFormat] = useState<string>("");
   const [ticketCount, setTicketCount] = useState(2);
   const [copied, setCopied] = useState(false);
+  const [inWishlist, setInWishlist] = useState(false);
+
+  useEffect(() => {
+    if (movie) {
+      setInWishlist(isInWishlist(movie.id));
+    }
+  }, [movie]);
+
+  const handleToggleWishlist = () => {
+    if (!movie) return;
+    const added = toggleWishlist({
+      id: movie.id,
+      type: "MOVIE",
+      title: movie.title,
+      image_url: movie.poster_url || undefined,
+      subtitle: `${genres.join(", ")} • ${movie.language || "English"}`,
+      link: `/movies/${movie.id}?city=${city}`,
+      addedAt: new Date().toISOString(),
+    });
+    setInWishlist(added);
+    if (added) {
+      toast.success(`"${movie.title}" added to your Wishlist`);
+    } else {
+      toast.info(`"${movie.title}" removed from your Wishlist`);
+    }
+  };
 
   const location = useLocation();
 
@@ -361,6 +388,18 @@ export default function MovieDetailPage() {
                   className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/30"
                 >
                   Book tickets
+                </button>
+
+                <button
+                  onClick={handleToggleWishlist}
+                  className={`w-11 h-11 rounded-full flex items-center justify-center transition border ${
+                    inWishlist
+                      ? "bg-[#7B1E3D] border-[#7B1E3D] text-white"
+                      : "bg-white/10 border-white/20 hover:bg-white/20 text-white"
+                  }`}
+                  title={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                >
+                  <Heart className={`h-5 w-5 ${inWishlist ? "fill-current" : ""}`} />
                 </button>
 
                 <button

@@ -39,6 +39,9 @@ import {
   Check,
   ExternalLink,
   Bell,
+  Tv,
+  CreditCard,
+  HeartHandshake,
 } from "lucide-react";
 import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
 import { toast } from "sonner";
@@ -109,13 +112,89 @@ function storeCity(city: string) {
   } catch {}
 }
 
+interface DrawerNotification {
+  id: string;
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  type: "booking" | "offer" | "update";
+  link?: string;
+}
+
+const DEFAULT_NOTIFICATIONS: DrawerNotification[] = [
+  {
+    id: "notif-1",
+    title: "Booking Confirmed! 🎉",
+    description: "Your reservation is confirmed. Download tickets or view details in Your Orders.",
+    time: "2 hours ago",
+    read: false,
+    type: "booking",
+    link: "/profile?tab=orders",
+  },
+  {
+    id: "notif-2",
+    title: "Weekend Movie Carnival 🍿",
+    description: "Get 25% instant off on IMAX & 4DX experiences. Use promo code WEEKEND25 at checkout.",
+    time: "1 day ago",
+    read: false,
+    type: "offer",
+    link: "/movies",
+  },
+  {
+    id: "notif-3",
+    title: "Live Concerts Alert 🎸",
+    description: "Brand new musical nights & live concerts announced in your city. Early bird passes live!",
+    time: "3 days ago",
+    read: true,
+    type: "update",
+    link: "/events",
+  },
+];
+
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerTab, setDrawerTab] = useState<"main" | "help" | "settings" | "rewards">("main");
+  const [drawerTab, setDrawerTab] = useState<"main" | "notifications" | "help" | "settings" | "rewards" | "playCard" | "bookAChange">("main");
+
+  const [notifications, setNotifications] = useState<DrawerNotification[]>(() => {
+    try {
+      const saved = localStorage.getItem("vyhbz_notifications");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_NOTIFICATIONS;
+  });
+
+  const unreadNotifCount = notifications.filter((n) => !n.read).length;
+
+  const handleMarkAllRead = () => {
+    const updated = notifications.map((n) => ({ ...n, read: true }));
+    setNotifications(updated);
+    localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+    toast.success("All notifications marked as read");
+  };
+
+  const handleClearNotifications = () => {
+    setNotifications([]);
+    localStorage.setItem("vyhbz_notifications", JSON.stringify([]));
+    toast.info("Cleared all notifications");
+  };
+
+  const handleNotificationClick = (notif: DrawerNotification) => {
+    const updated = notifications.map((n) =>
+      n.id === notif.id ? { ...n, read: true } : n
+    );
+    setNotifications(updated);
+    localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+
+    if (notif.link) {
+      setDrawerOpen(false);
+      navigate(withCity(notif.link, city));
+    }
+  };
   const [faqCategory, setFaqCategory] = useState<"all" | "booking" | "cancellation" | "payment" | "account">("all");
   const [faqSearch, setFaqSearch] = useState("");
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
@@ -587,7 +666,7 @@ export function Header() {
                 >
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 leading-tight">
-                      {user.full_name || "Hi, Guest"}
+                      {user.full_name ? `Hi, ${user.full_name}` : "Hi, Guest"}
                     </h2>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 hover:text-[#7B1E3D] transition">
                       Edit Profile <ChevronRight size={14} />
@@ -657,47 +736,74 @@ export function Header() {
                 </div>
 
                 <div className="py-1">
+                  {/* Notifications */}
+                  <DrawerMenuItem
+                    icon={Bell}
+                    title="Notifications"
+                    badge={unreadNotifCount > 0 ? `${unreadNotifCount}` : undefined}
+                    onClick={() => setDrawerTab("notifications")}
+                  />
+
                   {/* Your Orders */}
                   <DrawerMenuItem
                     icon={Ticket}
                     title="Your Orders"
                     subtitle="View all your bookings & purchases"
-                    onClick={() => handleProfileNavigation(withCity("/profile", city))}
+                    onClick={() => handleProfileNavigation(withCity("/profile?tab=orders", city))}
                   />
 
-                  {/* Wishlist */}
+                  {/* Your Wishlist */}
                   <DrawerMenuItem
                     icon={Heart}
                     title="Your Wishlist"
-                    subtitle="View your saved events and movies"
-                    onClick={() => handleProfileNavigation(withCity("/profile", city))}
+                    onClick={() => handleProfileNavigation(withCity("/profile?tab=saved", city))}
                   />
-                </div>
 
-                <div className="py-1">
-                  {/* Help & Support (BookMyShow style) */}
+                  {/* Stream Library */}
                   <DrawerMenuItem
-                    icon={Headphones}
+                    icon={Tv}
+                    title="Stream Library"
+                    subtitle="Rented & Purchased Movies"
+                    onClick={() => handleProfileNavigation(withCity("/movies", city))}
+                  />
+
+                  {/* Play Credit Card */}
+                  <DrawerMenuItem
+                    icon={CreditCard}
+                    title="Play Credit Card"
+                    subtitle="View your Play Credit Card details and offers"
+                    onClick={() => setDrawerTab("playCard")}
+                  />
+
+                  {/* Help & Support */}
+                  <DrawerMenuItem
+                    icon={MessageSquare}
                     title="Help & Support"
                     subtitle="View commonly asked queries and Chat"
                     onClick={() => handleProfileNavigation("/support")}
-                    badge="24/7"
                   />
 
-                  {/* Account & Settings */}
+                  {/* Accounts & Settings */}
                   <DrawerMenuItem
                     icon={Settings}
-                    title="Account & Settings"
-                    subtitle="Location, payments, permissions & more"
+                    title="Accounts & Settings"
+                    subtitle="Location, Payments, Permissions & More"
                     onClick={() => setDrawerTab("settings")}
                   />
 
-                  {/* Rewards & Offers */}
+                  {/* Rewards */}
                   <DrawerMenuItem
                     icon={Gift}
-                    title="Rewards & Offers"
+                    title="Rewards"
                     subtitle="View your rewards & unlock new ones"
                     onClick={() => setDrawerTab("rewards")}
+                  />
+
+                  {/* BookAChange */}
+                  <DrawerMenuItem
+                    icon={HeartHandshake}
+                    title="BookAChange"
+                    onClick={() => setDrawerTab("bookAChange")}
                   />
                 </div>
 
@@ -749,12 +855,253 @@ export function Header() {
                       signOut();
                     }}
                     variant="outline"
-                    className="w-full border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600 rounded-lg h-11 font-semibold bg-white transition"
+                    className="w-full border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 hover:text-[#5C0F2A] rounded-lg h-11 font-semibold bg-white transition shadow-sm"
                   >
                     Sign out
                   </Button>
                 </div>
               )}
+            </div>
+          )}
+
+                    {/* TAB: NOTIFICATIONS */}
+          {drawerTab === "notifications" && (
+            <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setDrawerTab("main")}
+                    className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-gray-900 transition"
+                    title="Back"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                      Notifications
+                    </h2>
+                    {unreadNotifCount > 0 && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-[#7B1E3D] text-white rounded-full">
+                        {unreadNotifCount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {unreadNotifCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-xs font-semibold text-[#7B1E3D] hover:underline"
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                  <SheetClose className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500">
+                    <X className="h-5 w-5" />
+                  </SheetClose>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-gray-50">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-20 px-6">
+                    <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3 text-gray-400">
+                      <Bell size={24} />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-900">No Notifications</h3>
+                    <p className="text-xs text-gray-500 mt-1 max-w-xs mx-auto">
+                      You are all caught up! Bookings, vouchers, and personalized alerts will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      onClick={() => handleNotificationClick(notif)}
+                      className={`p-4 flex items-start gap-3 hover:bg-gray-50 transition cursor-pointer ${
+                        !notif.read ? "bg-[#7B1E3D]/[0.02]" : ""
+                      }`}
+                    >
+                      <div
+                        className={`p-2.5 rounded-full shrink-0 ${
+                          notif.type === "booking"
+                            ? "bg-green-100 text-green-700"
+                            : notif.type === "offer"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-[#7B1E3D]/10 text-[#7B1E3D]"
+                        }`}
+                      >
+                        {notif.type === "booking" ? (
+                          <Ticket size={16} />
+                        ) : notif.type === "offer" ? (
+                          <Gift size={16} />
+                        ) : (
+                          <Bell size={16} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4
+                            className={`text-xs truncate ${
+                              !notif.read ? "font-bold text-gray-900" : "font-medium text-gray-700"
+                            }`}
+                          >
+                            {notif.title}
+                          </h4>
+                          {!notif.read && (
+                            <span className="w-2 h-2 rounded-full bg-[#7B1E3D] shrink-0" />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">
+                          {notif.description}
+                        </p>
+                        <span className="text-[10px] text-gray-400 mt-1.5 block">
+                          {notif.time}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {notifications.length > 0 && (
+                <div className="p-3 border-t border-gray-100 bg-gray-50 text-center">
+                  <button
+                    onClick={handleClearNotifications}
+                    className="text-xs text-gray-500 hover:text-gray-800 font-medium"
+                  >
+                    Clear all notifications
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: PLAY CREDIT CARD */}
+          {drawerTab === "playCard" && (
+            <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setDrawerTab("main")}
+                    className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-gray-900 transition"
+                    title="Back"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                    Play Credit Card
+                  </h2>
+                </div>
+                <SheetClose className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500">
+                  <X className="h-5 w-5" />
+                </SheetClose>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-5 rounded-2xl shadow-xl border border-gray-700 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 -mr-6 -mt-6 w-32 h-32 bg-[#7B1E3D]/30 rounded-full blur-2xl pointer-events-none" />
+                  <div className="flex justify-between items-start mb-8">
+                    <div>
+                      <span className="text-xs font-bold tracking-widest uppercase text-gray-300">
+                        Play Card
+                      </span>
+                      <p className="text-[10px] text-gray-400">Powered by RBL Bank</p>
+                    </div>
+                    <CreditCard className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <p className="font-mono text-base tracking-widest mb-6">•••• •••• •••• 4289</p>
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span className="uppercase font-semibold tracking-wider">{user?.full_name || "MEMBER"}</span>
+                    <span>EXP 12/29</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Card Benefits</h3>
+                  <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
+                    <Ticket className="w-5 h-5 text-[#7B1E3D] shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">2 Free Movie Tickets</p>
+                      <p className="text-[11px] text-gray-500">Every month up to ₹500 off</p>
+                    </div>
+                  </div>
+                  <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
+                    <Gift className="w-5 h-5 text-[#7B1E3D] shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">20% Off Food & Beverage</p>
+                      <p className="text-[11px] text-gray-500">At partner multiplexes across India</p>
+                    </div>
+                  </div>
+                  <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-[#7B1E3D] shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-gray-900">Zero Joining Fee</p>
+                      <p className="text-[11px] text-gray-500">Instant approval for active users</p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => toast.success("Application started! Our team will contact you shortly.")}
+                  className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm"
+                >
+                  Apply for Play Card
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: BOOKACHANGE */}
+          {drawerTab === "bookAChange" && (
+            <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setDrawerTab("main")}
+                    className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-gray-900 transition"
+                    title="Back"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <h2 className="text-lg font-bold text-gray-900 leading-tight">
+                    BookAChange
+                  </h2>
+                </div>
+                <SheetClose className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500">
+                  <X className="h-5 w-5" />
+                </SheetClose>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-[#7B1E3D]/10 text-[#7B1E3D] flex items-center justify-center mx-auto mb-3">
+                    <HeartHandshake size={32} />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900">Round Up for a Cause</h3>
+                  <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                    Through BookAChange, every time you book a ticket, just ₹1 contributes to educating underprivileged youth, supporting rural cinema artists, and building community art libraries.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-center">
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-xl font-extrabold text-[#7B1E3D]">1.2 Cr+</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Lives Impacted</p>
+                  </div>
+                  <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-xl font-extrabold text-[#7B1E3D]">₹8.4 Cr</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Funds Raised</p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <p className="text-xs font-bold text-amber-900">Auto-Contribute Enabled</p>
+                  <p className="text-[11px] text-amber-700 mt-1">
+                    Your next bookings will automatically round up ₹1 for BookAChange. You can opt out at checkout at any time.
+                  </p>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1117,15 +1464,15 @@ function DrawerMenuItem({
       onClick={onClick}
       className="w-full flex items-center justify-between px-6 py-3.5 hover:bg-gray-50 transition border-b border-gray-50 last:border-none group text-left"
     >
-      <div className="flex items-start gap-3.5 min-w-0">
-        <Icon className="w-5 h-5 text-gray-500 mt-0.5 group-hover:text-[#7B1E3D] transition shrink-0" />
+      <div className={`flex ${subtitle ? "items-start" : "items-center"} gap-3.5 min-w-0`}>
+        <Icon className={`w-5 h-5 text-gray-500 group-hover:text-[#7B1E3D] transition shrink-0 ${subtitle ? "mt-0.5" : ""}`} />
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-gray-900 group-hover:text-[#7B1E3D] transition truncate">
               {title}
             </h3>
             {badge && (
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#7B1E3D]/10 text-[#7B1E3D]">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#7B1E3D] text-white shadow-sm">
                 {badge}
               </span>
             )}
