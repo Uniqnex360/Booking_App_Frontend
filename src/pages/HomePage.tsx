@@ -32,7 +32,8 @@ interface EventCard {
   category: string;
   venue_name: string;
   city: string;
-  cover_image_url: string | null;
+  cover_image_url?: string | null;
+  poster_image_url?: string | null;
   start_date: string;
   min_price_paise?: number;
 }
@@ -424,9 +425,9 @@ export default function HomePage() {
                   className="snap-start shrink-0 w-[240px] sm:w-[280px] group cursor-pointer"
                 >
                   <div className="aspect-[4/3] rounded-lg bg-slate-200 overflow-hidden shadow-sm relative">
-                    {e.cover_image_url ? (
+                    {e.poster_image_url || e.cover_image_url ? (
                       <img
-                        src={e.cover_image_url}
+                        src={e.poster_image_url || e.cover_image_url!}
                         alt={e.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />

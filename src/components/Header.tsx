@@ -217,18 +217,18 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300">
-      <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16">
+      <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16 sm:h-[72px]">
         <Link to={withCity("/", city)} className="flex items-center shrink-0">
           <img
             src="/logo.png"
             alt="Vyhbz"
-            className="h-10 sm:h-12 w-auto object-contain rounded-lg hover:scale-105 transition-transform"
+            className="h-12 sm:h-14 md:h-16 w-auto object-contain hover:scale-105 transition-transform"
           />
         </Link>
 
         {/* Search Bar */}
         <div
-          className="relative hidden md:flex flex-1 max-w-[600px] ml-4"
+          className="relative hidden md:flex flex-1 max-w-[550px] lg:max-w-[620px] ml-4"
           ref={dropdownRef}
         >
           <div className="flex w-full items-center bg-gray-50 focus-within:bg-white border border-gray-200 focus-within:border-[#7B1E3D]/50 rounded-md transition shadow-inner shadow-gray-100/50">
@@ -343,7 +343,7 @@ export function Header() {
           )}
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 ml-auto md:ml-4">
+        <div className="flex items-center gap-4 shrink-0 ml-auto">
           <button
             type="button"
             className="md:hidden text-gray-600 hover:text-gray-900 transition"

@@ -112,7 +112,7 @@ export function Footer() {
     <img 
       src="/logo.png" 
       alt="Vyhbz Logo" 
-      className="h-12 w-auto object-contain bg-white rounded-lg p-1"
+      className="h-16 md:h-20 w-auto object-contain bg-white rounded-lg p-1.5 shadow-sm"
     />
   </div>
 </div>

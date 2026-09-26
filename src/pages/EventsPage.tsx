@@ -547,13 +547,13 @@ export default function EventsPage() {
               )}
 
               {loading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="aspect-[2/3] bg-gray-200 rounded-lg animate-pulse" />
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-8">
                   {filteredEvents.map((event) => {
                     const lowestPrice =
                       event.ticket_categories && event.ticket_categories.length > 0
