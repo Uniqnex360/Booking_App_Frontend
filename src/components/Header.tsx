@@ -155,7 +155,7 @@ const DEFAULT_NOTIFICATIONS: DrawerNotification[] = [
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, openAuthModal } = useAuth() as any;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<"main" | "notifications" | "help" | "settings" | "rewards" | "playCard" | "bookAChange">("main");
@@ -339,7 +339,7 @@ export function Header() {
 
   const initials = (user?.full_name || user?.email || "U")
     .split(" ")
-    .map((w) => w[0])
+    .map((w: string) => w[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
@@ -549,7 +549,7 @@ export function Header() {
             </button>
           ) : (
             <Button
-              onClick={() => navigate(withCity("/login", city))}
+              onClick={() => openAuthModal("get-started")}
               className="rounded text-xs font-semibold h-8 px-4 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-none transition"
             >
               Sign in
@@ -692,7 +692,7 @@ export function Header() {
                   <Button
                     onClick={() => {
                       setDrawerOpen(false);
-                      navigate(withCity("/login", city));
+                      openAuthModal("get-started");
                     }}
                     className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm"
                   >

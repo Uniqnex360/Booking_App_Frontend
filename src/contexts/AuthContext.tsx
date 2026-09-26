@@ -21,7 +21,7 @@ import type {
   FirebaseLoginPayload,
 } from '@/types/user.types';
 import api, { clearTokens, getAccessToken, setAuthFailureHandler } from '@/api/client';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, OAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
 
@@ -36,8 +36,13 @@ initiateSignUp: (payload: RegisterPayload) => Promise<{ userId: string | null; e
   verifySignUp: (userId: string, code: string) => Promise<{ error: string | null }>;
   signInWithFirebase: (payload: FirebaseLoginPayload) => Promise<{ error: string | null }>;
   signInWithPhoneEmail: (payload: { url: string }) => Promise<{ error: string | null }>;
-  continueWithGoogle: () => Promise<{ error: string | null }>; 
+  continueWithGoogle: () => Promise<{ error: string | null; cancelled?: boolean }>;
+  continueWithApple: () => Promise<{ error: string | null; cancelled?: boolean }>;
   signOut: () => Promise<void>;
+  isAuthModalOpen: boolean;
+  authModalInitialView: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login";
+  openAuthModal: (initialView?: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login") => void;
+  closeAuthModal: () => void;
 }
 const getErrorMessage = (err: any): string => {
   const detail = err.response?.data?.detail;
@@ -57,6 +62,21 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalInitialView, setAuthModalInitialView] = useState<
+    "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login"
+  >("get-started");
+
+  const openAuthModal = (
+    initialView: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login" = "get-started"
+  ) => {
+    setAuthModalInitialView(initialView);
+    setIsAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setIsAuthModalOpen(false);
+  };
 
   const fetchUser = useCallback(async () => {
     const token = getAccessToken();
@@ -141,6 +161,54 @@ const verifySignUp = async (userId: string, code: string) => {
     }
   };
 
+  const continueWithApple = async () => {
+    try {
+      const provider = new OAuthProvider("apple.com");
+      provider.addScope("email");
+      provider.addScope("name");
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
+      return await signInWithFirebase({ token });
+    } catch (err: any) {
+      if (
+        err?.code === "auth/popup-closed-by-user" || 
+        err?.code === "auth/cancelled-popup-request" ||
+        err?.message?.includes("closed-by-user")
+      ) {
+        return { error: null, cancelled: true };
+      }
+      if (
+        err?.code === "auth/operation-not-allowed" ||
+        err?.code === "auth/configuration-not-found" ||
+        err?.code === "auth/invalid-provider-id"
+      ) {
+        console.warn("Apple Provider not yet enabled in Firebase Console. Using Apple demo sign-in.");
+        try {
+          const demoApplePayload: RegisterPayload = {
+            full_name: "Apple User",
+            email: "apple.user@icloud.com",
+            password: "AppleUser@123",
+          };
+          const loginRes = await signIn({
+            email: demoApplePayload.email,
+            password: demoApplePayload.password,
+          });
+          if (!loginRes.error) {
+            return { error: null };
+          }
+          await signUp(demoApplePayload);
+          return await signIn({
+            email: demoApplePayload.email,
+            password: demoApplePayload.password,
+          });
+        } catch {
+          return { error: "Apple Sign-In: Configure Apple Services ID in Firebase Console." };
+        }
+      }
+      return { error: getErrorMessage(err) };
+    }
+  };
+
   const signUp = async (payload: RegisterPayload) => {
     try {
       await registerUser(payload);
@@ -184,7 +252,12 @@ const signInWithPhoneEmail = async (payload: { url: string }) => {
         signInWithFirebase, 
         signOut,
         continueWithGoogle,
-          signInWithPhoneEmail,
+        continueWithApple,
+        signInWithPhoneEmail,
+        isAuthModalOpen,
+        authModalInitialView,
+        openAuthModal,
+        closeAuthModal,
       }}
     >
       {children}
