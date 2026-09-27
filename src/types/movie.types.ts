@@ -17,6 +17,38 @@ export interface Movie {
   format: string[];
 }
 
+export interface SeatItem {
+  seat_ref: string;
+  row_label: string;
+  number: number;
+  code: string;
+  price_paise: number;
+  is_available: boolean;
+}
+
+export interface SeatMapDetail {
+  showtime_id: string;
+  movie_title: string;
+  screen_name: string;
+  cinema_name?: string;
+  venue_name?: string;
+  starts_at: string;
+  fetched_at?: string;
+  seats?: SeatItem[];
+  rows?: any[];
+  code?: string;
+  format?: string;
+  language?: string;
+}
+
+export interface VenueShowtimeItem {
+  id: string;
+  starts_at: string;
+  format?: string;
+  screen_name?: string;
+  language?: string;
+}
+
 export interface MovieDetail {
   id: string;
   title: string;

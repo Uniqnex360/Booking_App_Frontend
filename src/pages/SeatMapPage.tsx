@@ -17,38 +17,7 @@ import { toast } from "sonner";
 import AuthModal from "./AuthModal";
 import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
-
-interface SeatItem {
-  seat_ref: string;
-  row_label: string;
-  number: number;
-  code: string;
-  price_paise: number;
-  is_available: boolean;
-}
-
-interface SeatMapDetail {
-  showtime_id: string;
-  movie_title: string;
-  screen_name: string;
-  cinema_name?: string;
-  venue_name?: string;
-  starts_at: string;
-  fetched_at?: string;
-  seats?: SeatItem[];
-  rows?: any[];
-  code?: string;
-  format?: string;
-  language?: string;
-}
-
-interface VenueShowtimeItem {
-  id: string;
-  starts_at: string;
-  format?: string;
-  screen_name?: string;
-  language?: string;
-}
+import { SeatItem, SeatMapDetail, VenueShowtimeItem } from "@/types/movie.types";
 
 function isUserLoggedIn(): boolean {
   return Boolean(
@@ -85,7 +54,6 @@ export default function SeatMapPage() {
 
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
 
-  // Cached sister showtimes for this venue
   const venueShowtimes = useMemo<VenueShowtimeItem[]>(() => {
     try {
       const cached = sessionStorage.getItem("vyhbz_venue_showtimes");
@@ -116,15 +84,11 @@ export default function SeatMapPage() {
           ...venueShowtimes,
         ];
 
-    // Only show other showtimes at this theatre for the SAME calendar day
-    // as the showtime currently being booked (matches BookMyShow, which
-    // never mixes days in the pill switcher).
     const currentDay = new Date(mapData.starts_at).toDateString();
     const sameDay = merged.filter(
       (s) => new Date(s.starts_at).toDateString() === currentDay,
     );
 
-    // Chronological order, earliest first.
     return sameDay.sort(
       (a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
     );
@@ -209,7 +173,6 @@ export default function SeatMapPage() {
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
 
-    // Deselect if already selected
     const isAlreadySelected = selectedSeats.some(
       (s) => s.seat_ref === clickedSeat.seat_ref,
     );
@@ -354,7 +317,6 @@ export default function SeatMapPage() {
     setSearchParams(params, { replace: true });
   };
 
-  // Group seats by tier
   const tiers: {
     name: string;
     price_paise: number;
@@ -613,9 +575,7 @@ export default function SeatMapPage() {
                             maxWidth: "1180px",
                           }}
                         >
-                          {/* Fixed-width label rail: identical grid column on every
-                              row across every tier, so letters land on one straight
-                              vertical line no matter how wide that row's seats are. */}
+                          
                           <div className="flex items-center justify-center">
                             <span className="text-gray-400 font-semibold text-[10px] sm:text-xs select-none">
                               {rowLabel}
