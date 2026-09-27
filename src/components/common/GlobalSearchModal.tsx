@@ -218,11 +218,6 @@ export function GlobalSearchModal({
     });
   }, [allItems, query, activeTab]);
 
-  // Trending Now = actual movie/event names from the DB
-  const trendingItems = useMemo(() => {
-    return allItems.slice(0, 10);
-  }, [allItems]);
-
   if (!isOpen) return null;
 
   const handleNavigate = (link: string) => {
@@ -244,11 +239,6 @@ export function GlobalSearchModal({
 
   const handleItemClick = (item: UnifiedItem) => {
     saveRecentSearch(query.trim() || item.title);
-    handleNavigate(item.link);
-  };
-
-  const handleTrendingClick = (item: UnifiedItem) => {
-    saveRecentSearch(item.title);
     handleNavigate(item.link);
   };
 
@@ -309,12 +299,11 @@ export function GlobalSearchModal({
           </button>
         </div>
 
-        {/* When NO query: Show Recent Searches & Trending Now */}
+        {/* When NO query: Show only Recent Searches */}
         {!hasQuery ? (
           <div className="mt-6 animate-in fade-in duration-150">
-            {/* Recent Searches */}
             {recentSearches.length > 0 && (
-              <div className="mb-6">
+              <div>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm sm:text-base font-bold text-gray-900">
                     Recent Searches
@@ -341,37 +330,6 @@ export function GlobalSearchModal({
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Trending Now */}
-            {trendingItems.length > 0 && (
-              <div>
-                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-2">
-                  Trending Now
-                </h3>
-                <div className="divide-y divide-gray-100">
-                  {trendingItems.map((item) => (
-                    <div
-                      key={`${item.type}-${item.id}`}
-                      onClick={() => handleTrendingClick(item)}
-                      className="flex items-center justify-between py-3 px-1 hover:bg-gray-50 cursor-pointer transition group"
-                    >
-                      <span className="text-sm text-gray-700 group-hover:text-gray-900">
-                        {item.title}
-                      </span>
-                      <ClipboardList className="w-[18px] h-[18px] text-gray-400 shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Loading state for trending */}
-            {loading && trendingItems.length === 0 && (
-              <div className="flex items-center justify-center py-8 gap-2 text-sm text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin text-[#F84464]" />
-                Loading...
               </div>
             )}
           </div>
