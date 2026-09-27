@@ -102,19 +102,40 @@ function istHour(iso: string): number {
   );
 }
 
-function matchesPriceRange(format: string, selectedRanges: string[]): boolean {
-  if (selectedRanges.length === 0) return true;
-  const fmt = (format || "").toUpperCase();
-  const estPrice = fmt.includes("LUXE") ? 650 : fmt.includes("DOLBY") || fmt.includes("3D") ? 350 : 200;
+function parsePriceRange(rangeStr: string): [number, number] {
+  const digits = rangeStr.replace(/[^0-9\-]/g, "").split("-").map(Number);
+  if (digits.length === 2 && !isNaN(digits[0]) && !isNaN(digits[1])) {
+    return [digits[0], digits[1]];
+  }
+  return [0, 10000];
+}
 
-  return selectedRanges.some((range) => {
-    if (range.includes("0 - 200") && estPrice <= 200) return true;
-    if (range.includes("201 - 300") && estPrice >= 201 && estPrice <= 300) return true;
-    if (range.includes("301 - 400") && estPrice >= 301 && estPrice <= 400) return true;
-    if (range.includes("401 - 500") && estPrice >= 401 && estPrice <= 500) return true;
-    if (range.includes("501 - 600") && estPrice >= 501 && estPrice <= 600) return true;
-    if (range.includes("601 - 700") && estPrice >= 601 && estPrice <= 700) return true;
-    return false;
+function slotMatchesPriceRanges(
+  slot: ShowtimeSlot,
+  selectedRanges: string[],
+  pricingMap: Record<string, Array<{ price: string }>>
+): boolean {
+  if (selectedRanges.length === 0) return true;
+
+  let prices: number[] = [];
+  if (pricingMap[slot.id] && pricingMap[slot.id].length > 0) {
+    prices = pricingMap[slot.id]
+      .map((tier) => parseFloat(tier.price.replace(/[^0-9.]/g, "")))
+      .filter((p) => !isNaN(p));
+  }
+
+  if (prices.length === 0) {
+    const fmt = (slot.format || "").toUpperCase();
+    if (fmt.includes("LUXE")) {
+      prices = [650, 500];
+    } else {
+      prices = [390, 290, 190];
+    }
+  }
+
+  return selectedRanges.some((rangeStr) => {
+    const [min, max] = parsePriceRange(rangeStr);
+    return prices.some((p) => p >= min && p <= max);
   });
 }
 
@@ -224,7 +245,9 @@ export default function BuyTicketsPage() {
               s.format.toLowerCase().includes(fmt.toLowerCase())
             );
           })
-          .filter((s) => matchesPriceRange(s.format, selectedPriceRanges))
+          .filter((s) =>
+            slotMatchesPriceRanges(s, selectedPriceRanges, showtimePricingMap)
+          )
           .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
           .sort(
             (a, b) =>
@@ -256,6 +279,7 @@ export default function BuyTicketsPage() {
     langFormatFilter,
     selectedSpecialFormats,
     selectedPriceRanges,
+    showtimePricingMap,
     preferredTime,
     searchQuery,
     sortBy,
@@ -461,8 +485,8 @@ export default function BuyTicketsPage() {
       ) : (
         <>
           {/* ─── Date Strip & Filter Bar (Exact BookMyShow Match with Spacing) ─── */}
-          <div className="sticky top-[104px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs h-[60px]">
-            <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full">
+          <div className="sticky top-[104px] lg:top-[112px] z-30 bg-white border-b border-gray-200 shadow-xs h-[60px]">
+            <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full overflow-hidden">
               
               {/* Left Side: Date Strip with spacious gap on the right before vertical divider */}
               <div className="flex items-center gap-1.5 h-full border-r border-gray-200 pr-12 md:pr-20 mr-4 md:mr-6 shrink-0">
