@@ -101,23 +101,27 @@ function istHour(iso: string): number {
     })
   );
 }
-
-function matchesPriceRange(format: string, selectedRanges: string[]): boolean {
+const PRICE_RANGES = [
+  { label: "₹0 - ₹200", min: 0, max: 200 },
+  { label: "₹201 - ₹300", min: 201, max: 300 },
+  { label: "₹301 - ₹400", min: 301, max: 400 },
+  { label: "₹401 - ₹500", min: 401, max: 500 },
+  { label: "₹501 - ₹600", min: 501, max: 600 },
+  { label: "₹601 - ₹700", min: 601, max: 700 },
+];
+function matchesPriceRange(
+  format: string,
+  selectedRanges: { min: number; max: number }[]
+): boolean {
   if (selectedRanges.length === 0) return true;
   const fmt = (format || "").toUpperCase();
-  const estPrice = fmt.includes("LUXE") ? 650 : fmt.includes("DOLBY") || fmt.includes("3D") ? 350 : 200;
-
-  return selectedRanges.some((range) => {
-    if (range.includes("0 - 200") && estPrice <= 200) return true;
-    if (range.includes("201 - 300") && estPrice >= 201 && estPrice <= 300) return true;
-    if (range.includes("301 - 400") && estPrice >= 301 && estPrice <= 400) return true;
-    if (range.includes("401 - 500") && estPrice >= 401 && estPrice <= 500) return true;
-    if (range.includes("501 - 600") && estPrice >= 501 && estPrice <= 600) return true;
-    if (range.includes("601 - 700") && estPrice >= 601 && estPrice <= 700) return true;
-    return false;
-  });
+  const estPrice = fmt.includes("LUXE")
+    ? 650
+    : fmt.includes("DOLBY") || fmt.includes("3D")
+    ? 350
+    : 200;
+  return selectedRanges.some((r) => estPrice >= r.min && estPrice <= r.max);
 }
-
 function matchesPreferredTime(iso: string, pref: PreferredTime): boolean {
   if (pref === "any") return true;
   const h = istHour(iso);
@@ -153,8 +157,8 @@ export default function BuyTicketsPage() {
   const [openDropdown, setOpenDropdown] = useState<
     "langFormat" | "time" | "price" | "special" | "other" | "sort" | null
   >(null);
-  const [showSubtitleNotice, setShowSubtitleNotice] = useState(true);
-  const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
+    const [showSubtitleNotice, setShowSubtitleNotice] = useState(true);
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState<{ min: number; max: number }[]>([]);
   const [selectedSpecialFormats, setSelectedSpecialFormats] = useState<string[]>([]);
   const [selectedOtherFilters, setSelectedOtherFilters] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"relevance" | "popularity" | "distance">("relevance");
@@ -473,10 +477,7 @@ export default function BuyTicketsPage() {
                   return (
                     <button
                       key={dk}
-                        onClick={() => {
-    setSelectedDate(dk);
-    setLangFormatFilter("all");
-  }}
+                      onClick={() => setSelectedDate(dk)}
                       className={`w-[52px] sm:w-[58px] h-[52px] sm:h-[56px] py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
                         isActive
                           ? "bg-[#F84464] text-white shadow-xs"
@@ -580,37 +581,34 @@ export default function BuyTicketsPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[200px]"
                     >
-                      {[
-                        "₹0 - ₹200",
-                        "₹201 - ₹300",
-                        "₹301 - ₹400",
-                        "₹401 - ₹500",
-                        "₹501 - ₹600",
-                        "₹601 - ₹700",
-                      ].map((range) => {
-                        const isChecked = selectedPriceRanges.includes(range);
-                        return (
-                          <div
-                            key={range}
-                            onClick={() => {
-                              setSelectedPriceRanges((prev) =>
-                                prev.includes(range)
-                                  ? prev.filter((p) => p !== range)
-                                  : [...prev, range]
-                              );
-                            }}
-                            className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
-                          >
-                            <span>{range}</span>
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              readOnly
-                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
-                            />
-                          </div>
-                        );
-                      })}
+                      {PRICE_RANGES.map((range) => {
+  const isChecked = selectedPriceRanges.some(
+    (r) => r.min === range.min && r.max === range.max
+  );
+  return (
+    <div
+      key={range.label}
+      onClick={() => {
+        setSelectedPriceRanges((prev) =>
+          prev.some((r) => r.min === range.min && r.max === range.max)
+            ? prev.filter(
+                (r) => !(r.min === range.min && r.max === range.max)
+              )
+            : [...prev, range]
+        );
+      }}
+      className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
+    >
+      <span>{range.label}</span>
+      <input
+        type="checkbox"
+        checked={isChecked}
+        readOnly
+        className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
+      />
+    </div>
+  );
+})}
                     </div>
                   )}
                 </div>
