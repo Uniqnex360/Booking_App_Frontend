@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import AuthModal from "./AuthModal";
 import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
+import { Footer } from "@/components/Footer";
 
 interface SeatItem {
   seat_ref: string;
@@ -888,6 +889,8 @@ export default function SeatMapPage() {
           onSubmit={handleContactSubmit}
         />
       </div>
+            <Footer />
+      
     </div>
   );
 }
