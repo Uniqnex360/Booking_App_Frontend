@@ -836,87 +836,81 @@ export default function BuyTicketsPage() {
                   return (
                     <div
                       key={venue.venue_id}
-                      className="p-4 sm:p-5 flex flex-col md:flex-row md:items-start gap-4 hover:bg-gray-50/50 transition border-b border-gray-100 last:border-b-0"
+                      className="p-4 sm:p-5 flex flex-col gap-3 hover:bg-gray-50/50 transition border-b border-gray-100 last:border-b-0"
                     >
-                      {/* Left Column: Cinema Details & Amenities Icons (Fixed width w-[280px]) */}
-                      <div className="w-full md:w-[280px] shrink-0">
-                        <div className="flex items-start gap-2.5">
+                      {/* Top Row: Logo, Title & Info, and Heart Icon on Far Right */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3 min-w-0">
                           {/* Logo badge */}
                           {isPVR ? (
-                            <div className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                            <div className="w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-amber-500 font-serif text-xs shrink-0 shadow-2xs">
                               PVR
                             </div>
                           ) : isCinepolis ? (
-                            <div className="text-[9px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-                              CINÉPOLIS
+                            <div className="w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-black text-blue-600 text-[10px] shrink-0 shadow-2xs">
+                              cinépolis
                             </div>
                           ) : (
-                            <div className="text-[9px] font-bold text-gray-500 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
+                            <div className="w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-gray-600 text-[10px] shrink-0 shadow-2xs">
                               CINEMA
                             </div>
                           )}
 
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <h3
                                 onClick={() => setSelectedCinemaInfo(venue)}
-                                className="text-sm sm:text-[15px] font-bold text-gray-900 hover:text-[#F84464] transition leading-snug cursor-pointer"
+                                className="text-sm sm:text-base font-bold text-gray-900 hover:text-[#F84464] transition leading-snug cursor-pointer truncate"
                               >
                                 {venue.venue_name}
                               </h3>
                               <Info
                                 onClick={() => setSelectedCinemaInfo(venue)}
-                                className="h-3.5 w-3.5 text-gray-400 shrink-0 cursor-pointer hover:text-gray-600"
+                                className="h-4 w-4 text-gray-400 shrink-0 cursor-pointer hover:text-gray-600"
                               />
                             </div>
-
                             <p className="text-xs text-gray-400 mt-0.5">
                               Cancellation available
                             </p>
-
-                            {/* F&B and M-Ticket Icon Badges (Text revealed to the right on hover) */}
-                            <div className="flex items-center gap-2 mt-2">
-                              {/* Food & Beverage Badge */}
-                              <div
-                                className="group flex items-center gap-1 bg-[#FFF8E7] text-[#FF9800] border border-[#FFE8B3] rounded p-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 hover:pr-2.5"
-                                title="Food & Beverage Available"
-                              >
-                                <Coffee className="h-3.5 w-3.5 shrink-0" />
-                                <span className="max-w-0 overflow-hidden group-hover:max-w-[70px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[10px] font-bold">
-                                  F&amp;B
-                                </span>
-                              </div>
-
-                              {/* M-Ticket Badge */}
-                              <div
-                                className="group flex items-center gap-1 bg-[#E8F8EE] text-[#1EA83C] border border-[#C5F0D5] rounded p-1 text-[11px] font-semibold cursor-pointer transition-all duration-200 hover:pr-2.5"
-                                title="M-Ticket Available"
-                              >
-                                <Smartphone className="h-3.5 w-3.5 shrink-0" />
-                                <span className="max-w-0 overflow-hidden group-hover:max-w-[70px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[10px] font-bold">
-                                  M-Ticket
-                                </span>
-                              </div>
-                            </div>
                           </div>
+                        </div>
 
-                          {/* Mobile Favorite Heart button */}
-                          <button
-                            type="button"
-                            onClick={() => toggleFavorite(venue.venue_id)}
-                            className="text-gray-300 hover:text-[#F84464] p-1 transition cursor-pointer md:hidden"
-                          >
-                            <Heart
-                              className={`h-4 w-4 ${
-                                isFav ? "fill-[#F84464] text-[#F84464]" : ""
-                              }`}
-                            />
-                          </button>
+                        {/* Top Right: Favorite Heart Button */}
+                        <button
+                          type="button"
+                          onClick={() => toggleFavorite(venue.venue_id)}
+                          className="text-gray-300 hover:text-[#F84464] p-1 transition cursor-pointer shrink-0"
+                          title="Bookmark Cinema"
+                        >
+                          <Heart
+                            className={`h-5 w-5 ${
+                              isFav ? "fill-[#F84464] text-[#F84464]" : ""
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Second Row: Square Icon Badges (F&B and M-Ticket) */}
+                      <div className="flex items-center gap-2.5">
+                        {/* Food & Beverage Badge */}
+                        <div
+                          className="w-7 h-7 rounded-md bg-[#FDF4EA] border border-[#FEEAD4] flex items-center justify-center text-[#F48F29]"
+                          title="Food & Beverage Available"
+                        >
+                          <Coffee className="h-4 w-4" />
+                        </div>
+
+                        {/* M-Ticket Badge */}
+                        <div
+                          className="w-7 h-7 rounded-md bg-[#EDF7F2] border border-[#D5EFE1] flex items-center justify-center text-[#34A853]"
+                          title="M-Ticket Available"
+                        >
+                          <Smartphone className="h-4 w-4" />
                         </div>
                       </div>
 
-                      {/* Right Column: Showtimes Grid (Restored to original side-by-side right column) */}
-                      <div className="flex-1 flex flex-wrap items-center gap-2.5">
+                      {/* Third Row: Showtime Slots (Positioned directly below the badges) */}
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
                         {venue.showtimes.map((slot) => {
                           const isPast =
                             new Date(slot.starts_at).getTime() < now;
@@ -927,46 +921,30 @@ export default function BuyTicketsPage() {
                                 if (!isPast) handleShowtimeClick(slot.id);
                               }}
                               disabled={isPast}
-                              className={`relative rounded px-2.5 py-1 min-w-[90px] h-[38px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
+                              className={`relative rounded px-3 py-1.5 min-w-[105px] text-center transition cursor-pointer flex flex-col items-center justify-center ${
                                 isPast
                                   ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
-                                  : "border-l-[3px] border-l-[#1EA83C] border-t border-b border-r border-gray-300 bg-white hover:border-[#1EA83C] hover:bg-[#1EA83C]/5 shadow-2xs"
+                                  : "border border-[#34A853] border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
                               }`}
                             >
-                              <div className="flex items-center justify-center gap-1 leading-none">
+                              <div className="flex items-center justify-center gap-1">
                                 <span
-                                  className={`text-[11px] sm:text-[12px] font-bold leading-none ${
+                                  className={`text-xs sm:text-[13px] font-bold ${
                                     isPast ? "text-gray-300" : "text-gray-800"
                                   }`}
                                 >
                                   {istTimeLabel(slot.starts_at)}
                                 </span>
-                                <span className="text-[8px] font-mono border border-gray-300 text-gray-500 px-0.5 rounded leading-none">
+                                <span className="text-[9px] font-semibold border border-gray-400 text-gray-600 px-1 rounded-xs leading-tight font-sans">
                                   ENG
                                 </span>
                               </div>
-                              <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
+                              <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
                                 {slot.format || "2D"}
                               </div>
                             </button>
                           );
                         })}
-                      </div>
-
-                      {/* Desktop Favorite Heart Button (Far Right) */}
-                      <div className="hidden md:block shrink-0 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => toggleFavorite(venue.venue_id)}
-                          className="text-gray-300 hover:text-[#F84464] p-1.5 transition cursor-pointer"
-                          title="Bookmark Cinema"
-                        >
-                          <Heart
-                            className={`h-4 w-4 ${
-                              isFav ? "fill-[#F84464] text-[#F84464]" : ""
-                            }`}
-                          />
-                        </button>
                       </div>
                     </div>
                   );
