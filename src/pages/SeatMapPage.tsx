@@ -612,7 +612,7 @@ export default function SeatMapPage() {
                 label+seats combo — ends up balanced left/right of center,
                 instead of being dragged left by the label column. */}
             <div className="flex items-start">
-              <div className="w-fit flex flex-col items-start">
+              <div className="w-full flex flex-col items-center">
                 {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full flex flex-col items-start my-3">
                   {/* BookMyShow Tier Divider */}
@@ -632,10 +632,10 @@ export default function SeatMapPage() {
                       return (
                         <div
                           key={rowLabel}
-                          className="flex items-center justify-start gap-3 sm:gap-4 my-0.5 select-none w-full"
+                          className="relative flex items-center justify-center my-0.5 select-none w-full"
                         >
                           {/* Row letter badge in a single straight vertical line on the left (matching BMS rail) */}
-                          <div className="w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs">
+                          <div className="absolute left-4 sm:left-6 w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs">
                             {rowLabel}
                           </div>
 
