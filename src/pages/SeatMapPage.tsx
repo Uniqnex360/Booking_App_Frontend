@@ -613,12 +613,17 @@ export default function SeatMapPage() {
                           key={rowLabel}
                           className="flex items-center justify-center my-0.5 select-none w-full"
                         >
-                          {/* Fixed-width label column: same width on every row regardless
+                          {/* Fixed-width label rail: same width on every row regardless
                               of that row's seat count, so letters stay in one straight
-                              vertical line instead of drifting with row width. */}
-                          <div className="w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs mr-3 sm:mr-4">
-                            {rowLabel}
+                              vertical line. Pulled well clear of the seats with extra
+                              margin plus a thin divider, so it reads as a distinct rail
+                              rather than touching the seat grid. */}
+                          <div className="w-6 sm:w-7 shrink-0 flex items-center justify-center">
+                            <span className="text-gray-400 font-semibold text-[10px] sm:text-xs select-none">
+                              {rowLabel}
+                            </span>
                           </div>
+                          <div className="w-px self-stretch bg-gray-100 mr-4 sm:mr-6" />
 
                           <div className="flex items-center">
                             {blocks.map((block, bIdx) => (
@@ -671,13 +676,14 @@ export default function SeatMapPage() {
                             ))}
                           </div>
 
-                          {/* Invisible mirror of the label column, so justify-center
-                              balances the SEAT block (not the label+seats combo)
-                              under the screen. */}
+                          {/* Invisible mirror of the label rail (letter column + divider +
+                              margin), so justify-center balances the SEAT block (not the
+                              label+seats combo) under the screen. */}
                           <div
-                            className="w-7 sm:w-8 shrink-0 ml-3 sm:ml-4"
+                            className="w-6 sm:w-7 shrink-0 ml-4 sm:ml-6"
                             aria-hidden="true"
                           />
+                          <div className="w-px shrink-0" aria-hidden="true" />
                         </div>
                       );
                     })}
