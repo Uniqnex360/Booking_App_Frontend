@@ -102,6 +102,22 @@ function istHour(iso: string): number {
   );
 }
 
+function matchesPriceRange(format: string, selectedRanges: string[]): boolean {
+  if (selectedRanges.length === 0) return true;
+  const fmt = (format || "").toUpperCase();
+  const estPrice = fmt.includes("LUXE") ? 650 : fmt.includes("DOLBY") || fmt.includes("3D") ? 350 : 200;
+
+  return selectedRanges.some((range) => {
+    if (range.includes("0 - 200") && estPrice <= 200) return true;
+    if (range.includes("201 - 300") && estPrice >= 201 && estPrice <= 300) return true;
+    if (range.includes("301 - 400") && estPrice >= 301 && estPrice <= 400) return true;
+    if (range.includes("401 - 500") && estPrice >= 401 && estPrice <= 500) return true;
+    if (range.includes("501 - 600") && estPrice >= 501 && estPrice <= 600) return true;
+    if (range.includes("601 - 700") && estPrice >= 601 && estPrice <= 700) return true;
+    return false;
+  });
+}
+
 function matchesPreferredTime(iso: string, pref: PreferredTime): boolean {
   if (pref === "any") return true;
   const h = istHour(iso);
@@ -250,6 +266,7 @@ export default function BuyTicketsPage() {
                 s.format.toLowerCase().includes(fmt.toLowerCase())
               );
             })
+            .filter((s) => matchesPriceRange(s.format, selectedPriceRanges))
             .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
             .sort(
               (a, b) =>
