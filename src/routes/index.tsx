@@ -84,6 +84,22 @@ export function AppRoutes() {
         }
       />
       <Route
+        path="/partner/register"
+        element={
+          <PrivateRoute>
+            <BecomePartnerPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/list-your-show"
+        element={
+          <PrivateRoute>
+            <BecomePartnerPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
         path="/partner/dashboard"
         element={
           <PrivateRoute>
