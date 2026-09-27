@@ -164,64 +164,67 @@ export default function BuyTicketsPage() {
     Record<string, Array<{ price: string; tier: string; status: string; statusColor: string }>>
   >({});
 
-  const fetchShowtimePricing = async (slotId: string, format?: string) => {
+  const fetchShowtimePricing = async (slotId: string) => {
     if (showtimePricingMap[slotId]) return;
     try {
-      const data = await unwrap<{
-        rows?: Array<{
-          section?: string;
-          label?: string;
-          price_paise?: number;
-          seats?: Array<{ status?: string }>;
-        }>;
-      }>(api.get(`/showtimes/${slotId}/seat-map`));
-
-      if (data?.rows && data.rows.length > 0) {
-        const tierMap = new Map<
-          string,
-          { price: number; available: number; total: number }
-        >();
-
-        data.rows.forEach((r) => {
-          const sectionName = (
-            r.section ||
-            (r.price_paise && r.price_paise > 40000
-              ? "LUXE PRIME"
-              : r.price_paise && r.price_paise > 20000
-              ? "EXECUTIVE"
-              : "NORMAL")
-          ).toUpperCase();
-          const price = (r.price_paise || 25000) / 100;
-          const available = (r.seats || []).filter(
-            (s) => (s.status || "").toUpperCase() === "AVAILABLE"
-          ).length;
-          const total = (r.seats || []).length;
-
-          const existing = tierMap.get(sectionName) || {
-            price,
-            available: 0,
-            total: 0,
-          };
-          tierMap.set(sectionName, {
-            price: price || existing.price,
-            available: existing.available + available,
-            total: existing.total + total,
+      const data = await unwrap<any>(api.get(`/showtimes/${slotId}/seat-map`));
+      if (data) {
+        const allSeats: any[] = [];
+        if (data.seats && Array.isArray(data.seats) && data.seats.length > 0) {
+          allSeats.push(...data.seats);
+        } else if (data.rows && Array.isArray(data.rows)) {
+          data.rows.forEach((r: any) => {
+            if (r.seats && Array.isArray(r.seats)) {
+              r.seats.forEach((s: any) => {
+                allSeats.push({
+                  row_label: r.label,
+                  price_paise: s.price_paise || r.price_paise || 25000,
+                  is_available: s.status === "AVAILABLE",
+                });
+              });
+            }
           });
+        }
+
+        const rawRows: Record<string, { price_paise: number; seats: any[] }> = {};
+        allSeats.forEach((seat) => {
+          if (!rawRows[seat.row_label]) {
+            rawRows[seat.row_label] = { price_paise: seat.price_paise, seats: [] };
+          }
+          rawRows[seat.row_label].seats.push(seat);
         });
 
-        const tiers = Array.from(tierMap.entries()).map(([tier, info]) => {
-          const isFillingFast =
-            info.total > 0 && info.available / info.total < 0.4;
+        const tiers: { name: string; price_paise: number; totalSeats: number; availSeats: number }[] = [];
+        Object.entries(rawRows).forEach(([_, rowData]) => {
+          let tierName = "CLASSIC";
+          const priceRupees = rowData.price_paise / 100;
+          if (priceRupees >= 350) tierName = "RECLINER";
+          else if (priceRupees >= 250) tierName = "PRIME PLUS";
+          else if (priceRupees >= 200) tierName = "PRIME";
+
+          let existing = tiers.find((t) => t.price_paise === rowData.price_paise);
+          if (!existing) {
+            existing = { name: tierName, price_paise: rowData.price_paise, totalSeats: 0, availSeats: 0 };
+            tiers.push(existing);
+          }
+          existing.totalSeats += rowData.seats.length;
+          existing.availSeats += rowData.seats.filter((s) => s.is_available).length;
+        });
+
+        tiers.sort((a, b) => b.price_paise - a.price_paise);
+
+        const parsedTiers = tiers.map((t) => {
+          const isFillingFast = t.totalSeats > 0 && t.availSeats / t.totalSeats < 0.4;
           return {
-            price: `₹ ${info.price.toFixed(2)}`,
-            tier,
+            price: `₹ ${(t.price_paise / 100).toFixed(2)}`,
+            tier: t.name,
             status: isFillingFast ? "Filling Fast" : "Available",
             statusColor: isFillingFast ? "text-[#FFB000]" : "text-[#34A853]",
           };
         });
 
-        if (tiers.length > 0) {
-          setShowtimePricingMap((prev) => ({ ...prev, [slotId]: tiers }));
+        if (parsedTiers.length > 0) {
+          setShowtimePricingMap((prev) => ({ ...prev, [slotId]: parsedTiers }));
         }
       }
     } catch (err) {
@@ -359,6 +362,17 @@ export default function BuyTicketsPage() {
       a.venue_name.localeCompare(b.venue_name)
     );
   }
+
+  useEffect(() => {
+    if (!venuesForDate || venuesForDate.length === 0) return;
+    venuesForDate.forEach((v) => {
+      v.showtimes.forEach((slot) => {
+        if (!showtimePricingMap[slot.id]) {
+          fetchShowtimePricing(slot.id);
+        }
+      });
+    });
+  }, [venuesForDate]);
 
   const handleTicketChangeConfirm = () => {
     setShowTicketModal(false);
@@ -983,7 +997,7 @@ export default function BuyTicketsPage() {
                         </div>
                       </div>
 
-                      {/* Third Row: Showtime Slots with Reduced Height & Hover Price Tooltip fetched from API */}
+                      {/* Third Row: Showtime Slots with Live API Pricing Tooltip */}
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         {venue.showtimes.map((slot) => {
                           const isPast =
@@ -994,14 +1008,10 @@ export default function BuyTicketsPage() {
                                 { price: "₹ 650.00", tier: "LUXE PRIME", status: "Filling Fast", statusColor: "text-[#FFB000]" },
                                 { price: "₹ 500.00", tier: "LUXE", status: "Available", statusColor: "text-[#34A853]" },
                               ]
-                            : fmt.includes("DOLBY") || fmt.includes("3D") || fmt.includes("4K")
-                            ? [
-                                { price: "₹ 350.00", tier: "PREMIUM", status: "Filling Fast", statusColor: "text-[#FFB000]" },
-                                { price: "₹ 250.00", tier: "EXECUTIVE", status: "Available", statusColor: "text-[#34A853]" },
-                              ]
                             : [
-                                { price: "₹ 250.00", tier: "EXECUTIVE", status: "Filling Fast", statusColor: "text-[#FFB000]" },
-                                { price: "₹ 180.00", tier: "NORMAL", status: "Available", statusColor: "text-[#34A853]" },
+                                { price: "₹ 390.00", tier: "RECLINER", status: "Available", statusColor: "text-[#34A853]" },
+                                { price: "₹ 290.00", tier: "PRIME PLUS", status: "Available", statusColor: "text-[#34A853]" },
+                                { price: "₹ 190.00", tier: "CLASSIC", status: "Available", statusColor: "text-[#34A853]" },
                               ];
                           const pricingTiers =
                             showtimePricingMap[slot.id] || fallbackPricing;
@@ -1011,7 +1021,7 @@ export default function BuyTicketsPage() {
                               key={slot.id}
                               className="relative group"
                               onMouseEnter={() =>
-                                fetchShowtimePricing(slot.id, slot.format)
+                                fetchShowtimePricing(slot.id)
                               }
                             >
                               {/* Price Tooltip on Hover (Fetched from API) */}
