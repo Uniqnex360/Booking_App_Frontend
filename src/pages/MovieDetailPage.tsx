@@ -547,7 +547,6 @@ export default function MovieDetailPage() {
             className="bg-white rounded-lg w-full max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 relative p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Centered Title with top-right close button */}
             <div className="text-center pt-1 pb-1 relative">
               <h3 className="text-gray-900 font-bold text-lg">
                 How many seats?
@@ -561,12 +560,10 @@ export default function MovieDetailPage() {
               </button>
             </div>
 
-            {/* Vehicle Illustration */}
             <div className="flex items-center justify-center h-28 my-3">
               <SeatVehicle count={ticketCount} />
             </div>
 
-            {/* Numbers: All on 1 single row without any scrollbar */}
             <div className="flex items-center justify-between px-2 pt-2 pb-6 overflow-hidden select-none">
               {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
                 (n) => (
