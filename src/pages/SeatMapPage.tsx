@@ -444,29 +444,26 @@ export default function SeatMapPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
       {/* ─── BookMyShow Authentic Header (Pinned Static at Top) ─── */}
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
-            title="Back"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 grid grid-cols-[auto_1fr_auto] items-center gap-3 sticky top-0 z-30 shadow-xs">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0 justify-self-start"
+          title="Back"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
 
-          <div className="min-w-0">
-            <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
-              {mapData?.movie_title}
-            </p>
-            <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
-              {mapData?.cinema_name || mapData?.venue_name}
-              {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
-            </p>
-          </div>
+        <div className="min-w-0 text-center">
+          <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
+            {mapData?.movie_title}
+          </p>
+          <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
+            {mapData?.cinema_name || mapData?.venue_name}
+            {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {isStale && !isSourceUnavailable && (
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 justify-self-end">          {isStale && !isSourceUnavailable && (
             <button
               onClick={fetchSeatMap}
               className="text-[#f84464] hover:bg-[#f84464]/10 border border-[#f84464]/30 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
@@ -495,13 +492,7 @@ export default function SeatMapPage() {
             </span>
           </button>
 
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition cursor-pointer"
-            title="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          
         </div>
       </header>
 
@@ -620,10 +611,10 @@ export default function SeatMapPage() {
                       return (
                         <div
                           key={rowLabel}
-                          className="flex items-center justify-start gap-3 sm:gap-4 my-0.5 select-none w-full"
+                          className="flex items-center justify-center my-0.5 select-none w-full"
                         >
                           {/* Row letter badge in a single straight vertical line on the left (matching BMS rail) */}
-                          <div className="w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs">
+                          <div className="w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs mr-3 sm:mr-4">
                             {rowLabel}
                           </div>
 
@@ -679,6 +670,16 @@ export default function SeatMapPage() {
                               </div>
                             ))}
                           </div>
+
+                          {/* Invisible mirror of the row-letter badge on the right.
+                              The badge only sits on the left, which visually drags the
+                              seat block left of true center. This spacer reserves the
+                              same width (+ margin) on the right so the SEAT block itself
+                              — not the label+seats combo — ends up centered on the page. */}
+                          <div
+                            className="w-7 sm:w-8 h-6 sm:h-7 shrink-0 ml-3 sm:ml-4 invisible"
+                            aria-hidden="true"
+                          />
                         </div>
                       );
                     })}
