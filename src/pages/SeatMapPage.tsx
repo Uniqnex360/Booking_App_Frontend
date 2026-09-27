@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-import { Header } from "@/components/Header";
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
@@ -427,31 +426,35 @@ export default function SeatMapPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
-      {/* ─── Vybhz Site Header ─── */}
-      <Header />
 
-      <div className="pt-[112px] lg:pt-[120px] flex-grow flex flex-col">
-        {/* ─── BookMyShow Authentic Sub-Header ─── */}
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-[112px] lg:top-[120px] z-30 shadow-xs">
-          <div className="flex items-center gap-3 min-w-0">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
-              title="Back"
-            >
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-semibold text-gray-900 truncate leading-tight">
-                {mapData?.movie_title || "Movie"}
-                {mapData?.language ? ` - ${mapData.language}` : ""}
-              </h1>
-              <p className="text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
-                {mapData?.cinema_name || mapData?.venue_name}
-                {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
-              </p>
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
+            title="Back"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+
+          {/* Timing Green Button replacing movie title */}
+          <div className="bg-[#2dc492] text-white rounded px-3.5 py-1 text-center shadow-xs shrink-0 cursor-default">
+            <div className="text-xs font-bold leading-tight">{formattedTime}</div>
+            <div className="text-[9px] font-medium text-white/90 uppercase tracking-wide leading-tight">
+              {mapData?.format || "4K LASER ATMOS"}
             </div>
           </div>
+
+          <div className="min-w-0">
+            <p className="text-xs text-gray-700 font-semibold truncate leading-tight">
+              {mapData?.cinema_name || mapData?.venue_name}
+              {city ? `: ${city}` : ""}
+            </p>
+            <p className="text-[11px] text-gray-400 font-normal mt-0.5 truncate leading-tight">
+              {mapData?.screen_name ? `${mapData.screen_name} • ` : ""}{formattedDate}
+            </p>
+          </div>
+        </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isStale && !isSourceUnavailable && (
@@ -862,35 +865,24 @@ export default function SeatMapPage() {
                 </div>
               </div>
 
-              {/* Bestseller seats banner */}
-              <div className="bg-[#F8F9FA] border-t border-gray-100 py-2.5 px-4 text-center text-xs text-gray-600 flex items-center justify-center flex-wrap gap-1">
-                <span>Bestseller Seats:</span>
-                <span className="font-semibold text-gray-900">
-                  Rows {tiers[0]?.rows ? Object.keys(tiers[0].rows).slice(0, 2).join(", ") : "E, F"}
-                </span>
-              </div>
-
-              <div className="p-4 bg-white border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => handleSeatCountConfirm(tempTicketCount)}
-                  className="w-full bg-[#f84464] hover:bg-[#d63451] text-white font-bold py-3 rounded-lg text-sm transition cursor-pointer shadow-md"
-                >
-                  Select Seats
-                </button>
-              </div>
+            <div className="p-4 bg-white border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => handleSeatCountConfirm(tempTicketCount)}
+                className="w-full bg-[#f84464] hover:bg-[#d63451] text-white font-bold py-3 rounded-lg text-sm transition cursor-pointer shadow-md"
+              >
+                Select Seats
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          onSubmit={handleContactSubmit}
-        />
-      </div>
-            <Footer />
-      
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onSubmit={handleContactSubmit}
+      />
     </div>
   );
 }
