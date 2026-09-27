@@ -14,6 +14,10 @@ import {
   Info,
   Coffee,
   Smartphone,
+  Navigation,
+  Accessibility,
+  Car,
+  Utensils,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { LoadingPage } from "./LoadingPage";
@@ -131,6 +135,7 @@ export default function BuyTicketsPage() {
   const [selectedOtherFilters, setSelectedOtherFilters] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"relevance" | "popularity" | "distance">("relevance");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [selectedCinemaInfo, setSelectedCinemaInfo] = useState<VenueGroup | null>(null);
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -828,10 +833,16 @@ export default function BuyTicketsPage() {
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
-                              <h3 className="text-sm sm:text-[15px] font-bold text-gray-900 hover:text-[#F84464] transition leading-snug">
+                              <h3
+                                onClick={() => setSelectedCinemaInfo(venue)}
+                                className="text-sm sm:text-[15px] font-bold text-gray-900 hover:text-[#F84464] transition leading-snug cursor-pointer"
+                              >
                                 {venue.venue_name}
                               </h3>
-                              <Info className="h-3.5 w-3.5 text-gray-400 shrink-0 cursor-pointer hover:text-gray-600" />
+                              <Info
+                                onClick={() => setSelectedCinemaInfo(venue)}
+                                className="h-3.5 w-3.5 text-gray-400 shrink-0 cursor-pointer hover:text-gray-600"
+                              />
                             </div>
                             <p className="text-xs text-gray-400 mt-0.5">
                               Cancellation available
@@ -981,6 +992,135 @@ export default function BuyTicketsPage() {
           className="fixed inset-0 z-30"
           onClick={() => setOpenDropdown(null)}
         />
+      )}
+      {/* ─── Cinema Info Modal (BookMyShow exact clone) ─── */}
+      {selectedCinemaInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
+          onClick={() => setSelectedCinemaInfo(null)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-[460px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with Title & Close button */}
+            <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 bg-white">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 pr-4 truncate">
+                {selectedCinemaInfo.venue_name}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedCinemaInfo(null)}
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-900 transition cursor-pointer shrink-0"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Map Preview */}
+            <div className="relative w-full h-44 bg-slate-100 overflow-hidden border-b border-gray-100">
+              <iframe
+                title="Cinema Location Map"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                loading="lazy"
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                  selectedCinemaInfo.venue_name + ", " + selectedCinemaInfo.city
+                )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+              />
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 bg-white">
+              {/* Address Row */}
+              <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-4">
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <MapPin className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-gray-600 leading-relaxed">
+                    {selectedCinemaInfo.address ||
+                      `${selectedCinemaInfo.venue_name}, M.G. Road, ${selectedCinemaInfo.city}, Kerala, India`}
+                  </p>
+                </div>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    selectedCinemaInfo.venue_name + ", " + selectedCinemaInfo.city
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#129B9B] hover:text-[#0e7d7d] p-1.5 rounded-full hover:bg-teal-50 transition shrink-0"
+                  title="Open Directions"
+                >
+                  <Navigation className="h-4 w-4" />
+                </a>
+              </div>
+
+              {/* Favorites Row */}
+              <div
+                onClick={() => toggleFavorite(selectedCinemaInfo.venue_id)}
+                className="flex items-center gap-2.5 py-3.5 border-b border-gray-100 cursor-pointer group select-none"
+              >
+                <Heart
+                  className={`h-4 w-4 transition ${
+                    favorites[selectedCinemaInfo.venue_id]
+                      ? "fill-[#F84464] text-[#F84464]"
+                      : "text-gray-400 group-hover:text-[#F84464]"
+                  }`}
+                />
+                <span className="text-xs font-semibold text-gray-700 group-hover:text-gray-900">
+                  {favorites[selectedCinemaInfo.venue_id]
+                    ? "Added to your favorite cinemas"
+                    : "Tap to add to your favorite cinemas"}
+                </span>
+              </div>
+
+              {/* Available Facilities Section */}
+              <div className="pt-4">
+                <h4 className="text-xs font-bold text-gray-900 tracking-wide uppercase mb-3">
+                  Available Facilities
+                </h4>
+                <div className="flex items-start gap-8">
+                  {/* Wheel Chair */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-1.5 text-gray-700">
+                      <Accessibility className="h-5 w-5 text-gray-700" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-gray-600 leading-tight">
+                      Wheel Chair
+                      <br />
+                      Facility
+                    </span>
+                  </div>
+
+                  {/* Parking */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-1.5 text-gray-700">
+                      <Car className="h-5 w-5 text-gray-700" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-gray-600 leading-tight">
+                      Parking
+                      <br />
+                      Facility
+                    </span>
+                  </div>
+
+                  {/* Food Court */}
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-1.5 text-gray-700">
+                      <Utensils className="h-5 w-5 text-gray-700" />
+                    </div>
+                    <span className="text-[10px] font-semibold text-gray-600 leading-tight">
+                      Food
+                      <br />
+                      Court
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       <Footer />
     </div>
