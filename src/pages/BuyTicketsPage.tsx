@@ -461,7 +461,8 @@ export default function BuyTicketsPage() {
       ) : (
         <>
           {/* ─── Date Strip & Filter Bar (Exact BookMyShow Match with Spacing) ─── */}
-          <div className="sticky top-[104px] lg:top-[112px] z-30 bg-white border-b border-gray-200 shadow-xs h-[72px] sm:h-[74px]">
+
+ <div className="sticky top-[104px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs h-[72px] sm:h-[74px]">
             <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full">
               
               {/* Left Side: Date Strip with spacious gap on the right before vertical divider */}
