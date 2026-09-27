@@ -160,6 +160,74 @@ export default function BuyTicketsPage() {
   const [sortBy, setSortBy] = useState<"relevance" | "popularity" | "distance">("relevance");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [selectedCinemaInfo, setSelectedCinemaInfo] = useState<VenueGroup | null>(null);
+  const [showtimePricingMap, setShowtimePricingMap] = useState<
+    Record<string, Array<{ price: string; tier: string; status: string; statusColor: string }>>
+  >({});
+
+  const fetchShowtimePricing = async (slotId: string, format?: string) => {
+    if (showtimePricingMap[slotId]) return;
+    try {
+      const data = await unwrap<{
+        rows?: Array<{
+          section?: string;
+          label?: string;
+          price_paise?: number;
+          seats?: Array<{ status?: string }>;
+        }>;
+      }>(api.get(`/showtimes/${slotId}/seat-map`));
+
+      if (data?.rows && data.rows.length > 0) {
+        const tierMap = new Map<
+          string,
+          { price: number; available: number; total: number }
+        >();
+
+        data.rows.forEach((r) => {
+          const sectionName = (
+            r.section ||
+            (r.price_paise && r.price_paise > 40000
+              ? "LUXE PRIME"
+              : r.price_paise && r.price_paise > 20000
+              ? "EXECUTIVE"
+              : "NORMAL")
+          ).toUpperCase();
+          const price = (r.price_paise || 25000) / 100;
+          const available = (r.seats || []).filter(
+            (s) => (s.status || "").toUpperCase() === "AVAILABLE"
+          ).length;
+          const total = (r.seats || []).length;
+
+          const existing = tierMap.get(sectionName) || {
+            price,
+            available: 0,
+            total: 0,
+          };
+          tierMap.set(sectionName, {
+            price: price || existing.price,
+            available: existing.available + available,
+            total: existing.total + total,
+          });
+        });
+
+        const tiers = Array.from(tierMap.entries()).map(([tier, info]) => {
+          const isFillingFast =
+            info.total > 0 && info.available / info.total < 0.4;
+          return {
+            price: `₹ ${info.price.toFixed(2)}`,
+            tier,
+            status: isFillingFast ? "Filling Fast" : "Available",
+            statusColor: isFillingFast ? "text-[#FFB000]" : "text-[#34A853]",
+          };
+        });
+
+        if (tiers.length > 0) {
+          setShowtimePricingMap((prev) => ({ ...prev, [slotId]: tiers }));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch showtime pricing", err);
+    }
+  };
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -915,13 +983,13 @@ export default function BuyTicketsPage() {
                         </div>
                       </div>
 
-                      {/* Third Row: Showtime Slots with Reduced Height & Hover Price Tooltip */}
+                      {/* Third Row: Showtime Slots with Reduced Height & Hover Price Tooltip fetched from API */}
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         {venue.showtimes.map((slot) => {
                           const isPast =
                             new Date(slot.starts_at).getTime() < now;
                           const fmt = (slot.format || "").toUpperCase();
-                          const pricingTiers = fmt.includes("LUXE")
+                          const fallbackPricing = fmt.includes("LUXE")
                             ? [
                                 { price: "₹ 650.00", tier: "LUXE PRIME", status: "Filling Fast", statusColor: "text-[#FFB000]" },
                                 { price: "₹ 500.00", tier: "LUXE", status: "Available", statusColor: "text-[#34A853]" },
@@ -935,22 +1003,35 @@ export default function BuyTicketsPage() {
                                 { price: "₹ 250.00", tier: "EXECUTIVE", status: "Filling Fast", statusColor: "text-[#FFB000]" },
                                 { price: "₹ 180.00", tier: "NORMAL", status: "Available", statusColor: "text-[#34A853]" },
                               ];
+                          const pricingTiers =
+                            showtimePricingMap[slot.id] || fallbackPricing;
 
                           return (
-                            <div key={slot.id} className="relative group">
-                              {/* Price Tooltip on Hover */}
+                            <div
+                              key={slot.id}
+                              className="relative group"
+                              onMouseEnter={() =>
+                                fetchShowtimePricing(slot.id, slot.format)
+                              }
+                            >
+                              {/* Price Tooltip on Hover (Fetched from API) */}
                               {!isPast && (
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                                   <div className="flex items-center justify-around gap-4 text-center">
                                     {pricingTiers.map((tierItem, idx) => (
-                                      <div key={idx} className="flex flex-col items-center">
+                                      <div
+                                        key={idx}
+                                        className="flex flex-col items-center"
+                                      >
                                         <span className="font-bold text-xs sm:text-[13px] text-gray-900 tracking-tight">
                                           {tierItem.price}
                                         </span>
                                         <span className="text-[9px] font-semibold text-gray-700 uppercase mt-0.5 whitespace-nowrap">
                                           {tierItem.tier}
                                         </span>
-                                        <span className={`text-[9px] font-semibold mt-0.5 whitespace-nowrap ${tierItem.statusColor}`}>
+                                        <span
+                                          className={`text-[9px] font-semibold mt-0.5 whitespace-nowrap ${tierItem.statusColor}`}
+                                        >
                                           {tierItem.status}
                                         </span>
                                       </div>
