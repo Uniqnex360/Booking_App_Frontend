@@ -487,13 +487,7 @@ export default function SeatMapPage() {
             </span>
           </button>
 
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition cursor-pointer"
-            title="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          
           </div>
         </div>
       </header>
