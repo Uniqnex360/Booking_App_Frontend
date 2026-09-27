@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Search, X, Crosshair, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { detectCity } from "@/utils/geolocation";
@@ -59,6 +59,19 @@ export function CitySelectionModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [detecting, setDetecting] = useState(false);
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Filter cities by search query
   const filteredCities = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -87,7 +100,6 @@ export function CitySelectionModal({
             const userLat = position.coords.latitude;
             const userLng = position.coords.longitude;
 
-            // Find closest supported city using Euclidean distance
             let closest = CITIES[0];
             let minDistance = Infinity;
 
@@ -105,7 +117,6 @@ export function CitySelectionModal({
             onClose();
           },
           async () => {
-            // Geolocation permission denied or failed, fallback to IP detection
             const ipCity = await detectCity();
             setDetecting(false);
             if (ipCity) {
@@ -146,26 +157,18 @@ export function CitySelectionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[150] flex items-start justify-center pt-[72px] sm:pt-[84px] px-4 overflow-y-auto">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/60 backdrop-blur-[1px] transition-opacity animate-in fade-in duration-200"
         onClick={onClose}
       />
 
-      {/* Modal Card */}
-      <div className="relative w-full max-w-[640px] bg-white rounded-lg shadow-2xl overflow-hidden p-6 sm:p-8 z-10 animate-in zoom-in-95 duration-200">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
-          aria-label="Close"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Search input */}
-        <div className="relative flex items-center border border-gray-300 rounded-md px-3.5 py-2.5 bg-white focus-within:border-gray-500 transition-colors">
+      {/* Modal Card - Exact BookMyShow Dimensions & Top Position */}
+      <div className="relative w-full max-w-[840px] bg-white rounded-md shadow-2xl p-5 sm:px-8 sm:py-5 z-10 animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Search Input Bar */}
+        <div className="relative flex items-center border border-gray-300 rounded px-3.5 py-2.5 bg-white focus-within:border-gray-400 transition-colors">
           <Search className="w-4 h-4 text-gray-400 shrink-0 mr-3" />
           <input
             type="text"
@@ -179,40 +182,40 @@ export function CitySelectionModal({
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="text-gray-400 hover:text-gray-600 p-1"
+              className="text-gray-400 hover:text-gray-600 p-0.5"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* Detect my location button */}
-        <div className="mt-3.5 mb-5 flex items-center">
+        {/* Detect My Location */}
+        <div className="mt-2.5 mb-4 flex items-center">
           <button
             type="button"
             onClick={handleDetectLocation}
             disabled={detecting}
-            className="flex items-center gap-2 text-[#F84464] hover:text-[#d63351] text-xs sm:text-sm font-medium transition-colors cursor-pointer group"
+            className="flex items-center gap-1.5 text-[#F84464] hover:text-[#d63351] text-xs sm:text-[13px] font-medium transition-colors cursor-pointer group"
           >
             {detecting ? (
-              <Loader2 className="w-4 h-4 animate-spin text-[#F84464]" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F84464]" />
             ) : (
-              <Crosshair className="w-4 h-4 text-[#F84464] group-hover:scale-110 transition-transform" />
+              <Crosshair className="w-3.5 h-3.5 text-[#F84464] group-hover:scale-110 transition-transform" />
             )}
             <span>{detecting ? "Detecting location..." : "Detect my location"}</span>
           </button>
         </div>
 
-        {/* Section title */}
-        <div className="text-center my-6">
-          <span className="text-xs sm:text-sm font-medium text-gray-700 tracking-wide">
+        {/* Section Title */}
+        <div className="text-center my-3">
+          <span className="text-xs text-gray-600 font-medium tracking-wide">
             Popular Cities
           </span>
         </div>
 
-        {/* City Icons List */}
+        {/* Popular Cities Row */}
         {filteredCities.length > 0 ? (
-          <div className="flex items-center justify-center gap-8 sm:gap-14 flex-wrap py-2">
+          <div className="flex items-center justify-center gap-10 sm:gap-16 py-2">
             {filteredCities.map((c) => {
               const isSelected =
                 currentCity.toLowerCase() === c.id.toLowerCase() ||
@@ -225,7 +228,7 @@ export function CitySelectionModal({
                   onClick={() => handleSelect(c.id)}
                   className="flex flex-col items-center group cursor-pointer focus:outline-none transition-transform"
                 >
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center p-1 transition-transform duration-200 group-hover:scale-105">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center transition-transform duration-150 group-hover:scale-105">
                     <img
                       src={isSelected ? c.selectedIcon : c.icon}
                       alt={c.name}
@@ -233,7 +236,7 @@ export function CitySelectionModal({
                     />
                   </div>
                   <span
-                    className={`text-xs sm:text-sm mt-2.5 transition-colors ${
+                    className={`text-[11px] sm:text-xs mt-1.5 transition-colors ${
                       isSelected
                         ? "text-[#F84464] font-bold"
                         : "text-gray-700 group-hover:text-[#F84464] font-medium"
@@ -246,13 +249,13 @@ export function CitySelectionModal({
             })}
           </div>
         ) : (
-          <div className="py-8 text-center text-sm text-gray-500">
+          <div className="py-6 text-center text-xs text-gray-500">
             No cities found matching &quot;{searchQuery}&quot;
           </div>
         )}
 
-        {/* View All Cities button */}
-        <div className="text-center mt-8">
+        {/* View All Cities */}
+        <div className="text-center mt-4 pt-1">
           <button
             type="button"
             onClick={() => setSearchQuery("")}
