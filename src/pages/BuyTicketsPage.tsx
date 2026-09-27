@@ -836,12 +836,11 @@ export default function BuyTicketsPage() {
                   return (
                     <div
                       key={venue.venue_id}
-                      className="p-4 sm:p-5 flex flex-col gap-3.5 hover:bg-gray-50/50 transition border-b border-gray-100 last:border-b-0"
+                      className="p-4 sm:p-5 flex flex-col gap-3 hover:bg-gray-50/50 transition border-b border-gray-100 last:border-b-0"
                     >
-                      {/* Top Header Section: Cinema Info (Left) & Favorite Heart (Right) */}
+                      {/* Top Header Row: Logo, Cinema Title, Info Icon (Left) & Favorite Heart (Right) */}
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex flex-col gap-1 min-w-0">
-                          {/* Logo + Venue Name + Info Icon */}
                           <div className="flex items-center gap-2 flex-wrap">
                             {isPVR ? (
                               <div className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shrink-0">
@@ -871,12 +870,11 @@ export default function BuyTicketsPage() {
                             </div>
                           </div>
 
-                          {/* Cancellation available text */}
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-gray-400">
                             Cancellation available
                           </p>
 
-                          {/* F&B and M-Ticket Icon Badges with Hover-Reveal Text to the right (Exact BMS Style) */}
+                          {/* Amenities / Feature Icons: Text revealed to the right on hover (Exact BMS style) */}
                           <div className="flex items-center gap-2 mt-1">
                             {/* Food & Beverage Badge */}
                             <div
@@ -902,7 +900,7 @@ export default function BuyTicketsPage() {
                           </div>
                         </div>
 
-                        {/* Top-Right Favorite Heart Button */}
+                        {/* Top-Right Favorite Heart button */}
                         <button
                           type="button"
                           onClick={() => toggleFavorite(venue.venue_id)}
@@ -917,8 +915,8 @@ export default function BuyTicketsPage() {
                         </button>
                       </div>
 
-                      {/* Showtimes Row (Positioned BELOW the icons, BMS clone size & style) */}
-                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      {/* Showtimes Row (Positioned BELOW icons with reduced height matching BMS clone) */}
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
                         {venue.showtimes.map((slot) => {
                           const isPast =
                             new Date(slot.starts_at).getTime() < now;
@@ -929,15 +927,15 @@ export default function BuyTicketsPage() {
                                 if (!isPast) handleShowtimeClick(slot.id);
                               }}
                               disabled={isPast}
-                              className={`relative rounded px-3 py-1.5 min-w-[98px] max-w-[110px] text-center transition cursor-pointer flex flex-col items-center justify-center ${
+                              className={`relative rounded px-2.5 py-1 min-w-[90px] h-[38px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
                                 isPast
                                   ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
                                   : "border-l-[3px] border-l-[#1EA83C] border-t border-b border-r border-gray-300 bg-white hover:border-[#1EA83C] hover:bg-[#1EA83C]/5 shadow-2xs"
                               }`}
                             >
-                              <div className="flex items-center justify-center gap-1">
+                              <div className="flex items-center justify-center gap-1 leading-none">
                                 <span
-                                  className={`text-[12px] sm:text-[13px] font-bold ${
+                                  className={`text-[11px] sm:text-[12px] font-bold leading-none ${
                                     isPast ? "text-gray-300" : "text-gray-800"
                                   }`}
                                 >
@@ -947,7 +945,7 @@ export default function BuyTicketsPage() {
                                   ENG
                                 </span>
                               </div>
-                              <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
+                              <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
                                 {slot.format || "2D"}
                               </div>
                             </button>
