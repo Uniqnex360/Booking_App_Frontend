@@ -82,6 +82,14 @@ function dateTabParts(dateKey: string) {
   };
 }
 
+function getCityState(city: string): string {
+  const c = (city || "").toLowerCase();
+  if (c.includes("bang") || c.includes("beng")) return "Karnataka";
+  if (c.includes("chennai") || c.includes("madras")) return "Tamil Nadu";
+  if (c.includes("kochi") || c.includes("cochin")) return "Kerala";
+  return "India";
+}
+
 type PreferredTime = "any" | "morning" | "afternoon" | "evening" | "night";
 
 function istHour(iso: string): number {
@@ -1040,7 +1048,7 @@ export default function BuyTicketsPage() {
                   <MapPin className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
                   <p className="text-xs text-gray-600 leading-relaxed">
                     {selectedCinemaInfo.address ||
-                      `${selectedCinemaInfo.venue_name}, M.G. Road, ${selectedCinemaInfo.city}, Kerala, India`}
+                      `${selectedCinemaInfo.venue_name}, M.G. Road, ${selectedCinemaInfo.city}, ${getCityState(selectedCinemaInfo.city)}, India`}
                   </p>
                 </div>
                 <a
