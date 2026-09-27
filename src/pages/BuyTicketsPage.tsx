@@ -473,7 +473,10 @@ export default function BuyTicketsPage() {
                   return (
                     <button
                       key={dk}
-                      onClick={() => setSelectedDate(dk)}
+                        onClick={() => {
+    setSelectedDate(dk);
+    setLangFormatFilter("all");
+  }}
                       className={`w-[52px] sm:w-[58px] h-[52px] sm:h-[56px] py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
                         isActive
                           ? "bg-[#F84464] text-white shadow-xs"
