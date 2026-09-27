@@ -401,12 +401,6 @@ export default function SeatMapPage() {
 
   const canProceed = selectedSeats.length === requiredSeatCount;
 
-  // Split row seats into blocks for realistic BookMyShow aisles.
-  // The two aisle (edge) blocks are always kept the SAME size so a row
-  // reads as symmetric left/right — only the middle block absorbs the
-  // remainder. Previously the edge sizes were computed independently
-  // (percentage-based), which produced uneven splits like 8/7/6 for
-  // some row lengths, making the row look shifted to the left.
   const splitIntoBlocks = (seats: SeatItem[]) => {
     const len = seats.length;
     if (len <= 8) return [seats];
@@ -414,7 +408,6 @@ export default function SeatMapPage() {
       const left = Math.ceil(len / 2);
       return [seats.slice(0, left), seats.slice(left)];
     }
-    // 3 blocks, symmetric edges: left block size === right block size.
     const edge = Math.min(8, Math.floor(len / 4));
     const rightStart = len - edge;
     return [
@@ -443,7 +436,6 @@ export default function SeatMapPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
-      {/* ─── BookMyShow Authentic Header (Pinned Static at Top) ─── */}
       <header className="bg-white border-b border-gray-200 py-2.5 sticky top-0 z-30 shadow-xs">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -483,7 +475,6 @@ export default function SeatMapPage() {
             </div>
           )}
 
-          {/* Ticket count edit button matching BookMyShow */}
           <button
             onClick={() => setShowTicketModal(true)}
             className="border border-[#f84464] text-[#f84464] hover:bg-[#f84464]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
@@ -507,7 +498,6 @@ export default function SeatMapPage() {
         </div>
       </header>
 
-      {/* ─── BookMyShow Showtime Pills Switcher ─── */}
       {allShowtimes.length > 1 && (
         <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
@@ -576,7 +566,6 @@ export default function SeatMapPage() {
         </div>
       )}
 
-      {/* ─── Main Seat Layout Canvas ─── */}
       <main
         className={`flex-grow bg-white flex flex-col items-center justify-start py-8 overflow-auto relative ${
           selectedSeats.length > 0 ? "pb-28 sm:pb-32" : "pb-12"
@@ -603,19 +592,10 @@ export default function SeatMapPage() {
             className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col items-center transition-transform duration-150 origin-top"
             style={{ transform: `scale(${zoom})` }}
           >
-            {/* Tiers & Seating Grid — shares the same max-w-[1280px] mx-auto
-                px-4 sm:px-6 centered column as the header and pills row.
-                Rows stay items-start internally (row-letter labels form one
-                straight vertical column), and the whole label+seats block is
-                wrapped with an invisible mirror spacer (same width as the
-                label column) below, so the SEAT mass itself — not the
-                label+seats combo — ends up balanced left/right of center,
-                instead of being dragged left by the label column. */}
             <div className="flex items-start">
               <div className="w-full flex flex-col items-center">
                 {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full flex flex-col items-start my-3">
-                  {/* BookMyShow Tier Divider */}
                   <div className="w-full flex items-center my-5 select-none">
                     <div className="flex-grow h-px bg-gray-200" />
                     <span className="px-4 text-xs font-semibold text-gray-500 tracking-wider uppercase">
@@ -624,7 +604,6 @@ export default function SeatMapPage() {
                     <div className="flex-grow h-px bg-gray-200" />
                   </div>
 
-                  {/* Rows inside tier */}
                   <div className="space-y-1.5 flex flex-col items-start w-full">
                     {Object.entries(tier.rows).map(([rowLabel, seatList]) => {
                       const blocks = splitIntoBlocks(seatList);
@@ -632,14 +611,15 @@ export default function SeatMapPage() {
                       return (
                         <div
                           key={rowLabel}
-                          className="relative flex items-center justify-center my-0.5 select-none w-full"
+                          className="flex items-center justify-center my-0.5 select-none w-full"
                         >
-                          {/* Row letter badge in a single straight vertical line on the left (matching BMS rail) */}
-                          <div className="relative flex items-center"><div className="absolute right-full mr-3 sm:mr-4 w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs">
+                          {/* Fixed-width label column: same width on every row regardless
+                              of that row's seat count, so letters stay in one straight
+                              vertical line instead of drifting with row width. */}
+                          <div className="w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs mr-3 sm:mr-4">
                             {rowLabel}
                           </div>
 
-                          {/* Seating blocks with aisles */}
                           <div className="flex items-center">
                             {blocks.map((block, bIdx) => (
                               <div key={bIdx} className="flex items-center">
@@ -654,7 +634,6 @@ export default function SeatMapPage() {
 
                                     let seatStyle = "";
                                     if (!seat.is_available) {
-                                      // Flat light grey box, number hidden/transparent (exact BMS style)
                                       seatStyle =
                                         "bg-[#EEEEEE] border border-[#EEEEEE] text-transparent cursor-not-allowed";
                                     } else if (isSelected) {
@@ -691,6 +670,14 @@ export default function SeatMapPage() {
                               </div>
                             ))}
                           </div>
+
+                          {/* Invisible mirror of the label column, so justify-center
+                              balances the SEAT block (not the label+seats combo)
+                              under the screen. */}
+                          <div
+                            className="w-7 sm:w-8 shrink-0 ml-3 sm:ml-4"
+                            aria-hidden="true"
+                          />
                         </div>
                       );
                     })}
@@ -698,10 +685,6 @@ export default function SeatMapPage() {
                 </div>
               ))}
 
-              {/* ─── 3D Perspective Screen Trapezoid ("All eyes this way please") ─── */}
-              {/* Nested inside the same w-fit mx-auto wrapper as the seat rows so its
-                  horizontal center is guaranteed to match the seat grid's center,
-                  not just the page's center. */}
               <div className="w-full flex flex-col items-center mt-12 mb-8 select-none">
               <div className="w-64 sm:w-80 h-7 relative flex items-center justify-center">
                 <svg
@@ -746,7 +729,6 @@ export default function SeatMapPage() {
         )}
       </main>
 
-      {/* ─── Floating Zoom Controls (Bottom Right) ─── */}
       <div className="fixed bottom-24 sm:bottom-20 right-4 sm:right-6 flex flex-col gap-2 z-20">
         <button
           onClick={() =>
@@ -768,7 +750,6 @@ export default function SeatMapPage() {
         </button>
       </div>
 
-      {/* ─── BookMyShow Centered Pay Button ─── */}
       {selectedSeats.length > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-3 px-4 z-40 flex items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
           <button
@@ -791,13 +772,11 @@ export default function SeatMapPage() {
         </div>
       )}
 
-      {/* ─── BookMyShow Bottom Legend & Promo Bar ─── */}
       <footer
         className={`sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] select-none transition-all ${
           selectedSeats.length > 0 ? "mb-16 sm:mb-20" : ""
         }`}
       >
-        {/* Legend items */}
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-center gap-5 sm:gap-8 text-xs text-gray-600 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-3.5 h-3.5 rounded-[2px] border border-[#1ea83c] bg-white" />
@@ -822,7 +801,6 @@ export default function SeatMapPage() {
           </div>
         </div>
 
-        {/* Bottom Promo Strip & Page Indicator */}
         <div className="border-t border-gray-100 py-1.5 px-4 sm:px-8 flex items-center justify-between text-[11px] text-gray-500 bg-[#FAFAFA]">
           <div className="flex items-center gap-1.5 mx-auto sm:mx-0">
             <span className="text-[#f84464] font-bold">✓</span>
@@ -834,7 +812,6 @@ export default function SeatMapPage() {
         </div>
       </footer>
 
-      {/* ─── Seat Count Change Modal (BookMyShow Exact) ─── */}
       {showTicketModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -871,7 +848,6 @@ export default function SeatMapPage() {
               ))}
             </div>
 
-            {/* Tiers Pricing Preview */}
             <div className="border-t border-gray-100 px-6 py-4">
               <div className="flex items-center justify-around text-center gap-3">
                 {tiers.map((t, idx) => (
