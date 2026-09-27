@@ -444,28 +444,29 @@ export default function SeatMapPage() {
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
       {/* ─── BookMyShow Authentic Header (Pinned Static at Top) ─── */}
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-2.5 flex items-center justify-between sticky top-0 z-30 shadow-xs">
-        <div className="flex items-center gap-3 min-w-0">
-          <button
-            onClick={() => navigate(-1)}
-            className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
-            title="Back"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
+      <header className="bg-white border-b border-gray-200 py-2.5 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
+              title="Back"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
 
-          <div className="min-w-0">
-            <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
-              {mapData?.movie_title}
-            </p>
-            <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
-              {mapData?.cinema_name || mapData?.venue_name}
-              {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
-            </p>
+            <div className="min-w-0">
+              <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
+                {mapData?.movie_title}
+              </p>
+              <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
+                {mapData?.cinema_name || mapData?.venue_name}
+                {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {isStale && !isSourceUnavailable && (
             <button
               onClick={fetchSeatMap}
@@ -502,12 +503,14 @@ export default function SeatMapPage() {
           >
             <X className="h-5 w-5" />
           </button>
+          </div>
         </div>
       </header>
 
       {/* ─── BookMyShow Showtime Pills Switcher ─── */}
       {allShowtimes.length > 1 && (
-        <div className="bg-white border-b border-gray-100 px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar shadow-2xs">
+        <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
           {allShowtimes.map((s) => {
             const isCurrent = s.id === id;
             const hasStarted = new Date(s.starts_at).getTime() <= Date.now();
@@ -569,12 +572,13 @@ export default function SeatMapPage() {
               </button>
             );
           })}
+          </div>
         </div>
       )}
 
       {/* ─── Main Seat Layout Canvas ─── */}
       <main
-        className={`flex-grow bg-white flex flex-col items-center justify-start py-8 px-2 sm:px-4 overflow-auto relative ${
+        className={`flex-grow bg-white flex flex-col items-center justify-start py-8 overflow-auto relative ${
           selectedSeats.length > 0 ? "pb-28 sm:pb-32" : "pb-12"
         }`}
       >
@@ -596,12 +600,13 @@ export default function SeatMapPage() {
           </div>
         ) : (
           <div
-            className="w-full flex flex-col items-start pl-4 sm:pl-6 transition-transform duration-150 origin-top"
+            className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col items-start transition-transform duration-150 origin-top"
             style={{ transform: `scale(${zoom})` }}
           >
-            {/* Tiers & Seating Grid — starts at the same left inset (pl-4 sm:pl-6)
-                as the header's back button, so the row-label column lines up
-                directly under the back arrow, matching the BMS reference. */}
+            {/* Tiers & Seating Grid — shares the same max-w-[1280px] mx-auto
+                px-4 sm:px-6 centered column as the header and pills row, so
+                the row-label column lines up under the back arrow and the
+                whole page has symmetric side margins, matching BMS. */}
             <div className="w-fit flex flex-col items-start">
               {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full flex flex-col items-start my-3">
@@ -787,7 +792,7 @@ export default function SeatMapPage() {
         }`}
       >
         {/* Legend items */}
-        <div className="max-w-[1240px] mx-auto px-4 py-2 flex items-center justify-center gap-5 sm:gap-8 text-xs text-gray-600 flex-wrap">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-center gap-5 sm:gap-8 text-xs text-gray-600 flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-3.5 h-3.5 rounded-[2px] border border-[#1ea83c] bg-white" />
             <span>Available</span>
