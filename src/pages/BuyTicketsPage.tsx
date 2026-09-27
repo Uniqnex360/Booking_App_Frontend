@@ -379,6 +379,30 @@ export default function BuyTicketsPage() {
     setSearchParams(p, { replace: true });
 
     if (selectedSlotId) {
+      try {
+        const parentVenue = venuesInCity.find((v) =>
+          v.showtimes.some((s) => s.id === selectedSlotId)
+        );
+        if (parentVenue) {
+          sessionStorage.setItem(
+            "vyhbz_venue_showtimes",
+            JSON.stringify({
+              venue_name: parentVenue.venue_name,
+              movie_title: movie?.title,
+              showtimes: parentVenue.showtimes.map((s) => ({
+                id: s.id,
+                starts_at: s.starts_at,
+                format: s.format,
+                screen_name: s.screen_name,
+                language: s.language,
+              })),
+            })
+          );
+        }
+      } catch (err) {
+        console.error("Failed to cache venue showtimes", err);
+      }
+
       navigate(
         withCity(
           `/showtimes/${selectedSlotId}/seat-map?qty=${tempTicketCount}`,
