@@ -410,7 +410,7 @@ export default function SeatMapPage() {
     ? new Date(mapData.starts_at).toLocaleDateString("en-US", {
         weekday: "short",
         day: "numeric",
-        month: "short",
+        month: "long",
         year: "numeric",
       })
     : "";
@@ -436,21 +436,13 @@ export default function SeatMapPage() {
             <ChevronLeft className="h-6 w-6" />
           </button>
 
-          {/* Timing Green Button replacing movie title */}
-          <div className="bg-[#2dc492] text-white rounded px-3.5 py-1 text-center shadow-xs shrink-0 cursor-default">
-            <div className="text-xs font-bold leading-tight">{formattedTime}</div>
-            <div className="text-[9px] font-medium text-white/90 uppercase tracking-wide leading-tight">
-              {mapData?.format || "4K LASER ATMOS"}
-            </div>
-          </div>
-
           <div className="min-w-0">
-            <p className="text-xs text-gray-700 font-semibold truncate leading-tight">
-              {mapData?.cinema_name || mapData?.venue_name}
-              {city ? `: ${city}` : ""}
+            <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
+              {mapData?.movie_title}
             </p>
-            <p className="text-[11px] text-gray-400 font-normal mt-0.5 truncate leading-tight">
-              {mapData?.screen_name ? `${mapData.screen_name} • ` : ""}{formattedDate}
+            <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
+              {mapData?.cinema_name || mapData?.venue_name}
+              {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
             </p>
           </div>
         </div>
@@ -675,10 +667,12 @@ export default function SeatMapPage() {
                   </div>
                 </div>
               ))}
-            </div>
 
-            {/* ─── 3D Perspective Screen Trapezoid ("All eyes this way please") ─── */}
-            <div className="w-full max-w-xl flex flex-col items-center mt-12 mb-8 select-none">
+              {/* ─── 3D Perspective Screen Trapezoid ("All eyes this way please") ─── */}
+              {/* Nested inside the same w-fit mx-auto wrapper as the seat rows so its
+                  horizontal center is guaranteed to match the seat grid's center,
+                  not just the page's center. */}
+              <div className="w-full flex flex-col items-center mt-12 mb-8 select-none">
               <div className="w-64 sm:w-80 h-7 relative flex items-center justify-center">
                 <svg
                   viewBox="0 0 320 28"
@@ -715,6 +709,7 @@ export default function SeatMapPage() {
               <div className="text-xs text-gray-400 font-normal mt-3 tracking-normal select-none">
                 All eyes this way please
               </div>
+            </div>
             </div>
           </div>
         )}
