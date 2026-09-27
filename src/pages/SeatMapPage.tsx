@@ -103,18 +103,31 @@ export default function SeatMapPage() {
 
   const allShowtimes = useMemo(() => {
     if (!mapData) return venueShowtimes;
-    const exists = venueShowtimes.some((s) => s.id === id);
-    if (exists) return venueShowtimes;
-    return [
-      {
-        id: id || mapData.showtime_id,
-        starts_at: mapData.starts_at,
-        format: mapData.format || "4K LASER ATMOS",
-        screen_name: mapData.screen_name,
-        language: mapData.language,
-      },
-      ...venueShowtimes,
-    ];
+    const merged = venueShowtimes.some((s) => s.id === id)
+      ? venueShowtimes
+      : [
+          {
+            id: id || mapData.showtime_id,
+            starts_at: mapData.starts_at,
+            format: mapData.format || "4K LASER ATMOS",
+            screen_name: mapData.screen_name,
+            language: mapData.language,
+          },
+          ...venueShowtimes,
+        ];
+
+    // Only show other showtimes at this theatre for the SAME calendar day
+    // as the showtime currently being booked (matches BookMyShow, which
+    // never mixes days in the pill switcher).
+    const currentDay = new Date(mapData.starts_at).toDateString();
+    const sameDay = merged.filter(
+      (s) => new Date(s.starts_at).toDateString() === currentDay,
+    );
+
+    // Chronological order, earliest first.
+    return sameDay.sort(
+      (a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
+    );
   }, [venueShowtimes, mapData, id]);
 
   const fetchSeatMap = async () => {
@@ -388,21 +401,26 @@ export default function SeatMapPage() {
 
   const canProceed = selectedSeats.length === requiredSeatCount;
 
-  // Split row seats into blocks for realistic BookMyShow aisles
+  // Split row seats into blocks for realistic BookMyShow aisles.
+  // The two aisle (edge) blocks are always kept the SAME size so a row
+  // reads as symmetric left/right — only the middle block absorbs the
+  // remainder. Previously the edge sizes were computed independently
+  // (percentage-based), which produced uneven splits like 8/7/6 for
+  // some row lengths, making the row look shifted to the left.
   const splitIntoBlocks = (seats: SeatItem[]) => {
     const len = seats.length;
     if (len <= 8) return [seats];
     if (len <= 14) {
-      const mid = Math.ceil(len / 2);
-      return [seats.slice(0, mid), seats.slice(mid)];
+      const left = Math.ceil(len / 2);
+      return [seats.slice(0, left), seats.slice(left)];
     }
-    // 3 blocks: e.g. 8 - 8 - rest
-    const leftCut = Math.min(8, Math.floor(len * 0.35));
-    const rightCut = Math.min(len - 4, Math.floor(len * 0.72));
+    // 3 blocks, symmetric edges: left block size === right block size.
+    const edge = Math.min(8, Math.floor(len / 4));
+    const rightStart = len - edge;
     return [
-      seats.slice(0, leftCut),
-      seats.slice(leftCut, rightCut),
-      seats.slice(rightCut),
+      seats.slice(0, edge),
+      seats.slice(edge, rightStart),
+      seats.slice(rightStart),
     ];
   };
 
@@ -520,10 +538,10 @@ export default function SeatMapPage() {
                   key={s.id}
                   disabled
                   title="Show has already started"
-                  className="bg-gray-50 border border-gray-200 text-gray-400 rounded px-3.5 py-1 text-center opacity-60 cursor-not-allowed shrink-0"
+                  className="bg-amber-50 border border-amber-200 text-amber-600 rounded px-3.5 py-1 text-center cursor-not-allowed shrink-0"
                 >
                   <div className="text-xs font-bold leading-tight">{timeLabel}</div>
-                  <div className="text-[9px] font-medium text-gray-400 uppercase tracking-wide leading-tight">
+                  <div className="text-[9px] font-medium text-amber-500 uppercase tracking-wide leading-tight">
                     {subLabel}
                   </div>
                 </button>
