@@ -465,7 +465,7 @@ export default function BuyTicketsPage() {
             <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full">
               
               {/* Left Side: Date Strip with spacious gap on the right before vertical divider */}
-              <div className="flex items-center gap-1.5 h-full border-r border-gray-200 pr-12 md:pr-20 mr-4 md:mr-6 shrink-0 overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1.5 h-full border-r border-gray-200 pr-12 md:pr-20 mr-4 md:mr-6 shrink-0">
                 {dateKeys.map((dk) => {
                   const { weekday, day, month } = dateTabParts(dk);
                   const isActive = activeDate === dk;
