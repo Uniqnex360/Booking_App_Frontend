@@ -741,6 +741,7 @@ export default function SeatMapPage() {
               </div>
             </div>
             </div>
+            </div>
           </div>
         )}
       </main>
@@ -907,6 +908,8 @@ export default function SeatMapPage() {
         onClose={() => setIsAuthModalOpen(false)}
         onSubmit={handleContactSubmit}
       />
+      
     </div>
+
   );
 }
