@@ -110,17 +110,15 @@ const PRICE_RANGES = [
   { label: "₹601 - ₹700", min: 601, max: 700 },
 ];
 function matchesPriceRange(
-  format: string,
+  tiers: Array<{ price: string }> | undefined,
   selectedRanges: { min: number; max: number }[]
 ): boolean {
   if (selectedRanges.length === 0) return true;
-  const fmt = (format || "").toUpperCase();
-  const estPrice = fmt.includes("LUXE")
-    ? 650
-    : fmt.includes("DOLBY") || fmt.includes("3D")
-    ? 350
-    : 200;
-  return selectedRanges.some((r) => estPrice >= r.min && estPrice <= r.max);
+  if (!tiers || tiers.length === 0) return true; // pricing not fetched yet, don't hide
+  return tiers.some((t) => {
+    const price = parseFloat(t.price.replace(/[^0-9.]/g, ""));
+    return selectedRanges.some((r) => price >= r.min && price <= r.max);
+  });
 }
 function matchesPreferredTime(iso: string, pref: PreferredTime): boolean {
   if (pref === "any") return true;
@@ -228,7 +226,7 @@ export default function BuyTicketsPage() {
               s.format.toLowerCase().includes(fmt.toLowerCase())
             );
           })
-          .filter((s) => matchesPriceRange(s.format, selectedPriceRanges))
+          .filter((s) => matchesPriceRange(showtimePricingMap[s.id], selectedPriceRanges))
           .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
           .sort(
             (a, b) =>
@@ -263,6 +261,7 @@ export default function BuyTicketsPage() {
     preferredTime,
     searchQuery,
     sortBy,
+    showtimePricingMap
   ]);
 
   const fetchShowtimePricing = useCallback(async (slotId: string) => {
