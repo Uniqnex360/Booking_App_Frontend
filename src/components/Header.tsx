@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
 import { CitySelectionModal } from "@/components/common/CitySelectionModal";
+import { GlobalSearchModal } from "@/components/common/GlobalSearchModal";
 import { toast } from "sonner";
 
 const CITY_STORAGE_KEY = "vyhbz_selected_city";
@@ -160,6 +161,7 @@ export function Header() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const displayCityName = (c: string) => {
     if (c?.toLowerCase() === "bangalore" || c?.toLowerCase() === "bengaluru") {
@@ -386,125 +388,17 @@ export function Header() {
           />
         </Link>
 
-        {/* Search Bar */}
+        {/* Search Bar (Triggers Full BookMyShow Search Overlay) */}
         <div
-          className="relative hidden md:flex flex-1 max-w-[550px] lg:max-w-[620px] ml-4"
-          ref={dropdownRef}
+          onClick={() => setIsSearchModalOpen(true)}
+          className="relative hidden md:flex flex-1 max-w-[550px] lg:max-w-[620px] ml-4 cursor-pointer group"
         >
-          <div className="flex w-full items-center bg-gray-50 focus-within:bg-white border border-gray-200 focus-within:border-[#7B1E3D]/50 rounded-md transition shadow-inner shadow-gray-100/50">
-            <Search className="h-4 w-4 text-gray-400 ml-3 shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() =>
-                searchQuery.trim().length >= 2 && setShowDropdown(true)
-              }
-              placeholder="Search for Movies, Events, Plays, Sports and Activities"
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
-            />
-            {isSearching ? (
-              <Loader2 className="h-4 w-4 text-gray-400 mr-3 animate-spin" />
-            ) : searchQuery ? (
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="p-2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            ) : null}
+          <div className="flex w-full items-center bg-gray-50 group-hover:bg-white border border-gray-200 group-hover:border-gray-300 rounded-md transition shadow-inner shadow-gray-100/50 py-2.5 px-3">
+            <Search className="h-4 w-4 text-gray-400 mr-3 shrink-0" />
+            <span className="text-sm text-gray-400 select-none truncate">
+              Search for Movies, Events, Plays, Sports and Activities
+            </span>
           </div>
-
-          {/* Search Dropdown */}
-          {showDropdown && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-              {isSearching ? (
-                <div className="p-4 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-[#7B1E3D]" />
-                  <span>Searching...</span>
-                </div>
-              ) : !hasResults ? (
-                <div className="p-4 text-center text-sm text-gray-500">
-                  No results found for "{searchQuery}"
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100 max-h-[380px] overflow-y-auto">
-                  {results.movies.length > 0 && (
-                    <div className="p-2">
-                      <p className="text-[11px] font-bold text-gray-400 px-3 py-1 uppercase tracking-wider">
-                        Movies
-                      </p>
-                      <div className="mt-1 space-y-1">
-                        {results.movies.map((m) => (
-                          <Link
-                            key={m.id}
-                            to={withCity(`/movies/${m.id}`, city)}
-                            onClick={() => setShowDropdown(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition group"
-                          >
-                            <div className="h-10 w-8 bg-gray-100 rounded overflow-hidden shrink-0">
-                              {m.poster_url && (
-                                <img
-                                  src={m.poster_url}
-                                  alt={m.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#7B1E3D]">
-                                {m.title}
-                              </p>
-                              <p className="text-[11px] text-gray-500 truncate">
-                                {m.language} • {m.certificate}
-                              </p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {results.events.length > 0 && (
-                    <div className="p-2">
-                      <p className="text-[11px] font-bold text-gray-400 px-3 py-1 uppercase tracking-wider">
-                        Events
-                      </p>
-                      <div className="mt-1 space-y-1">
-                        {results.events.map((e) => (
-                          <Link
-                            key={e.id}
-                            to={withCity(`/booking/event/${e.id}`, city)}
-                            onClick={() => setShowDropdown(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-gray-50 transition group"
-                          >
-                            <div className="h-10 w-8 bg-gray-100 rounded overflow-hidden shrink-0">
-                              {(e.poster_image_url || e.cover_image_url) && (
-                                <img
-                                  src={e.poster_image_url || e.cover_image_url}
-                                  alt={e.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-gray-900 truncate group-hover:text-[#7B1E3D]">
-                                {e.title}
-                              </p>
-                              <p className="text-[11px] text-gray-500 truncate">
-                                {e.category} • {e.city}
-                              </p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Right Section: Aligned to the far right with ml-auto */}
@@ -513,7 +407,7 @@ export function Header() {
           <button
             type="button"
             className="md:hidden text-gray-600 hover:text-gray-900 transition p-1"
-            onClick={() => setMobileSearchOpen((v) => !v)}
+            onClick={() => setIsSearchModalOpen(true)}
           >
             {mobileSearchOpen ? (
               <X className="h-5 w-5" />
@@ -1451,6 +1345,11 @@ export function Header() {
         onClose={() => setIsCityModalOpen(false)}
         currentCity={city}
         onSelectCity={(newCity) => setCity(newCity)}
+      />
+      <GlobalSearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        city={city}
       />
     </header>
   );
