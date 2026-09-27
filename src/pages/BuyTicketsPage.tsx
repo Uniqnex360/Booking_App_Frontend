@@ -126,6 +126,10 @@ export default function BuyTicketsPage() {
     "langFormat" | "time" | "price" | "special" | "other" | "sort" | null
   >(null);
   const [showSubtitleNotice, setShowSubtitleNotice] = useState(true);
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
+  const [selectedSpecialFormats, setSelectedSpecialFormats] = useState<string[]>([]);
+  const [selectedOtherFilters, setSelectedOtherFilters] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"relevance" | "popularity" | "distance">("relevance");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -318,12 +322,11 @@ export default function BuyTicketsPage() {
         </div>
       ) : (
         <>
-          {/* ─── Date Strip & Filter Bar (White background, BookMyShow layout) ─── */}
+          {/* ─── Date Strip & Filter Bar (Exact BookMyShow Cell Box Layout) ─── */}
           <div className="sticky top-[104px] lg:top-[112px] z-30 bg-white border-b border-gray-200 shadow-xs">
-            <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
-              
+            <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between overflow-x-auto scrollbar-none">
               {/* Date Cards */}
-              <div className="flex items-center gap-1.5 py-2 shrink-0">
+              <div className="flex items-center gap-1.5 py-2 shrink-0 border-r border-gray-200 pr-3">
                 {dateKeys.map((dk) => {
                   const { weekday, day, month } = dateTabParts(dk);
                   const isActive = activeDate === dk;
@@ -363,27 +366,24 @@ export default function BuyTicketsPage() {
                 })}
               </div>
 
-              {/* Vertical divider */}
-              <div className="h-10 w-px bg-gray-200 shrink-0 hidden md:block" />
-
-              {/* Filter Tabs & Dropdowns */}
-              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                {/* Active Format Tab */}
-                <div className="relative">
+              {/* Filter Cell Items Container */}
+              <div className="flex items-center shrink-0">
+                {/* 1. Language - Format Active Tab */}
+                <div className="relative border-r border-gray-200">
                   <button
                     onClick={() => toggleDropdown("langFormat")}
-                    className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-900 border-b-2 border-[#F84464] py-3.5 px-3 whitespace-nowrap cursor-pointer"
+                    className="flex items-center gap-1 text-xs sm:text-sm font-semibold text-gray-900 border-b-2 border-[#F84464] py-4 px-4 whitespace-nowrap cursor-pointer hover:bg-gray-50 transition"
                   >
                     <span>{activeFormatDisplay}</span>
                   </button>
                   {openDropdown === "langFormat" && (
-                    <div className="absolute left-0 z-40 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[200px]">
+                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[180px]">
                       <button
                         onClick={() => {
                           setLangFormatFilter("all");
                           setOpenDropdown(null);
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm hover:bg-gray-50 ${
+                        className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
                           langFormatFilter === "all"
                             ? "text-[#F84464] font-semibold"
                             : "text-gray-700"
@@ -398,7 +398,7 @@ export default function BuyTicketsPage() {
                             setLangFormatFilter(opt);
                             setOpenDropdown(null);
                           }}
-                          className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm hover:bg-gray-50 ${
+                          className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
                             langFormatFilter === opt
                               ? "text-[#F84464] font-semibold"
                               : "text-gray-700"
@@ -411,39 +411,180 @@ export default function BuyTicketsPage() {
                   )}
                 </div>
 
-                {/* Price Range */}
-                <div className="relative hidden lg:block">
+                {/* 2. Price Range */}
+                <div className="relative border-r border-gray-200">
                   <button
                     onClick={() => toggleDropdown("price")}
-                    className="flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900 py-3.5 px-2.5 whitespace-nowrap cursor-pointer font-medium"
+                    className={`flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 py-4 px-3.5 whitespace-nowrap cursor-pointer font-medium hover:bg-gray-50 transition ${
+                      selectedPriceRanges.length > 0
+                        ? "text-[#F84464] font-semibold"
+                        : ""
+                    }`}
                   >
                     <span>Price Range</span>
-                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                        openDropdown === "price" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
                   {openDropdown === "price" && (
-                    <div className="absolute left-0 z-40 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-2 px-3 min-w-[180px] text-xs text-gray-600">
-                      <div className="py-1.5 hover:text-gray-900 cursor-pointer">Rs. 0 - 200</div>
-                      <div className="py-1.5 hover:text-gray-900 cursor-pointer">Rs. 201 - 350</div>
-                      <div className="py-1.5 hover:text-gray-900 cursor-pointer">Rs. 351+</div>
+                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[200px]">
+                      {[
+                        "₹0 - ₹200",
+                        "₹201 - ₹300",
+                        "₹301 - ₹400",
+                        "₹401 - ₹500",
+                        "₹501 - ₹600",
+                        "₹601 - ₹700",
+                      ].map((range) => {
+                        const isChecked = selectedPriceRanges.includes(range);
+                        return (
+                          <label
+                            key={range}
+                            className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
+                          >
+                            <span>{range}</span>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedPriceRanges((prev) =>
+                                  isChecked
+                                    ? prev.filter((p) => p !== range)
+                                    : [...prev, range]
+                                );
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464]"
+                            />
+                          </label>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* Preferred Time */}
-                <div className="relative">
+                {/* 3. Special Formats */}
+                <div className="relative border-r border-gray-200">
+                  <button
+                    onClick={() => toggleDropdown("special")}
+                    className={`flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 py-4 px-3.5 whitespace-nowrap cursor-pointer font-medium hover:bg-gray-50 transition ${
+                      selectedSpecialFormats.length > 0
+                        ? "text-[#F84464] font-semibold"
+                        : ""
+                    }`}
+                  >
+                    <span>Special Formats</span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                        openDropdown === "special" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {openDropdown === "special" && (
+                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[180px]">
+                      {["Dolby", "Luxe"].map((fmt) => {
+                        const isChecked = selectedSpecialFormats.includes(fmt);
+                        return (
+                          <label
+                            key={fmt}
+                            className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
+                          >
+                            <span>{fmt}</span>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedSpecialFormats((prev) =>
+                                  isChecked
+                                    ? prev.filter((s) => s !== fmt)
+                                    : [...prev, fmt]
+                                );
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464]"
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. Other Filters */}
+                <div className="relative border-r border-gray-200">
+                  <button
+                    onClick={() => toggleDropdown("other")}
+                    className={`flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 py-4 px-3.5 whitespace-nowrap cursor-pointer font-medium hover:bg-gray-50 transition ${
+                      selectedOtherFilters.length > 0
+                        ? "text-[#F84464] font-semibold"
+                        : ""
+                    }`}
+                  >
+                    <span>Other Filters</span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                        openDropdown === "other" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {openDropdown === "other" && (
+                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[210px]">
+                      {[
+                        "Cancellation available",
+                        "M-Ticket",
+                        "Food & Beverage",
+                      ].map((filterName) => {
+                        const isChecked =
+                          selectedOtherFilters.includes(filterName);
+                        return (
+                          <label
+                            key={filterName}
+                            className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
+                          >
+                            <span>{filterName}</span>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {
+                                setSelectedOtherFilters((prev) =>
+                                  isChecked
+                                    ? prev.filter((o) => o !== filterName)
+                                    : [...prev, filterName]
+                                );
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464]"
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 5. Preferred Time */}
+                <div className="relative border-r border-gray-200">
                   <button
                     onClick={() => toggleDropdown("time")}
-                    className="flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900 py-3.5 px-2.5 whitespace-nowrap cursor-pointer font-medium"
+                    className={`flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 py-4 px-3.5 whitespace-nowrap cursor-pointer font-medium hover:bg-gray-50 transition ${
+                      preferredTime !== "any"
+                        ? "text-[#F84464] font-semibold"
+                        : ""
+                    }`}
                   >
                     <span>
                       {preferredTime === "any"
                         ? "Preferred Time"
-                        : preferredTime.charAt(0).toUpperCase() + preferredTime.slice(1)}
+                        : preferredTime.charAt(0).toUpperCase() +
+                          preferredTime.slice(1)}
                     </span>
-                    <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                        openDropdown === "time" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
                   {openDropdown === "time" && (
-                    <div className="absolute right-0 z-40 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl py-1 min-w-[210px]">
+                    <div className="absolute right-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[220px]">
                       {(
                         [
                           "any",
@@ -467,7 +608,7 @@ export default function BuyTicketsPage() {
                               setPreferredTime(key);
                               setOpenDropdown(null);
                             }}
-                            className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
+                            className={`w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 ${
                               preferredTime === key
                                 ? "text-[#F84464] font-semibold"
                                 : "text-gray-700"
@@ -481,8 +622,76 @@ export default function BuyTicketsPage() {
                   )}
                 </div>
 
-                {/* Search Toggle */}
-                <div className="relative pl-1">
+                {/* 6. Sort By (Exact BookMyShow Radio Popup) */}
+                <div className="relative border-r border-gray-200">
+                  <button
+                    onClick={() => toggleDropdown("sort")}
+                    className="flex items-center gap-1.5 text-xs text-gray-700 hover:text-gray-900 py-4 px-3.5 whitespace-nowrap cursor-pointer font-medium hover:bg-gray-50 transition"
+                  >
+                    <span>Sort By</span>
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 text-gray-400 transition-transform ${
+                        openDropdown === "sort" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {openDropdown === "sort" && (
+                    <div className="absolute right-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-3 min-w-[240px]">
+                      {[
+                        {
+                          id: "relevance",
+                          title: "Relevance",
+                          subtitle: "Best options for you first",
+                        },
+                        {
+                          id: "popularity",
+                          title: "Popularity",
+                          subtitle: "Show most popular first",
+                        },
+                        {
+                          id: "distance",
+                          title: "Distance",
+                          subtitle: "Show nearest first",
+                        },
+                      ].map((opt) => {
+                        const isSelected = sortBy === opt.id;
+                        return (
+                          <div
+                            key={opt.id}
+                            onClick={() => {
+                              setSortBy(opt.id as any);
+                              setOpenDropdown(null);
+                            }}
+                            className="flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition"
+                          >
+                            <div>
+                              <div className="text-xs font-bold text-gray-900">
+                                {opt.title}
+                              </div>
+                              <div className="text-[11px] text-gray-400 mt-0.5">
+                                {opt.subtitle}
+                              </div>
+                            </div>
+                            <div
+                              className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                isSelected
+                                  ? "border-[#F84464] bg-[#F84464]"
+                                  : "border-gray-300"
+                              }`}
+                            >
+                              {isSelected && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* 7. Search Toggle Icon */}
+                <div className="relative px-3 py-4">
                   {isSearchOpen ? (
                     <div className="flex items-center bg-gray-100 rounded-full px-2.5 py-1">
                       <Search className="h-3.5 w-3.5 text-gray-400 mr-1.5" />
@@ -507,7 +716,7 @@ export default function BuyTicketsPage() {
                   ) : (
                     <button
                       onClick={() => setIsSearchOpen(true)}
-                      className="p-2 text-gray-600 hover:text-gray-900 cursor-pointer"
+                      className="p-1 text-gray-600 hover:text-gray-900 cursor-pointer flex items-center"
                       title="Search Cinema"
                     >
                       <Search className="h-4 w-4" />
@@ -517,7 +726,6 @@ export default function BuyTicketsPage() {
               </div>
             </div>
           </div>
-
           {/* ─── Subtitle Notice & Availability Legend Bar ─── */}
           <div className="bg-[#F5F5FA] border-b border-gray-200">
             <div className="max-w-[1240px] mx-auto px-4 py-2 flex items-center justify-between gap-4 text-xs text-gray-500">
