@@ -604,11 +604,16 @@ export default function SeatMapPage() {
             style={{ transform: `scale(${zoom})` }}
           >
             {/* Tiers & Seating Grid — shares the same max-w-[1280px] mx-auto
-                px-4 sm:px-6 centered column as the header and pills row, so
-                the row-label column lines up under the back arrow and the
-                whole page has symmetric side margins, matching BMS. */}
-            <div className="w-fit flex flex-col items-start">
-              {tiers.map((tier) => (
+                px-4 sm:px-6 centered column as the header and pills row.
+                Rows stay items-start internally (row-letter labels form one
+                straight vertical column), and the whole label+seats block is
+                wrapped with an invisible mirror spacer (same width as the
+                label column) below, so the SEAT mass itself — not the
+                label+seats combo — ends up balanced left/right of center,
+                instead of being dragged left by the label column. */}
+            <div className="flex items-start">
+              <div className="w-fit flex flex-col items-start">
+                {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full flex flex-col items-start my-3">
                   {/* BookMyShow Tier Divider */}
                   <div className="w-full flex items-center my-5 select-none">
