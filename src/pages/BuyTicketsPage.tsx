@@ -707,15 +707,15 @@ export default function BuyTicketsPage() {
               <SeatVehicle count={tempTicketCount} />
             </div>
 
-            <div className="flex items-center justify-center gap-2 px-6 pb-5">
+            <div className="flex items-center justify-between px-6 pt-2 pb-5 overflow-hidden select-none">
               {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => setTempTicketCount(n)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition cursor-pointer ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
                     tempTicketCount === n
-                      ? "bg-[#F84464] text-white shadow-md"
+                      ? "bg-[#F84464] text-white shadow-md font-bold"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >

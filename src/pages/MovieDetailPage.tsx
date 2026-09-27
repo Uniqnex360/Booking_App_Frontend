@@ -566,8 +566,8 @@ export default function MovieDetailPage() {
               <SeatVehicle count={ticketCount} />
             </div>
 
-            {/* Numbers: All on 1 single row, matching BookMyShow */}
-            <div className="flex items-center justify-center gap-1 sm:gap-2 px-1 pb-6 overflow-x-auto scrollbar-none">
+            {/* Numbers: All on 1 single row without any scrollbar */}
+            <div className="flex items-center justify-between px-2 pt-2 pb-6 overflow-hidden select-none">
               {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
                 (n) => (
                   <button
