@@ -461,11 +461,11 @@ export default function BuyTicketsPage() {
       ) : (
         <>
           {/* ─── Date Strip & Filter Bar (Exact BookMyShow Match with Spacing) ─── */}
-          <div className="sticky top-[104px] lg:top-[112px] z-30 bg-white border-b border-gray-200 shadow-xs h-[60px]">
-            <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full overflow-hidden">
+          <div className="sticky top-[104px] lg:top-[112px] z-30 bg-white border-b border-gray-200 shadow-xs h-[72px] sm:h-[74px]">
+            <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full">
               
               {/* Left Side: Date Strip with spacious gap on the right before vertical divider */}
-              <div className="flex items-center gap-1.5 h-full border-r border-gray-200 pr-12 md:pr-20 mr-4 md:mr-6 shrink-0">
+              <div className="flex items-center gap-2 h-full border-r border-gray-200 pr-12 md:pr-20 mr-4 md:mr-6 shrink-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1.5">
                 {dateKeys.map((dk) => {
                   const { weekday, day, month } = dateTabParts(dk);
                   const isActive = activeDate === dk;
@@ -473,7 +473,7 @@ export default function BuyTicketsPage() {
                     <button
                       key={dk}
                       onClick={() => setSelectedDate(dk)}
-                      className={`w-[50px] sm:w-[54px] py-1.5 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
+                      className={`w-[52px] sm:w-[58px] h-[52px] sm:h-[56px] py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
                         isActive
                           ? "bg-[#F84464] text-white shadow-xs"
                           : "text-gray-700 hover:bg-gray-100"
