@@ -604,28 +604,32 @@ export default function SeatMapPage() {
                     <div className="flex-grow h-px bg-gray-200" />
                   </div>
 
-                  <div className="space-y-1.5 flex flex-col items-start w-full">
+                  <div className="space-y-1.5 flex flex-col items-center w-full">
                     {Object.entries(tier.rows).map(([rowLabel, seatList]) => {
                       const blocks = splitIntoBlocks(seatList);
 
                       return (
                         <div
                           key={rowLabel}
-                          className="flex items-center justify-center my-0.5 select-none w-full"
+                          className="grid select-none"
+                          style={{
+                            gridTemplateColumns: "28px 1px 1fr",
+                            columnGap: "16px",
+                            width: "100%",
+                            maxWidth: "1180px",
+                          }}
                         >
-                          {/* Fixed-width label rail: same width on every row regardless
-                              of that row's seat count, so letters stay in one straight
-                              vertical line. Pulled well clear of the seats with extra
-                              margin plus a thin divider, so it reads as a distinct rail
-                              rather than touching the seat grid. */}
-                          <div className="w-6 sm:w-7 shrink-0 flex items-center justify-center">
+                          {/* Fixed-width label rail: identical grid column on every
+                              row across every tier, so letters land on one straight
+                              vertical line no matter how wide that row's seats are. */}
+                          <div className="flex items-center justify-center">
                             <span className="text-gray-400 font-semibold text-[10px] sm:text-xs select-none">
                               {rowLabel}
                             </span>
                           </div>
-                          <div className="w-px self-stretch bg-gray-100 mr-4 sm:mr-6" />
+                          <div className="bg-gray-100 self-stretch" />
 
-                          <div className="flex items-center">
+                          <div className="flex items-center justify-center">
                             {blocks.map((block, bIdx) => (
                               <div key={bIdx} className="flex items-center">
                                 {bIdx > 0 && (
@@ -675,15 +679,6 @@ export default function SeatMapPage() {
                               </div>
                             ))}
                           </div>
-
-                          {/* Invisible mirror of the label rail (letter column + divider +
-                              margin), so justify-center balances the SEAT block (not the
-                              label+seats combo) under the screen. */}
-                          <div
-                            className="w-6 sm:w-7 shrink-0 ml-4 sm:ml-6"
-                            aria-hidden="true"
-                          />
-                          <div className="w-px shrink-0" aria-hidden="true" />
                         </div>
                       );
                     })}
