@@ -1,18 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Loader2, Film, Calendar, Clock, TrendingUp } from "lucide-react";
+import { Search, X, Loader2, Film, Calendar, ClipboardList } from "lucide-react";
 import api, { unwrap } from "@/api/client";
 import { withCity } from "@/lib/cityLink";
 
 const RECENT_SEARCHES_STORAGE_KEY = "vyhbz_recent_searches";
-const POPULAR_SEARCHES = [
-  "Movies",
-  "Standup Comedy",
-  "Music Concerts",
-  "Plays",
-  "Cricket",
-  "Workshops",
-];
 
 export type SearchCategoryTab =
   | "All"
@@ -65,7 +57,7 @@ export function GlobalSearchModal({
   const [allItems, setAllItems] = useState<UnifiedItem[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // Load recent searches from localStorage
+  // Load recent searches from localStorage & focus input
   useEffect(() => {
     if (isOpen) {
       setQuery(initialQuery);
@@ -74,7 +66,9 @@ export function GlobalSearchModal({
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            setRecentSearches(parsed.filter((item): item is string => typeof item === "string"));
+            setRecentSearches(
+              parsed.filter((item): item is string => typeof item === "string")
+            );
           }
         }
       } catch {
@@ -90,22 +84,18 @@ export function GlobalSearchModal({
     const trimmed = term.trim();
     if (!trimmed || trimmed.length < 2) return;
     setRecentSearches((prev) => {
-      const next = [trimmed, ...prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase())].slice(0, 8);
+      const next = [
+        trimmed,
+        ...prev.filter((s) => s.toLowerCase() !== trimmed.toLowerCase()),
+      ].slice(0, 8);
       try {
-        localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(next));
+        localStorage.setItem(
+          RECENT_SEARCHES_STORAGE_KEY,
+          JSON.stringify(next)
+        );
       } catch {
         // Storage full or unavailable
       }
-      return next;
-    });
-  };
-
-  const removeRecentSearch = (termToRemove: string) => {
-    setRecentSearches((prev) => {
-      const next = prev.filter((s) => s.toLowerCase() !== termToRemove.toLowerCase());
-      try {
-        localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(next));
-      } catch {}
       return next;
     });
   };
@@ -130,7 +120,7 @@ export function GlobalSearchModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Fetch movies and events
+  // Fetch movies and events data
   useEffect(() => {
     if (!isOpen) return;
 
@@ -141,13 +131,17 @@ export function GlobalSearchModal({
       try {
         const today = new Date().toISOString().split("T")[0];
         const [moviesRes, eventsRes] = await Promise.all([
-          unwrap<any[]>(api.get("/movies", { params: { city, date: today } })).catch(() => []),
+          unwrap<any[]>(
+            api.get("/movies", { params: { city, date: today } })
+          ).catch(() => []),
           unwrap<any>(api.get("/events")).catch(() => []),
         ]);
 
         if (!isMounted) return;
 
-        const rawEvents = Array.isArray(eventsRes) ? eventsRes : eventsRes.items || [];
+        const rawEvents = Array.isArray(eventsRes)
+          ? eventsRes
+          : eventsRes.items || [];
         const unified: UnifiedItem[] = [];
 
         // Map Movies
@@ -204,26 +198,30 @@ export function GlobalSearchModal({
     };
   }, [isOpen, city]);
 
-  // Filter items by search query and active tab
+  // Filter items by search query and active tab (only when query is present)
   const filteredResults = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
     return allItems.filter((item) => {
-      // Tab filter
       if (activeTab === "STREAM") {
-        if (item.tabCategory !== "Movies" && item.tabCategory !== "STREAM") return false;
+        if (item.tabCategory !== "Movies" && item.tabCategory !== "STREAM")
+          return false;
       } else if (activeTab !== "All" && item.tabCategory !== activeTab) {
         return false;
       }
 
-      // Query match
       return (
         item.title.toLowerCase().includes(q) ||
         item.subtitle.toLowerCase().includes(q)
       );
     });
   }, [allItems, query, activeTab]);
+
+  // Trending Now = actual movie/event names from the DB
+  const trendingItems = useMemo(() => {
+    return allItems.slice(0, 10);
+  }, [allItems]);
 
   if (!isOpen) return null;
 
@@ -249,6 +247,11 @@ export function GlobalSearchModal({
     handleNavigate(item.link);
   };
 
+  const handleTrendingClick = (item: UnifiedItem) => {
+    saveRecentSearch(item.title);
+    handleNavigate(item.link);
+  };
+
   const handleViewAll = () => {
     if (query.trim()) {
       saveRecentSearch(query.trim());
@@ -256,7 +259,11 @@ export function GlobalSearchModal({
     onClose();
     if (activeTab === "Movies") {
       navigate(withCity("/movies", city));
-    } else if (activeTab === "Events" || activeTab === "Plays" || activeTab === "Sports") {
+    } else if (
+      activeTab === "Events" ||
+      activeTab === "Plays" ||
+      activeTab === "Sports"
+    ) {
       navigate(withCity("/events", city));
     } else {
       navigate(withCity("/movies", city));
@@ -268,18 +275,16 @@ export function GlobalSearchModal({
   return (
     <div className="fixed inset-0 z-[160] bg-[#F5F5FA] overflow-y-auto animate-in fade-in duration-150">
       <div className="w-full max-w-[780px] mx-auto pt-4 sm:pt-6 px-4">
-        
         {/* Top Search Bar & Close Button */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 flex items-center bg-white border border-gray-300 rounded-md px-4 py-3 shadow-sm focus-within:border-gray-400">
-            <Search className="w-4 h-4 text-gray-400 mr-2.5 shrink-0" />
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 flex items-center bg-white border-b border-gray-300 px-2 py-3">
             <input
               ref={inputRef}
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleInputKeyDown}
-              placeholder="Search for Movies, Events, Plays, Sports and Activities"
+              placeholder="Search for latest movies"
               className="w-full text-sm sm:text-base text-gray-900 placeholder:text-gray-400 outline-none bg-transparent"
             />
             {query && (
@@ -297,77 +302,78 @@ export function GlobalSearchModal({
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-800 p-2 text-2xl font-light leading-none cursor-pointer shrink-0"
+            className="text-gray-500 hover:text-gray-800 p-2 cursor-pointer shrink-0"
             aria-label="Close"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* When NO query is entered: Show Recent Searches & Trending */}
+        {/* When NO query: Show Recent Searches & Trending Now */}
         {!hasQuery ? (
-          <div className="mt-6 space-y-6 animate-in fade-in duration-150">
+          <div className="mt-6 animate-in fade-in duration-150">
+            {/* Recent Searches */}
             {recentSearches.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                    <Clock className="w-3.5 h-3.5 text-gray-400" />
-                    <span>Recent Searches</span>
-                  </div>
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm sm:text-base font-bold text-gray-900">
+                    Recent Searches
+                  </h3>
                   <button
                     type="button"
                     onClick={clearRecentSearches}
-                    className="text-xs text-[#F84464] hover:text-[#d63351] font-semibold cursor-pointer transition"
+                    className="text-sm text-[#F84464] hover:text-[#d63351] font-semibold cursor-pointer transition"
                   >
-                    Clear All
+                    Clear
                   </button>
                 </div>
-
-                <div className="flex flex-wrap gap-2">
+                <div className="divide-y divide-gray-100">
                   {recentSearches.map((term) => (
                     <div
                       key={term}
                       onClick={() => handleSelectRecent(term)}
-                      className="group flex items-center gap-2 bg-white border border-gray-200 hover:border-gray-400 hover:shadow-xs px-3.5 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 cursor-pointer transition"
+                      className="flex items-center justify-between py-3 px-1 hover:bg-gray-50 cursor-pointer transition group"
                     >
-                      <Clock className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600 shrink-0" />
-                      <span className="font-medium">{term}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeRecentSearch(term);
-                        }}
-                        className="text-gray-400 hover:text-gray-700 p-0.5 rounded-full transition ml-0.5 shrink-0"
-                        aria-label={`Remove ${term}`}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
+                      <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                        {term}
+                      </span>
+                      <ClipboardList className="w-[18px] h-[18px] text-gray-400 shrink-0" />
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Trending / Popular Searches */}
-            <div>
-              <div className="flex items-center gap-1.5 mb-3 text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                <TrendingUp className="w-3.5 h-3.5 text-[#F84464]" />
-                <span>Trending Searches</span>
+            {/* Trending Now */}
+            {trendingItems.length > 0 && (
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-2">
+                  Trending Now
+                </h3>
+                <div className="divide-y divide-gray-100">
+                  {trendingItems.map((item) => (
+                    <div
+                      key={`${item.type}-${item.id}`}
+                      onClick={() => handleTrendingClick(item)}
+                      className="flex items-center justify-between py-3 px-1 hover:bg-gray-50 cursor-pointer transition group"
+                    >
+                      <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                        {item.title}
+                      </span>
+                      <ClipboardList className="w-[18px] h-[18px] text-gray-400 shrink-0" />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {POPULAR_SEARCHES.map((term) => (
-                  <button
-                    key={term}
-                    type="button"
-                    onClick={() => handleSelectRecent(term)}
-                    className="bg-white border border-gray-200 hover:border-[#F84464]/50 hover:text-[#F84464] px-4 py-1.5 rounded-full text-xs sm:text-sm text-gray-700 font-medium cursor-pointer transition shadow-xs"
-                  >
-                    {term}
-                  </button>
-                ))}
+            )}
+
+            {/* Loading state for trending */}
+            {loading && trendingItems.length === 0 && (
+              <div className="flex items-center justify-center py-8 gap-2 text-sm text-gray-500">
+                <Loader2 className="w-4 h-4 animate-spin text-[#F84464]" />
+                Loading...
               </div>
-            </div>
+            )}
           </div>
         ) : (
           /* When Query IS entered: Show Category Tabs & Filtered Results */
@@ -447,9 +453,12 @@ export function GlobalSearchModal({
               </div>
             ) : !loading ? (
               <div className="bg-white rounded-md border border-gray-200 p-8 text-center text-gray-500 text-sm shadow-sm mb-6">
-                <p className="font-semibold text-gray-700">No results found for &quot;{query}&quot;</p>
+                <p className="font-semibold text-gray-700">
+                  No results found for &quot;{query}&quot;
+                </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  Try searching with another keyword or explore different categories.
+                  Try searching with another keyword or explore different
+                  categories.
                 </p>
               </div>
             ) : null}
