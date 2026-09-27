@@ -4,7 +4,6 @@ import {
   X,
   ChevronLeft,
   Mail,
-  ChevronDown,
   Loader2,
   Lock,
 } from "lucide-react";
@@ -41,8 +40,7 @@ export function QuickAuthModal() {
   const [password, setPassword] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Mobile flow state
-  const [phone, setPhone] = useState("");
+
 
   // OTP state (6 digits for email)
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
@@ -83,92 +81,96 @@ export function QuickAuthModal() {
   // ---------------------------------------------
   // Phone.Email Integration (SMS & WhatsApp OTP)
   // ---------------------------------------------
+  const isProcessingPhoneRef = useRef(false);
+
+  const handlePhoneVerified = async (userJsonUrl: string) => {
+    if (!userJsonUrl || isProcessingPhoneRef.current) return;
+    isProcessingPhoneRef.current = true;
+    setLoading(true);
+    try {
+      const { error: apiError } = await signInWithPhoneEmail({
+        url: userJsonUrl,
+      });
+      if (apiError) {
+        setError(apiError);
+        toast.error(apiError);
+      } else {
+        toast.success("Phone verified successfully!");
+        closeAuthModal();
+      }
+    } catch (err: any) {
+      setError(err?.message || "Phone verification failed.");
+    } finally {
+      setLoading(false);
+      setTimeout(() => {
+        isProcessingPhoneRef.current = false;
+      }, 2500);
+    }
+  };
+
+  // Cross-window postMessage listener from Phone.Email popup
   useEffect(() => {
-    const handleMessage = async (event: MessageEvent) => {
+    const handleMessage = (event: MessageEvent) => {
       if (
         event.origin === "https://auth.phone.email" ||
         event.origin === "https://www.phone.email"
       ) {
-        const data = event.data;
-        const userJsonUrl = data?.user_json_url;
+        const userJsonUrl = event.data?.user_json_url;
         if (userJsonUrl) {
-          setLoading(true);
-          try {
-            const { error: apiError } = await signInWithPhoneEmail({
-              url: userJsonUrl,
-            });
-            if (apiError) {
-              setError(apiError);
-              toast.error(apiError);
-            } else {
-              toast.success("Phone verified successfully!");
-              closeAuthModal();
-            }
-          } catch (err: any) {
-            setError(err?.message || "Phone verification failed.");
-          } finally {
-            setLoading(false);
-          }
+          handlePhoneVerified(userJsonUrl);
         }
       }
     };
 
     window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
 
-    (window as any).phoneEmailListener = async (userObj: any) => {
+  // Dynamically attach Phone.Email listener and load script ONLY when modal & get-started view are active
+  useEffect(() => {
+    if (!isAuthModalOpen || view !== "get-started") return;
+
+    (window as any).phoneEmailListener = (userObj: any) => {
       const userJsonUrl = userObj?.user_json_url;
       if (userJsonUrl) {
-        setLoading(true);
-        try {
-          const { error: apiError } = await signInWithPhoneEmail({
-            url: userJsonUrl,
-          });
-          if (apiError) {
-            setError(apiError);
-            toast.error(apiError);
-          } else {
-            toast.success("Phone verified successfully!");
-            closeAuthModal();
-          }
-        } catch (err: any) {
-          setError(err?.message || "Phone verification failed.");
-        } finally {
-          setLoading(false);
-        }
+        handlePhoneVerified(userJsonUrl);
       }
     };
 
-    // Dynamically load phone.email script
-    if (!document.getElementById("phone-email-script")) {
-      const script = document.createElement("script");
-      script.id = "phone-email-script";
-      script.src = "https://www.phone.email/sign_in_button_v1.js";
-      script.async = true;
-      document.body.appendChild(script);
+    // Remove any previous script element to allow fresh initialization of the sign_in_button
+    const prevScript = document.getElementById("phone-email-script");
+    if (prevScript) {
+      prevScript.remove();
     }
 
+    const script = document.createElement("script");
+    script.id = "phone-email-script";
+    script.src = "https://www.phone.email/sign_in_button_v1.js";
+    script.async = true;
+    document.body.appendChild(script);
+
     return () => {
-      window.removeEventListener("message", handleMessage);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
       delete (window as any).phoneEmailListener;
     };
-  }, [signInWithPhoneEmail, closeAuthModal]);
+  }, [isAuthModalOpen, view]);
 
-  const triggerPhoneEmail = (targetPhone?: string) => {
+  const openPhoneEmailLogin = () => {
     setError(null);
-    const currUrl = window.location.origin;
-    const cleanPhone = (targetPhone || phone).replace(/\D/g, "");
-    const phoneParam = cleanPhone ? `&user_phone_no=${encodeURIComponent(cleanPhone)}` : "";
-    const popupUrl = `https://auth.phone.email/sign-in?client_id=${clientId}&auth_type=8&origin=${encodeURIComponent(
-      currUrl
-    )}${phoneParam}`;
-
+    const currUrl = window.location.href;
     const w = 500;
     const h = 560;
     const left = (window.screen.width - w) / 2;
     const top = (window.screen.height - h) / 2;
 
     window.open(
-      popupUrl,
+      `https://auth.phone.email/log-in?client_id=${clientId}&auth_type=8&origin=${encodeURIComponent(
+        currUrl
+      )}`,
       "peLoginWindow",
       `toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=${w},height=${h},top=${top},left=${left}`
     );
@@ -374,6 +376,34 @@ export function QuickAuthModal() {
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-[2px] p-4 animate-in fade-in duration-200">
+      <style>{`
+        .pe_signin_button {
+          display: flex !important;
+          justify-content: center !important;
+          width: 100% !important;
+        }
+        .pe_signin_button button,
+        .pe_signin_button #btn_ph_login {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          width: 100% !important;
+          height: 48px !important;
+          border-radius: 12px !important;
+          font-size: 14px !important;
+          font-weight: 600 !important;
+          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+          transition: all 0.2s ease !important;
+          cursor: pointer !important;
+          background-color: #02BD7E !important;
+          color: #ffffff !important;
+          border: none !important;
+        }
+        .pe_signin_button button:hover,
+        .pe_signin_button #btn_ph_login:hover {
+          filter: brightness(0.95) !important;
+        }
+      `}</style>
       <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-200">
 
         {/* VIEW 1: GET STARTED */}
@@ -450,37 +480,35 @@ export function QuickAuthModal() {
               </span>
             </div>
 
-            {/* Mobile Number Input with phone.email trigger */}
-            <div className="flex items-center border-b border-gray-300 pb-2.5 hover:border-gray-400 focus-within:border-[#7B1E3D] transition">
+            {/* Phone.Email Official Green Button Section */}
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-xs text-gray-500 mb-3 text-center">
+                Sign in securely with your mobile number via OTP
+              </p>
+
               <div
-                onClick={() => triggerPhoneEmail(phone)}
-                className="flex items-center gap-1.5 pr-3 cursor-pointer select-none"
+                className="pe_signin_button w-full flex justify-center"
+                data-client-id={clientId}
+                style={{ minHeight: "48px", width: "100%" }}
               >
-                <span className="text-lg leading-none">🇮🇳</span>
-                <span className="text-sm font-semibold text-gray-800">+91</span>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                <button
+                  id="btn_ph_login"
+                  name="btn_ph_login"
+                  type="button"
+                  onClick={openPhoneEmailLogin}
+                  className="w-full h-12 flex items-center justify-center gap-2.5 rounded-xl text-white font-semibold text-sm transition-all shadow-sm cursor-pointer hover:brightness-95 active:scale-[0.99]"
+                  style={{
+                    backgroundColor: "#02BD7E",
+                  }}
+                >
+                  <img
+                    src="https://storage.googleapis.com/prod-phoneemail-prof-images/phem-widgets/phem-phone.svg"
+                    alt="phone email"
+                    className="w-5 h-5"
+                  />
+                  <span>Sign In with Phone</span>
+                </button>
               </div>
-              <input
-                type="tel"
-                maxLength={10}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    triggerPhoneEmail(phone);
-                  }
-                }}
-                placeholder="Continue with mobile number"
-                className="pe_phone_number w-full text-sm text-gray-800 outline-none placeholder:text-gray-400 bg-transparent font-medium"
-              />
-              <button
-                type="button"
-                onClick={() => triggerPhoneEmail(phone)}
-                disabled={loading}
-                className="text-xs font-bold text-[#7B1E3D] hover:underline shrink-0 ml-2 cursor-pointer"
-              >
-                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Continue"}
-              </button>
             </div>
 
             <p className="text-[11px] text-gray-500 text-center leading-relaxed mt-10">
