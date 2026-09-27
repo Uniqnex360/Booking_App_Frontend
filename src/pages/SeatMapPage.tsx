@@ -325,6 +325,9 @@ if (loading) {
             </button>
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
+                <h1 className="text-base sm:text-lg font-bold text-white truncate">
+                  {mapData?.movie_title || "Select Seats"}
+                </h1>
                 <div className="bg-white/15 border border-white/10 px-2 py-0.5 rounded text-[10px] sm:text-xs font-semibold tracking-wide shrink-0 text-white">
                   {requiredSeatCount}{" "}
                   {requiredSeatCount === 1 ? "Ticket" : "Tickets"}
@@ -351,23 +354,6 @@ if (loading) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {mapData && (() => {
-              const showHasStarted = new Date(mapData.starts_at).getTime() <= Date.now();
-              return (
-                <button
-                  onClick={() => !showHasStarted && navigate(-1)}
-                  disabled={showHasStarted}
-                  title={showHasStarted ? "Show has already started" : "Switch to another showtime"}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
-                    showHasStarted
-                      ? "bg-white/5 border-white/10 text-white/30 cursor-not-allowed"
-                      : "bg-white/10 border-white/20 text-white hover:bg-white/20 cursor-pointer"
-                  }`}
-                >
-                  <RefreshCw className="h-3.5 w-3.5" /> Change Showtime
-                </button>
-              );
-            })()}
             {isStale && !isSourceUnavailable && (
               <button
                 onClick={fetchSeatMap}
@@ -486,18 +472,19 @@ if (loading) {
             </div>
 
             <div className="w-full max-w-2xl flex flex-col items-center mt-12 mb-6">
-              <div className="text-[11px] font-semibold tracking-[0.25em] text-slate-400 uppercase mb-4">
-                All eyes this way please!
-              </div>
               <div
                 className="w-full h-4 relative"
                 style={{
                   background:
-                    "linear-gradient(0deg, rgba(200,200,210,0.6) 0%, rgba(200,200,210,0) 100%)",
-                  borderRadius: "0 0 50% 50% / 0 0 100% 100%",
-                  boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+                    "linear-gradient(180deg, rgba(200,200,210,0.6) 0%, rgba(200,200,210,0) 100%)",
+                  borderRadius: "50% 50% 0 0 / 100% 100% 0 0",
+                  transform: "perspective(200px) rotateX(-30deg)",
+                  boxShadow: "0 -6px 20px rgba(0,0,0,0.08)",
                 }}
               />
+              <div className="text-[11px] font-semibold tracking-[0.25em] text-slate-400 uppercase mt-4">
+                All eyes this way please!
+              </div>
             </div>
 
             <div className="flex items-center justify-center gap-6 mt-4 text-xs text-slate-600">
