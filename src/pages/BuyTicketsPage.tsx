@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -9,7 +9,6 @@ import {
   Heart,
   MapPin,
   Search,
-  Users,
   X,
   Info,
   Coffee,
@@ -18,6 +17,7 @@ import {
   Accessibility,
   Car,
   Utensils,
+  PartyPopper,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { LoadingPage } from "./LoadingPage";
@@ -160,11 +160,108 @@ export default function BuyTicketsPage() {
   const [sortBy, setSortBy] = useState<"relevance" | "popularity" | "distance">("relevance");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
   const [selectedCinemaInfo, setSelectedCinemaInfo] = useState<VenueGroup | null>(null);
+
   const [showtimePricingMap, setShowtimePricingMap] = useState<
     Record<string, Array<{ price: string; tier: string; status: string; statusColor: string }>>
   >({});
 
-  const fetchShowtimePricing = async (slotId: string) => {
+  const now = Date.now();
+
+  const venuesInCity = useMemo(() => {
+    return (movie?.venues ?? []).filter((v) => v.city === city);
+  }, [movie, city]);
+
+  const dateKeys = useMemo(() => {
+    return Array.from(
+      new Set(
+        venuesInCity.flatMap((v) =>
+          v.showtimes
+            .filter((s) => new Date(s.starts_at).getTime() > now)
+            .map((s) => istDateKey(s.starts_at))
+        )
+      )
+    ).sort();
+  }, [venuesInCity, now]);
+
+  const activeDate = selectedDate ?? dateKeys[0] ?? null;
+
+  const langFormatOptions = useMemo(() => {
+    const set = new Set<string>();
+    venuesInCity.forEach((v) =>
+      v.showtimes
+        .filter((s) => new Date(s.starts_at).getTime() > now)
+        .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
+        .forEach((s) => set.add(`${s.language} - ${s.format}`))
+    );
+    return Array.from(set).sort();
+  }, [venuesInCity, activeDate, now]);
+
+  const genres = useMemo(() => {
+    if (!movie?.genre) return ["Action", "Thriller"];
+    if (Array.isArray(movie.genre)) return movie.genre;
+    return movie.genre
+      .split(",")
+      .map((g) => g.trim())
+      .filter(Boolean);
+  }, [movie?.genre]);
+
+  const venuesForDate = useMemo(() => {
+    if (!activeDate) return [];
+    let list = venuesInCity
+      .map((v) => ({
+        ...v,
+        showtimes: v.showtimes
+          .filter((s) => new Date(s.starts_at).getTime() > now)
+          .filter((s) => istDateKey(s.starts_at) === activeDate)
+          .filter(
+            (s) =>
+              langFormatFilter === "all" ||
+              `${s.language} - ${s.format}` === langFormatFilter
+          )
+          .filter((s) => {
+            if (selectedSpecialFormats.length === 0) return true;
+            return selectedSpecialFormats.some((fmt) =>
+              s.format.toLowerCase().includes(fmt.toLowerCase())
+            );
+          })
+          .filter((s) => matchesPriceRange(s.format, selectedPriceRanges))
+          .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
+          .sort(
+            (a, b) =>
+              new Date(a.starts_at).getTime() -
+              new Date(b.starts_at).getTime()
+          ),
+      }))
+      .filter((v) =>
+        searchQuery
+          ? v.venue_name.toLowerCase().includes(searchQuery.toLowerCase())
+          : true
+      )
+      .filter((v) => v.showtimes.length > 0);
+
+    if (sortBy === "popularity") {
+      list = [...list].sort(
+        (a, b) => b.showtimes.length - a.showtimes.length
+      );
+    } else if (sortBy === "distance") {
+      list = [...list].sort((a, b) =>
+        a.venue_name.localeCompare(b.venue_name)
+      );
+    }
+    return list;
+  }, [
+    activeDate,
+    venuesInCity,
+    now,
+    langFormatFilter,
+    selectedSpecialFormats,
+    selectedPriceRanges,
+    preferredTime,
+    searchQuery,
+    sortBy,
+  ]);
+
+  const fetchShowtimePricing = useCallback(async (slotId: string) => {
     if (showtimePricingMap[slotId]) return;
     try {
       const data = await unwrap<any>(api.get(`/showtimes/${slotId}/seat-map`));
@@ -230,7 +327,7 @@ export default function BuyTicketsPage() {
     } catch (err) {
       console.error("Failed to fetch showtime pricing", err);
     }
-  };
+  }, [showtimePricingMap]);
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -247,48 +344,16 @@ export default function BuyTicketsPage() {
     fetchMovie();
   }, [id]);
 
-  const now = Date.now();
-  const todayKey = new Date().toLocaleDateString("en-CA", {
-    timeZone: "Asia/Kolkata",
-  });
-
-  const venuesInCity = useMemo(() => {
-    return (movie?.venues ?? []).filter((v) => v.city === city);
-  }, [movie, city]);
-
-  const dateKeys = useMemo(() => {
-    return Array.from(
-      new Set(
-        venuesInCity.flatMap((v) =>
-          v.showtimes
-            .filter((s) => new Date(s.starts_at).getTime() > now)
-            .map((s) => istDateKey(s.starts_at))
-        )
-      )
-    ).sort();
-  }, [venuesInCity, now]);
-
-  const activeDate = selectedDate ?? dateKeys[0] ?? null;
-
-  const langFormatOptions = useMemo(() => {
-    const set = new Set<string>();
-    venuesInCity.forEach((v) =>
-      v.showtimes
-        .filter((s) => new Date(s.starts_at).getTime() > now)
-        .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
-        .forEach((s) => set.add(`${s.language} - ${s.format}`))
-    );
-    return Array.from(set).sort();
-  }, [venuesInCity, activeDate, now]);
-
-  const genres = useMemo(() => {
-    if (!movie?.genre) return ["Action", "Thriller"];
-    if (Array.isArray(movie.genre)) return movie.genre;
-    return movie.genre
-      .split(",")
-      .map((g) => g.trim())
-      .filter(Boolean);
-  }, [movie?.genre]);
+  useEffect(() => {
+    if (!venuesForDate || venuesForDate.length === 0) return;
+    venuesForDate.forEach((v) => {
+      v.showtimes.forEach((slot) => {
+        if (!showtimePricingMap[slot.id]) {
+          fetchShowtimePricing(slot.id);
+        }
+      });
+    });
+  }, [venuesForDate, fetchShowtimePricing, showtimePricingMap]);
 
   const formatRuntime = (mins?: number) => {
     if (!mins) return "2h 17m";
@@ -303,76 +368,6 @@ export default function BuyTicketsPage() {
       [venueId]: !prev[venueId],
     }));
   };
-
-  if (loading) {
-    return <LoadingPage showFooter={false} />;
-  }
-
-  if (!movie) {
-    return (
-      <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
-        <Header />
-        <div className="flex-grow flex justify-center items-center py-20 text-gray-500">
-          Shows not found.
-        </div>
-      </div>
-    );
-  }
-
-  let venuesForDate = activeDate
-    ? venuesInCity
-        .map((v) => ({
-          ...v,
-          showtimes: v.showtimes
-            .filter((s) => new Date(s.starts_at).getTime() > now)
-            .filter((s) => istDateKey(s.starts_at) === activeDate)
-            .filter(
-              (s) =>
-                langFormatFilter === "all" ||
-                `${s.language} - ${s.format}` === langFormatFilter
-            )
-            .filter((s) => {
-              if (selectedSpecialFormats.length === 0) return true;
-              return selectedSpecialFormats.some((fmt) =>
-                s.format.toLowerCase().includes(fmt.toLowerCase())
-              );
-            })
-            .filter((s) => matchesPriceRange(s.format, selectedPriceRanges))
-            .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
-            .sort(
-              (a, b) =>
-                new Date(a.starts_at).getTime() -
-                new Date(b.starts_at).getTime()
-            ),
-        }))
-        .filter((v) =>
-          searchQuery
-            ? v.venue_name.toLowerCase().includes(searchQuery.toLowerCase())
-            : true
-        )
-        .filter((v) => v.showtimes.length > 0)
-    : [];
-
-  if (sortBy === "popularity") {
-    venuesForDate = [...venuesForDate].sort(
-      (a, b) => b.showtimes.length - a.showtimes.length
-    );
-  } else if (sortBy === "distance") {
-    venuesForDate = [...venuesForDate].sort((a, b) =>
-      a.venue_name.localeCompare(b.venue_name)
-    );
-  }
-
-  useEffect(() => {
-    if (!venuesForDate || venuesForDate.length === 0) return;
-    venuesForDate.forEach((v) => {
-      v.showtimes.forEach((slot) => {
-        if (!showtimePricingMap[slot.id]) {
-          fetchShowtimePricing(slot.id);
-        }
-      });
-    });
-  }, [venuesForDate]);
 
   const handleTicketChangeConfirm = () => {
     setShowTicketModal(false);
@@ -399,6 +394,21 @@ export default function BuyTicketsPage() {
   const toggleDropdown = (
     name: "langFormat" | "time" | "price" | "special" | "other" | "sort"
   ) => setOpenDropdown((cur) => (cur === name ? null : name));
+
+  if (loading) {
+    return <LoadingPage showFooter={false} />;
+  }
+
+  if (!movie) {
+    return (
+      <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
+        <Header />
+        <div className="flex-grow flex justify-center items-center py-20 text-gray-500">
+          Shows not found.
+        </div>
+      </div>
+    );
+  }
 
   const activeFormatDisplay =
     langFormatFilter === "all"
@@ -859,6 +869,7 @@ export default function BuyTicketsPage() {
               </div>
             </div>
           </div>
+
           {/* ─── Subtitle Notice & Availability Legend Bar ─── */}
           <div className="bg-[#F5F5FA] border-b border-gray-200">
             <div className="max-w-[1240px] mx-auto px-4 py-2 flex items-center justify-between gap-4 text-xs text-gray-500">
@@ -918,31 +929,31 @@ export default function BuyTicketsPage() {
                   return (
                     <div
                       key={venue.venue_id}
-                      className="p-4 sm:p-5 flex flex-col gap-3 hover:bg-gray-50/50 transition border-b border-gray-100 last:border-b-0"
+                      className="p-5 flex flex-col gap-3 hover:bg-gray-50/50 transition"
                     >
-                      {/* Top Row: Logo, Title & Info, and Heart Icon on Far Right */}
+                      {/* Top Row: Cinema Details & Bookmark */}
                       <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-3 min-w-0">
+                        <div className="flex items-start gap-2.5 min-w-0">
                           {/* Logo badge */}
                           {isPVR ? (
-                            <div className="w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-amber-500 font-serif text-xs shrink-0 shadow-2xs">
+                            <div className="text-[11px] font-black text-amber-500 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-serif shrink-0 mt-0.5">
                               PVR
                             </div>
                           ) : isCinepolis ? (
-                            <div className="w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-black text-blue-600 text-[10px] shrink-0 shadow-2xs">
+                            <div className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
                               cinépolis
                             </div>
                           ) : (
-                            <div className="w-10 h-10 rounded-lg border border-gray-200 bg-white flex items-center justify-center font-bold text-gray-600 text-[10px] shrink-0 shadow-2xs">
+                            <div className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
                               CINEMA
                             </div>
                           )}
 
-                          <div className="min-w-0">
+                          <div>
                             <div className="flex items-center gap-1.5">
                               <h3
                                 onClick={() => setSelectedCinemaInfo(venue)}
-                                className="text-sm sm:text-base font-bold text-gray-900 hover:text-[#F84464] transition leading-snug cursor-pointer truncate"
+                                className="text-sm sm:text-base font-bold text-gray-900 hover:text-[#F84464] transition leading-snug cursor-pointer"
                               >
                                 {venue.venue_name}
                               </h3>
@@ -972,32 +983,32 @@ export default function BuyTicketsPage() {
                         </button>
                       </div>
 
-                      {/* Second Row: Square Icon Badges (F&B and M-Ticket with hover text to the right) */}
-                      <div className="flex items-center gap-2">
+                      {/* Second Row: Square Icon Badges (F&B and M-Ticket with hover text expanding to the right) */}
+                      <div className="flex items-center gap-2.5">
                         {/* Food & Beverage Badge */}
                         <div
-                          className="group flex items-center gap-1 bg-[#FDF4EA] text-[#F48F29] border border-[#FEEAD4] rounded-md p-1.5 text-xs font-semibold cursor-pointer transition-all duration-200 hover:pr-2.5"
+                          className="group flex items-center gap-1.5 bg-[#FFF8E7] text-[#FF9800] border border-[#FFE8B3] rounded-md px-2 py-1.5 text-xs font-semibold cursor-pointer transition-all duration-200"
                           title="Food & Beverage Available"
                         >
                           <Coffee className="h-3.5 w-3.5 shrink-0" />
-                          <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[10px] font-bold">
-                            F&amp;B
+                          <span className="max-w-0 overflow-hidden group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[11px] font-bold">
+                            Food &amp; Beverage
                           </span>
                         </div>
 
                         {/* M-Ticket Badge */}
                         <div
-                          className="group flex items-center gap-1 bg-[#EDF7F2] text-[#34A853] border border-[#D5EFE1] rounded-md p-1.5 text-xs font-semibold cursor-pointer transition-all duration-200 hover:pr-2.5"
+                          className="group flex items-center gap-1.5 bg-[#E8F8EE] text-[#1EA83C] border border-[#C5F0D5] rounded-md px-2 py-1.5 text-xs font-semibold cursor-pointer transition-all duration-200"
                           title="M-Ticket Available"
                         >
                           <Smartphone className="h-3.5 w-3.5 shrink-0" />
-                          <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[10px] font-bold">
+                          <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[11px] font-bold">
                             M-Ticket
                           </span>
                         </div>
                       </div>
 
-                      {/* Third Row: Showtime Slots with Live API Pricing Tooltip */}
+                      {/* Third Row: Showtime Slots with Live Dynamic Pricing Tooltip from API */}
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         {venue.showtimes.map((slot) => {
                           const isPast =
@@ -1024,7 +1035,7 @@ export default function BuyTicketsPage() {
                                 fetchShowtimePricing(slot.id)
                               }
                             >
-                              {/* Price Tooltip on Hover (Fetched from API) */}
+                              {/* Price Tooltip on Hover (Fetched dynamically from API) */}
                               {!isPast && (
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                                   <div className="flex items-center justify-around gap-4 text-center">
@@ -1089,6 +1100,66 @@ export default function BuyTicketsPage() {
               )}
             </div>
           </div>
+
+          {/* ─── Unable to find prompt / Change Location button ─── */}
+          <div className="text-center py-6 bg-white border-t border-gray-100 mt-6">
+            <p className="text-xs text-gray-500 font-medium mb-3">
+              Unable to find what you are looking for?
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(withCity("/", city))}
+              className="border border-[#F84464] text-[#F84464] hover:bg-[#F84464] hover:text-white px-5 py-2 rounded-md text-xs font-semibold transition cursor-pointer"
+            >
+              Change Location
+            </button>
+          </div>
+
+          {/* ─── Breadcrumb Trail (Matching BMS Exact Reference) ─── */}
+          <div className="max-w-[1240px] mx-auto px-4 py-4">
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500 font-normal">
+              <Link to="/" className="hover:text-gray-900 transition">
+                Home
+              </Link>
+              <span className="text-gray-400">→</span>
+              <span className="hover:text-gray-900 cursor-pointer">
+                Movies in {city}
+              </span>
+              <span className="text-gray-400">→</span>
+              <span className="hover:text-gray-900 cursor-pointer">
+                {movie.language} Movies
+              </span>
+              <span className="text-gray-400">→</span>
+              <span className="text-gray-800 font-medium">{movie.title}</span>
+            </div>
+          </div>
+
+          {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
+          <div className="bg-[#404046] text-white py-4 px-4 sm:px-8 mt-4">
+            <div className="max-w-[1240px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                  <PartyPopper className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
+                      List your Show
+                    </span>
+                    <span className="text-xs text-gray-300">
+                      Got a show, event, activity or a great experience? Partner with us &amp; get listed on Vyhbhz
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Link
+                to="/partner/register"
+                className="bg-[#EC5E71] hover:bg-[#e04a5e] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
+              >
+                Contact today!
+              </Link>
+            </div>
+          </div>
         </>
       )}
 
@@ -1148,6 +1219,7 @@ export default function BuyTicketsPage() {
           onClick={() => setOpenDropdown(null)}
         />
       )}
+
       {/* ─── Cinema Info Modal (BookMyShow exact clone) ─── */}
       {selectedCinemaInfo && (
         <div
