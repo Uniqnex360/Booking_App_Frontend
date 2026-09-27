@@ -115,6 +115,7 @@ export default function BuyTicketsPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const [showTicketModal, setShowTicketModal] = useState(false);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [tempTicketCount, setTempTicketCount] = useState(ticketCount);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -246,12 +247,21 @@ export default function BuyTicketsPage() {
     const p = new URLSearchParams(searchParams);
     p.set("qty", tempTicketCount.toString());
     setSearchParams(p, { replace: true });
+
+    if (selectedSlotId) {
+      navigate(
+        withCity(
+          `/showtimes/${selectedSlotId}/seat-map?qty=${tempTicketCount}`,
+          city
+        )
+      );
+    }
   };
 
   const handleShowtimeClick = (slotId: string) => {
-    navigate(
-      withCity(`/showtimes/${slotId}/seat-map?qty=${ticketCount}`, city)
-    );
+    setSelectedSlotId(slotId);
+    setTempTicketCount(ticketCount);
+    setShowTicketModal(true);
   };
 
   const toggleDropdown = (

@@ -19,7 +19,6 @@ import {
   Check,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
-import { SeatVehicle } from "./SeatVehicle";
 import { toast } from "sonner";
 import { getMovieById } from "@/api/movie.api";
 import RatingModal from "./RatingModal";
@@ -48,12 +47,10 @@ export default function MovieDetailPage() {
 
   // Modal States
   const [showLangFormatModal, setShowLangFormatModal] = useState(false);
-  const [showTicketModal, setShowTicketModal] = useState(false);
   const [showTrailerModal, setShowTrailerModal] = useState(false);
 
   const [selectedLang, setSelectedLang] = useState<string>("");
   const [selectedFormat, setSelectedFormat] = useState<string>("");
-  const [ticketCount, setTicketCount] = useState(2);
   const [copied, setCopied] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
 
@@ -172,9 +169,13 @@ export default function MovieDetailPage() {
     } else {
       const defaultLang = Object.keys(langFormatMap)[0] || movie.language;
       const defaultFormat = langFormatMap[defaultLang]?.[0] || "2D";
-      setSelectedLang(defaultLang);
-      setSelectedFormat(defaultFormat);
-      setShowTicketModal(true);
+      const filterQuery = `${defaultLang} - ${defaultFormat}`;
+      navigate(
+        withCity(
+          `/buytickets/${movie.id}?filter=${encodeURIComponent(filterQuery)}`,
+          city,
+        ),
+      );
     }
   };
 
@@ -182,15 +183,10 @@ export default function MovieDetailPage() {
     setSelectedLang(lang);
     setSelectedFormat(format);
     setShowLangFormatModal(false);
-    setShowTicketModal(true);
-  };
-
-  const handleTicketConfirm = () => {
-    setShowTicketModal(false);
-    const filterQuery = `${selectedLang} - ${selectedFormat}`;
+    const filterQuery = `${lang} - ${format}`;
     navigate(
       withCity(
-        `/buytickets/${movie.id}?qty=${ticketCount}&filter=${encodeURIComponent(filterQuery)}`,
+        `/buytickets/${movie.id}?filter=${encodeURIComponent(filterQuery)}`,
         city,
       ),
     );
@@ -538,62 +534,6 @@ export default function MovieDetailPage() {
         </div>
       )}
 
-      {showTicketModal && (
-        <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
-          onClick={() => setShowTicketModal(false)}
-        >
-          <div
-            className="bg-white rounded-lg w-full max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 relative p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center pt-1 pb-1 relative">
-              <h3 className="text-gray-900 font-bold text-lg">
-                How many seats?
-              </h3>
-              <button
-                onClick={() => setShowTicketModal(false)}
-                className="absolute right-0 top-0 text-gray-400 hover:text-gray-700 transition p-1 cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-center h-28 my-3">
-              <SeatVehicle count={ticketCount} />
-            </div>
-
-            <div className="flex items-center justify-between px-2 pt-2 pb-6 overflow-hidden select-none">
-              {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
-                (n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => setTicketCount(n)}
-                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 ${
-                      ticketCount === n
-                        ? "bg-[#F84464] text-white shadow-md font-bold"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ),
-              )}
-            </div>
-
-            {/* Select Seats Button */}
-            <button
-              type="button"
-              onClick={handleTicketConfirm}
-              className="w-full bg-[#F84464] hover:bg-[#e03555] text-white font-bold rounded-lg py-3 transition flex items-center justify-center gap-2 cursor-pointer shadow-sm text-sm"
-            >
-              Select Seats
-            </button>
-          </div>
-        </div>
-      )}
       <RatingModal
         isOpen={isRatingModalOpen}
         onClose={() => setIsRatingModalOpen(false)}
