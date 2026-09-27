@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   X,
@@ -18,9 +17,6 @@ export type AuthModalView =
   | "password-login";
 
 export function QuickAuthModal() {
-  const navigate = useNavigate();
-  const location = useLocation();
-
   const {
     isAuthModalOpen,
     closeAuthModal,
@@ -32,13 +28,6 @@ export function QuickAuthModal() {
     verifyEmailOtpLogin,
     signInWithPhoneEmail,
   } = useAuth() as any;
-
-  const handleClose = () => {
-    closeAuthModal();
-    if (location.pathname === "/login" || location.pathname === "/register") {
-      navigate("/", { replace: true });
-    }
-  };
 
   const clientId = import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID || "16879666373804430168";
 
@@ -412,7 +401,7 @@ export function QuickAuthModal() {
         {view === "get-started" && (
           <div>
             <button
-              onClick={handleClose}
+              onClick={closeAuthModal}
               className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
               aria-label="Close"
             >
@@ -552,7 +541,7 @@ export function QuickAuthModal() {
               </button>
               <button
                 type="button"
-                onClick={handleClose}
+                onClick={closeAuthModal}
                 className="text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
               >
                 <X size={20} />
@@ -644,7 +633,7 @@ export function QuickAuthModal() {
               </button>
               <button
                 type="button"
-                onClick={handleClose}
+                onClick={closeAuthModal}
                 className="text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
               >
                 <X size={20} />
@@ -744,7 +733,7 @@ export function QuickAuthModal() {
               </button>
               <button
                 type="button"
-                onClick={handleClose}
+                onClick={closeAuthModal}
                 className="text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
               >
                 <X size={20} />

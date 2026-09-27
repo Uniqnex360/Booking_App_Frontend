@@ -71,19 +71,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login"
   >("get-started");
 
-  const openAuthModal = useCallback(
-    (
-      initialView: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login" = "get-started"
-    ) => {
-      setAuthModalInitialView(initialView);
-      setIsAuthModalOpen(true);
-    },
-    []
-  );
+  const openAuthModal = (
+    initialView: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login" = "get-started"
+  ) => {
+    setAuthModalInitialView(initialView);
+    setIsAuthModalOpen(true);
+  };
 
-  const closeAuthModal = useCallback(() => {
+  const closeAuthModal = () => {
     setIsAuthModalOpen(false);
-  }, []);
+  };
 
   const fetchUser = useCallback(async () => {
     const token = getAccessToken();
