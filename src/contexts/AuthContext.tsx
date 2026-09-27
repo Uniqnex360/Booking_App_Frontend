@@ -12,7 +12,9 @@ import {
   loginWithFirebase,
   logout as logoutApi,
   getCurrentUser,
-  loginWithPhoneEmail,  
+  loginWithPhoneEmail,
+  sendEmailOtp,
+  verifyEmailOtp,  
 } from '@/api/auth.api';
 import type {
   User,
@@ -36,6 +38,8 @@ initiateSignUp: (payload: RegisterPayload) => Promise<{ userId: string | null; e
   verifySignUp: (userId: string, code: string) => Promise<{ error: string | null }>;
   signInWithFirebase: (payload: FirebaseLoginPayload) => Promise<{ error: string | null }>;
   signInWithPhoneEmail: (payload: { url: string }) => Promise<{ error: string | null }>;
+  sendEmailOtpLogin: (payload: { email: string; full_name?: string }) => Promise<{ data: { user_id: string; email: string; otp_sent: boolean } | null; error: string | null }>;
+  verifyEmailOtpLogin: (payload: { user_id?: string; email?: string; otp_code: string }) => Promise<{ error: string | null }>;
   continueWithGoogle: () => Promise<{ error: string | null; cancelled?: boolean }>;
   continueWithApple: () => Promise<{ error: string | null; cancelled?: boolean }>;
   signOut: () => Promise<void>;
@@ -228,6 +232,25 @@ const verifySignUp = async (userId: string, code: string) => {
         setUser(null);
     }
   };
+  const sendEmailOtpLogin = async (payload: { email: string; full_name?: string }) => {
+    try {
+      const data = await sendEmailOtp(payload);
+      return { data, error: null };
+    } catch (err: any) {
+      return { data: null, error: getErrorMessage(err) };
+    }
+  };
+
+  const verifyEmailOtpLogin = async (payload: { user_id?: string; email?: string; otp_code: string }) => {
+    try {
+      await verifyEmailOtp(payload);
+      await fetchUser();
+      return { error: null };
+    } catch (err: any) {
+      return { error: getErrorMessage(err) };
+    }
+  };
+
 const signInWithPhoneEmail = async (payload: { url: string }) => {
   try {
     await loginWithPhoneEmail(payload);
@@ -254,6 +277,8 @@ const signInWithPhoneEmail = async (payload: { url: string }) => {
         continueWithGoogle,
         continueWithApple,
         signInWithPhoneEmail,
+        sendEmailOtpLogin,
+        verifyEmailOtpLogin,
         isAuthModalOpen,
         authModalInitialView,
         openAuthModal,

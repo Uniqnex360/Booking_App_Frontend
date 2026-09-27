@@ -24,8 +24,8 @@ export function QuickAuthModal() {
     continueWithGoogle,
     continueWithApple,
     signIn,
-    initiateSignUp,
-    verifySignUp,
+    sendEmailOtpLogin,
+    verifyEmailOtpLogin,
     signInWithPhoneEmail,
   } = useAuth() as any;
 
@@ -289,27 +289,18 @@ export function QuickAuthModal() {
     setLoading(true);
 
     try {
-      const res = await initiateSignUp({
-        full_name: email.split("@")[0],
+      const res = await sendEmailOtpLogin({
         email: email.trim(),
-        password: "TempPassword@" + Math.floor(100000 + Math.random() * 900000),
+        full_name: email.split("@")[0],
       });
 
       if (res.error) {
-        if (
-          res.error.toLowerCase().includes("duplicate") ||
-          res.error.toLowerCase().includes("already registered") ||
-          res.error.toLowerCase().includes("already exists")
-        ) {
-          setView("password-login");
-          toast.info("Account found. Please enter your password to sign in.");
-          setLoading(false);
-          return;
-        }
         setError(res.error);
         toast.error(res.error);
       } else {
-        setUserId(res.userId);
+        if (res.data?.user_id) {
+          setUserId(res.data.user_id);
+        }
         setOtpDigits(["", "", "", "", "", ""]);
         setResendTimer(30);
         setView("email-otp");
@@ -328,17 +319,17 @@ export function QuickAuthModal() {
     setLoading(true);
 
     try {
-      if (userId) {
-        const res = await verifySignUp(userId, otpCode);
-        if (res.error) {
-          setError(res.error);
-          toast.error(res.error);
-        } else {
-          toast.success("Email verified! Welcome to Vyhbz.");
-          closeAuthModal();
-        }
+      const res = await verifyEmailOtpLogin({
+        user_id: userId || undefined,
+        email: email.trim(),
+        otp_code: otpCode,
+      });
+
+      if (res.error) {
+        setError(res.error);
+        toast.error(res.error);
       } else {
-        toast.success("Authentication confirmed.");
+        toast.success("Signed in successfully!");
         closeAuthModal();
       }
     } catch (err: any) {

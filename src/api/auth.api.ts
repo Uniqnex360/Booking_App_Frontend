@@ -62,3 +62,25 @@ export async function logout(): Promise<void> {
   }
   clearTokens();
 }
+
+export async function sendEmailOtp(payload: {
+  email: string;
+  full_name?: string;
+}): Promise<{ user_id: string; email: string; otp_sent: boolean }> {
+  const response = await api.post<ApiResponse<{ user_id: string; email: string; otp_sent: boolean }>>(
+    "/auth/email-otp/send",
+    payload
+  );
+  return response.data.data;
+}
+
+export async function verifyEmailOtp(payload: {
+  user_id?: string;
+  email?: string;
+  otp_code: string;
+}): Promise<AuthTokens> {
+  const response = await api.post<ApiResponse<AuthTokens>>("/auth/email-otp/verify", payload);
+  const result = response.data.data;
+  setTokens(result.access_token, result.refresh_token);
+  return result;
+}
