@@ -600,7 +600,7 @@ export default function SeatMapPage() {
           </div>
         ) : (
           <div
-            className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col items-start transition-transform duration-150 origin-top"
+            className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col items-center transition-transform duration-150 origin-top"
             style={{ transform: `scale(${zoom})` }}
           >
             {/* Tiers & Seating Grid — shares the same max-w-[1280px] mx-auto
