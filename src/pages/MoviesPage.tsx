@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
+import { CitySelectionModal } from "@/components/common/CitySelectionModal";
 import { withCity } from "@/lib/cityLink";
 
 interface MovieItem {
@@ -44,6 +45,7 @@ export default function MoviesPage() {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isCityModalOpen, setIsCityModalOpen] = useState(false);
 
   // Accordion collapse state
   const [openSections, setOpenSections] = useState({
@@ -192,20 +194,14 @@ export default function MoviesPage() {
             </div>
 
             {/* City Selector */}
-            <div className="relative">
-              <select
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="bg-white border border-gray-200 text-gray-700 font-medium rounded-lg py-2 pl-3 pr-8 text-xs sm:text-sm focus:outline-none focus:border-[#7B1E3D] appearance-none cursor-pointer"
-              >
-                {SUPPORTED_CITIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-500 pointer-events-none" />
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsCityModalOpen(true)}
+              className="bg-white border border-gray-200 text-gray-700 font-medium rounded-lg py-2 px-3 text-xs sm:text-sm hover:border-[#7B1E3D] flex items-center gap-2 cursor-pointer shadow-sm"
+            >
+              <span>{city?.toLowerCase() === "bangalore" || city?.toLowerCase() === "bengaluru" ? "Bengaluru" : city}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+            </button>
 
             {/* Mobile Filter Toggle */}
             <button
@@ -541,6 +537,12 @@ export default function MoviesPage() {
       )}
 
       <Footer />
+      <CitySelectionModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+        currentCity={city}
+        onSelectCity={setCity}
+      />
     </div>
   );
 }

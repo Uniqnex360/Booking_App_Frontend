@@ -44,6 +44,7 @@ import {
   HeartHandshake,
 } from "lucide-react";
 import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
+import { CitySelectionModal } from "@/components/common/CitySelectionModal";
 import { toast } from "sonner";
 
 const CITY_STORAGE_KEY = "vyhbz_selected_city";
@@ -158,6 +159,14 @@ export function Header() {
   const { user, signOut, openAuthModal } = useAuth() as any;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isCityModalOpen, setIsCityModalOpen] = useState(false);
+
+  const displayCityName = (c: string) => {
+    if (c?.toLowerCase() === "bangalore" || c?.toLowerCase() === "bengaluru") {
+      return "Bengaluru";
+    }
+    return c || "Kochi";
+  };
   const [drawerTab, setDrawerTab] = useState<"main" | "notifications" | "help" | "settings" | "rewards" | "playCard" | "bookAChange">("main");
 
   const [notifications, setNotifications] = useState<DrawerNotification[]>(() => {
@@ -513,21 +522,15 @@ export function Header() {
             )}
           </button>
 
-          {/* City Selector */}
-          <div className="relative hidden md:flex items-center">
-            <select
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              className="appearance-none bg-transparent border-none outline-none cursor-pointer text-sm font-medium text-gray-700 hover:text-[#7B1E3D] pr-4 transition-colors z-10 relative"
-            >
-              {SUPPORTED_CITIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="h-3.5 w-3.5 text-gray-500 absolute right-0 pointer-events-none" />
-          </div>
+          {/* City Selector (Modal Trigger) */}
+          <button
+            type="button"
+            onClick={() => setIsCityModalOpen(true)}
+            className="hidden md:flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-[#7B1E3D] transition-colors cursor-pointer select-none py-1 px-1.5 rounded-md hover:bg-gray-50"
+          >
+            <span>{displayCityName(city)}</span>
+            <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+          </button>
 
           {/* User Sign In / Profile Avatar */}
           {user ? (
@@ -702,21 +705,22 @@ export function Header() {
               )}
 
               {/* Mobile City Selector */}
-              <div className="md:hidden px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+              <div
+                onClick={() => {
+                  setDrawerOpen(false);
+                  setIsCityModalOpen(true);
+                }}
+                className="md:hidden px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
+              >
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Selected City
                 </span>
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className="bg-transparent text-sm font-bold text-[#7B1E3D] outline-none cursor-pointer"
-                >
-                  {SUPPORTED_CITIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm font-bold text-[#7B1E3D]">
+                    {displayCityName(city)}
+                  </span>
+                  <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+                </div>
               </div>
 
               {/* Menu Items List */}
@@ -1288,17 +1292,17 @@ export function Header() {
                   <p className="text-xs text-gray-500">
                     Showtimes and event schedules will be tailored to this city.
                   </p>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-900 outline-none focus:border-[#7B1E3D]"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      setIsCityModalOpen(true);
+                    }}
+                    className="w-full flex items-center justify-between rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 hover:border-[#7B1E3D] transition cursor-pointer"
                   >
-                    {SUPPORTED_CITIES.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
+                    <span>{displayCityName(city)}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                  </button>
                 </div>
 
                 {/* Notifications */}
@@ -1441,6 +1445,13 @@ export function Header() {
           )}
         </SheetContent>
       </Sheet>
+
+      <CitySelectionModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+        currentCity={city}
+        onSelectCity={(newCity) => setCity(newCity)}
+      />
     </header>
   );
 }
