@@ -495,7 +495,13 @@ export default function SeatMapPage() {
             </span>
           </button>
 
-          
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition cursor-pointer"
+            title="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
       </header>
 
@@ -590,11 +596,13 @@ export default function SeatMapPage() {
           </div>
         ) : (
           <div
-            className="w-full flex flex-col items-center transition-transform duration-150 origin-top"
+            className="w-full flex flex-col items-start pl-4 sm:pl-6 transition-transform duration-150 origin-top"
             style={{ transform: `scale(${zoom})` }}
           >
-            {/* Tiers & Seating Grid */}
-            <div className="w-fit mx-auto flex flex-col items-center">
+            {/* Tiers & Seating Grid — starts at the same left inset (pl-4 sm:pl-6)
+                as the header's back button, so the row-label column lines up
+                directly under the back arrow, matching the BMS reference. */}
+            <div className="w-fit flex flex-col items-start">
               {tiers.map((tier) => (
                 <div key={tier.price_paise} className="w-full flex flex-col items-start my-3">
                   {/* BookMyShow Tier Divider */}
@@ -614,10 +622,10 @@ export default function SeatMapPage() {
                       return (
                         <div
                           key={rowLabel}
-                          className="flex items-center justify-center my-0.5 select-none w-full"
+                          className="flex items-center justify-start gap-3 sm:gap-4 my-0.5 select-none w-full"
                         >
                           {/* Row letter badge in a single straight vertical line on the left (matching BMS rail) */}
-                          <div className="w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs mr-3 sm:mr-4">
+                          <div className="w-7 sm:w-8 h-6 sm:h-7 rounded bg-[#F4F4F6] text-gray-600 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 select-none shadow-2xs">
                             {rowLabel}
                           </div>
 
@@ -673,16 +681,6 @@ export default function SeatMapPage() {
                               </div>
                             ))}
                           </div>
-
-                          {/* Invisible mirror of the row-letter badge on the right.
-                              The badge only sits on the left, which visually drags the
-                              seat block left of true center. This spacer reserves the
-                              same width (+ margin) on the right so the SEAT block itself
-                              — not the label+seats combo — ends up centered on the page. */}
-                          <div
-                            className="w-7 sm:w-8 h-6 sm:h-7 shrink-0 ml-3 sm:ml-4 invisible"
-                            aria-hidden="true"
-                          />
                         </div>
                       );
                     })}
