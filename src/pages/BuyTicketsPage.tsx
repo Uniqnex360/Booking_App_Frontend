@@ -392,7 +392,21 @@ export default function BuyTicketsPage() {
     setSelectedSlotId(slotId);
     setTempTicketCount(ticketCount);
     setShowTicketModal(true);
+    if (!showtimePricingMap[slotId]) {
+      fetchShowtimePricing(slotId);
+    }
   };
+
+  const currentSlotTiers = useMemo(() => {
+    if (selectedSlotId && showtimePricingMap[selectedSlotId]?.length) {
+      return showtimePricingMap[selectedSlotId];
+    }
+    return [
+      { tier: "RECLINER", price: "₹500", status: "FILLING FAST", statusColor: "text-[#E5A100]" },
+      { tier: "ELITE", price: "₹210", status: "AVAILABLE", statusColor: "text-[#34A853]" },
+      { tier: "CLASSIC", price: "₹170", status: "AVAILABLE", statusColor: "text-[#34A853]" },
+    ];
+  }, [selectedSlotId, showtimePricingMap]);
 
   const toggleDropdown = (
     name: "langFormat" | "time" | "price" | "special" | "other" | "sort"
@@ -1183,7 +1197,7 @@ export default function BuyTicketsPage() {
           onClick={() => setShowTicketModal(false)}
         >
           <div
-            className="bg-white rounded-lg shadow-2xl w-full max-w-[400px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-xl shadow-2xl w-full max-w-[420px] overflow-hidden animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="pt-6 pb-2 text-center">
@@ -1204,7 +1218,7 @@ export default function BuyTicketsPage() {
                   onClick={() => setTempTicketCount(n)}
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
                     tempTicketCount === n
-                      ? "bg-[#F84464] text-white shadow-md font-bold"
+                      ? "bg-[#D6445B] text-white shadow-md font-bold"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
@@ -1213,11 +1227,48 @@ export default function BuyTicketsPage() {
               ))}
             </div>
 
-            <div className="px-6 pt-3 pb-6">
+            {/* Tiers & Seat Pricing Breakdown */}
+            <div className="border-t border-gray-100 px-6 py-4">
+              <div className="flex items-center justify-around text-center gap-3">
+                {currentSlotTiers.map((t, idx) => {
+                  const displayPrice = t.price.startsWith("₹")
+                    ? t.price.replace("₹ ", "₹").split(".")[0]
+                    : `₹${t.price}`;
+                  const isFillingFast = t.status.toLowerCase().includes("filling");
+                  return (
+                    <div key={idx} className="flex flex-col items-center">
+                      <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+                        {t.tier}
+                      </span>
+                      <span className="text-sm sm:text-base font-bold text-gray-900 mt-0.5">
+                        {displayPrice}
+                      </span>
+                      <span
+                        className={`text-[10px] font-bold uppercase mt-0.5 ${
+                          isFillingFast ? "text-[#E5A100]" : "text-[#34A853]"
+                        }`}
+                      >
+                        {t.status.toUpperCase()}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Bestseller seats banner */}
+            <div className="bg-[#F8F9FA] border-t border-gray-100 py-2.5 px-4 text-center text-xs text-gray-600 flex items-center justify-center flex-wrap gap-1">
+              <span>Book the</span>
+              <span className="inline-block w-3.5 h-3.5 border-2 border-[#E5A100] rounded-xs bg-[#FFF8E7] mx-0.5" />
+              <span className="font-bold text-gray-800">Bestseller Seats</span>
+              <span>in this cinema at no extra cost!</span>
+            </div>
+
+            <div className="p-4 bg-white">
               <button
                 type="button"
                 onClick={handleTicketChangeConfirm}
-                className="w-full bg-[#F84464] hover:bg-[#e03555] text-white font-bold rounded-lg py-3 text-sm transition cursor-pointer"
+                className="w-full bg-[#D6445B] hover:bg-[#c33a4f] text-white font-bold rounded-lg py-3 text-sm sm:text-base transition cursor-pointer shadow-xs"
               >
                 Select Seats
               </button>
