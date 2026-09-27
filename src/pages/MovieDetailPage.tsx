@@ -540,58 +540,60 @@ export default function MovieDetailPage() {
 
       {showTicketModal && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-4 sm:p-0 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           onClick={() => setShowTicketModal(false)}
         >
           <div
-            className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-lg w-full max-w-[420px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 relative p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-6 pt-5 pb-3 flex items-center justify-between border-b border-gray-100">
+            {/* Centered Title with top-right close button */}
+            <div className="text-center pt-1 pb-1 relative">
               <h3 className="text-gray-900 font-bold text-lg">
                 How many seats?
               </h3>
               <button
                 onClick={() => setShowTicketModal(false)}
-                className="text-gray-400 hover:text-gray-700 transition p-1"
+                className="absolute right-0 top-0 text-gray-400 hover:text-gray-700 transition p-1 cursor-pointer"
+                aria-label="Close"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="px-6 pt-6 pb-8 bg-white">
-              <div className="flex items-center justify-center h-28 mb-6">
-                <SeatVehicle count={ticketCount} />
-              </div>
-
-              <div className="flex items-center justify-center gap-2 flex-wrap px-1">
-                {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
-                  (n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setTicketCount(n)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold border transition-all ${
-                        ticketCount === n
-                          ? "bg-[#7B1E3D] text-white border-[#7B1E3D] scale-110 shadow-lg shadow-[#7B1E3D]/25"
-                          : "bg-white text-gray-700 border-gray-300 hover:border-[#7B1E3D]/50 hover:text-[#7B1E3D]"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ),
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleTicketConfirm}
-                className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-lg py-3.5 mt-8 transition flex items-center justify-center gap-2 shadow-lg shadow-[#7B1E3D]/20"
-              >
-                Select Seats
-                <ChevronRight className="h-5 w-5" />
-              </button>
+            {/* Vehicle Illustration */}
+            <div className="flex items-center justify-center h-28 my-3">
+              <SeatVehicle count={ticketCount} />
             </div>
+
+            {/* Numbers: All on 1 single row, matching BookMyShow */}
+            <div className="flex items-center justify-center gap-1 sm:gap-2 px-1 pb-6 overflow-x-auto scrollbar-none">
+              {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map(
+                (n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setTicketCount(n)}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition-all cursor-pointer shrink-0 ${
+                      ticketCount === n
+                        ? "bg-[#F84464] text-white shadow-md font-bold"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                ),
+              )}
+            </div>
+
+            {/* Select Seats Button */}
+            <button
+              type="button"
+              onClick={handleTicketConfirm}
+              className="w-full bg-[#F84464] hover:bg-[#e03555] text-white font-bold rounded-lg py-3 transition flex items-center justify-center gap-2 cursor-pointer shadow-sm text-sm"
+            >
+              Select Seats
+            </button>
           </div>
         </div>
       )}
