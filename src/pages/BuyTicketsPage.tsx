@@ -572,7 +572,10 @@ export default function BuyTicketsPage() {
                     />
                   </button>
                   {openDropdown === "price" && (
-                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[200px]">
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[200px]"
+                    >
                       {[
                         "₹0 - ₹200",
                         "₹201 - ₹300",
@@ -583,24 +586,25 @@ export default function BuyTicketsPage() {
                       ].map((range) => {
                         const isChecked = selectedPriceRanges.includes(range);
                         return (
-                          <label
+                          <div
                             key={range}
+                            onClick={() => {
+                              setSelectedPriceRanges((prev) =>
+                                prev.includes(range)
+                                  ? prev.filter((p) => p !== range)
+                                  : [...prev, range]
+                              );
+                            }}
                             className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
                           >
                             <span>{range}</span>
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() => {
-                                setSelectedPriceRanges((prev) =>
-                                  isChecked
-                                    ? prev.filter((p) => p !== range)
-                                    : [...prev, range]
-                                );
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464]"
+                              readOnly
+                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
                             />
-                          </label>
+                          </div>
                         );
                       })}
                     </div>
@@ -625,28 +629,32 @@ export default function BuyTicketsPage() {
                     />
                   </button>
                   {openDropdown === "special" && (
-                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[180px]">
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[180px]"
+                    >
                       {["Dolby", "Luxe"].map((fmt) => {
                         const isChecked = selectedSpecialFormats.includes(fmt);
                         return (
-                          <label
+                          <div
                             key={fmt}
+                            onClick={() => {
+                              setSelectedSpecialFormats((prev) =>
+                                prev.includes(fmt)
+                                  ? prev.filter((s) => s !== fmt)
+                                  : [...prev, fmt]
+                              );
+                            }}
                             className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
                           >
                             <span>{fmt}</span>
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() => {
-                                setSelectedSpecialFormats((prev) =>
-                                  isChecked
-                                    ? prev.filter((s) => s !== fmt)
-                                    : [...prev, fmt]
-                                );
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464]"
+                              readOnly
+                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
                             />
-                          </label>
+                          </div>
                         );
                       })}
                     </div>
@@ -671,7 +679,10 @@ export default function BuyTicketsPage() {
                     />
                   </button>
                   {openDropdown === "other" && (
-                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[210px]">
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[210px]"
+                    >
                       {[
                         "Cancellation available",
                         "M-Ticket",
@@ -680,24 +691,25 @@ export default function BuyTicketsPage() {
                         const isChecked =
                           selectedOtherFilters.includes(filterName);
                         return (
-                          <label
+                          <div
                             key={filterName}
+                            onClick={() => {
+                              setSelectedOtherFilters((prev) =>
+                                prev.includes(filterName)
+                                  ? prev.filter((o) => o !== filterName)
+                                  : [...prev, filterName]
+                              );
+                            }}
                             className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
                           >
                             <span>{filterName}</span>
                             <input
                               type="checkbox"
                               checked={isChecked}
-                              onChange={() => {
-                                setSelectedOtherFilters((prev) =>
-                                  isChecked
-                                    ? prev.filter((o) => o !== filterName)
-                                    : [...prev, filterName]
-                                );
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464]"
+                              readOnly
+                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
                             />
-                          </label>
+                          </div>
                         );
                       })}
                     </div>
