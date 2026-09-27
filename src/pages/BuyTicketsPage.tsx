@@ -219,7 +219,7 @@ export default function BuyTicketsPage() {
     );
   }
 
-  const venuesForDate = activeDate
+  let venuesForDate = activeDate
     ? venuesInCity
         .map((v) => ({
           ...v,
@@ -231,6 +231,12 @@ export default function BuyTicketsPage() {
                 langFormatFilter === "all" ||
                 `${s.language} - ${s.format}` === langFormatFilter
             )
+            .filter((s) => {
+              if (selectedSpecialFormats.length === 0) return true;
+              return selectedSpecialFormats.some((fmt) =>
+                s.format.toLowerCase().includes(fmt.toLowerCase())
+              );
+            })
             .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
             .sort(
               (a, b) =>
@@ -245,6 +251,16 @@ export default function BuyTicketsPage() {
         )
         .filter((v) => v.showtimes.length > 0)
     : [];
+
+  if (sortBy === "popularity") {
+    venuesForDate = [...venuesForDate].sort(
+      (a, b) => b.showtimes.length - a.showtimes.length
+    );
+  } else if (sortBy === "distance") {
+    venuesForDate = [...venuesForDate].sort((a, b) =>
+      a.venue_name.localeCompare(b.venue_name)
+    );
+  }
 
   const handleTicketChangeConfirm = () => {
     setShowTicketModal(false);
@@ -282,7 +298,7 @@ export default function BuyTicketsPage() {
       <Header />
 
       {/* ─── Movie Title & Metadata Header (White background matching BookMyShow) ─── */}
-      <div className="bg-white border-b border-gray-200 pt-[104px] lg:pt-[116px] pb-4">
+      <div className="bg-white border-b border-gray-200 pt-[128px] lg:pt-[144px] pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
             {movie.title} - ({movie.language})
@@ -327,7 +343,7 @@ export default function BuyTicketsPage() {
             <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full overflow-hidden">
               
               {/* Left Side: Date Strip with spacious gap on the right before vertical divider */}
-              <div className="flex items-center gap-1.5 h-full border-r border-gray-200 pr-10 md:pr-16 shrink-0">
+              <div className="flex items-center gap-1.5 h-full border-r border-gray-200 pr-12 md:pr-20 mr-4 md:mr-6 shrink-0">
                 {dateKeys.map((dk) => {
                   const { weekday, day, month } = dateTabParts(dk);
                   const isActive = activeDate === dk;
