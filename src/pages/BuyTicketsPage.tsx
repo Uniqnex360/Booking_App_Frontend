@@ -890,59 +890,105 @@ export default function BuyTicketsPage() {
                         </button>
                       </div>
 
-                      {/* Second Row: Square Icon Badges (F&B and M-Ticket) */}
-                      <div className="flex items-center gap-2.5">
+                      {/* Second Row: Square Icon Badges (F&B and M-Ticket with hover text to the right) */}
+                      <div className="flex items-center gap-2">
                         {/* Food & Beverage Badge */}
                         <div
-                          className="w-7 h-7 rounded-md bg-[#FDF4EA] border border-[#FEEAD4] flex items-center justify-center text-[#F48F29]"
+                          className="group flex items-center gap-1 bg-[#FDF4EA] text-[#F48F29] border border-[#FEEAD4] rounded-md p-1.5 text-xs font-semibold cursor-pointer transition-all duration-200 hover:pr-2.5"
                           title="Food & Beverage Available"
                         >
-                          <Coffee className="h-4 w-4" />
+                          <Coffee className="h-3.5 w-3.5 shrink-0" />
+                          <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[10px] font-bold">
+                            F&amp;B
+                          </span>
                         </div>
 
                         {/* M-Ticket Badge */}
                         <div
-                          className="w-7 h-7 rounded-md bg-[#EDF7F2] border border-[#D5EFE1] flex items-center justify-center text-[#34A853]"
+                          className="group flex items-center gap-1 bg-[#EDF7F2] text-[#34A853] border border-[#D5EFE1] rounded-md p-1.5 text-xs font-semibold cursor-pointer transition-all duration-200 hover:pr-2.5"
                           title="M-Ticket Available"
                         >
-                          <Smartphone className="h-4 w-4" />
+                          <Smartphone className="h-3.5 w-3.5 shrink-0" />
+                          <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[10px] font-bold">
+                            M-Ticket
+                          </span>
                         </div>
                       </div>
 
-                      {/* Third Row: Showtime Slots (Positioned directly below the badges) */}
+                      {/* Third Row: Showtime Slots with Reduced Height & Hover Price Tooltip */}
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         {venue.showtimes.map((slot) => {
                           const isPast =
                             new Date(slot.starts_at).getTime() < now;
+                          const fmt = (slot.format || "").toUpperCase();
+                          const pricingTiers = fmt.includes("LUXE")
+                            ? [
+                                { price: "₹ 650.00", tier: "LUXE PRIME", status: "Filling Fast", statusColor: "text-[#FFB000]" },
+                                { price: "₹ 500.00", tier: "LUXE", status: "Available", statusColor: "text-[#34A853]" },
+                              ]
+                            : fmt.includes("DOLBY") || fmt.includes("3D") || fmt.includes("4K")
+                            ? [
+                                { price: "₹ 350.00", tier: "PREMIUM", status: "Filling Fast", statusColor: "text-[#FFB000]" },
+                                { price: "₹ 250.00", tier: "EXECUTIVE", status: "Available", statusColor: "text-[#34A853]" },
+                              ]
+                            : [
+                                { price: "₹ 250.00", tier: "EXECUTIVE", status: "Filling Fast", statusColor: "text-[#FFB000]" },
+                                { price: "₹ 180.00", tier: "NORMAL", status: "Available", statusColor: "text-[#34A853]" },
+                              ];
+
                           return (
-                            <button
-                              key={slot.id}
-                              onClick={() => {
-                                if (!isPast) handleShowtimeClick(slot.id);
-                              }}
-                              disabled={isPast}
-                              className={`relative rounded px-3 py-1.5 min-w-[105px] text-center transition cursor-pointer flex flex-col items-center justify-center ${
-                                isPast
-                                  ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
-                                  : "border border-[#34A853] border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
-                              }`}
-                            >
-                              <div className="flex items-center justify-center gap-1">
-                                <span
-                                  className={`text-xs sm:text-[13px] font-bold ${
-                                    isPast ? "text-gray-300" : "text-gray-800"
-                                  }`}
-                                >
-                                  {istTimeLabel(slot.starts_at)}
-                                </span>
-                                <span className="text-[9px] font-semibold border border-gray-400 text-gray-600 px-1 rounded-xs leading-tight font-sans">
-                                  ENG
-                                </span>
-                              </div>
-                              <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mt-0.5">
-                                {slot.format || "2D"}
-                              </div>
-                            </button>
+                            <div key={slot.id} className="relative group">
+                              {/* Price Tooltip on Hover */}
+                              {!isPast && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                                  <div className="flex items-center justify-around gap-4 text-center">
+                                    {pricingTiers.map((tierItem, idx) => (
+                                      <div key={idx} className="flex flex-col items-center">
+                                        <span className="font-bold text-xs sm:text-[13px] text-gray-900 tracking-tight">
+                                          {tierItem.price}
+                                        </span>
+                                        <span className="text-[9px] font-semibold text-gray-700 uppercase mt-0.5 whitespace-nowrap">
+                                          {tierItem.tier}
+                                        </span>
+                                        <span className={`text-[9px] font-semibold mt-0.5 whitespace-nowrap ${tierItem.statusColor}`}>
+                                          {tierItem.status}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {/* Tooltip Downward Caret */}
+                                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45 border-r border-b border-gray-100" />
+                                </div>
+                              )}
+
+                              <button
+                                onClick={() => {
+                                  if (!isPast) handleShowtimeClick(slot.id);
+                                }}
+                                disabled={isPast}
+                                className={`relative rounded px-3 py-1 min-w-[100px] h-[38px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
+                                  isPast
+                                    ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
+                                    : "border border-[#34A853] border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
+                                }`}
+                              >
+                                <div className="flex items-center justify-center gap-1 leading-none">
+                                  <span
+                                    className={`text-xs sm:text-[13px] font-bold leading-none ${
+                                      isPast ? "text-gray-300" : "text-gray-800"
+                                    }`}
+                                  >
+                                    {istTimeLabel(slot.starts_at)}
+                                  </span>
+                                  <span className="text-[8px] font-semibold border border-gray-400 text-gray-600 px-1 rounded-xs leading-none font-sans">
+                                    ENG
+                                  </span>
+                                </div>
+                                <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
+                                  {slot.format || "2D"}
+                                </div>
+                              </button>
+                            </div>
                           );
                         })}
                       </div>
