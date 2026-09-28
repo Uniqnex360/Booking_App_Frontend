@@ -396,6 +396,11 @@ export function QuickAuthModal() {
         }
       `}</style>
       <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-200">
+        {loading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70 cursor-wait">
+            <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />
+          </div>
+        )}
 
         {/* VIEW 1: GET STARTED */}
         {view === "get-started" && (

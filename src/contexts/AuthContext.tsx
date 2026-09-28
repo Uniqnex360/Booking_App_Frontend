@@ -82,22 +82,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthModalOpen(false);
   };
 
-  const fetchUser = useCallback(async () => {
-    const token = getAccessToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const data = await getCurrentUser();
-      setUser(data);
-    } catch {
-      clearTokens();
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchUser = useCallback(async (): Promise<boolean> => {
+  const token = getAccessToken();
+  if (!token) {
+    setLoading(false);
+    return false;
+  }
+  try {
+    const data = await getCurrentUser();
+    setUser(data);
+    return true;
+  } catch {
+    clearTokens();
+    setUser(null);
+    return false;
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   useEffect(() => {
     setAuthFailureHandler(() => {
