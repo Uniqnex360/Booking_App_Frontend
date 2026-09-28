@@ -148,6 +148,8 @@ const [showStickyBar, setShowStickyBar] = useState(false);
   };
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    setLoading(true);
     fetchMovie();
     if (id) {
       getMovieReviews(id)
@@ -886,12 +888,13 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                     ? `${m.rating_count} votes`
                     : "20K+ votes";
                   return (
-                    <div
+                    <Link
                       key={m.id}
+                      to={withCity(`/movies/${m.id}`, city)}
                       onClick={() =>
-                        navigate(withCity(`/movies/${m.id}`, city))
+                        window.scrollTo({ top: 0, left: 0, behavior: "instant" })
                       }
-                      className="w-[150px] sm:w-[180px] shrink-0 cursor-pointer group flex flex-col"
+                      className="w-[150px] sm:w-[180px] shrink-0 cursor-pointer group flex flex-col no-underline text-inherit"
                     >
                       <div className="w-full aspect-[2/3] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-2xs mb-2.5 relative">
                         {m.poster_url ? (
@@ -923,7 +926,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                       <p className="text-xs text-gray-500 truncate mt-0.5">
                         {m.genre || m.language || "Action, Drama"}
                       </p>
-                    </div>
+                    </Link>
                   );
                 })}
               </div>
