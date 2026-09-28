@@ -89,7 +89,8 @@ export default function MovieDetailPage() {
   const [reviews, setReviews] = useState<MovieReview[]>([]);
   const [similarMovies, setSimilarMovies] = useState<any[]>([]);
   const similarMoviesRef = useRef<HTMLDivElement>(null);
-
+  const heroRef = useRef<HTMLDivElement>(null);
+const [showStickyBar, setShowStickyBar] = useState(false);
   const scrollSimilarMovies = (direction: "left" | "right") => {
     if (similarMoviesRef.current) {
       const scrollAmount = similarMoviesRef.current.clientWidth * 0.75;
@@ -221,7 +222,16 @@ export default function MovieDetailPage() {
       Object.entries(map).map(([lang, formats]) => [lang, Array.from(formats)]),
     );
   }, [movie]);
-
+  useEffect(() => {
+  const el = heroRef.current;
+  if (!el) return;
+  const obs = new IntersectionObserver(
+    ([entry]) => setShowStickyBar(!entry.isIntersecting),
+    { threshold: 0, rootMargin: "-64px 0px 0px 0px" },
+  );
+  obs.observe(el);
+  return () => obs.disconnect();
+}, [movie]);
   if (loading) {
     return <LoadingPage showFooter={false} />;
   }
@@ -308,8 +318,25 @@ export default function MovieDetailPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
-
+    <div
+  className={`fixed left-0 right-0 top-0 lg:top-[104px] z-30 bg-white border-b border-gray-200 shadow-sm transition-transform duration-200 ${
+    showStickyBar ? "translate-y-0" : "-translate-y-full pointer-events-none"
+  }`}
+>
+  <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
+    <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+      {movie.title}
+    </h2>
+    <button
+      onClick={handleBookTicketsClick}
+      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-6 py-2 rounded-md transition shrink-0"
+    >
+      Book tickets
+    </button>
+  </div>
+</div>
       <div
+      ref={heroRef}
         className="relative pt-16 lg:pt-[104px] bg-[#1A1A2E] overflow-hidden"
         style={{
           backgroundImage: movie.banner_url
