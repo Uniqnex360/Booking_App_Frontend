@@ -485,6 +485,7 @@ export function QuickAuthModal() {
                 <button
                   id="btn_ph_login"
                   name="btn_ph_login"
+                  disabled={loading}
                   type="button"
                   onClick={openPhoneEmailLogin}
                   className="w-full h-12 flex items-center justify-center gap-2.5 rounded-xl text-white font-semibold text-sm transition-all shadow-sm cursor-pointer hover:brightness-95 active:scale-[0.99]"
@@ -571,6 +572,7 @@ export function QuickAuthModal() {
               >
                 <input
                   type="email"
+                  disabled={loading}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => {
@@ -666,6 +668,7 @@ export function QuickAuthModal() {
                   ref={(el) => (otpInputRefs.current[idx] = el)}
                   type="text"
                   inputMode="numeric"
+                  disabled={loading}
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpDigitChange(e.target.value, idx)}
@@ -764,6 +767,7 @@ export function QuickAuthModal() {
                 <div className="relative flex items-center border border-gray-300 rounded-lg px-3.5 py-3 focus-within:border-[#7B1E3D]">
                   <input
                     type="password"
+                    disabled={loading}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
