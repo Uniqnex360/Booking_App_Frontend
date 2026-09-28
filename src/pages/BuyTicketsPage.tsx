@@ -223,9 +223,18 @@ export default function BuyTicketsPage() {
           )
           .filter((s) => {
             if (selectedSpecialFormats.length === 0) return true;
-            return selectedSpecialFormats.some((fmt) =>
-              s.format.toLowerCase().includes(fmt.toLowerCase())
-            );
+            return selectedSpecialFormats.some((fmt) => {
+              if (fmt.toLowerCase().includes("couple")) {
+                return (
+                  s.screen_name.toLowerCase().includes("couple") ||
+                  s.format.toLowerCase().includes("couple")
+                );
+              }
+              return (
+                s.format.toLowerCase().includes(fmt.toLowerCase()) ||
+                s.screen_name.toLowerCase().includes(fmt.toLowerCase())
+              );
+            });
           })
           .filter((s) => matchesPriceRange(showtimePricingMap[s.id], selectedPriceRanges))
           .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
@@ -417,9 +426,27 @@ export default function BuyTicketsPage() {
   const [pendingSlotId, setPendingSlotId] = useState<string | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
 
+  const isSelectedSlotCouple = useMemo(() => {
+    if (!selectedSlotId) return false;
+    const slot = venuesInCity.flatMap((v) => v.showtimes).find((s) => s.id === selectedSlotId);
+    return Boolean(
+      slot?.screen_name?.toLowerCase().includes("couple") ||
+      slot?.format?.toLowerCase().includes("couple")
+    );
+  }, [selectedSlotId, venuesInCity]);
+
   const proceedWithSlot = (slotId: string) => {
     setSelectedSlotId(slotId);
-    setTempTicketCount(ticketCount);
+    const slot = venuesInCity.flatMap((v) => v.showtimes).find((s) => s.id === slotId);
+    const isCouple = Boolean(
+      slot?.screen_name?.toLowerCase().includes("couple") ||
+      slot?.format?.toLowerCase().includes("couple")
+    );
+    let qty = ticketCount;
+    if (isCouple && (qty % 2 !== 0 || qty < 2)) {
+      qty = Math.max(2, qty % 2 === 1 ? qty + 1 : 2);
+    }
+    setTempTicketCount(qty);
     setShowTicketModal(true);
     if (!showtimePricingMap[slotId]) {
       fetchShowtimePricing(slotId);
@@ -720,7 +747,7 @@ export default function BuyTicketsPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[180px]"
                     >
-                      {["Dolby", "Luxe"].map((fmt) => {
+                      {["Dolby", "Luxe", "Couple Recliners"].map((fmt) => {
                         const isChecked = selectedSpecialFormats.includes(fmt);
                         return (
                           <div
@@ -1113,7 +1140,15 @@ export default function BuyTicketsPage() {
                           const isPast =
                             new Date(slot.starts_at).getTime() < now;
                           const fmt = (slot.format || "").toUpperCase();
-                          const fallbackPricing = fmt.includes("LUXE")
+                          const isCouple =
+                            slot.screen_name.toLowerCase().includes("couple") ||
+                            slot.format.toLowerCase().includes("couple");
+
+                          const fallbackPricing = isCouple
+                            ? [
+                                { price: "₹ 450.00", tier: "COUPLE RECLINER", status: "Available", statusColor: "text-[#34A853]" },
+                              ]
+                            : fmt.includes("LUXE")
                             ? [
                                 { price: "₹ 650.00", tier: "LUXE PRIME", status: "Filling Fast", statusColor: "text-[#FFB000]" },
                                 { price: "₹ 500.00", tier: "LUXE", status: "Available", statusColor: "text-[#34A853]" },
@@ -1137,6 +1172,11 @@ export default function BuyTicketsPage() {
                               {/* Price Tooltip on Hover (Fetched dynamically from API) */}
                               {!isPast && (
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                                  {isCouple && (
+                                    <div className="text-[10px] font-bold text-[#be185d] text-center mb-1 pb-1 border-b border-pink-100">
+                                      💑 Screen 4 (Couple Recliners) • ₹900 / pair
+                                    </div>
+                                  )}
                                   <div className="flex items-center justify-around gap-4 text-center">
                                     {pricingTiers.map((tierItem, idx) => (
                                       <div
@@ -1167,26 +1207,42 @@ export default function BuyTicketsPage() {
                                   if (!isPast) handleShowtimeClick(slot.id);
                                 }}
                                 disabled={isPast}
-                                className={`relative rounded px-3 py-1 min-w-[100px] h-[38px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
+                                className={`relative rounded px-3 py-1 min-w-[102px] h-[38px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
                                   isPast
                                     ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
+                                    : isCouple
+                                    ? "border border-[#f472b6] border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs"
                                     : "border border-[#34A853] border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
                                 }`}
                               >
                                 <div className="flex items-center justify-center gap-1 leading-none">
                                   <span
                                     className={`text-xs sm:text-[13px] font-bold leading-none ${
-                                      isPast ? "text-gray-300" : "text-gray-800"
+                                      isPast
+                                        ? "text-gray-300"
+                                        : isCouple
+                                        ? "text-[#831843]"
+                                        : "text-gray-800"
                                     }`}
                                   >
                                     {istTimeLabel(slot.starts_at)}
                                   </span>
-                                  <span className="text-[8px] font-semibold border border-gray-400 text-gray-600 px-1 rounded-xs leading-none font-sans">
-                                    ENG
+                                  <span
+                                    className={`text-[8px] font-semibold border px-1 rounded-xs leading-none font-sans ${
+                                      isCouple
+                                        ? "border-[#f472b6] text-[#be185d]"
+                                        : "border-gray-400 text-gray-600"
+                                    }`}
+                                  >
+                                    {slot.language ? slot.language.substring(0, 3).toUpperCase() : "ENG"}
                                   </span>
                                 </div>
-                                <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
-                                  {slot.format || "2D"}
+                                <div
+                                  className={`text-[8px] font-bold uppercase tracking-wider leading-none mt-1 flex items-center justify-center gap-0.5 ${
+                                    isCouple ? "text-[#be185d]" : "text-gray-400"
+                                  }`}
+                                >
+                                  {isCouple ? "💑 COUPLE" : (slot.format || "2D")}
                                 </div>
                               </button>
                             </div>
@@ -1280,6 +1336,11 @@ export default function BuyTicketsPage() {
               <h2 className="text-lg font-bold text-gray-900">
                 How many seats?
               </h2>
+              {isSelectedSlotCouple && (
+                <p className="text-xs text-[#be185d] font-semibold mt-1">
+                  Couple Recliner: Select tickets in pairs of 2 (2, 4, 6, 8, 10)
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-center py-4">
@@ -1287,20 +1348,26 @@ export default function BuyTicketsPage() {
             </div>
 
             <div className="flex items-center justify-between px-6 pt-2 pb-5 overflow-hidden select-none">
-              {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setTempTicketCount(n)}
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
-                    tempTicketCount === n
-                      ? "bg-[#D6445B] text-white shadow-md font-bold"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
+              {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map((n) => {
+                const isOddOnCouple = isSelectedSlotCouple && n % 2 !== 0;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={isOddOnCouple}
+                    onClick={() => setTempTicketCount(n)}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition shrink-0 ${
+                      isOddOnCouple
+                        ? "opacity-30 cursor-not-allowed text-gray-300"
+                        : tempTicketCount === n
+                        ? "bg-[#D6445B] text-white shadow-md font-bold cursor-pointer"
+                        : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Tiers & Seat Pricing Breakdown */}
