@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   useLocation,
   useNavigate,
@@ -13,6 +13,7 @@ import {
   Share2,
   Star,
   X,
+  ChevronLeft,
   ChevronRight,
   ArrowLeft,
   Check,
@@ -86,6 +87,17 @@ export default function MovieDetailPage() {
   const [inWishlist, setInWishlist] = useState(false);
   const [reviews, setReviews] = useState<MovieReview[]>([]);
   const [similarMovies, setSimilarMovies] = useState<any[]>([]);
+  const similarMoviesRef = useRef<HTMLDivElement>(null);
+
+  const scrollSimilarMovies = (direction: "left" | "right") => {
+    if (similarMoviesRef.current) {
+      const scrollAmount = similarMoviesRef.current.clientWidth * 0.75;
+      similarMoviesRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   // User review reactions: { [reviewId]: 'like' | 'dislike' | null }
   const [reviewReactions, setReviewReactions] = useState<Record<string, "like" | "dislike" | null>>(() => {
@@ -804,49 +816,73 @@ export default function MovieDetailPage() {
               </button>
             </div>
 
-            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {similarMovies.map((m) => {
-                const ratingVal = m.rating || m.external_rating || 8.8;
-                const votesCount = m.rating_count ? `${m.rating_count} votes` : "20K+ votes";
-                return (
-                  <div
-                    key={m.id}
-                    onClick={() => navigate(withCity(`/movies/${m.id}`, city))}
-                    className="w-[150px] sm:w-[180px] shrink-0 cursor-pointer group flex flex-col"
-                  >
-                    <div className="w-full aspect-[2/3] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-2xs mb-2.5 relative">
-                      {m.poster_url ? (
-                        <img
-                          src={m.poster_url}
-                          alt={m.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                          No Poster
-                        </div>
-                      )}
-                    </div>
+            <div className="relative group/similar">
+              <button
+                type="button"
+                onClick={() => scrollSimilarMovies("left")}
+                aria-label="Previous movies"
+                className="flex absolute -left-2 sm:-left-5 top-[38%] -translate-y-1/2 z-10 h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-700 hover:text-gray-900 hover:scale-105 transition cursor-pointer"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
 
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <Star className="h-3.5 w-3.5 fill-[#f84464] text-[#f84464]" />
-                      <span className="text-xs font-bold text-gray-900">
-                        {ratingVal}
-                      </span>
-                      <span className="text-[11px] text-gray-500 font-normal">
-                        {votesCount}
-                      </span>
-                    </div>
+              <div
+                ref={similarMoviesRef}
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth [&::-webkit-scrollbar]:hidden"
+              >
+                {similarMovies.map((m) => {
+                  const ratingVal = m.rating || m.external_rating || 8.8;
+                  const votesCount = m.rating_count ? `${m.rating_count} votes` : "20K+ votes";
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => navigate(withCity(`/movies/${m.id}`, city))}
+                      className="w-[150px] sm:w-[180px] shrink-0 cursor-pointer group flex flex-col"
+                    >
+                      <div className="w-full aspect-[2/3] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-2xs mb-2.5 relative">
+                        {m.poster_url ? (
+                          <img
+                            src={m.poster_url}
+                            alt={m.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                            No Poster
+                          </div>
+                        )}
+                      </div>
 
-                    <h3 className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-[#f84464] transition">
-                      {m.title}
-                    </h3>
-                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                      {m.genre || m.language || "Action, Drama"}
-                    </p>
-                  </div>
-                );
-              })}
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Star className="h-3.5 w-3.5 fill-[#f84464] text-[#f84464]" />
+                        <span className="text-xs font-bold text-gray-900">
+                          {ratingVal}
+                        </span>
+                        <span className="text-[11px] text-gray-500 font-normal">
+                          {votesCount}
+                        </span>
+                      </div>
+
+                      <h3 className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-[#f84464] transition">
+                        {m.title}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate mt-0.5">
+                        {m.genre || m.language || "Action, Drama"}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => scrollSimilarMovies("right")}
+                aria-label="Next movies"
+                className="flex absolute -right-2 sm:-right-5 top-[38%] -translate-y-1/2 z-10 h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-white shadow-md border border-gray-200 text-gray-700 hover:text-gray-900 hover:scale-105 transition cursor-pointer"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
