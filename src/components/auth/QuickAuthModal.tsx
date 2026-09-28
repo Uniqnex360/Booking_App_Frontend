@@ -606,14 +606,18 @@ export function QuickAuthModal() {
             </button>
 
             <div className="mt-4 text-center">
-              <button
-                disabled={!isEmailValid || loading}
-                type="button"
-                onClick={() => setView("password-login")}
-                className="text-xs text-gray-500 hover:text-[#7B1E3D] underline"
-              >
-                Sign in with Password instead
-              </button>
+             <button
+  disabled={!isEmailValid || loading}
+  type="button"
+  onClick={() => setView("password-login")}
+  className={`text-xs underline transition ${
+    isEmailValid && !loading
+      ? "text-gray-500 hover:text-[#7B1E3D] cursor-pointer"
+      : "text-gray-300 cursor-not-allowed no-underline"
+  }`}
+>
+  Sign in with Password instead
+</button>
             </div>
           </div>
         )}
