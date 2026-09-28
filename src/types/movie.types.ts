@@ -93,6 +93,7 @@ export interface MovieReview {
   created_at: string;
   updated_at: string;
   user_name?: string;
+  likes?: number;
 }
 export interface MovieShowtime {
   id: string;

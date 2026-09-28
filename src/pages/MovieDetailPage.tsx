@@ -97,8 +97,6 @@ export default function MovieDetailPage() {
     }
   });
 
-  const [reviewLikesDelta, setReviewLikesDelta] = useState<Record<string, number>>({});
-
   const handleReviewReaction = (reviewId: string, type: "like" | "dislike") => {
     setReviewReactions((prev) => {
       const current = prev[reviewId];
@@ -107,14 +105,6 @@ export default function MovieDetailPage() {
       try {
         localStorage.setItem("vyhbz_review_reactions", JSON.stringify(updated));
       } catch {}
-
-      setReviewLikesDelta((dPrev) => {
-        let deltaChange = 0;
-        if (current === "like") deltaChange -= 1;
-        if (nextType === "like") deltaChange += 1;
-        return { ...dPrev, [reviewId]: (dPrev[reviewId] || 0) + deltaChange };
-      });
-
       return updated;
     });
   };
@@ -580,7 +570,8 @@ export default function MovieDetailPage() {
               reviews.map((r, idx) => {
                 const rId = r.id || `review-${idx}`;
                 const reaction = reviewReactions[rId];
-                const currentLikes = Math.max(0, 0 + (reviewLikesDelta[rId] || 0));
+                const isLiked = reaction === "like";
+                const currentLikes = (r.likes || 0) + (isLiked ? 1 : 0);
 
                 const reviewTime = (() => {
                   if (!r.created_at) return "Recently";
@@ -641,13 +632,13 @@ export default function MovieDetailPage() {
                           type="button"
                           onClick={() => handleReviewReaction(rId, "like")}
                           className={`flex items-center gap-1.5 transition cursor-pointer ${
-                            reaction === "like"
+                            isLiked
                               ? "text-[#f84464] font-bold"
                               : "text-gray-400 hover:text-gray-700"
                           }`}
-                          title={reaction === "like" ? "Unlike" : "Helpful"}
+                          title={isLiked ? "Unlike" : "Helpful"}
                         >
-                          <ThumbsUp className={`h-3.5 w-3.5 ${reaction === "like" ? "fill-current" : ""}`} />
+                          <ThumbsUp className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
                           <span>{currentLikes}</span>
                         </button>
 
@@ -703,65 +694,93 @@ export default function MovieDetailPage() {
                   text: "Fast-paced thriller with memorable soundtrack and crisp background score. Fully worth the hype!",
                   likes: 54,
                 },
-              ].map((sample, sIdx) => (
-                <div
-                  key={sIdx}
-                  className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between mb-3">
+              ].map((sample, sIdx) => {
+                const sId = `sample-${sIdx}`;
+                const reaction = reviewReactions[sId];
+                const isLiked = reaction === "like";
+                const currentLikes = sample.likes + (isLiked ? 1 : 0);
+
+                return (
+                  <div
+                    key={sIdx}
+                    className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                            {sample.name.slice(0, 2)}
+                          </div>
+                          <div>
+                            <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                              {sample.name}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              Booked on <span className="font-semibold text-gray-600">vyhbz</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span>{sample.rating}/10</span>
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
+                          {sample.tags.map((h) => `#${h}`).join(" ")}
+                        </p>
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                          {sample.text}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-4">
+                        <button
+                          type="button"
+                          onClick={() => handleReviewReaction(sId, "like")}
+                          className={`flex items-center gap-1.5 transition cursor-pointer ${
+                            isLiked
+                              ? "text-[#f84464] font-bold"
+                              : "text-gray-400 hover:text-gray-700"
+                          }`}
+                          title={isLiked ? "Unlike" : "Helpful"}
+                        >
+                          <ThumbsUp className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
+                          <span>{currentLikes}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleReviewReaction(sId, "dislike")}
+                          className={`flex items-center gap-1 transition cursor-pointer ${
+                            reaction === "dislike"
+                              ? "text-[#f84464] font-bold"
+                              : "text-gray-400 hover:text-gray-700"
+                          }`}
+                          title={reaction === "dislike" ? "Remove dislike" : "Not helpful"}
+                        >
+                          <ThumbsDown className={`h-3.5 w-3.5 ${reaction === "dislike" ? "fill-current" : ""}`} />
+                        </button>
+                      </div>
+
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
-                          {sample.name.slice(0, 2)}
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
-                            {sample.name}
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">
-                            Booked on <span className="font-semibold text-gray-600">vyhbz</span>
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        <span>{sample.rating}/10</span>
+                        <span>2 Days ago</span>
+                        <button
+                          type="button"
+                          onClick={handleShare}
+                          className="hover:text-gray-700 cursor-pointer p-0.5"
+                          title="Share review"
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
-
-                    <div className="mb-4">
-                      <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
-                        {sample.tags.map((h) => `#${h}`).join(" ")}
-                      </p>
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                        {sample.text}
-                      </p>
-                    </div>
                   </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
-                        <ThumbsUp className="h-3.5 w-3.5" /> {sample.likes}
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
-                        <ThumbsDown className="h-3.5 w-3.5" />
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span>2 Days ago</span>
-                      <button
-                        type="button"
-                        onClick={handleShare}
-                        className="hover:text-gray-700 cursor-pointer p-0.5"
-                        title="Share review"
-                      >
-                        <Share2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
