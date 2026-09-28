@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React from "react";
+import { AlertTriangle, X, ShieldAlert } from "lucide-react";
 
 export interface AgeRestrictionModalProps {
   isOpen: boolean;
@@ -11,55 +12,76 @@ export function AgeRestrictionModal({
   isOpen,
   onClose,
   onConfirm,
+  movieTitle,
 }: AgeRestrictionModalProps) {
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="bg-white rounded-2xl max-w-[450px] w-full shadow-2xl border border-gray-100 overflow-hidden animate-in zoom-in-95 duration-200"
+        className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="pt-6 px-6 pb-4">
-          <h3 className="text-[19px] sm:text-xl font-bold text-gray-900 tracking-tight">
-            This movie is rated &quot;A&quot;
-          </h3>
-        </div>
+        {/* Close Button */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
+          aria-label="Close"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
-        {/* Content Body: 18+ Badge + Explanation */}
-        <div className="flex items-center gap-4 px-6 pb-6">
-          <div className="shrink-0 w-16 h-16 rounded-full border-[3.5px] border-[#c93b54] flex items-center justify-center text-gray-900 font-bold text-xl select-none">
-            18+
+        {/* Warning Icon & Header */}
+        <div className="flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-red-600 mb-3 shadow-xs">
+            <ShieldAlert className="w-7 h-7" />
           </div>
-          <p className="text-[13.5px] sm:text-[14px] text-gray-600 leading-relaxed font-normal">
-            This movie is only for viewers above 18. Please carry a valid ID/Age Proof to the theatre. If you are denied entry due to age or ID issues, you will not get a refund.
-          </p>
-        </div>
 
-        {/* Footer / Continue Button */}
-        <div className="border-t border-gray-100 px-6 py-4 bg-white">
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="w-full py-3.5 px-4 rounded-xl bg-[#cb3b56] hover:bg-[#b8314a] active:bg-[#a5293f] text-white font-semibold text-base transition-colors duration-150 shadow-xs cursor-pointer text-center"
-          >
-            Continue
-          </button>
+          <div className="inline-flex items-center gap-1.5 bg-red-100 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full mb-2 border border-red-200">
+            <span>RATED 'A'</span>
+            <span>•</span>
+            <span>18+ ONLY</span>
+          </div>
+
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+            Age Restriction Advisory
+          </h3>
+
+          {movieTitle && (
+            <p className="text-xs font-semibold text-gray-500 mb-3">
+              for <span className="text-gray-800 font-bold">{movieTitle}</span>
+            </p>
+          )}
+
+          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-4 text-center">
+            This movie is certified <strong className="text-gray-900">'A' (Adults Only)</strong> by the CBFC and is strictly restricted to viewers aged <strong className="text-gray-900">18 years and above</strong>.
+          </p>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left w-full mb-6 text-xs text-amber-800 flex gap-2.5 items-start">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="leading-snug">
+              Please carry a valid government-issued photo ID. Entry will be denied to anyone under 18 years without exception, even if accompanied by an adult, and tickets cannot be refunded.
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3 w-full">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold text-xs sm:text-sm transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-[#F84464] hover:bg-[#d63451] text-white font-semibold text-xs sm:text-sm transition shadow-sm cursor-pointer"
+            >
+              I am 18+ / Proceed
+            </button>
+          </div>
         </div>
       </div>
     </div>
