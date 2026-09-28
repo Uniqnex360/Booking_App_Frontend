@@ -9,9 +9,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/common/Loader";
 import {
-  Heart,
   Play,
-  Share2,
   Star,
   X,
   ChevronRight,
@@ -32,7 +30,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { LoadingPage } from "./LoadingPage";
 import { isInWishlist, toggleWishlist } from "@/utils/wishlist";
 
-const MAX_TICKETS = 10;
 
 function CastCrewCard({ member }: { member: CastCrewMember }) {
   return (
@@ -90,24 +87,7 @@ export default function MovieDetailPage() {
     }
   }, [movie]);
 
-  const handleToggleWishlist = () => {
-    if (!movie) return;
-    const added = toggleWishlist({
-      id: movie.id,
-      type: "MOVIE",
-      title: movie.title,
-      image_url: movie.poster_url || undefined,
-      subtitle: `${genres.join(", ")} • ${movie.language || "English"}`,
-      link: `/movies/${movie.id}?city=${city}`,
-      addedAt: new Date().toISOString(),
-    });
-    setInWishlist(added);
-    if (added) {
-      toast.success(`"${movie.title}" added to your Wishlist`);
-    } else {
-      toast.info(`"${movie.title}" removed from your Wishlist`);
-    }
-  };
+  
 
   const location = useLocation();
 
@@ -190,24 +170,7 @@ export default function MovieDetailPage() {
   const genres = movie.genre.split(",").map((g) => g.trim());
   const embedTrailerUrl = getEmbedTrailerUrl(movie.trailer_url);
 
-  const handleBookTicketsClick = () => {
-    const langCount = Object.keys(langFormatMap).length;
-    const totalFormats = Object.values(langFormatMap).flat().length;
-
-    if (langCount > 1 || totalFormats > 1) {
-      setShowLangFormatModal(true);
-    } else {
-      const defaultLang = Object.keys(langFormatMap)[0] || movie.language;
-      const defaultFormat = langFormatMap[defaultLang]?.[0] || "2D";
-      const filterQuery = `${defaultLang} - ${defaultFormat}`;
-      navigate(
-        withCity(
-          `/buytickets/${movie.id}?filter=${encodeURIComponent(filterQuery)}`,
-          city,
-        ),
-      );
-    }
-  };
+  
 
   const handleSelectLangFormat = (lang: string, format: string) => {
     setSelectedLang(lang);
@@ -227,28 +190,7 @@ export default function MovieDetailPage() {
     return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
   };
 
-  const handleShare = async () => {
-    const url = getShareUrl();
-    const title = movie?.title ?? "Movie";
-    const text = `Watch ${title} on Vyhbz`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, text, url });
-        return;
-      }
-    } catch {}
-
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      toast.success("Link copied!");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
+  
 
   const synopsisText =
     movie.synopsis || "No synopsis available for this movie.";
@@ -278,30 +220,14 @@ export default function MovieDetailPage() {
         )}
 
         <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-          <div className="flex items-center justify-between mb-5">
-            <button
-              type="button"
-              onClick={() => navigate(withCity("/movies", city))}
-              className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition group cursor-pointer"
-            >
-              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition" />
-              Back to Movies
-            </button>
-
-            <button
-              type="button"
-              onClick={handleShare}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/15 text-white text-sm font-medium transition cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
-              title="Share movie"
-            >
-              {copied ? (
-                <Check className="h-4 w-4 text-green-400" />
-              ) : (
-                <Share2 className="h-4 w-4" />
-              )}
-              <span>{copied ? "Copied!" : "Share"}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate(withCity("/movies", city))}
+            className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition mb-5 group"
+          >
+            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition" />
+            Back to Movies
+          </button>
 
           <div className="flex gap-8 items-start">
             <div className="hidden sm:block w-[240px] shrink-0">
@@ -424,38 +350,7 @@ export default function MovieDetailPage() {
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
 
-              <div className="flex items-center gap-3 mt-8">
-                <button
-                  onClick={handleBookTicketsClick}
-                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/30"
-                >
-                  Book tickets
-                </button>
-
-                <button
-                  onClick={handleToggleWishlist}
-                  className={`w-11 h-11 rounded-full flex items-center justify-center transition border ${
-                    inWishlist
-                      ? "bg-[#7B1E3D] border-[#7B1E3D] text-white"
-                      : "bg-white/10 border-white/20 hover:bg-white/20 text-white"
-                  }`}
-                  title={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
-                >
-                  <Heart className={`h-5 w-5 ${inWishlist ? "fill-current" : ""}`} />
-                </button>
-
-                <button
-                  onClick={handleShare}
-                  className="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition"
-                  title="Share movie"
-                >
-                  {copied ? (
-                    <Check className="h-5 w-5 text-green-400" />
-                  ) : (
-                    <Share2 className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
+              
             </div>
           </div>
         </div>
