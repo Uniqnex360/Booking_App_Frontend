@@ -475,7 +475,15 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                   Rate Now
                 </button>
               </div>
-
+              <div className="flex flex-wrap items-center gap-2 text-sm text-white/90 mt-5">
+                <span>{formatDuration(movie.duration_min)}</span>
+                <span className="text-white/40">•</span>
+                <span>{genres.join(", ")}</span>
+                <span className="text-white/40">•</span>
+                <span>{movie.certificate}</span>
+                <span className="text-white/40">•</span>
+                <span>{formatReleaseDate(movie.release_date)}</span>
+              </div>
               <div className="flex flex-wrap gap-2 mt-5">
                 {Object.values(langFormatMap)
                   .flat()
@@ -492,15 +500,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-sm text-white/90 mt-5">
-                <span>{formatDuration(movie.duration_min)}</span>
-                <span className="text-white/40">•</span>
-                <span>{genres.join(", ")}</span>
-                <span className="text-white/40">•</span>
-                <span>{movie.certificate}</span>
-                <span className="text-white/40">•</span>
-                <span>{formatReleaseDate(movie.release_date)}</span>
-              </div>
+              
 
               <div className="flex items-center gap-3 mt-8">
                 <button
