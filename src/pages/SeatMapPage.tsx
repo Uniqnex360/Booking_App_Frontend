@@ -173,16 +173,14 @@ export default function SeatMapPage() {
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
 
-    const isAlreadySelected = selectedSeats.some(
-      (s) => s.seat_ref === clickedSeat.seat_ref,
-    );
-    if (isAlreadySelected) {
-      setSelectedSeats(
-        selectedSeats.filter((s) => s.seat_ref !== clickedSeat.seat_ref),
-      );
-      idempotencyKeyRef.current = crypto.randomUUID();
-      return;
-    }
+   const isAlreadySelected = selectedSeats.some(
+  (s) => s.seat_ref === clickedSeat.seat_ref,
+);
+if (isAlreadySelected) {
+  setSelectedSeats([]);
+  idempotencyKeyRef.current = crypto.randomUUID();
+  return;
+}
 
     const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
     const clickedIdx = sortedRow.findIndex(
@@ -269,7 +267,9 @@ export default function SeatMapPage() {
         }
       }
     } catch (err: any) {
-      if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
+  setHoldId(null);
+  setHeldUntil(null);
+  if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
         toast.error(
           "One or more selected seats were just taken. Refreshing...",
         );
