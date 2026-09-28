@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import {
+  Link,
   useLocation,
   useNavigate,
   useParams,
@@ -19,6 +20,7 @@ import {
   Check,
   ThumbsUp,
   ThumbsDown,
+  PartyPopperIcon,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { toast } from "sonner";
@@ -887,7 +889,50 @@ export default function MovieDetailPage() {
           </div>
         </div>
       )}
-
+      <div className="max-w-[1240px] mx-auto px-4 py-4">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500 font-normal">
+                    <Link to="/" className="hover:text-gray-900 transition">
+                      Home
+                    </Link>
+                    <span className="text-gray-400">→</span>
+                    <span className="hover:text-gray-900 cursor-pointer">
+                      Movies in {city}
+                    </span>
+                    <span className="text-gray-400">→</span>
+                    <span className="hover:text-gray-900 cursor-pointer">
+                      {movie.language} Movies
+                    </span>
+                    <span className="text-gray-400">→</span>
+                    <span className="text-gray-800 font-medium">{movie.title}</span>
+                  </div>
+                </div>
+      
+                {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
+                <div className="bg-[#404046] text-white py-4 px-4 sm:px-8 mt-4">
+                  <div className="max-w-[1240px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                        <PartyPopperIcon className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                          <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
+                            List your Show
+                          </span>
+                          <span className="text-xs text-gray-300">
+                            Got a show, event, activity or a great experience? Partner with us &amp; get listed on Vyhbhz
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Link
+                      to="/partner/register"
+                      className="bg-[#EC5E71] hover:bg-[#e04a5e] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
+                    >
+                      Contact today!
+                    </Link>
+                  </div>
+                </div>
       <Footer />
 
       {showTrailerModal && movie.trailer_url && (
