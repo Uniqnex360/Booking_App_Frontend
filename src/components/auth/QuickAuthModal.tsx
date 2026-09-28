@@ -607,6 +607,7 @@ export function QuickAuthModal() {
 
             <div className="mt-4 text-center">
               <button
+                disabled={!isEmailValid || loading}
                 type="button"
                 onClick={() => setView("password-login")}
                 className="text-xs text-gray-500 hover:text-[#7B1E3D] underline"
