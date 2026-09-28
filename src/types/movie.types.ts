@@ -49,12 +49,6 @@ export interface VenueShowtimeItem {
   language?: string;
 }
 
-export interface CastCrewMember {
-  name: string;
-  role: string;
-  photo_url?: string | null;
-}
-
 export interface MovieDetail {
   id: string;
   title: string;
@@ -71,8 +65,6 @@ export interface MovieDetail {
   genre: string;
   release_date: string;
   venues?: any[];
-  cast?: CastCrewMember[];
-  crew?: CastCrewMember[];
 }
 export interface MovieReviewsSummary {
   rating: number;

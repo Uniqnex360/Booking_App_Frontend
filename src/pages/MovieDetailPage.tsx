@@ -22,7 +22,7 @@ import { withCity } from "@/lib/cityLink";
 import { toast } from "sonner";
 import { getMovieById } from "@/api/movie.api";
 import RatingModal from "./RatingModal";
-import { MovieDetail, CastCrewMember } from "@/types/movie.types";
+import { MovieDetail } from "@/types/movie.types";
 import {
   formatDuration,
   formatReleaseDate,
@@ -33,36 +33,6 @@ import { LoadingPage } from "./LoadingPage";
 import { isInWishlist, toggleWishlist } from "@/utils/wishlist";
 
 const MAX_TICKETS = 10;
-
-function CastCrewCard({ member }: { member: CastCrewMember }) {
-  return (
-    <div className="flex flex-col items-start shrink-0 w-[112px] sm:w-[124px]">
-      <div className="w-[104px] h-[104px] sm:w-[116px] sm:h-[116px] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 mb-2 shrink-0 shadow-2xs">
-        {member.photo_url ? (
-          <img
-            src={member.photo_url}
-            alt={member.name}
-            className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-200"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f3f4f6&color=6b7280&size=120`;
-            }}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 font-bold text-xl">
-            {member.name.charAt(0).toUpperCase()}
-          </div>
-        )}
-      </div>
-      <p className="text-xs sm:text-sm font-semibold text-gray-900 leading-tight line-clamp-2">
-        {member.name}
-      </p>
-      <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 leading-tight line-clamp-1">
-        {member.role}
-      </p>
-    </div>
-  );
-}
 
 export default function MovieDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -465,38 +435,6 @@ export default function MovieDetailPage() {
           )}
         </div>
       </div>
-
-      {/* ─── Cast Section (BookMyShow Exact) ─── */}
-      {movie.cast && movie.cast.length > 0 && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
-              Cast
-            </h2>
-            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {movie.cast.map((member, idx) => (
-                <CastCrewCard key={`${member.name}-${idx}`} member={member} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── Crew Section (BookMyShow Exact) ─── */}
-      {movie.crew && movie.crew.length > 0 && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
-              Crew
-            </h2>
-            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {movie.crew.map((member, idx) => (
-                <CastCrewCard key={`${member.name}-${idx}`} member={member} />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer />
 
