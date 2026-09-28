@@ -656,7 +656,8 @@ export default function ProfilePage() {
                       <h3 className="mb-4 text-sm font-bold text-gray-500 uppercase tracking-wider">
                         Upcoming
                       </h3>
-<div className="grid gap-4 md:grid-cols-2">                        {upcoming.map((b) => (
+                      <div className="grid gap-4">
+                        {upcoming.map((b) => (
                           <BookingCard key={b.id} booking={b} />
                         ))}
                       </div>
@@ -667,7 +668,8 @@ export default function ProfilePage() {
                       <h3 className="mb-4 text-sm font-bold text-gray-500 uppercase tracking-wider">
                         Past
                       </h3>
-<div className="grid gap-4 md:grid-cols-2">                        {past.map((b) => (
+                      <div className="grid gap-4">
+                        {past.map((b) => (
                           <BookingCard key={b.id} booking={b} past />
                         ))}
                       </div>
