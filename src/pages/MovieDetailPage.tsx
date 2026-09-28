@@ -913,8 +913,8 @@ export default function MovieDetailPage() {
           </div>
         </div>
       )}
-      <div className="max-w-[1240px] mx-auto px-4 py-4">
-  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500 font-normal">
+      <div className="w-full max-w-[1240px] mx-auto px-4 py-4">
+  <div className="flex flex-wrap items-center justify-start gap-1.5 text-[11px] text-gray-500 font-normal">
     <Link to="/" className="hover:text-gray-900 transition">Home</Link>
     <span className="text-gray-400">→</span>
     <span className="hover:text-gray-900 cursor-pointer">Movies in {city}</span>
