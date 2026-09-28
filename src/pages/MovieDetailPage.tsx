@@ -926,8 +926,8 @@ export default function MovieDetailPage() {
 </div>
 
       {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
-      <div className="bg-[#404046] text-white py-4 px-4 sm:px-8 mt-4">
-        <div className="max-w-[1240px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-[#404046] text-white py-4 mt-4">
+  <div className="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
               <PartyPopperIcon className="h-5 w-5 text-white" />
