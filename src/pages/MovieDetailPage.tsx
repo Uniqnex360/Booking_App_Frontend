@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { getMovieById, getMovieReviews } from "@/api/movie.api";
 import { api, unwrap } from "@/api/client";
 import RatingModal from "./RatingModal";
+import { AgeRestrictionModal } from "@/components/common/AgeRestrictionModal";
 import { MovieDetail, CastCrewMember, MovieReview } from "@/types/movie.types";
 import {
   formatDuration,
@@ -81,6 +82,8 @@ export default function MovieDetailPage() {
   // Modal States
   const [showLangFormatModal, setShowLangFormatModal] = useState(false);
   const [showTrailerModal, setShowTrailerModal] = useState(false);
+  const [showAgeWarningModal, setShowAgeWarningModal] = useState(false);
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   const [selectedLang, setSelectedLang] = useState<string>("");
   const [selectedFormat, setSelectedFormat] = useState<string>("");
@@ -254,6 +257,15 @@ const [showStickyBar, setShowStickyBar] = useState(false);
   const embedTrailerUrl = getEmbedTrailerUrl(movie.trailer_url);
 
   const handleBookTicketsClick = () => {
+    if (movie?.certificate?.toUpperCase() === "A" && !ageConfirmed) {
+      setShowAgeWarningModal(true);
+      return;
+    }
+    proceedWithBooking();
+  };
+
+  const proceedWithBooking = () => {
+    if (!movie) return;
     const langCount = Object.keys(langFormatMap).length;
     const totalFormats = Object.values(langFormatMap).flat().length;
 
@@ -482,7 +494,15 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                 <span className="text-white/40">•</span>
                 <span>{genres.join(", ")}</span>
                 <span className="text-white/40">•</span>
-                <span>{movie.certificate}</span>
+                <span
+                  className={
+                    movie.certificate?.toUpperCase() === "A"
+                      ? "bg-red-500/25 border border-red-500 text-red-200 font-bold px-2 py-0.5 rounded text-xs inline-flex items-center gap-1 shadow-xs"
+                      : ""
+                  }
+                >
+                  {movie.certificate?.toUpperCase() === "A" ? "A • 18+" : movie.certificate}
+                </span>
                 <span className="text-white/40">•</span>
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
@@ -1085,6 +1105,17 @@ const [showStickyBar, setShowStickyBar] = useState(false);
         onClose={() => setIsRatingModalOpen(false)}
         movieId={movie.id}
         onSubmitSuccess={fetchMovie}
+      />
+
+      <AgeRestrictionModal
+        isOpen={showAgeWarningModal}
+        movieTitle={movie.title}
+        onClose={() => setShowAgeWarningModal(false)}
+        onConfirm={() => {
+          setAgeConfirmed(true);
+          setShowAgeWarningModal(false);
+          proceedWithBooking();
+        }}
       />
     </div>
   );

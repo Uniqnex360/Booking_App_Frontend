@@ -22,6 +22,7 @@ import {
 import { withCity } from "@/lib/cityLink";
 import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
+import { AgeRestrictionModal } from "@/components/common/AgeRestrictionModal";
 
 // --- Interfaces & Utility functions ---
 interface ShowtimeSlot {
@@ -412,13 +413,26 @@ export default function BuyTicketsPage() {
     }
   };
 
-  const handleShowtimeClick = (slotId: string) => {
+  const [showAgeWarningModal, setShowAgeWarningModal] = useState(false);
+  const [pendingSlotId, setPendingSlotId] = useState<string | null>(null);
+  const [ageVerified, setAgeVerified] = useState(false);
+
+  const proceedWithSlot = (slotId: string) => {
     setSelectedSlotId(slotId);
     setTempTicketCount(ticketCount);
     setShowTicketModal(true);
     if (!showtimePricingMap[slotId]) {
       fetchShowtimePricing(slotId);
     }
+  };
+
+  const handleShowtimeClick = (slotId: string) => {
+    if (movie?.certificate?.toUpperCase() === "A" && !ageVerified) {
+      setPendingSlotId(slotId);
+      setShowAgeWarningModal(true);
+      return;
+    }
+    proceedWithSlot(slotId);
   };
 
   const currentSlotTiers = useMemo(() => {
@@ -475,8 +489,14 @@ export default function BuyTicketsPage() {
               Movie runtime: {formatRuntime(movie.duration_min)}
             </span>
             {movie.certificate && (
-              <span className="border border-gray-300 rounded-full px-2.5 py-0.5 text-xs text-gray-600 font-medium">
-                {movie.certificate}
+              <span
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                  movie.certificate?.toUpperCase() === "A"
+                    ? "border-red-500 bg-red-50 text-red-600 font-bold"
+                    : "border-gray-300 text-gray-600"
+                }`}
+              >
+                {movie.certificate?.toUpperCase() === "A" ? "A • 18+" : movie.certificate}
               </span>
             )}
             {genres.map((g) => (
@@ -488,6 +508,12 @@ export default function BuyTicketsPage() {
               </span>
             ))}
           </div>
+          {movie.certificate?.toUpperCase() === "A" && (
+            <div className="mt-3 inline-flex items-center gap-2 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-1.5 rounded-md font-medium">
+              <span className="font-bold">Age Restriction:</span>
+              <span>This movie is rated 'A' (Adults Only) and strictly for viewers aged 18 and above. Please carry valid government ID.</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1463,6 +1489,22 @@ export default function BuyTicketsPage() {
           </div>
         </div>
       )}
+      <AgeRestrictionModal
+        isOpen={showAgeWarningModal}
+        movieTitle={movie?.title}
+        onClose={() => {
+          setShowAgeWarningModal(false);
+          setPendingSlotId(null);
+        }}
+        onConfirm={() => {
+          setAgeVerified(true);
+          setShowAgeWarningModal(false);
+          if (pendingSlotId) {
+            proceedWithSlot(pendingSlotId);
+            setPendingSlotId(null);
+          }
+        }}
+      />
       <Footer />
     </div>
   );
