@@ -1185,9 +1185,16 @@ export default function BuyTicketsPage() {
                                     ENG
                                   </span>
                                 </div>
-                                <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
-                                  {slot.format || "2D"}
-                                </div>
+                                {slot.screen_name?.toLowerCase().includes("couple") ||
+                                (slot.format || "").toLowerCase().includes("couple") ? (
+                                  <span className="text-[8px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-1 py-0.5 rounded uppercase tracking-wider leading-none mt-1 border border-[#7B1E3D]/30">
+                                    COUPLE
+                                  </span>
+                                ) : (
+                                  <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
+                                    {slot.format || "2D"}
+                                  </div>
+                                )}
                               </button>
                             </div>
                           );

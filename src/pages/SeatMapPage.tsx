@@ -39,6 +39,13 @@ export default function SeatMapPage() {
   );
 
   const [mapData, setMapData] = useState<SeatMapDetail | null>(null);
+
+  const isCoupleScreen = useMemo(() => {
+    const sName = (mapData?.screen_name || "").toLowerCase();
+    const fmt = (mapData?.format || "").toLowerCase();
+    return sName.includes("couple") || fmt.includes("couple");
+  }, [mapData]);
+
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState<SeatItem[]>([]);
   const [isCommitLoading, setIsCommitLoading] = useState(false);
@@ -118,6 +125,16 @@ export default function SeatMapPage() {
   }, [requiredSeatCount]);
 
   useEffect(() => {
+    if (isCoupleScreen && requiredSeatCount % 2 !== 0) {
+      const evenQty = Math.max(2, requiredSeatCount + 1);
+      const params = new URLSearchParams(searchParams);
+      params.set("qty", String(evenQty));
+      setSearchParams(params, { replace: true });
+      setTempTicketCount(evenQty);
+    }
+  }, [isCoupleScreen, requiredSeatCount, searchParams, setSearchParams]);
+
+  useEffect(() => {
     if (!heldUntil) return;
     const interval = setInterval(() => {
       const remaining = Math.max(
@@ -173,14 +190,95 @@ export default function SeatMapPage() {
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
 
-   const isAlreadySelected = selectedSeats.some(
-  (s) => s.seat_ref === clickedSeat.seat_ref,
-);
-if (isAlreadySelected) {
-  setSelectedSeats([]);
-  idempotencyKeyRef.current = crypto.randomUUID();
-  return;
-}
+    if (isCoupleScreen) {
+      const partnerNum =
+        clickedSeat.number % 2 === 1
+          ? clickedSeat.number + 1
+          : clickedSeat.number - 1;
+      const partnerSeat = rowSeats.find((s) => s.number === partnerNum);
+
+      if (!partnerSeat || !partnerSeat.is_available) {
+        toast.error("Both seats of a couple recliner must be available to book.");
+        return;
+      }
+
+      // If clicked seat or partner is already selected, deselect
+      const isAlreadySelected = selectedSeats.some(
+        (s) =>
+          s.seat_ref === clickedSeat.seat_ref ||
+          s.seat_ref === partnerSeat.seat_ref,
+      );
+      if (isAlreadySelected) {
+        setSelectedSeats([]);
+        idempotencyKeyRef.current = crypto.randomUUID();
+        return;
+      }
+
+      // Ensure requiredSeatCount is an even number >= 2
+      let effectiveQty = requiredSeatCount;
+      if (effectiveQty % 2 !== 0 || effectiveQty < 2) {
+        effectiveQty = Math.max(2, effectiveQty % 2 === 1 ? effectiveQty + 1 : 2);
+        const params = new URLSearchParams(searchParams);
+        params.set("qty", String(effectiveQty));
+        setSearchParams(params, { replace: true });
+        setTempTicketCount(effectiveQty);
+        toast.info(
+          `Couple seats can only be booked in pairs of 2. Quantity updated to ${effectiveQty}.`,
+        );
+      }
+
+      const pairsNeeded = Math.floor(effectiveQty / 2);
+
+      // Build sorted pairs in this row
+      const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
+      const rowPairs: SeatItem[][] = [];
+      for (let i = 0; i < sortedRow.length; i++) {
+        const s1 = sortedRow[i];
+        if (s1.number % 2 === 1) {
+          const s2 = sortedRow.find((s) => s.number === s1.number + 1);
+          if (s2) {
+            rowPairs.push([s1, s2]);
+          }
+        }
+      }
+
+      const clickedPairIdx = rowPairs.findIndex((p) =>
+        p.some((s) => s.seat_ref === clickedSeat.seat_ref),
+      );
+      if (clickedPairIdx === -1) return;
+
+      // Try contiguous window of pairs
+      for (let shift = 0; shift < pairsNeeded; shift++) {
+        const startIdx = clickedPairIdx - shift;
+        const endIdx = startIdx + pairsNeeded;
+
+        if (startIdx >= 0 && endIdx <= rowPairs.length) {
+          const candidatePairs = rowPairs.slice(startIdx, endIdx);
+          const allAvailable = candidatePairs.every((pair) =>
+            pair.every((s) => s.is_available),
+          );
+          if (allAvailable) {
+            setSelectedSeats(candidatePairs.flat());
+            idempotencyKeyRef.current = crypto.randomUUID();
+            return;
+          }
+        }
+      }
+
+      // Fallback: select just the clicked pair
+      setSelectedSeats([clickedSeat, partnerSeat]);
+      idempotencyKeyRef.current = crypto.randomUUID();
+      return;
+    }
+
+    const isAlreadySelected = selectedSeats.some(
+      (s) => s.seat_ref === clickedSeat.seat_ref,
+    );
+    if (isAlreadySelected) {
+      setSelectedSeats([]);
+      idempotencyKeyRef.current = crypto.randomUUID();
+      return;
+    }
 
     const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
     const clickedIdx = sortedRow.findIndex(
@@ -222,6 +320,27 @@ if (isAlreadySelected) {
         `Please select exactly ${requiredSeatCount} contiguous seats.`,
       );
       return;
+    }
+
+    if (isCoupleScreen) {
+      if (selectedSeats.length % 2 !== 0) {
+        toast.error("Couple seats must be booked in pairs of 2.");
+        return;
+      }
+      const selectedNumsByRow = new Map<string, Set<number>>();
+      for (const s of selectedSeats) {
+        if (!selectedNumsByRow.has(s.row_label)) {
+          selectedNumsByRow.set(s.row_label, new Set());
+        }
+        selectedNumsByRow.get(s.row_label)!.add(s.number);
+      }
+      for (const s of selectedSeats) {
+        const partnerNum = s.number % 2 === 1 ? s.number + 1 : s.number - 1;
+        if (!selectedNumsByRow.get(s.row_label)?.has(partnerNum)) {
+          toast.error("Both seats of each couple pair must be selected together.");
+          return;
+        }
+      }
     }
     setIsCommitLoading(true);
 
@@ -335,10 +454,14 @@ if (isAlreadySelected) {
   Object.entries(rawRows).forEach(([rowLabel, rowData]) => {
     let tierName = "CLASSIC";
     const priceRupees = rowData.price_paise / 100;
-    if (priceRupees >= 350) tierName = "RECLINER";
-    else if (priceRupees >= 250) tierName = "PRIME PLUS";
-    else if (priceRupees >= 200) tierName = "GOLD";
-    else if (priceRupees >= 150) tierName = "SILVER";
+    if (isCoupleScreen) {
+      tierName = priceRupees >= 480 ? "COUPLE ROYAL LOUNGER" : "COUPLE RECLINER";
+    } else {
+      if (priceRupees >= 350) tierName = "RECLINER";
+      else if (priceRupees >= 250) tierName = "PRIME PLUS";
+      else if (priceRupees >= 200) tierName = "GOLD";
+      else if (priceRupees >= 150) tierName = "SILVER";
+    }
 
     let existingTier = tiers.find((t) => t.price_paise === rowData.price_paise);
     if (!existingTier) {
@@ -554,8 +677,13 @@ if (isAlreadySelected) {
                 <div key={tier.price_paise} className="w-full flex flex-col items-start my-3">
                   <div className="w-full flex items-center my-5 select-none">
                     <div className="flex-grow h-px bg-gray-200" />
-                    <span className="px-4 text-xs font-semibold text-gray-500 tracking-wider uppercase">
+                    <span className="px-4 text-xs font-semibold text-gray-500 tracking-wider uppercase flex items-center gap-2">
                       {formatRupees(tier.price_paise)} {tier.name}
+                      {isCoupleScreen && (
+                        <span className="text-[10px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 border border-[#7B1E3D]/25 px-2 py-0.5 rounded-full normal-case">
+                          Booked in pairs of 2 • {formatRupees(tier.price_paise * 2)}/pair
+                        </span>
+                      )}
                     </span>
                     <div className="flex-grow h-px bg-gray-200" />
                   </div>
@@ -584,54 +712,145 @@ if (isAlreadySelected) {
                           <div className="bg-gray-100 self-stretch" />
 
                           <div className="flex items-center justify-center">
-                            {blocks.map((block, bIdx) => (
-                              <div key={bIdx} className="flex items-center">
-                                {bIdx > 0 && (
-                                  <div className="w-4 sm:w-6 shrink-0" />
-                                )}
-                                <div className="flex items-center gap-1 sm:gap-1.5">
-                                  {block.map((seat) => {
-                                    const isSelected = selectedSeats.some(
-                                      (s) => s.seat_ref === seat.seat_ref,
-                                    );
-
-                                    let seatStyle = "";
-                                    if (!seat.is_available) {
-                                      seatStyle =
-                                        "bg-[#EEEEEE] border border-[#EEEEEE] text-transparent cursor-not-allowed";
-                                    } else if (isSelected) {
-                                      seatStyle =
-                                        "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
+                            {isCoupleScreen ? (
+                              <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
+                                {(() => {
+                                  const sorted = [...seatList].sort((a, b) => a.number - b.number);
+                                  const pairs: SeatItem[][] = [];
+                                  for (let i = 0; i < sorted.length; i += 2) {
+                                    if (
+                                      i + 1 < sorted.length &&
+                                      sorted[i].number % 2 === 1 &&
+                                      sorted[i + 1].number === sorted[i].number + 1
+                                    ) {
+                                      pairs.push([sorted[i], sorted[i + 1]]);
                                     } else {
-                                      seatStyle =
-                                        "bg-white border border-[#1ea83c] text-[#1ea83c] hover:bg-[#1ea83c] hover:text-white cursor-pointer";
+                                      pairs.push([sorted[i]]);
                                     }
+                                  }
+
+                                  return pairs.map((pair, pIdx) => {
+                                    const isPairSelected = pair.every((s) =>
+                                      selectedSeats.some((sel) => sel.seat_ref === s.seat_ref),
+                                    );
+                                    const isPairSold = pair.some((s) => !s.is_available);
 
                                     return (
-                                      <button
-                                        key={seat.seat_ref}
-                                        disabled={
-                                          !seat.is_available || Boolean(holdId)
-                                        }
-                                        onClick={() =>
-                                          handleSeatClick(seat, seatList)
-                                        }
-                                        title={
-                                          seat.is_available
-                                            ? `Seat ${seat.code || `${seat.row_label}${seat.number}`} • ${formatRupees(
-                                                seat.price_paise,
-                                              )}`
-                                            : `Seat ${seat.code || `${seat.row_label}${seat.number}`} (Sold)`
-                                        }
-                                        className={`w-6 h-6 sm:w-7 sm:h-7 rounded-[3px] text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all ${seatStyle}`}
+                                      <div
+                                        key={pIdx}
+                                        className={`group/pair relative flex items-center rounded-[5px] transition-all ${
+                                          isPairSelected
+                                            ? "ring-2 ring-[#1ea83c] shadow-xs"
+                                            : isPairSold
+                                            ? "opacity-60 cursor-not-allowed"
+                                            : "hover:ring-1 hover:ring-[#1ea83c]"
+                                        }`}
                                       >
-                                        {String(seat.number).padStart(2, "0")}
-                                      </button>
+                                        {pair.map((seat, sIdx) => {
+                                          const isSelected = selectedSeats.some(
+                                            (s) => s.seat_ref === seat.seat_ref,
+                                          );
+                                          const isLeft = sIdx === 0;
+                                          const isRight = sIdx === 1;
+
+                                          let seatStyle = "";
+                                          if (!seat.is_available || isPairSold) {
+                                            seatStyle =
+                                              "bg-[#EEEEEE] border border-[#EEEEEE] text-transparent cursor-not-allowed";
+                                          } else if (isSelected) {
+                                            seatStyle =
+                                              "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
+                                          } else {
+                                            seatStyle =
+                                              "bg-white border border-[#1ea83c] text-[#1ea83c] group-hover/pair:bg-[#1ea83c] group-hover/pair:text-white cursor-pointer";
+                                          }
+
+                                          const rounding =
+                                            pair.length === 2
+                                              ? isLeft
+                                                ? "rounded-l-[5px] rounded-r-none border-r-0"
+                                                : "rounded-r-[5px] rounded-l-none border-l-0"
+                                              : "rounded-[3px]";
+
+                                          return (
+                                            <button
+                                              key={seat.seat_ref}
+                                              disabled={
+                                                !seat.is_available ||
+                                                isPairSold ||
+                                                Boolean(holdId)
+                                              }
+                                              onClick={() =>
+                                                handleSeatClick(seat, seatList)
+                                              }
+                                              title={
+                                                seat.is_available && !isPairSold
+                                                  ? `Couple Seat ${seat.code || `${seat.row_label}${seat.number}`} • ${formatRupees(
+                                                      seat.price_paise,
+                                                    )} (Booked in pairs of 2)`
+                                                  : `Couple Seat ${seat.code || `${seat.row_label}${seat.number}`} (Sold)`
+                                              }
+                                              className={`w-7 h-7 sm:w-8 sm:h-8 text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all ${rounding} ${seatStyle}`}
+                                            >
+                                              {String(seat.number).padStart(2, "0")}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
                                     );
-                                  })}
-                                </div>
+                                  });
+                                })()}
                               </div>
-                            ))}
+                            ) : (
+                              blocks.map((block, bIdx) => (
+                                <div key={bIdx} className="flex items-center">
+                                  {bIdx > 0 && (
+                                    <div className="w-4 sm:w-6 shrink-0" />
+                                  )}
+                                  <div className="flex items-center gap-1 sm:gap-1.5">
+                                    {block.map((seat) => {
+                                      const isSelected = selectedSeats.some(
+                                        (s) => s.seat_ref === seat.seat_ref,
+                                      );
+
+                                      let seatStyle = "";
+                                      if (!seat.is_available) {
+                                        seatStyle =
+                                          "bg-[#EEEEEE] border border-[#EEEEEE] text-transparent cursor-not-allowed";
+                                      } else if (isSelected) {
+                                        seatStyle =
+                                          "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
+                                      } else {
+                                        seatStyle =
+                                          "bg-white border border-[#1ea83c] text-[#1ea83c] hover:bg-[#1ea83c] hover:text-white cursor-pointer";
+                                      }
+
+                                      return (
+                                        <button
+                                          key={seat.seat_ref}
+                                          disabled={
+                                            !seat.is_available || Boolean(holdId)
+                                          }
+                                          onClick={() =>
+                                            handleSeatClick(seat, seatList)
+                                          }
+                                          title={
+                                            seat.is_available
+                                              ? `Seat ${seat.code || `${seat.row_label}${seat.number}`} • ${formatRupees(
+                                                  seat.price_paise,
+                                                )}`
+                                              : `Seat ${seat.code || `${seat.row_label}${seat.number}`} (Sold)`
+                                          }
+                                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-[3px] text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all ${seatStyle}`}
+                                        >
+                                          {String(seat.number).padStart(2, "0")}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ))
+                            )}
                           </div>
                         </div>
                       );
@@ -754,6 +973,17 @@ if (isAlreadySelected) {
             <div className="w-3.5 h-3.5 rounded-[2px] bg-[#1ea83c] border border-[#1ea83c]" />
             <span>Selected</span>
           </div>
+          {isCoupleScreen && (
+            <div className="flex items-center gap-2 bg-[#7B1E3D]/5 border border-[#7B1E3D]/25 px-2.5 py-0.5 rounded-full">
+              <div className="flex items-center">
+                <span className="w-2.5 h-3 rounded-l-[2px] border border-[#7B1E3D] bg-white" />
+                <span className="w-2.5 h-3 rounded-r-[2px] border border-l-0 border-[#7B1E3D] bg-white" />
+              </div>
+              <span className="text-[#7B1E3D] font-bold text-[11px]">
+                Couple Seats (Pairs of 2)
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-gray-100 py-1.5 px-4 sm:px-8 flex items-center justify-between text-[11px] text-gray-500 bg-[#FAFAFA]">
@@ -780,6 +1010,11 @@ if (isAlreadySelected) {
               <h2 className="text-lg font-bold text-gray-900">
                 How many seats?
               </h2>
+              {isCoupleScreen && (
+                <p className="text-xs text-[#7B1E3D] font-semibold mt-1">
+                  Couple Recliner: Select tickets in pairs of 2 (2, 4, 6, 8, 10)
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-center py-4">
@@ -787,20 +1022,32 @@ if (isAlreadySelected) {
             </div>
 
             <div className="flex items-center justify-between px-6 pt-2 pb-5 overflow-hidden select-none">
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setTempTicketCount(n)}
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
-                    tempTicketCount === n
-                      ? "bg-[#7B1E3D] text-white shadow-md font-bold"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+                const isOddOnCouple = isCoupleScreen && n % 2 !== 0;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    disabled={isOddOnCouple}
+                    onClick={() => {
+                      if (isOddOnCouple) {
+                        toast.info("Couple seats can only be booked in pairs of 2.");
+                        return;
+                      }
+                      setTempTicketCount(n);
+                    }}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition shrink-0 ${
+                      isOddOnCouple
+                        ? "text-gray-300 bg-gray-50 cursor-not-allowed line-through opacity-50"
+                        : tempTicketCount === n
+                        ? "bg-[#7B1E3D] text-white shadow-md font-bold cursor-pointer"
+                        : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    }`}
+                  >
+                    {n}
+                  </button>
+                );
+              })}
             </div>
 
             <div className="border-t border-gray-100 px-6 py-4">
