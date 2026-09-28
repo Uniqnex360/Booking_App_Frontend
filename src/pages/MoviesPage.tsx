@@ -426,8 +426,16 @@ export default function MoviesPage() {
                         <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-1 group-hover:text-[#7B1E3D] transition leading-snug">
                           {movie.title}
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5">
-                          {movie.certificate} • {movie.language}
+                        <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 flex items-center gap-1.5">
+                          {movie.certificate?.toUpperCase() === "A" ? (
+                            <span className="bg-red-50 text-red-600 border border-red-200 text-[10px] font-bold px-1.5 py-0.2 rounded">
+                              A (18+)
+                            </span>
+                          ) : (
+                            <span>{movie.certificate}</span>
+                          )}
+                          <span>•</span>
+                          <span>{movie.language}</span>
                         </p>
                         {movie.genre && (
                           <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">
