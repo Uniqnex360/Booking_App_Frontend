@@ -132,15 +132,7 @@ export default function MovieDetailPage() {
         counts[tag] = (counts[tag] || 0) + 1;
       });
     });
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    if (sorted.length > 0) return sorted;
-    return [
-      ["SuperDirection", 491],
-      ["GreatActing", 487],
-      ["Wellmade", 484],
-      ["AwesomeStory", 460],
-      ["Blockbuster", 450],
-    ] as [string, number][];
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
   }, [reviews]);
 
   const handleRateNow = () => {
@@ -517,181 +509,122 @@ export default function MovieDetailPage() {
             </h2>
             <button
               type="button"
-              onClick={goToReviews}
+              onClick={reviews.length > 0 ? goToReviews : handleRateNow}
               className="text-[#f84464] hover:text-[#d63451] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
             >
-              {reviews.length > 0 ? `${reviews.length} reviews` : "672 reviews"}
+              {reviews.length > 0 ? `${reviews.length} reviews` : "Write a review"}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-500 mb-4">
-            Summary of {reviews.length > 0 ? reviews.length : 672} reviews.
-          </p>
+          {reviews.length > 0 ? (
+            <>
+              <p className="text-xs sm:text-sm text-gray-500 mb-4">
+                Summary of {reviews.length} reviews.
+              </p>
 
-          {/* Hashtag Summary Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
-            {topHashtags.map(([tag, count]) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 text-[#f84464] text-xs font-semibold bg-white whitespace-nowrap shadow-2xs hover:bg-gray-50 transition cursor-default"
-              >
-                #{tag}
-                <span className="text-gray-400 font-normal">{count}</span>
-              </span>
-            ))}
-          </div>
+              {/* Hashtag Summary Chips */}
+              {topHashtags.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+                  {topHashtags.map(([tag, count]) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 text-[#f84464] text-xs font-semibold bg-white whitespace-nowrap shadow-2xs hover:bg-gray-50 transition cursor-default"
+                    >
+                      #{tag}
+                      <span className="text-gray-400 font-normal">{count}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
 
-          {/* Review Cards Carousel */}
-          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 no-scrollbar">
-            {reviews.length > 0 ? (
-              reviews.map((r, idx) => (
-                <div
-                  key={r.id || idx}
-                  className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
-                          {(r.user_name || "User").slice(0, 2)}
+              {/* Real Review Cards Carousel */}
+              <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 no-scrollbar">
+                {reviews.map((r, idx) => (
+                  <div
+                    key={r.id || idx}
+                    className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                            {(r.user_name || "User").slice(0, 2)}
+                          </div>
+                          <div>
+                            <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                              {r.user_name || "Vyhbz User"}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              Booked on <span className="font-semibold text-gray-600">vyhbz</span>
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
-                            {r.user_name || "Vyhbz User"}
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">
-                            Booked on <span className="font-semibold text-gray-600">vyhbz</span>
-                          </p>
+                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
+                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                          <span>{r.rating}/10</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        <span>{r.rating}/10</span>
-                      </div>
-                    </div>
 
-                    <div className="mb-4">
-                      {r.hashtags && r.hashtags.length > 0 && (
-                        <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
-                          {r.hashtags.map((h) => `#${h}`).join(" ")}
+                      <div className="mb-4">
+                        {r.hashtags && r.hashtags.length > 0 && (
+                          <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
+                            {r.hashtags.map((h) => `#${h}`).join(" ")}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                          {r.hashtags && r.hashtags.length > 0
+                            ? `Enjoyed the movie! ${r.hashtags.join(", ")} made this film a must-watch on the big screen.`
+                            : "Great theatrical experience."}
                         </p>
-                      )}
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                        {r.hashtags && r.hashtags.length > 0
-                          ? `Enjoyed the movie! ${r.hashtags.join(", ")} made this film a must-watch experience on the big screen.`
-                          : "Great theatrical experience with crisp sound and visuals."}
-                      </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
-                        <ThumbsUp className="h-3.5 w-3.5" /> 24
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
-                        <ThumbsDown className="h-3.5 w-3.5" />
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span>2 Days ago</span>
-                      <button
-                        type="button"
-                        onClick={handleShare}
-                        className="hover:text-gray-700 cursor-pointer p-0.5"
-                        title="Share review"
-                      >
-                        <Share2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              [
-                {
-                  name: "Sreekuttan",
-                  rating: 10,
-                  tags: ["SuperDirection", "GreatActing", "WowMusic"],
-                  text: "Investigation thriller film. Engaging screenplay, tight direction, and a powerhouse performance that keeps you on the edge of your seat.",
-                  likes: 221,
-                },
-                {
-                  name: "Abhi Suresh",
-                  rating: 10,
-                  tags: ["SuperDirection", "GreatActing", "AwesomeStory"],
-                  text: "Brilliant execution and top-notch cinematography. An absolute must-watch in theatres with friends and family!",
-                  likes: 72,
-                },
-                {
-                  name: "Rahul M",
-                  rating: 9,
-                  tags: ["Wellmade", "Blockbuster", "Rocking"],
-                  text: "Fast-paced thriller with memorable soundtrack and crisp background score. Fully worth the hype!",
-                  likes: 54,
-                },
-              ].map((sample, sIdx) => (
-                <div
-                  key={sIdx}
-                  className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
+                          <ThumbsUp className="h-3.5 w-3.5" /> 1
+                        </span>
+                        <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
+                          <ThumbsDown className="h-3.5 w-3.5" />
+                        </span>
+                      </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
-                          {sample.name.slice(0, 2)}
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
-                            {sample.name}
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">
-                            Booked on <span className="font-semibold text-gray-600">vyhbz</span>
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        <span>{sample.rating}/10</span>
+                        <span>{new Date(r.created_at || Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                        <button
+                          type="button"
+                          onClick={handleShare}
+                          className="hover:text-gray-700 cursor-pointer p-0.5"
+                          title="Share review"
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
-
-                    <div className="mb-4">
-                      <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
-                        {sample.tags.map((h) => `#${h}`).join(" ")}
-                      </p>
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                        {sample.text}
-                      </p>
-                    </div>
                   </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
-                        <ThumbsUp className="h-3.5 w-3.5" /> {sample.likes}
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
-                        <ThumbsDown className="h-3.5 w-3.5" />
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span>2 Days ago</span>
-                      <button
-                        type="button"
-                        onClick={handleShare}
-                        className="hover:text-gray-700 cursor-pointer p-0.5"
-                        title="Share review"
-                      >
-                        <Share2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="border border-dashed border-gray-200 rounded-2xl p-8 sm:p-10 text-center bg-gray-50/60 flex flex-col items-center justify-center mt-3">
+              <div className="w-12 h-12 rounded-full bg-red-50 text-[#f84464] flex items-center justify-center mb-3">
+                <Star className="h-6 w-6 fill-[#f84464]" />
+              </div>
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
+                No reviews yet
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-500 max-w-md mb-5">
+                Be the first to share your thoughts on {movie.title} and help other moviegoers!
+              </p>
+              <button
+                type="button"
+                onClick={handleRateNow}
+                className="px-6 py-2.5 bg-[#f84464] hover:bg-[#d63451] text-white rounded-lg text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
+              >
+                Rate &amp; Review Movie
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
