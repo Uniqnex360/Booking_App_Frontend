@@ -7,9 +7,10 @@ import {
 } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Loader } from "@/components/common/Loader";
 import {
+  Heart,
   Play,
+  Share2,
   Star,
   X,
   ChevronRight,
@@ -170,7 +171,24 @@ export default function MovieDetailPage() {
   const genres = movie.genre.split(",").map((g) => g.trim());
   const embedTrailerUrl = getEmbedTrailerUrl(movie.trailer_url);
 
-  
+  const handleBookTicketsClick = () => {
+    const langCount = Object.keys(langFormatMap).length;
+    const totalFormats = Object.values(langFormatMap).flat().length;
+
+    if (langCount > 1 || totalFormats > 1) {
+      setShowLangFormatModal(true);
+    } else {
+      const defaultLang = Object.keys(langFormatMap)[0] || movie.language;
+      const defaultFormat = langFormatMap[defaultLang]?.[0] || "2D";
+      const filterQuery = `${defaultLang} - ${defaultFormat}`;
+      navigate(
+        withCity(
+          `/buytickets/${movie.id}?filter=${encodeURIComponent(filterQuery)}`,
+          city,
+        ),
+      );
+    }
+  };
 
   const handleSelectLangFormat = (lang: string, format: string) => {
     setSelectedLang(lang);
@@ -350,7 +368,18 @@ export default function MovieDetailPage() {
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
 
-              
+              <div className="flex items-center gap-3 mt-8">
+                <button
+                  onClick={handleBookTicketsClick}
+                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/30"
+                >
+                  Book tickets
+                </button>
+
+                
+
+                
+              </div>
             </div>
           </div>
         </div>
