@@ -781,9 +781,9 @@ export function QuickAuthModal() {
 
               <button
                 type="submit"
-                disabled={!password || loading}
+                disabled={!isEmailValid || !password || loading}
                 className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
-                  password && !loading
+                  isEmailValid && password && !loading
                     ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
                     : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
                 }`}
