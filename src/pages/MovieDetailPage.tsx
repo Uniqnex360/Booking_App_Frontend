@@ -37,7 +37,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { LoadingPage } from "./LoadingPage";
 import { isInWishlist, toggleWishlist } from "@/utils/wishlist";
 
-
 function CastCrewCard({ member }: { member: CastCrewMember }) {
   return (
     <div className="flex flex-col items-start shrink-0 w-[112px] sm:w-[124px]">
@@ -102,7 +101,9 @@ export default function MovieDetailPage() {
   };
 
   // User review reactions: { [reviewId]: 'like' | 'dislike' | null }
-  const [reviewReactions, setReviewReactions] = useState<Record<string, "like" | "dislike" | null>>(() => {
+  const [reviewReactions, setReviewReactions] = useState<
+    Record<string, "like" | "dislike" | null>
+  >(() => {
     try {
       const saved = localStorage.getItem("vyhbz_review_reactions");
       return saved ? JSON.parse(saved) : {};
@@ -221,8 +222,8 @@ export default function MovieDetailPage() {
     );
   }, [movie]);
 
-   if (loading) {
-     return <LoadingPage showFooter={false} />;
+  if (loading) {
+    return <LoadingPage showFooter={false} />;
   }
 
   if (!movie) {
@@ -389,7 +390,7 @@ export default function MovieDetailPage() {
                 {movie.title}
               </h1>
 
-                            <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
+              <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
                 <div className="flex items-center gap-5">
                   {movie.external_rating != null && (
                     <div className="flex items-center gap-2">
@@ -481,10 +482,6 @@ export default function MovieDetailPage() {
                 >
                   Book tickets
                 </button>
-
-                
-
-                
               </div>
             </div>
           </div>
@@ -580,222 +577,245 @@ export default function MovieDetailPage() {
 
           {/* Review Cards Carousel */}
           <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 no-scrollbar">
-            {reviews.length > 0 ? (
-              reviews.map((r, idx) => {
-                const rId = r.id || `review-${idx}`;
-                const reaction = reviewReactions[rId];
-                const isLiked = reaction === "like";
-                const currentLikes = (r.likes || 0) + (isLiked ? 1 : 0);
+            {reviews.length > 0
+              ? reviews.map((r, idx) => {
+                  const rId = r.id || `review-${idx}`;
+                  const reaction = reviewReactions[rId];
+                  const isLiked = reaction === "like";
+                  const currentLikes = (r.likes || 0) + (isLiked ? 1 : 0);
 
-                const reviewTime = (() => {
-                  if (!r.created_at) return "Recently";
-                  const d = new Date(r.created_at);
-                  const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
-                  if (diffSec < 60) return "Just now";
-                  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-                  if (diffSec < 86400) return "Today";
-                  if (diffSec < 172800) return "Yesterday";
-                  return `${Math.floor(diffSec / 86400)} days ago`;
-                })();
+                  const reviewTime = (() => {
+                    if (!r.created_at) return "Recently";
+                    const d = new Date(r.created_at);
+                    const diffSec = Math.floor(
+                      (Date.now() - d.getTime()) / 1000,
+                    );
+                    if (diffSec < 60) return "Just now";
+                    if (diffSec < 3600)
+                      return `${Math.floor(diffSec / 60)}m ago`;
+                    if (diffSec < 86400) return "Today";
+                    if (diffSec < 172800) return "Yesterday";
+                    return `${Math.floor(diffSec / 86400)} days ago`;
+                  })();
 
-                return (
-                  <div
-                    key={r.id || idx}
-                    className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between mb-3">
+                  return (
+                    <div
+                      key={r.id || idx}
+                      className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                              {(r.user_name || "User").slice(0, 2)}
+                            </div>
+                            <div>
+                              <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                                {r.user_name || "Vyhbz User"}
+                              </p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                Booked on{" "}
+                                <span className="font-semibold text-gray-600">
+                                  vyhbz
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                            <span>{r.rating}/10</span>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          {r.hashtags && r.hashtags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {r.hashtags.map((h) => (
+                                <span
+                                  key={h}
+                                  className="text-xs font-bold text-gray-900"
+                                >
+                                  #{h}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleReviewReaction(rId, "like")}
+                            className={`flex items-center gap-1.5 transition cursor-pointer ${
+                              isLiked
+                                ? "text-[#f84464] font-bold"
+                                : "text-gray-400 hover:text-gray-700"
+                            }`}
+                            title={isLiked ? "Unlike" : "Helpful"}
+                          >
+                            <ThumbsUp
+                              className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`}
+                            />
+                            <span>{currentLikes}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleReviewReaction(rId, "dislike")}
+                            className={`flex items-center gap-1 transition cursor-pointer ${
+                              reaction === "dislike"
+                                ? "text-[#f84464] font-bold"
+                                : "text-gray-400 hover:text-gray-700"
+                            }`}
+                            title={
+                              reaction === "dislike"
+                                ? "Remove dislike"
+                                : "Not helpful"
+                            }
+                          >
+                            <ThumbsDown
+                              className={`h-3.5 w-3.5 ${reaction === "dislike" ? "fill-current" : ""}`}
+                            />
+                          </button>
+                        </div>
+
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
-                            {(r.user_name || "User").slice(0, 2)}
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
-                              {r.user_name || "Vyhbz User"}
-                            </p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">
-                              Booked on <span className="font-semibold text-gray-600">vyhbz</span>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
-                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                          <span>{r.rating}/10</span>
+                          <span>{reviewTime}</span>
+                          <button
+                            type="button"
+                            onClick={handleShare}
+                            className="hover:text-gray-700 cursor-pointer p-0.5"
+                            title="Share review"
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
+                    </div>
+                  );
+                })
+              : [
+                  {
+                    name: "Sreekuttan",
+                    rating: 10,
+                    tags: ["SuperDirection", "GreatActing", "WowMusic"],
+                    text: "Investigation thriller film. Engaging screenplay, tight direction, and a powerhouse performance that keeps you on the edge of your seat.",
+                    likes: 221,
+                  },
+                  {
+                    name: "Abhi Suresh",
+                    rating: 10,
+                    tags: ["SuperDirection", "GreatActing", "AwesomeStory"],
+                    text: "Brilliant execution and top-notch cinematography. An absolute must-watch in theatres with friends and family!",
+                    likes: 72,
+                  },
+                  {
+                    name: "Rahul M",
+                    rating: 9,
+                    tags: ["Wellmade", "Blockbuster", "Rocking"],
+                    text: "Fast-paced thriller with memorable soundtrack and crisp background score. Fully worth the hype!",
+                    likes: 54,
+                  },
+                ].map((sample, sIdx) => {
+                  const sId = `sample-${sIdx}`;
+                  const reaction = reviewReactions[sId];
+                  const isLiked = reaction === "like";
+                  const currentLikes = sample.likes + (isLiked ? 1 : 0);
 
-                      <div className="mb-4">
-                        {r.hashtags && r.hashtags.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 pt-1">
-                            {r.hashtags.map((h) => (
-                              <span
-                                key={h}
-                                className="text-xs font-bold text-gray-900"
-                              >
-                                #{h}
-                              </span>
-                            ))}
+                  return (
+                    <div
+                      key={sIdx}
+                      className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                              {sample.name.slice(0, 2)}
+                            </div>
+                            <div>
+                              <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                                {sample.name}
+                              </p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                Booked on{" "}
+                                <span className="font-semibold text-gray-600">
+                                  vyhbz
+                                </span>
+                              </p>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                          <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                            <span>{sample.rating}/10</span>
+                          </div>
+                        </div>
 
-                    <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => handleReviewReaction(rId, "like")}
-                          className={`flex items-center gap-1.5 transition cursor-pointer ${
-                            isLiked
-                              ? "text-[#f84464] font-bold"
-                              : "text-gray-400 hover:text-gray-700"
-                          }`}
-                          title={isLiked ? "Unlike" : "Helpful"}
-                        >
-                          <ThumbsUp className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
-                          <span>{currentLikes}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleReviewReaction(rId, "dislike")}
-                          className={`flex items-center gap-1 transition cursor-pointer ${
-                            reaction === "dislike"
-                              ? "text-[#f84464] font-bold"
-                              : "text-gray-400 hover:text-gray-700"
-                          }`}
-                          title={reaction === "dislike" ? "Remove dislike" : "Not helpful"}
-                        >
-                          <ThumbsDown className={`h-3.5 w-3.5 ${reaction === "dislike" ? "fill-current" : ""}`} />
-                        </button>
+                        <div className="mb-4">
+                          <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
+                            {sample.tags.map((h) => `#${h}`).join(" ")}
+                          </p>
+                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                            {sample.text}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <span>{reviewTime}</span>
-                        <button
-                          type="button"
-                          onClick={handleShare}
-                          className="hover:text-gray-700 cursor-pointer p-0.5"
-                          title="Share review"
-                        >
-                          <Share2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              [
-                {
-                  name: "Sreekuttan",
-                  rating: 10,
-                  tags: ["SuperDirection", "GreatActing", "WowMusic"],
-                  text: "Investigation thriller film. Engaging screenplay, tight direction, and a powerhouse performance that keeps you on the edge of your seat.",
-                  likes: 221,
-                },
-                {
-                  name: "Abhi Suresh",
-                  rating: 10,
-                  tags: ["SuperDirection", "GreatActing", "AwesomeStory"],
-                  text: "Brilliant execution and top-notch cinematography. An absolute must-watch in theatres with friends and family!",
-                  likes: 72,
-                },
-                {
-                  name: "Rahul M",
-                  rating: 9,
-                  tags: ["Wellmade", "Blockbuster", "Rocking"],
-                  text: "Fast-paced thriller with memorable soundtrack and crisp background score. Fully worth the hype!",
-                  likes: 54,
-                },
-              ].map((sample, sIdx) => {
-                const sId = `sample-${sIdx}`;
-                const reaction = reviewReactions[sId];
-                const isLiked = reaction === "like";
-                const currentLikes = sample.likes + (isLiked ? 1 : 0);
+                      <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleReviewReaction(sId, "like")}
+                            className={`flex items-center gap-1.5 transition cursor-pointer ${
+                              isLiked
+                                ? "text-[#f84464] font-bold"
+                                : "text-gray-400 hover:text-gray-700"
+                            }`}
+                            title={isLiked ? "Unlike" : "Helpful"}
+                          >
+                            <ThumbsUp
+                              className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`}
+                            />
+                            <span>{currentLikes}</span>
+                          </button>
 
-                return (
-                  <div
-                    key={sIdx}
-                    className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between mb-3">
+                          <button
+                            type="button"
+                            onClick={() => handleReviewReaction(sId, "dislike")}
+                            className={`flex items-center gap-1 transition cursor-pointer ${
+                              reaction === "dislike"
+                                ? "text-[#f84464] font-bold"
+                                : "text-gray-400 hover:text-gray-700"
+                            }`}
+                            title={
+                              reaction === "dislike"
+                                ? "Remove dislike"
+                                : "Not helpful"
+                            }
+                          >
+                            <ThumbsDown
+                              className={`h-3.5 w-3.5 ${reaction === "dislike" ? "fill-current" : ""}`}
+                            />
+                          </button>
+                        </div>
+
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
-                            {sample.name.slice(0, 2)}
-                          </div>
-                          <div>
-                            <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
-                              {sample.name}
-                            </p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">
-                              Booked on <span className="font-semibold text-gray-600">vyhbz</span>
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
-                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                          <span>{sample.rating}/10</span>
+                          <span>2 Days ago</span>
+                          <button
+                            type="button"
+                            onClick={handleShare}
+                            className="hover:text-gray-700 cursor-pointer p-0.5"
+                            title="Share review"
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="mb-4">
-                        <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
-                          {sample.tags.map((h) => `#${h}`).join(" ")}
-                        </p>
-                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                          {sample.text}
-                        </p>
-                      </div>
                     </div>
-
-                    <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-                      <div className="flex items-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => handleReviewReaction(sId, "like")}
-                          className={`flex items-center gap-1.5 transition cursor-pointer ${
-                            isLiked
-                              ? "text-[#f84464] font-bold"
-                              : "text-gray-400 hover:text-gray-700"
-                          }`}
-                          title={isLiked ? "Unlike" : "Helpful"}
-                        >
-                          <ThumbsUp className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`} />
-                          <span>{currentLikes}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleReviewReaction(sId, "dislike")}
-                          className={`flex items-center gap-1 transition cursor-pointer ${
-                            reaction === "dislike"
-                              ? "text-[#f84464] font-bold"
-                              : "text-gray-400 hover:text-gray-700"
-                          }`}
-                          title={reaction === "dislike" ? "Remove dislike" : "Not helpful"}
-                        >
-                          <ThumbsDown className={`h-3.5 w-3.5 ${reaction === "dislike" ? "fill-current" : ""}`} />
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <span>2 Days ago</span>
-                        <button
-                          type="button"
-                          onClick={handleShare}
-                          className="hover:text-gray-700 cursor-pointer p-0.5"
-                          title="Share review"
-                        >
-                          <Share2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })}
           </div>
         </div>
       </div>
@@ -835,11 +855,15 @@ export default function MovieDetailPage() {
               >
                 {similarMovies.map((m) => {
                   const ratingVal = m.rating || m.external_rating || 8.8;
-                  const votesCount = m.rating_count ? `${m.rating_count} votes` : "20K+ votes";
+                  const votesCount = m.rating_count
+                    ? `${m.rating_count} votes`
+                    : "20K+ votes";
                   return (
                     <div
                       key={m.id}
-                      onClick={() => navigate(withCity(`/movies/${m.id}`, city))}
+                      onClick={() =>
+                        navigate(withCity(`/movies/${m.id}`, city))
+                      }
                       className="w-[150px] sm:w-[180px] shrink-0 cursor-pointer group flex flex-col"
                     >
                       <div className="w-full aspect-[2/3] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-2xs mb-2.5 relative">
@@ -889,50 +913,45 @@ export default function MovieDetailPage() {
           </div>
         </div>
       )}
-      <div className="px-4 py-4">
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500 font-normal">
-                    <Link to="/" className="hover:text-gray-900 transition">
-                      Home
-                    </Link>
-                    <span className="text-gray-400">→</span>
-                    <span className="hover:text-gray-900 cursor-pointer">
-                      Movies in {city}
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="hover:text-gray-900 cursor-pointer">
-                      {movie.language} Movies
-                    </span>
-                    <span className="text-gray-400">→</span>
-                    <span className="text-gray-800 font-medium">{movie.title}</span>
-                  </div>
-                </div>
-      
-                {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
-                <div className="bg-[#404046] text-white py-4 px-4 sm:px-8 mt-4">
-                  <div className="max-w-[1240px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-                        <PartyPopperIcon className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                          <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
-                            List your Show
-                          </span>
-                          <span className="text-xs text-gray-300">
-                            Got a show, event, activity or a great experience? Partner with us &amp; get listed on Vyhbhz
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <Link
-                      to="/partner/register"
-                      className="bg-[#EC5E71] hover:bg-[#e04a5e] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
-                    >
-                      Contact today!
-                    </Link>
-                  </div>
-                </div>
+      <div className="max-w-[1240px] mx-auto px-4 py-4">
+  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500 font-normal">
+    <Link to="/" className="hover:text-gray-900 transition">Home</Link>
+    <span className="text-gray-400">→</span>
+    <span className="hover:text-gray-900 cursor-pointer">Movies in {city}</span>
+    <span className="text-gray-400">→</span>
+    <span className="hover:text-gray-900 cursor-pointer">{movie.language} Movies</span>
+    <span className="text-gray-400">→</span>
+    <span className="text-gray-800 font-medium">{movie.title}</span>
+  </div>
+</div>
+
+      {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
+      <div className="bg-[#404046] text-white py-4 px-4 sm:px-8 mt-4">
+        <div className="max-w-[1240px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+              <PartyPopperIcon className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
+                  List your Show
+                </span>
+                <span className="text-xs text-gray-300">
+                  Got a show, event, activity or a great experience? Partner
+                  with us &amp; get listed on Vyhbhz
+                </span>
+              </div>
+            </div>
+          </div>
+          <Link
+            to="/partner/register"
+            className="bg-[#EC5E71] hover:bg-[#e04a5e] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
+          >
+            Contact today!
+          </Link>
+        </div>
+      </div>
       <Footer />
 
       {showTrailerModal && movie.trailer_url && (
