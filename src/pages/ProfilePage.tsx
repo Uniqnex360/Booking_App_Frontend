@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { getWishlist, removeFromWishlist, type WishlistItem } from "@/utils/wishlist";
+import {
+  getWishlist,
+  removeFromWishlist,
+  type WishlistItem,
+} from "@/utils/wishlist";
+import { QRCodeSVG } from "qrcode.react";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/common/Loader";
 import { useAuth } from "@/hooks/useAuth";
 import { getBookings } from "@/api/booking.api";
-import {
-  getExtendedProfile,
-  updateProfile,
-} from "@/api/profile.api";
+import { getExtendedProfile, updateProfile } from "@/api/profile.api";
 import type { Booking } from "@/types/booking.types";
 import type {
   ExtendedProfile,
@@ -77,7 +79,8 @@ export default function ProfilePage() {
     setWishlist(getWishlist());
     const handleWishlistChange = () => setWishlist(getWishlist());
     window.addEventListener("wishlist-updated", handleWishlistChange);
-    return () => window.removeEventListener("wishlist-updated", handleWishlistChange);
+    return () =>
+      window.removeEventListener("wishlist-updated", handleWishlistChange);
   }, []);
 
   const handleTabChange = (tab: Tab) => {
@@ -87,7 +90,7 @@ export default function ProfilePage() {
 
   const handleRemoveWishlist = (id: string, title: string) => {
     removeFromWishlist(id);
-    toast.success("Removed \"" + title + "\" from Wishlist");
+    toast.success('Removed "' + title + '" from Wishlist');
   };
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingsLoading, setBookingsLoading] = useState(true);
@@ -131,7 +134,9 @@ export default function ProfilePage() {
         const data = await getExtendedProfile();
         if (isMounted) {
           setProfile(data);
-          setDateOfBirth(data.date_of_birth ? data.date_of_birth.slice(0, 10) : "");
+          setDateOfBirth(
+            data.date_of_birth ? data.date_of_birth.slice(0, 10) : "",
+          );
           setGender(data.gender || "");
           setPreferredLanguage(data.preferred_language || "en");
           setBio(data.bio || "");
@@ -173,7 +178,7 @@ export default function ProfilePage() {
   }, [user]);
 
   if (loading || !user) {
-     return <LoadingPage showFooter={false} />;
+    return <LoadingPage showFooter={false} />;
   }
 
   const upcoming = bookings.filter(
@@ -270,7 +275,7 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       const updated = await updateProfile(payload as any);
-      
+
       setProfile(updated);
       if (updated.date_of_birth) {
         setDateOfBirth(updated.date_of_birth.slice(0, 10));
@@ -420,7 +425,10 @@ export default function ProfilePage() {
                             </span>
                           )}
                           {!editingPhone && !!phone && (
-                            <Check size={18} className="text-green-500 shrink-0" />
+                            <Check
+                              size={18}
+                              className="text-green-500 shrink-0"
+                            />
                           )}
                         </div>
                       </div>
@@ -454,7 +462,10 @@ export default function ProfilePage() {
                             </span>
                           )}
                           {!editingEmail && !!email && (
-                            <Check size={18} className="text-green-500 shrink-0" />
+                            <Check
+                              size={18}
+                              className="text-green-500 shrink-0"
+                            />
                           )}
                         </div>
                       </div>
@@ -569,7 +580,9 @@ export default function ProfilePage() {
                         </label>
                         <span
                           className={`text-xs ${
-                            bio.length > 250 ? "text-red-500 font-bold" : "text-gray-400"
+                            bio.length > 250
+                              ? "text-red-500 font-bold"
+                              : "text-gray-400"
                           }`}
                         >
                           {bio.length}/250
@@ -611,7 +624,9 @@ export default function ProfilePage() {
           {/* ORDERS */}
           {activeTab === "orders" && (
             <div className="animate-in fade-in duration-300">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Orders</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Your Orders
+              </h2>
               {bookingsLoading ? (
                 <div className="flex justify-center py-12">
                   <Loader className="h-6 w-6" />
@@ -621,11 +636,16 @@ export default function ProfilePage() {
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
                     <Ticket className="h-8 w-8 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">No bookings found</h3>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    No bookings found
+                  </h3>
                   <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
                     Looks like you haven&apos;t booked anything yet.
                   </p>
-                  <Button asChild className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A]">
+                  <Button
+                    asChild
+                    className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A]"
+                  >
                     <Link to="/">Explore Now</Link>
                   </Button>
                 </div>
@@ -636,8 +656,7 @@ export default function ProfilePage() {
                       <h3 className="mb-4 text-sm font-bold text-gray-500 uppercase tracking-wider">
                         Upcoming
                       </h3>
-                      <div className="grid gap-4">
-                        {upcoming.map((b) => (
+<div className="grid gap-4 md:grid-cols-2">                        {upcoming.map((b) => (
                           <BookingCard key={b.id} booking={b} />
                         ))}
                       </div>
@@ -648,8 +667,7 @@ export default function ProfilePage() {
                       <h3 className="mb-4 text-sm font-bold text-gray-500 uppercase tracking-wider">
                         Past
                       </h3>
-                      <div className="grid gap-4">
-                        {past.map((b) => (
+<div className="grid gap-4 md:grid-cols-2">                        {past.map((b) => (
                           <BookingCard key={b.id} booking={b} past />
                         ))}
                       </div>
@@ -665,7 +683,9 @@ export default function ProfilePage() {
             <div className="animate-in fade-in duration-300">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Your Wishlist</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Your Wishlist
+                  </h2>
                   <p className="text-xs text-gray-500 mt-1">
                     Movies and events saved to your personal collection
                   </p>
@@ -682,15 +702,25 @@ export default function ProfilePage() {
                   <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-sm">
                     <Heart className="h-8 w-8 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">Your Wishlist is Empty</h3>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Your Wishlist is Empty
+                  </h3>
                   <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-                    Save movies and live events you are interested in to find and book them quickly anytime.
+                    Save movies and live events you are interested in to find
+                    and book them quickly anytime.
                   </p>
                   <div className="flex items-center justify-center gap-3 mt-6">
-                    <Button asChild className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white">
+                    <Button
+                      asChild
+                      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white"
+                    >
                       <Link to="/movies">Explore Movies</Link>
                     </Button>
-                    <Button asChild variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="border-gray-300 text-gray-700 hover:bg-gray-100"
+                    >
                       <Link to="/events">Explore Events</Link>
                     </Button>
                   </div>
@@ -720,7 +750,9 @@ export default function ProfilePage() {
                           </span>
                         </div>
                         <button
-                          onClick={() => handleRemoveWishlist(item.id, item.title)}
+                          onClick={() =>
+                            handleRemoveWishlist(item.id, item.title)
+                          }
                           className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-500 hover:text-red-600 flex items-center justify-center shadow transition"
                           title="Remove from wishlist"
                         >
@@ -773,7 +805,9 @@ function SidebarItem({ icon: Icon, label, active, onClick }: any) {
       <div className="flex items-center gap-4">
         <div
           className={`p-1.5 rounded-full ${
-            active ? "text-[#7B1E3D]" : "text-gray-400 group-hover:text-gray-600"
+            active
+              ? "text-[#7B1E3D]"
+              : "text-gray-400 group-hover:text-gray-600"
           }`}
         >
           <Icon size={18} strokeWidth={active ? 2.5 : 2} />
@@ -792,7 +826,6 @@ function SidebarItem({ icon: Icon, label, active, onClick }: any) {
     </button>
   );
 }
-
 function BookingCard({
   booking,
   past = false,
@@ -802,142 +835,202 @@ function BookingCard({
 }) {
   const isMovie = booking.type === "MOVIE" && !!booking.starts_at;
   const bookingDate = new Date(booking.starts_at || booking.booking_date);
+  const title = booking.movie_title ?? booking.title;
+  const seatCount = booking.seat_codes?.length ?? 0;
 
+  const statusLabel =
+    booking.status === "CANCELLED"
+      ? "Cancelled"
+      : past
+        ? "Completed"
+        : "Confirmed";
+
+  const dateStr = bookingDate.toLocaleString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const timeStr = bookingDate.toLocaleString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  // Non-movie: keep simple card
+  if (!isMovie) {
+    return (
+      <div
+        className={`rounded-xl border border-gray-200 bg-white p-5 hover:shadow-md transition-all ${
+          past ? "opacity-75" : ""
+        }`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h4 className="text-lg font-bold text-gray-900 leading-tight">
+              {title}
+            </h4>
+            <p className="mt-1 text-sm text-gray-500 font-medium">
+              {booking.venue}
+            </p>
+            <p className="mt-3 text-sm font-semibold text-gray-800">
+              {formatDate(booking.booking_date)}
+            </p>
+            {booking.location && (
+              <p className="mt-1 text-sm text-gray-600 flex items-center gap-1">
+                <MapPin className="h-3 w-3" /> {booking.location}
+              </p>
+            )}
+            {booking.guests ? (
+              <p className="mt-3 text-sm text-gray-700">
+                <Users className="h-3 w-3 inline mr-1" />
+                {booking.guests} guests
+              </p>
+            ) : null}
+          </div>
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[10px] font-bold uppercase">
+            {statusLabel}
+          </Badge>
+        </div>
+        <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+          <span className="font-mono text-sm font-bold text-gray-900">
+            {booking.ref_code}
+          </span>
+          <span className="text-sm font-bold text-gray-900">
+            {formatCurrency(booking.total_price)}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Movie: BMS style M-Ticket
   return (
     <div
-      className={`group flex flex-col sm:flex-row overflow-hidden rounded-xl border border-gray-200 bg-white hover:shadow-md transition-all ${
-        past ? "opacity-75" : ""
+      className={`relative w-full max-w-[420px] rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden ${
+        past ? "opacity-80" : ""
       }`}
     >
-      <div className="relative w-full sm:w-36 shrink-0 aspect-[16/9] sm:aspect-[2/3] bg-gray-100">
-        {booking.image_url ? (
-          <img
-            src={booking.image_url}
-            alt={booking.movie_title ?? booking.title}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gray-200">
-            <Ticket className="h-10 w-10 text-gray-400" />
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col justify-between p-5">
-        <div>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h4 className="text-lg font-bold text-gray-900 leading-tight">
-                {booking.movie_title ?? booking.title}
-              </h4>
-              {isMovie ? (
-                <>
-                  {(booking.language || booking.format) && (
-                    <p className="mt-1 text-sm text-gray-500 font-medium">
-                      {[booking.language, booking.format]
-                        .filter(Boolean)
-                        .join(" • ")}
-                    </p>
-                  )}
-                  {(booking.cinema_name || booking.screen_name) && (
-                    <p className="mt-3 text-sm font-semibold text-gray-800">
-                      {booking.cinema_name}
-                      {booking.screen_name ? `: ${booking.screen_name}` : ""}
-                    </p>
-                  )}
-                  <p className="mt-1 text-sm text-gray-600">
-                    {bookingDate.toLocaleString("en-IN", {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                    {" | "}
-                    {bookingDate.toLocaleString("en-IN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="mt-1 text-sm text-gray-500 font-medium">
-                    {booking.venue}
-                  </p>
-                  <p className="mt-3 text-sm font-semibold text-gray-800">
-                    {formatDate(booking.booking_date)}
-                  </p>
-                  {booking.location && (
-                    <p className="mt-1 text-sm text-gray-600 flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {booking.location}
-                    </p>
-                  )}
-                </>
-              )}
+      {/* Top: poster + info */}
+      <div className="flex gap-4 p-4 pb-5">
+        <div className="w-[76px] h-[110px] shrink-0 rounded-md overflow-hidden bg-gray-100">
+          {booking.image_url ? (
+            <img
+              src={booking.image_url}
+              alt={title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Ticket className="h-6 w-6 text-gray-400" />
             </div>
-            <Badge
-  className={`whitespace-nowrap px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
-    booking.status === "CANCELLED"
-      ? "bg-red-100 text-red-700 hover:bg-red-100"
-      : past
-        ? "bg-gray-100 text-gray-600 hover:bg-gray-100"
-        : "bg-green-100 text-green-700 hover:bg-green-100"
-  }`}
->
-  {booking.status === "CANCELLED"
-    ? "Cancelled"
-    : past
-      ? "Completed"
-      : "Confirmed"}
-</Badge>
-          </div>
-
-          {isMovie && booking.seat_codes?.length ? (
-            <p className="mt-4 text-sm font-semibold text-gray-800 bg-gray-50 inline-block px-3 py-1.5 rounded border border-gray-100">
-              <span className="text-gray-500 font-normal">Ticket(s):</span>{" "}
-              {booking.seat_codes.join(", ")}
-            </p>
-          ) : !isMovie && booking.guests ? (
-            <p className="mt-4 text-sm font-semibold text-gray-800 bg-gray-50 inline-block px-3 py-1.5 rounded border border-gray-100">
-              <span className="text-gray-500 font-normal">Guests:</span>{" "}
-              <Users className="h-3 w-3 inline mr-1" /> {booking.guests}
-            </p>
-          ) : null}
+          )}
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-between border-t border-gray-100 pt-4 gap-4">
-          <div className="flex gap-8">
-            {booking.ref_code && (
-              <div>
-                <p className="text-xs text-gray-500 uppercase font-medium mb-0.5">
-                  Booking ID
-                </p>
-                <p className="font-mono text-sm font-bold text-gray-900">
-                  {booking.ref_code}
-                </p>
-              </div>
-            )}
-            <div>
-              <p className="text-xs text-gray-500 uppercase font-medium mb-0.5">
-                Total Amount
-              </p>
-              <p className="text-sm font-bold text-gray-900">
-                {formatCurrency(booking.total_price)}
-              </p>
-            </div>
-          </div>
-          {!past && (
-            <Button
-              asChild
-              variant="link"
-              className="text-[#7B1E3D] font-bold p-0 h-auto gap-1 hover:text-[#5C0F2A] hover:no-underline group"
-            >
-              <Link to={`/bookings/${booking.id}`}>
-                View Details{" "}
-                <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
+        <div className="min-w-0 flex-1 pr-5">
+          <h4 className="text-[17px] font-bold text-gray-900 leading-tight">
+            {title}
+          </h4>
+          {(booking.language || booking.format) && (
+            <p className="mt-1 text-sm text-gray-500">
+              {[booking.language, booking.format].filter(Boolean).join(", ")}
+            </p>
           )}
+          <p className="mt-2 text-sm text-gray-700">
+            {dateStr} | {timeStr}
+          </p>
+          <p className="mt-1 text-sm text-gray-700 line-clamp-2">
+            {booking.cinema_name}
+          </p>
+        </div>
+
+        {/* Vertical "M-Ticket" label */}
+        <span
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 tracking-wider"
+          style={{ writingMode: "vertical-rl" }}
+        >
+          M-Ticket
+        </span>
+      </div>
+
+      {/* Notch + dashed divider */}
+      <div className="relative h-4">
+        <span className="absolute -left-2 top-0 h-4 w-4 rounded-full bg-[#F5F5FA] border border-gray-200" />
+        <span className="absolute -right-2 top-0 h-4 w-4 rounded-full bg-[#F5F5FA] border border-gray-200" />
+        <div className="absolute left-4 right-4 top-1/2 border-t border-dashed border-gray-300" />
+      </div>
+
+      {/* Inner grey box: QR + details */}
+      <div className="px-4 pt-3">
+        <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center gap-4">
+          <div className="bg-white p-1.5 rounded shrink-0">
+            <QRCodeSVG
+              value={booking.ref_code || booking.id}
+              size={96}
+              level="M"
+            />
+          </div>
+          <div className="flex-1 text-center min-w-0">
+            <p className="text-xs text-gray-500">
+              {seatCount} Ticket{seatCount === 1 ? "" : "s"}(s)
+            </p>
+            <p className="mt-1 text-xl font-bold text-gray-900 truncate">
+              {booking.screen_name || "SCREEN"}
+            </p>
+            {booking.seat_codes?.length ? (
+              <p className="text-xs text-gray-500 mt-0.5 break-words">
+                {booking.seat_codes.join(", ")}
+              </p>
+            ) : null}
+            {booking.ref_code && (
+              <p className="mt-2 text-[11px] font-bold text-gray-900">
+                BOOKING ID: {booking.ref_code}
+              </p>
+            )}
+            <Link
+              to={`/bookings/${booking.id}`}
+              className="mt-1 inline-block text-[11px] text-gray-500 hover:text-[#7B1E3D] underline-offset-2 hover:underline"
+            >
+              Tap to see more
+            </Link>
+          </div>
+        </div>
+
+        <p className="mt-4 text-center text-xs text-gray-500 leading-relaxed px-2">
+          A confirmation is sent on e-mail/SMS/WhatsApp within 15 minutes of
+          booking.
+        </p>
+
+        {/* Actions */}
+        <div className="mt-4 mb-4 grid grid-cols-2 gap-2 text-center">
+          <button
+            type="button"
+            disabled={past || booking.status === "CANCELLED"}
+            onClick={() => toast.info("Cancellation coming soon")}
+            className="py-2 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Cancel booking
+          </button>
+          <Link
+            to="/contact"
+            className="py-2 text-xs text-gray-400 hover:text-gray-700"
+          >
+            Contact support
+          </Link>
+        </div>
+      </div>
+
+      {/* Footer: total */}
+      <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm">
+        <span className="text-gray-600">Total Amount</span>
+        <div className="flex items-center gap-2">
+          {booking.status === "CANCELLED" && (
+            <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px] font-bold uppercase">
+              Cancelled
+            </Badge>
+          )}
+          <span className="font-semibold text-gray-900">
+            {formatCurrency(booking.total_price)}
+          </span>
         </div>
       </div>
     </div>
