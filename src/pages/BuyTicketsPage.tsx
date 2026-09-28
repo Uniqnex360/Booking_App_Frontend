@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
 
 import { Header } from "@/components/Header";
@@ -168,29 +168,6 @@ export default function BuyTicketsPage() {
     Record<string, Array<{ price: string; tier: string; status: string; statusColor: string }>>
   >({});
 
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fetchingSlotsRef = useRef<Set<string>>(new Set());
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    abortControllerRef.current = new AbortController();
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const handleShowtimeLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-  };
-
   const now = Date.now();
 
   const venuesInCity = useMemo(() => {
@@ -298,14 +275,9 @@ export default function BuyTicketsPage() {
   ]);
 
   const fetchShowtimePricing = useCallback(async (slotId: string) => {
-    if (showtimePricingMap[slotId] || fetchingSlotsRef.current.has(slotId)) return;
-    fetchingSlotsRef.current.add(slotId);
+    if (showtimePricingMap[slotId]) return;
     try {
-      const data = await unwrap<any>(
-        api.get(`/showtimes/${slotId}/seat-map`, {
-          signal: abortControllerRef.current?.signal,
-        })
-      );
+      const data = await unwrap<any>(api.get(`/showtimes/${slotId}/seat-map`));
       if (data) {
         const allSeats: any[] = [];
         if (data.seats && Array.isArray(data.seats) && data.seats.length > 0) {
@@ -332,21 +304,13 @@ export default function BuyTicketsPage() {
           rawRows[seat.row_label].seats.push(seat);
         });
 
-        const isCoupleScreen =
-          (data.screen_name || "").toLowerCase().includes("couple") ||
-          (data.format || "").toLowerCase().includes("couple");
-
         const tiers: { name: string; price_paise: number; totalSeats: number; availSeats: number }[] = [];
         Object.entries(rawRows).forEach(([_, rowData]) => {
           let tierName = "CLASSIC";
           const priceRupees = rowData.price_paise / 100;
-          if (isCoupleScreen) {
-            tierName = priceRupees >= 480 ? "COUPLE ROYAL LOUNGER" : "COUPLE RECLINER";
-          } else {
-            if (priceRupees >= 350) tierName = "RECLINER";
-            else if (priceRupees >= 250) tierName = "PRIME PLUS";
-            else if (priceRupees >= 200) tierName = "PRIME";
-          }
+          if (priceRupees >= 350) tierName = "RECLINER";
+          else if (priceRupees >= 250) tierName = "PRIME PLUS";
+          else if (priceRupees >= 200) tierName = "PRIME";
 
           let existing = tiers.find((t) => t.price_paise === rowData.price_paise);
           if (!existing) {
@@ -373,21 +337,10 @@ export default function BuyTicketsPage() {
           setShowtimePricingMap((prev) => ({ ...prev, [slotId]: parsedTiers }));
         }
       }
-    } catch (err: any) {
-      if (err?.name === "CanceledError" || err?.code === "ERR_CANCELED") return;
-      console.warn("Failed to fetch showtime pricing", err);
-    } finally {
-      fetchingSlotsRef.current.delete(slotId);
+    } catch (err) {
+      console.error("Failed to fetch showtime pricing", err);
     }
   }, [showtimePricingMap]);
-
-  const handleShowtimeHover = (slotId: string) => {
-    if (showtimePricingMap[slotId] || fetchingSlotsRef.current.has(slotId)) return;
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    hoverTimeoutRef.current = setTimeout(() => {
-      fetchShowtimePricing(slotId);
-    }, 150);
-  };
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -403,6 +356,17 @@ export default function BuyTicketsPage() {
     };
     fetchMovie();
   }, [id]);
+
+  useEffect(() => {
+    if (!venuesForDate || venuesForDate.length === 0) return;
+    venuesForDate.forEach((v) => {
+      v.showtimes.forEach((slot) => {
+        if (!showtimePricingMap[slot.id]) {
+          fetchShowtimePricing(slot.id);
+        }
+      });
+    });
+  }, [venuesForDate, fetchShowtimePricing, showtimePricingMap]);
 
   const formatRuntime = (mins?: number) => {
     if (!mins) return "2h 17m";
@@ -1202,9 +1166,8 @@ export default function BuyTicketsPage() {
                               key={slot.id}
                               className="relative group"
                               onMouseEnter={() =>
-                                handleShowtimeHover(slot.id)
+                                fetchShowtimePricing(slot.id)
                               }
-                              onMouseLeave={handleShowtimeLeave}
                             >
                               {/* Price Tooltip on Hover (Fetched dynamically from API) */}
                               {!isPast && (
