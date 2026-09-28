@@ -96,13 +96,7 @@ export default function MoviesPage() {
 
   // Derive unique languages and genres for filter lists
   const availableLanguages = useMemo(() => {
-    const set = new Set<string>();
-    movies.forEach((m) => {
-      if (m.language) {
-        m.language.split(",").forEach((l) => set.add(l.trim()));
-      }
-    });
-    return Array.from(set).sort();
+    return Array.from(new Set(movies.map((m) => m.language))).filter(Boolean);
   }, [movies]);
 
   const availableGenres = useMemo(() => {
@@ -123,12 +117,11 @@ export default function MoviesPage() {
         return false;
       }
       // Languages
-      if (selectedLanguages.length > 0) {
-        const movieLangs = m.language?.split(",").map((l) => l.trim()) || [];
-        const hasMatchingLang = selectedLanguages.some((l) =>
-          movieLangs.includes(l),
-        );
-        if (!hasMatchingLang) return false;
+      if (
+        selectedLanguages.length > 0 &&
+        !selectedLanguages.includes(m.language)
+      ) {
+        return false;
       }
       // Genres
       if (selectedGenres.length > 0) {
