@@ -47,6 +47,7 @@ export default function SeatMapPage() {
   }, [mapData]);
 
   const [loading, setLoading] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [selectedSeats, setSelectedSeats] = useState<SeatItem[]>([]);
   const [isCommitLoading, setIsCommitLoading] = useState(false);
 
@@ -101,18 +102,33 @@ export default function SeatMapPage() {
     );
   }, [venueShowtimes, mapData, id]);
 
-  const fetchSeatMap = async () => {
-    setLoading(true);
+  const fetchSeatMap = async (isManualRetry = false) => {
+    if (isManualRetry) {
+      setIsRetrying(true);
+    } else {
+      setLoading(true);
+    }
     try {
-      const data = await unwrap<SeatMapDetail>(
+      let data = await unwrap<SeatMapDetail>(
         api.get(`/showtimes/${id}/seat-map`),
       );
+      // Auto-retry once after 1.5s if upstream returned SOURCE_UNAVAILABLE on initial load
+      if (!isManualRetry && data?.code === "SOURCE_UNAVAILABLE") {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        data = await unwrap<SeatMapDetail>(
+          api.get(`/showtimes/${id}/seat-map`),
+        );
+      }
       setMapData(data);
       setSelectedSeats([]);
     } catch (err) {
       console.error("Failed to load seat map", err);
+      if (isManualRetry) {
+        toast.error("External ticketing provider is still waking up. Please try again in a moment.");
+      }
     } finally {
       setLoading(false);
+      setIsRetrying(false);
     }
   };
 
@@ -478,14 +494,14 @@ export default function SeatMapPage() {
   });
 
   if (isCoupleScreen) {
-  tiers.sort((a, b) => {
-    const aFirst = Object.keys(a.rows).sort()[0];
-    const bFirst = Object.keys(b.rows).sort()[0];
-    return aFirst.localeCompare(bFirst);
-  });
-} else {
-  tiers.sort((a, b) => b.price_paise - a.price_paise);
-}
+    tiers.sort((a, b) => {
+      const aFirst = Object.keys(a.rows).sort()[0] || "";
+      const bFirst = Object.keys(b.rows).sort()[0] || "";
+      return aFirst.localeCompare(bFirst);
+    });
+  } else {
+    tiers.sort((a, b) => b.price_paise - a.price_paise);
+  }
 
   const totalPricePaise = selectedSeats.reduce(
     (acc, s) => acc + (s.price_paise || 0),
@@ -554,7 +570,7 @@ export default function SeatMapPage() {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {isStale && !isSourceUnavailable && (
             <button
-              onClick={fetchSeatMap}
+              onClick={() => fetchSeatMap(true)}
               className="text-[#7B1E3D] hover:bg-[#7B1E3D]/10 border border-[#7B1E3D]/30 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
             >
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
@@ -665,13 +681,21 @@ export default function SeatMapPage() {
               Availability temporarily unavailable
             </h2>
             <p className="text-gray-500 text-sm">
-              The external ticketing system is unreachable. Please try again.
+              The external ticketing system is taking longer to respond. Please try again.
             </p>
             <button
-              onClick={fetchSeatMap}
-              className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-2.5 px-6 rounded-lg text-sm transition cursor-pointer"
+              onClick={() => fetchSeatMap(true)}
+              disabled={isRetrying}
+              className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A] disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition cursor-pointer flex items-center justify-center gap-2"
             >
-              Retry Connection
+              {isRetrying ? (
+                <>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                "Retry Connection"
+              )}
             </button>
           </div>
         ) : (
