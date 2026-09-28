@@ -50,7 +50,7 @@ export function AgeRestrictionModal({
           <button
             type="button"
             onClick={onConfirm}
-            className="w-full bg-[#CC4F60] hover:bg-[#b8434f] text-white font-semibold text-lg py-3 rounded-lg transition shadow-md cursor-pointer"
+            className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-lg py-3 rounded-lg transition shadow-md cursor-pointer"
           >
             Continue
           </button>

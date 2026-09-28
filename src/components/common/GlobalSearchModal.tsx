@@ -311,7 +311,7 @@ export function GlobalSearchModal({
                   <button
                     type="button"
                     onClick={clearRecentSearches}
-                    className="text-sm text-[#F84464] hover:text-[#d63351] font-semibold cursor-pointer transition"
+                    className="text-sm text-[#7B1E3D] hover:text-[#5C0F2A] font-semibold cursor-pointer transition"
                   >
                     Clear
                   </button>
@@ -347,7 +347,7 @@ export function GlobalSearchModal({
                     onClick={() => setActiveTab(tab)}
                     className={`pb-2.5 text-xs sm:text-sm font-semibold transition-all relative shrink-0 cursor-pointer ${
                       isActive
-                        ? "text-[#F84464] border-b-2 border-[#F84464]"
+                        ? "text-[#7B1E3D] border-b-2 border-[#7B1E3D]"
                         : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
@@ -361,7 +361,7 @@ export function GlobalSearchModal({
             <div className="my-3 text-xs text-gray-500 font-medium">
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F84464]" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#7B1E3D]" />
                   Searching experiences...
                 </span>
               ) : (
@@ -399,7 +399,7 @@ export function GlobalSearchModal({
 
                     {/* Details */}
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#F84464] transition-colors truncate">
+                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#7B1E3D] transition-colors truncate">
                         {item.title}
                       </h4>
                       <p className="text-xs text-gray-500 mt-1 line-clamp-1">
@@ -427,7 +427,7 @@ export function GlobalSearchModal({
                 <button
                   type="button"
                   onClick={handleViewAll}
-                  className="border border-[#F84464] text-[#F84464] hover:bg-[#F84464]/5 font-semibold text-xs sm:text-sm rounded-md px-10 py-2.5 transition cursor-pointer"
+                  className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 font-semibold text-xs sm:text-sm rounded-md px-10 py-2.5 transition cursor-pointer"
                 >
                   View All Results
                 </button>

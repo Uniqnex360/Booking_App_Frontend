@@ -533,14 +533,14 @@ export default function BuyTicketsPage() {
               <button
                 type="button"
                 onClick={handleOpenCityModal}
-                className="text-xs text-gray-500 hover:text-[#F84464] font-medium mb-3 transition cursor-pointer block mx-auto"
+                className="text-xs text-gray-500 hover:text-[#7B1E3D] font-medium mb-3 transition cursor-pointer block mx-auto"
               >
                 Unable to find what you are looking for?
               </button>
               <button
                 type="button"
                 onClick={handleOpenCityModal}
-                className="border border-[#F84464] text-[#F84464] hover:bg-[#F84464] hover:text-white px-5 py-2 rounded-md text-xs font-semibold transition cursor-pointer"
+                className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D] hover:text-white px-5 py-2 rounded-md text-xs font-semibold transition cursor-pointer"
               >
                 Change Location
               </button>
@@ -565,7 +565,7 @@ export default function BuyTicketsPage() {
                       onClick={() => setSelectedDate(dk)}
                       className={`w-[52px] sm:w-[58px] h-[52px] sm:h-[56px] py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
                         isActive
-                          ? "bg-[#F84464] text-white shadow-xs"
+                          ? "bg-[#7B1E3D] text-white shadow-xs"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
@@ -607,7 +607,7 @@ export default function BuyTicketsPage() {
                     <span>{activeFormatDisplay}</span>
                   </button>
                   {/* Active Red Bottom Line */}
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#F84464]" />
+                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#7B1E3D]" />
 
                   {openDropdown === "langFormat" && (
                     <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[180px]">
@@ -618,7 +618,7 @@ export default function BuyTicketsPage() {
                         }}
                         className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
                           langFormatFilter === "all"
-                            ? "text-[#F84464] font-semibold"
+                            ? "text-[#7B1E3D] font-semibold"
                             : "text-gray-700"
                         }`}
                       >
@@ -633,7 +633,7 @@ export default function BuyTicketsPage() {
                           }}
                           className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
                             langFormatFilter === opt
-                              ? "text-[#F84464] font-semibold"
+                              ? "text-[#7B1E3D] font-semibold"
                               : "text-gray-700"
                           }`}
                         >
@@ -650,7 +650,7 @@ export default function BuyTicketsPage() {
                     onClick={() => toggleDropdown("price")}
                     className={`flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900 h-full whitespace-nowrap cursor-pointer font-normal ${
                       selectedPriceRanges.length > 0
-                        ? "text-[#F84464] font-semibold"
+                        ? "text-[#7B1E3D] font-semibold"
                         : ""
                     }`}
                   >
@@ -689,7 +689,7 @@ export default function BuyTicketsPage() {
         type="checkbox"
         checked={isChecked}
         readOnly
-        className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
+        className="h-4 w-4 rounded border-gray-300 text-[#7B1E3D] focus:ring-[#7B1E3D] accent-[#7B1E3D] pointer-events-none cursor-pointer"
       />
     </div>
   );
@@ -704,7 +704,7 @@ export default function BuyTicketsPage() {
                     onClick={() => toggleDropdown("special")}
                     className={`flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900 h-full whitespace-nowrap cursor-pointer font-normal ${
                       selectedSpecialFormats.length > 0
-                        ? "text-[#F84464] font-semibold"
+                        ? "text-[#7B1E3D] font-semibold"
                         : ""
                     }`}
                   >
@@ -739,7 +739,7 @@ export default function BuyTicketsPage() {
                               type="checkbox"
                               checked={isChecked}
                               readOnly
-                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
+                              className="h-4 w-4 rounded border-gray-300 text-[#7B1E3D] focus:ring-[#7B1E3D] accent-[#7B1E3D] pointer-events-none cursor-pointer"
                             />
                           </div>
                         );
@@ -754,7 +754,7 @@ export default function BuyTicketsPage() {
                     onClick={() => toggleDropdown("other")}
                     className={`flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900 h-full whitespace-nowrap cursor-pointer font-normal ${
                       selectedOtherFilters.length > 0
-                        ? "text-[#F84464] font-semibold"
+                        ? "text-[#7B1E3D] font-semibold"
                         : ""
                     }`}
                   >
@@ -794,7 +794,7 @@ export default function BuyTicketsPage() {
                               type="checkbox"
                               checked={isChecked}
                               readOnly
-                              className="h-4 w-4 rounded border-gray-300 text-[#F84464] focus:ring-[#F84464] accent-[#F84464] pointer-events-none cursor-pointer"
+                              className="h-4 w-4 rounded border-gray-300 text-[#7B1E3D] focus:ring-[#7B1E3D] accent-[#7B1E3D] pointer-events-none cursor-pointer"
                             />
                           </div>
                         );
@@ -809,7 +809,7 @@ export default function BuyTicketsPage() {
                     onClick={() => toggleDropdown("time")}
                     className={`flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900 h-full whitespace-nowrap cursor-pointer font-normal ${
                       preferredTime !== "any"
-                        ? "text-[#F84464] font-semibold"
+                        ? "text-[#7B1E3D] font-semibold"
                         : ""
                     }`}
                   >
@@ -852,7 +852,7 @@ export default function BuyTicketsPage() {
                             }}
                             className={`w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 ${
                               preferredTime === key
-                                ? "text-[#F84464] font-semibold"
+                                ? "text-[#7B1E3D] font-semibold"
                                 : "text-gray-700"
                             }`}
                           >
@@ -917,7 +917,7 @@ export default function BuyTicketsPage() {
                             <div
                               className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                                 isSelected
-                                  ? "border-[#F84464] bg-[#F84464]"
+                                  ? "border-[#7B1E3D] bg-[#7B1E3D]"
                                   : "border-gray-300"
                               }`}
                             >
@@ -1052,7 +1052,7 @@ export default function BuyTicketsPage() {
                             <div className="flex items-center gap-1.5">
                               <h3
                                 onClick={() => setSelectedCinemaInfo(venue)}
-                                className="text-sm sm:text-base font-bold text-gray-900 hover:text-[#F84464] transition leading-snug cursor-pointer"
+                                className="text-sm sm:text-base font-bold text-gray-900 hover:text-[#7B1E3D] transition leading-snug cursor-pointer"
                               >
                                 {venue.venue_name}
                               </h3>
@@ -1071,12 +1071,12 @@ export default function BuyTicketsPage() {
                         <button
                           type="button"
                           onClick={() => toggleFavorite(venue.venue_id)}
-                          className="text-gray-300 hover:text-[#F84464] p-1 transition cursor-pointer shrink-0"
+                          className="text-gray-300 hover:text-[#7B1E3D] p-1 transition cursor-pointer shrink-0"
                           title="Bookmark Cinema"
                         >
                           <Heart
                             className={`h-5 w-5 ${
-                              isFav ? "fill-[#F84464] text-[#F84464]" : ""
+                              isFav ? "fill-[#7B1E3D] text-[#7B1E3D]" : ""
                             }`}
                           />
                         </button>
@@ -1205,14 +1205,14 @@ export default function BuyTicketsPage() {
             <button
               type="button"
               onClick={handleOpenCityModal}
-              className="text-xs text-gray-500 hover:text-[#F84464] font-medium mb-3 transition cursor-pointer block mx-auto"
+              className="text-xs text-gray-500 hover:text-[#7B1E3D] font-medium mb-3 transition cursor-pointer block mx-auto"
             >
               Unable to find what you are looking for?
             </button>
             <button
               type="button"
               onClick={handleOpenCityModal}
-              className="border border-[#F84464] text-[#F84464] hover:bg-[#F84464] hover:text-white px-5 py-2 rounded-md text-xs font-semibold transition cursor-pointer"
+              className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D] hover:text-white px-5 py-2 rounded-md text-xs font-semibold transition cursor-pointer"
             >
               Change Location
             </button>
@@ -1257,7 +1257,7 @@ export default function BuyTicketsPage() {
               </div>
               <Link
                 to="/partner/register"
-                className="bg-[#EC5E71] hover:bg-[#e04a5e] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
+                className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
               >
                 Contact today!
               </Link>
@@ -1431,8 +1431,8 @@ export default function BuyTicketsPage() {
                 <Heart
                   className={`h-4 w-4 transition ${
                     favorites[selectedCinemaInfo.venue_id]
-                      ? "fill-[#F84464] text-[#F84464]"
-                      : "text-gray-400 group-hover:text-[#F84464]"
+                      ? "fill-[#7B1E3D] text-[#7B1E3D]"
+                      : "text-gray-400 group-hover:text-[#7B1E3D]"
                   }`}
                 />
                 <span className="text-xs font-semibold text-gray-700 group-hover:text-gray-900">

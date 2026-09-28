@@ -195,12 +195,12 @@ export function CitySelectionModal({
             type="button"
             onClick={handleDetectLocation}
             disabled={detecting}
-            className="flex items-center gap-1.5 text-[#F84464] hover:text-[#d63351] text-xs sm:text-[13px] font-medium transition-colors cursor-pointer group"
+            className="flex items-center gap-1.5 text-[#7B1E3D] hover:text-[#5C0F2A] text-xs sm:text-[13px] font-medium transition-colors cursor-pointer group"
           >
             {detecting ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#F84464]" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#7B1E3D]" />
             ) : (
-              <Crosshair className="w-3.5 h-3.5 text-[#F84464] group-hover:scale-110 transition-transform" />
+              <Crosshair className="w-3.5 h-3.5 text-[#7B1E3D] group-hover:scale-110 transition-transform" />
             )}
             <span>{detecting ? "Detecting location..." : "Detect my location"}</span>
           </button>
@@ -238,8 +238,8 @@ export function CitySelectionModal({
                   <span
                     className={`text-[11px] sm:text-xs mt-1.5 transition-colors ${
                       isSelected
-                        ? "text-[#F84464] font-bold"
-                        : "text-gray-700 group-hover:text-[#F84464] font-medium"
+                        ? "text-[#7B1E3D] font-bold"
+                        : "text-gray-700 group-hover:text-[#7B1E3D] font-medium"
                     }`}
                   >
                     {c.name}
@@ -259,7 +259,7 @@ export function CitySelectionModal({
           <button
             type="button"
             onClick={() => setSearchQuery("")}
-            className="text-xs font-semibold text-[#F84464] hover:underline cursor-pointer"
+            className="text-xs font-semibold text-[#7B1E3D] hover:underline cursor-pointer"
           >
             View All Cities
           </button>

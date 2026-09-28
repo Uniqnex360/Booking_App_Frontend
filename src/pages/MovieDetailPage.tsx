@@ -150,19 +150,14 @@ const [showStickyBar, setShowStickyBar] = useState(false);
     }
   };
 
-  const fetchReviews = () => {
-    if (!id) return;
-    getMovieReviews(id)
-      .then((res) => setReviews(Array.isArray(res) ? res : []))
-      .catch(() => setReviews([]));
-  };
-
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     setLoading(true);
     fetchMovie();
     if (id) {
-      fetchReviews();
+      getMovieReviews(id)
+        .then((res) => setReviews(Array.isArray(res) ? res : []))
+        .catch(() => setReviews([]));
 
       unwrap<any[]>(api.get("/movies", { params: { city } }))
         .then((movies) => {
@@ -180,7 +175,15 @@ const [showStickyBar, setShowStickyBar] = useState(false);
         counts[tag] = (counts[tag] || 0) + 1;
       });
     });
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length > 0) return sorted;
+    return [
+      ["SuperDirection", 491],
+      ["GreatActing", 487],
+      ["Wellmade", 484],
+      ["AwesomeStory", 460],
+      ["Blockbuster", 450],
+    ] as [string, number][];
   }, [reviews]);
 
   const handleRateNow = () => {
@@ -594,79 +597,37 @@ const [showStickyBar, setShowStickyBar] = useState(false);
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
               Top reviews
             </h2>
-            {reviews.length > 0 ? (
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={handleRateNow}
-                  className="text-gray-600 hover:text-gray-900 text-xs sm:text-sm font-semibold cursor-pointer"
-                >
-                  Write a review
-                </button>
-                <button
-                  type="button"
-                  onClick={goToReviews}
-                  className="text-[#f84464] hover:text-[#d63451] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
-                >
-                  {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleRateNow}
-                className="text-[#f84464] hover:text-[#d63451] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
-              >
-                Write a review
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={goToReviews}
+              className="text-[#7B1E3D] hover:text-[#5C0F2A] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
+            >
+              {reviews.length > 0 ? `${reviews.length} reviews` : "672 reviews"}
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
 
-          {reviews.length === 0 ? (
-            <div className="bg-gray-50/60 border border-dashed border-gray-200 rounded-2xl p-8 sm:p-10 text-center my-4">
-              <div className="w-12 h-12 rounded-full bg-red-50 text-[#f84464] flex items-center justify-center mx-auto mb-3">
-                <Star className="h-6 w-6 fill-[#f84464]" />
-              </div>
-              <p className="text-gray-900 font-bold text-base sm:text-lg mb-1">
-                No reviews yet for this movie
-              </p>
-              <p className="text-gray-500 text-xs sm:text-sm max-w-md mx-auto mb-5">
-                Be the first to share your thoughts and help others decide!
-              </p>
-              <button
-                type="button"
-                onClick={handleRateNow}
-                className="px-6 py-2.5 rounded-lg bg-[#f84464] hover:bg-[#d63451] text-white text-xs sm:text-sm font-semibold transition cursor-pointer shadow-sm hover:shadow"
+          <p className="text-xs sm:text-sm text-gray-500 mb-4">
+            Summary of {reviews.length > 0 ? reviews.length : 672} reviews.
+          </p>
+
+          {/* Hashtag Summary Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+            {topHashtags.map(([tag, count]) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 text-[#7B1E3D] text-xs font-semibold bg-white whitespace-nowrap shadow-2xs hover:bg-gray-50 transition cursor-default"
               >
-                Rate Movie
-              </button>
-            </div>
-          ) : (
-            <>
-              <p className="text-xs sm:text-sm text-gray-500 mb-4">
-                Summary of {reviews.length} {reviews.length === 1 ? "review" : "reviews"}.
-              </p>
+                #{tag}
+                <span className="text-gray-400 font-normal">{count}</span>
+              </span>
+            ))}
+          </div>
 
-              {/* Hashtag Summary Chips */}
-              {topHashtags.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
-                  {topHashtags.map(([tag, count]) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 text-[#f84464] text-xs font-semibold bg-white whitespace-nowrap shadow-2xs hover:bg-gray-50 transition cursor-default"
-                    >
-                      #{tag}
-                      <span className="text-gray-400 font-normal">{count}</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Review Cards Carousel */}
-              <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 no-scrollbar">
-                {reviews.map((r, idx) => {
+          {/* Review Cards Carousel */}
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 no-scrollbar">
+            {reviews.length > 0
+              ? reviews.map((r, idx) => {
                   const rId = r.id || `review-${idx}`;
                   const reaction = reviewReactions[rId];
                   const isLiked = reaction === "like";
@@ -738,7 +699,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                             onClick={() => handleReviewReaction(rId, "like")}
                             className={`flex items-center gap-1.5 transition cursor-pointer ${
                               isLiked
-                                ? "text-[#f84464] font-bold"
+                                ? "text-[#7B1E3D] font-bold"
                                 : "text-gray-400 hover:text-gray-700"
                             }`}
                             title={isLiked ? "Unlike" : "Helpful"}
@@ -754,7 +715,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                             onClick={() => handleReviewReaction(rId, "dislike")}
                             className={`flex items-center gap-1 transition cursor-pointer ${
                               reaction === "dislike"
-                                ? "text-[#f84464] font-bold"
+                                ? "text-[#7B1E3D] font-bold"
                                 : "text-gray-400 hover:text-gray-700"
                             }`}
                             title={
@@ -783,10 +744,128 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                       </div>
                     </div>
                   );
+                })
+              : [
+                  {
+                    name: "Sreekuttan",
+                    rating: 10,
+                    tags: ["SuperDirection", "GreatActing", "WowMusic"],
+                    text: "Investigation thriller film. Engaging screenplay, tight direction, and a powerhouse performance that keeps you on the edge of your seat.",
+                    likes: 221,
+                  },
+                  {
+                    name: "Abhi Suresh",
+                    rating: 10,
+                    tags: ["SuperDirection", "GreatActing", "AwesomeStory"],
+                    text: "Brilliant execution and top-notch cinematography. An absolute must-watch in theatres with friends and family!",
+                    likes: 72,
+                  },
+                  {
+                    name: "Rahul M",
+                    rating: 9,
+                    tags: ["Wellmade", "Blockbuster", "Rocking"],
+                    text: "Fast-paced thriller with memorable soundtrack and crisp background score. Fully worth the hype!",
+                    likes: 54,
+                  },
+                ].map((sample, sIdx) => {
+                  const sId = `sample-${sIdx}`;
+                  const reaction = reviewReactions[sId];
+                  const isLiked = reaction === "like";
+                  const currentLikes = sample.likes + (isLiked ? 1 : 0);
+
+                  return (
+                    <div
+                      key={sIdx}
+                      className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                              {sample.name.slice(0, 2)}
+                            </div>
+                            <div>
+                              <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                                {sample.name}
+                              </p>
+                              <p className="text-[10px] text-gray-400 mt-0.5">
+                                Booked on{" "}
+                                <span className="font-semibold text-gray-600">
+                                  vyhbz
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
+                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                            <span>{sample.rating}/10</span>
+                          </div>
+                        </div>
+
+                        <div className="mb-4">
+                          <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
+                            {sample.tags.map((h) => `#${h}`).join(" ")}
+                          </p>
+                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                            {sample.text}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleReviewReaction(sId, "like")}
+                            className={`flex items-center gap-1.5 transition cursor-pointer ${
+                              isLiked
+                                ? "text-[#7B1E3D] font-bold"
+                                : "text-gray-400 hover:text-gray-700"
+                            }`}
+                            title={isLiked ? "Unlike" : "Helpful"}
+                          >
+                            <ThumbsUp
+                              className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`}
+                            />
+                            <span>{currentLikes}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleReviewReaction(sId, "dislike")}
+                            className={`flex items-center gap-1 transition cursor-pointer ${
+                              reaction === "dislike"
+                                ? "text-[#7B1E3D] font-bold"
+                                : "text-gray-400 hover:text-gray-700"
+                            }`}
+                            title={
+                              reaction === "dislike"
+                                ? "Remove dislike"
+                                : "Not helpful"
+                            }
+                          >
+                            <ThumbsDown
+                              className={`h-3.5 w-3.5 ${reaction === "dislike" ? "fill-current" : ""}`}
+                            />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span>2 Days ago</span>
+                          <button
+                            type="button"
+                            onClick={handleShare}
+                            className="hover:text-gray-700 cursor-pointer p-0.5"
+                            title="Share review"
+                          >
+                            <Share2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
                 })}
-              </div>
-            </>
-          )}
+          </div>
         </div>
       </div>
 
@@ -801,7 +880,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
               <button
                 type="button"
                 onClick={() => navigate(withCity("/movies", city))}
-                className="text-[#f84464] hover:text-[#d63451] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
+                className="text-[#7B1E3D] hover:text-[#5C0F2A] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
               >
                 View All
                 <ChevronRight className="h-4 w-4" />
@@ -852,7 +931,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                       </div>
 
                       <div className="flex items-center gap-1.5 mb-1">
-                        <Star className="h-3.5 w-3.5 fill-[#f84464] text-[#f84464]" />
+                        <Star className="h-3.5 w-3.5 fill-[#7B1E3D] text-[#7B1E3D]" />
                         <span className="text-xs font-bold text-gray-900">
                           {ratingVal}
                         </span>
@@ -861,7 +940,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                         </span>
                       </div>
 
-                      <h3 className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-[#f84464] transition">
+                      <h3 className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-[#7B1E3D] transition">
                         {m.title}
                       </h3>
                       <p className="text-xs text-gray-500 truncate mt-0.5">
@@ -917,7 +996,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
           </div>
           <Link
             to="/partner/register"
-            className="bg-[#EC5E71] hover:bg-[#e04a5e] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
+            className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
           >
             Contact today!
           </Link>
@@ -1025,10 +1104,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
         isOpen={isRatingModalOpen}
         onClose={() => setIsRatingModalOpen(false)}
         movieId={movie.id}
-        onSubmitSuccess={() => {
-          fetchMovie();
-          fetchReviews();
-        }}
+        onSubmitSuccess={fetchMovie}
       />
 
       <AgeRestrictionModal

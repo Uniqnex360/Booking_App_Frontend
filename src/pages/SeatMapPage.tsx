@@ -424,14 +424,14 @@ if (isAlreadySelected) {
           {isStale && !isSourceUnavailable && (
             <button
               onClick={fetchSeatMap}
-              className="text-[#f84464] hover:bg-[#f84464]/10 border border-[#f84464]/30 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              className="text-[#7B1E3D] hover:bg-[#7B1E3D]/10 border border-[#7B1E3D]/30 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
             >
               <RefreshCw className="h-3.5 w-3.5" /> Refresh
             </button>
           )}
 
           {holdId && countdown > 0 && (
-            <div className="bg-[#f84464] text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse">
+            <div className="bg-[#7B1E3D] text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse">
               <Clock className="h-3 w-3" /> {Math.floor(countdown / 60)}:
               {(countdown % 60).toString().padStart(2, "0")}
             </div>
@@ -439,7 +439,7 @@ if (isAlreadySelected) {
 
           <button
             onClick={() => setShowTicketModal(true)}
-            className="border border-[#f84464] text-[#f84464] hover:bg-[#f84464]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             title="Change seat count"
           >
             <Edit2 className="h-3 w-3" />
@@ -529,7 +529,7 @@ if (isAlreadySelected) {
       >
         {isSourceUnavailable ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white border border-gray-200 rounded-2xl max-w-lg mx-auto text-center px-6 mt-8 shadow-xs">
-            <AlertCircle className="h-12 w-12 text-[#f84464] mb-3" />
+            <AlertCircle className="h-12 w-12 text-[#7B1E3D] mb-3" />
             <h2 className="text-xl font-bold mb-2 text-gray-900">
               Availability temporarily unavailable
             </h2>
@@ -538,7 +538,7 @@ if (isAlreadySelected) {
             </p>
             <button
               onClick={fetchSeatMap}
-              className="mt-6 bg-[#f84464] hover:bg-[#d63451] text-white font-bold py-2.5 px-6 rounded-lg text-sm transition cursor-pointer"
+              className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-2.5 px-6 rounded-lg text-sm transition cursor-pointer"
             >
               Retry Connection
             </button>
@@ -712,7 +712,7 @@ if (isAlreadySelected) {
             disabled={isCommitLoading || !canProceed}
             className={`w-full max-w-sm sm:max-w-md font-bold py-3.5 px-8 rounded-lg transition text-sm sm:text-base flex items-center justify-center gap-2 shadow-md ${
               canProceed && !isCommitLoading
-                ? "bg-[#f84464] hover:bg-[#d63451] text-white cursor-pointer shadow-[#f84464]/25 active:scale-[0.99]"
+                ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer shadow-[#7B1E3D]/25 active:scale-[0.99]"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
@@ -758,7 +758,7 @@ if (isAlreadySelected) {
 
         <div className="border-t border-gray-100 py-1.5 px-4 sm:px-8 flex items-center justify-between text-[11px] text-gray-500 bg-[#FAFAFA]">
           <div className="flex items-center gap-1.5 mx-auto sm:mx-0">
-            <span className="text-[#f84464] font-bold">✓</span>
+            <span className="text-[#7B1E3D] font-bold">✓</span>
             <span>YES Private Debit Card Offer</span>
           </div>
           <span className="hidden sm:inline text-gray-400 font-mono text-[10px]">
@@ -794,7 +794,7 @@ if (isAlreadySelected) {
                   onClick={() => setTempTicketCount(n)}
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
                     tempTicketCount === n
-                      ? "bg-[#f84464] text-white shadow-md font-bold"
+                      ? "bg-[#7B1E3D] text-white shadow-md font-bold"
                       : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
@@ -825,7 +825,7 @@ if (isAlreadySelected) {
               <button
                 type="button"
                 onClick={() => handleSeatCountConfirm(tempTicketCount)}
-                className="w-full bg-[#f84464] hover:bg-[#d63451] text-white font-bold py-3 rounded-lg text-sm transition cursor-pointer shadow-md"
+                className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3 rounded-lg text-sm transition cursor-pointer shadow-md"
               >
                 Select Seats
               </button>
