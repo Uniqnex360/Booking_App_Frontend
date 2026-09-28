@@ -416,10 +416,41 @@ export default function BuyTicketsPage() {
   const [showAgeWarningModal, setShowAgeWarningModal] = useState(false);
   const [pendingSlotId, setPendingSlotId] = useState<string | null>(null);
   const [ageVerified, setAgeVerified] = useState(false);
+  const selectedSlot = useMemo(() => {
+    if (!selectedSlotId || !movie?.venues) return null;
+    for (const v of movie.venues) {
+      const s = v.showtimes.find((st) => st.id === selectedSlotId);
+      if (s) return s;
+    }
+    return null;
+  }, [selectedSlotId, movie]);
+
+  const isSelectedSlotCouple = useMemo(() => {
+    if (!selectedSlot) return false;
+    const sName = (selectedSlot.screen_name || "").toLowerCase();
+    const fmt = (selectedSlot.format || "").toLowerCase();
+    return sName.includes("couple") || fmt.includes("couple");
+  }, [selectedSlot]);
 
   const proceedWithSlot = (slotId: string) => {
     setSelectedSlotId(slotId);
-    setTempTicketCount(ticketCount);
+    let initialCount = ticketCount;
+    if (movie?.venues) {
+      for (const v of movie.venues) {
+        const s = v.showtimes.find((st) => st.id === slotId);
+        if (s) {
+          const sName = (s.screen_name || "").toLowerCase();
+          const fmt = (s.format || "").toLowerCase();
+          if (sName.includes("couple") || fmt.includes("couple")) {
+            if (initialCount % 2 !== 0 || initialCount < 2) {
+              initialCount = 2;
+            }
+          }
+          break;
+        }
+      }
+    }
+    setTempTicketCount(initialCount);
     setShowTicketModal(true);
     if (!showtimePricingMap[slotId]) {
       fetchShowtimePricing(slotId);
@@ -1185,16 +1216,9 @@ export default function BuyTicketsPage() {
                                     ENG
                                   </span>
                                 </div>
-                                {slot.screen_name?.toLowerCase().includes("couple") ||
-                                (slot.format || "").toLowerCase().includes("couple") ? (
-                                  <span className="text-[8px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-1 py-0.5 rounded uppercase tracking-wider leading-none mt-1 border border-[#7B1E3D]/30">
-                                    COUPLE
-                                  </span>
-                                ) : (
-                                  <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
-                                    {slot.format || "2D"}
-                                  </div>
-                                )}
+                                <div className="text-[8px] font-semibold text-gray-400 uppercase tracking-wider leading-none mt-1">
+                                  {slot.format || "2D"}
+                                </div>
                               </button>
                             </div>
                           );
@@ -1287,22 +1311,36 @@ export default function BuyTicketsPage() {
               <h2 className="text-lg font-bold text-gray-900">
                 How many seats?
               </h2>
+              {isSelectedSlotCouple && (
+                <p className="text-xs text-[#7B1E3D] font-semibold mt-1">
+                  Couple Recliner: Select 2, 4, 6, 8, or 10 seats (Pairs of 2)
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-center py-4">
               <SeatVehicle count={tempTicketCount} />
             </div>
 
-            <div className="flex items-center justify-between px-6 pt-2 pb-5 overflow-hidden select-none">
-              {Array.from({ length: MAX_TICKETS }, (_, i) => i + 1).map((n) => (
+            <div
+              className={`flex items-center pt-2 pb-5 overflow-hidden select-none ${
+                isSelectedSlotCouple
+                  ? "justify-center gap-3 sm:gap-4 px-4"
+                  : "justify-between px-6"
+              }`}
+            >
+              {(isSelectedSlotCouple
+                ? [2, 4, 6, 8, 10]
+                : Array.from({ length: MAX_TICKETS }, (_, i) => i + 1)
+              ).map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => setTempTicketCount(n)}
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
+                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition cursor-pointer shrink-0 ${
                     tempTicketCount === n
-                      ? "bg-[#D6445B] text-white shadow-md font-bold"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-[#7B1E3D] text-white shadow-md font-bold"
+                      : "text-gray-700 hover:bg-gray-100 border border-gray-200"
                   }`}
                 >
                   {n}

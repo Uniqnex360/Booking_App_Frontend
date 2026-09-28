@@ -1021,33 +1021,30 @@ export default function SeatMapPage() {
               <SeatVehicle count={tempTicketCount} />
             </div>
 
-            <div className="flex items-center justify-between px-6 pt-2 pb-5 overflow-hidden select-none">
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-                const isOddOnCouple = isCoupleScreen && n % 2 !== 0;
-                return (
-                  <button
-                    key={n}
-                    type="button"
-                    disabled={isOddOnCouple}
-                    onClick={() => {
-                      if (isOddOnCouple) {
-                        toast.info("Couple seats can only be booked in pairs of 2.");
-                        return;
-                      }
-                      setTempTicketCount(n);
-                    }}
-                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition shrink-0 ${
-                      isOddOnCouple
-                        ? "text-gray-300 bg-gray-50 cursor-not-allowed line-through opacity-50"
-                        : tempTicketCount === n
-                        ? "bg-[#7B1E3D] text-white shadow-md font-bold cursor-pointer"
-                        : "text-gray-700 hover:bg-gray-100 cursor-pointer"
-                    }`}
-                  >
-                    {n}
-                  </button>
-                );
-              })}
+            <div
+              className={`flex items-center pt-2 pb-5 overflow-hidden select-none ${
+                isCoupleScreen
+                  ? "justify-center gap-3 sm:gap-4 px-4"
+                  : "justify-between px-6"
+              }`}
+            >
+              {(isCoupleScreen
+                ? [2, 4, 6, 8, 10]
+                : Array.from({ length: 10 }, (_, i) => i + 1)
+              ).map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setTempTicketCount(n)}
+                  className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold transition shrink-0 cursor-pointer ${
+                    tempTicketCount === n
+                      ? "bg-[#7B1E3D] text-white shadow-md font-bold"
+                      : "text-gray-700 hover:bg-gray-100 border border-gray-200"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
             </div>
 
             <div className="border-t border-gray-100 px-6 py-4">
