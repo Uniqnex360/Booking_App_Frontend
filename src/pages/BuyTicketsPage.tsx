@@ -493,14 +493,32 @@ export default function BuyTicketsPage() {
 
       {dateKeys.length === 0 ? (
         <div className="max-w-[1240px] mx-auto px-4">
-          <div className="text-center py-20 text-gray-500">
+          <div className="text-center py-16 text-gray-500">
             <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-            <p className="text-lg font-medium">
+            <p className="text-lg font-medium text-gray-800">
               No showtimes available in {city}
             </p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-gray-400 mt-1 mb-6">
               Try selecting a different city
             </p>
+
+            {/* ─── Unable to find prompt / Change Location button ─── */}
+            <div className="text-center py-4 bg-white rounded-xl border border-gray-100 shadow-2xs max-w-md mx-auto">
+              <button
+                type="button"
+                onClick={handleOpenCityModal}
+                className="text-xs text-gray-500 hover:text-[#F84464] font-medium mb-3 transition cursor-pointer block mx-auto"
+              >
+                Unable to find what you are looking for?
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenCityModal}
+                className="border border-[#F84464] text-[#F84464] hover:bg-[#F84464] hover:text-white px-5 py-2 rounded-md text-xs font-semibold transition cursor-pointer"
+              >
+                Change Location
+              </button>
+            </div>
           </div>
         </div>
       ) : (
