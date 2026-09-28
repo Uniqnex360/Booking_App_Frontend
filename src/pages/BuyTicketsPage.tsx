@@ -436,6 +436,10 @@ export default function BuyTicketsPage() {
     name: "langFormat" | "time" | "price" | "special" | "other" | "sort"
   ) => setOpenDropdown((cur) => (cur === name ? null : name));
 
+  const handleOpenCityModal = () => {
+    window.dispatchEvent(new CustomEvent("open-city-modal"));
+  };
+
   if (loading) {
     return <LoadingPage showFooter={false} />;
   }
@@ -1154,12 +1158,16 @@ export default function BuyTicketsPage() {
 
           {/* ─── Unable to find prompt / Change Location button ─── */}
           <div className="text-center py-6 bg-white border-t border-gray-100 mt-6">
-            <p className="text-xs text-gray-500 font-medium mb-3">
-              Unable to find what you are looking for?
-            </p>
             <button
               type="button"
-              onClick={() => navigate(withCity("/", city))}
+              onClick={handleOpenCityModal}
+              className="text-xs text-gray-500 hover:text-[#F84464] font-medium mb-3 transition cursor-pointer block mx-auto"
+            >
+              Unable to find what you are looking for?
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenCityModal}
               className="border border-[#F84464] text-[#F84464] hover:bg-[#F84464] hover:text-white px-5 py-2 rounded-md text-xs font-semibold transition cursor-pointer"
             >
               Change Location

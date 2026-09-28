@@ -163,6 +163,12 @@ export function Header() {
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
+  useEffect(() => {
+    const handleOpenCityModal = () => setIsCityModalOpen(true);
+    window.addEventListener("open-city-modal", handleOpenCityModal);
+    return () => window.removeEventListener("open-city-modal", handleOpenCityModal);
+  }, []);
+
   const displayCityName = (c: string) => {
     if (c?.toLowerCase() === "bangalore" || c?.toLowerCase() === "bengaluru") {
       return "Bengaluru";
