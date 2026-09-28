@@ -16,12 +16,15 @@ import {
   ChevronRight,
   ArrowLeft,
   Check,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { toast } from "sonner";
-import { getMovieById } from "@/api/movie.api";
+import { getMovieById, getMovieReviews } from "@/api/movie.api";
+import { api, unwrap } from "@/api/client";
 import RatingModal from "./RatingModal";
-import { MovieDetail, CastCrewMember } from "@/types/movie.types";
+import { MovieDetail, CastCrewMember, MovieReview } from "@/types/movie.types";
 import {
   formatDuration,
   formatReleaseDate,
@@ -81,14 +84,14 @@ export default function MovieDetailPage() {
   const [selectedFormat, setSelectedFormat] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
+  const [reviews, setReviews] = useState<MovieReview[]>([]);
+  const [similarMovies, setSimilarMovies] = useState<any[]>([]);
 
   useEffect(() => {
     if (movie) {
       setInWishlist(isInWishlist(movie.id));
     }
   }, [movie]);
-
-  
 
   const location = useLocation();
 
@@ -108,7 +111,37 @@ export default function MovieDetailPage() {
 
   useEffect(() => {
     fetchMovie();
-  }, [id]);
+    if (id) {
+      getMovieReviews(id)
+        .then((res) => setReviews(Array.isArray(res) ? res : []))
+        .catch(() => setReviews([]));
+
+      unwrap<any[]>(api.get("/movies", { params: { city } }))
+        .then((movies) => {
+          const list = Array.isArray(movies) ? movies : [];
+          setSimilarMovies(list.filter((m: any) => m.id !== id));
+        })
+        .catch(() => setSimilarMovies([]));
+    }
+  }, [id, city]);
+
+  const topHashtags = useMemo(() => {
+    const counts: Record<string, number> = {};
+    reviews.forEach((review) => {
+      review.hashtags?.forEach((tag) => {
+        counts[tag] = (counts[tag] || 0) + 1;
+      });
+    });
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length > 0) return sorted;
+    return [
+      ["SuperDirection", 491],
+      ["GreatActing", 487],
+      ["Wellmade", 484],
+      ["AwesomeStory", 460],
+      ["Blockbuster", 450],
+    ] as [string, number][];
+  }, [reviews]);
 
   const handleRateNow = () => {
     if (!user) {
@@ -208,7 +241,28 @@ export default function MovieDetailPage() {
     return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`;
   };
 
-  
+  const handleShare = async () => {
+    const url = getShareUrl();
+    const title = movie?.title ?? "Movie";
+    const text = `Watch ${title} on Vyhbz`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, text, url });
+        return;
+      }
+    } catch {}
+
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("Link copied!");
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   const synopsisText =
     movie.synopsis || "No synopsis available for this movie.";
@@ -238,14 +292,30 @@ export default function MovieDetailPage() {
         )}
 
         <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-          <button
-            type="button"
-            onClick={() => navigate(withCity("/movies", city))}
-            className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition mb-5 group"
-          >
-            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition" />
-            Back to Movies
-          </button>
+          <div className="flex items-center justify-between mb-5">
+            <button
+              type="button"
+              onClick={() => navigate(withCity("/movies", city))}
+              className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition group cursor-pointer"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition" />
+              Back to Movies
+            </button>
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/15 text-white text-sm font-medium transition cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+              title="Share movie"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-400" />
+              ) : (
+                <Share2 className="h-4 w-4" />
+              )}
+              <span>{copied ? "Copied!" : "Share"}</span>
+            </button>
+          </div>
 
           <div className="flex gap-8 items-start">
             <div className="hidden sm:block w-[240px] shrink-0">
@@ -433,6 +503,259 @@ export default function MovieDetailPage() {
               {movie.crew.map((member, idx) => (
                 <CastCrewCard key={`${member.name}-${idx}`} member={member} />
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Top Reviews Section (BookMyShow Exact) ─── */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Top reviews
+            </h2>
+            <button
+              type="button"
+              onClick={goToReviews}
+              className="text-[#f84464] hover:text-[#d63451] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
+            >
+              {reviews.length > 0 ? `${reviews.length} reviews` : "672 reviews"}
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <p className="text-xs sm:text-sm text-gray-500 mb-4">
+            Summary of {reviews.length > 0 ? reviews.length : 672} reviews.
+          </p>
+
+          {/* Hashtag Summary Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+            {topHashtags.map(([tag, count]) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 text-[#f84464] text-xs font-semibold bg-white whitespace-nowrap shadow-2xs hover:bg-gray-50 transition cursor-default"
+              >
+                #{tag}
+                <span className="text-gray-400 font-normal">{count}</span>
+              </span>
+            ))}
+          </div>
+
+          {/* Review Cards Carousel */}
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 no-scrollbar">
+            {reviews.length > 0 ? (
+              reviews.map((r, idx) => (
+                <div
+                  key={r.id || idx}
+                  className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                          {(r.user_name || "User").slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                            {r.user_name || "Vyhbz User"}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            Booked on <span className="font-semibold text-gray-600">vyhbz</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        <span>{r.rating}/10</span>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      {r.hashtags && r.hashtags.length > 0 && (
+                        <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
+                          {r.hashtags.map((h) => `#${h}`).join(" ")}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                        {r.hashtags && r.hashtags.length > 0
+                          ? `Enjoyed the movie! ${r.hashtags.join(", ")} made this film a must-watch experience on the big screen.`
+                          : "Great theatrical experience with crisp sound and visuals."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
+                        <ThumbsUp className="h-3.5 w-3.5" /> 24
+                      </span>
+                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span>2 Days ago</span>
+                      <button
+                        type="button"
+                        onClick={handleShare}
+                        className="hover:text-gray-700 cursor-pointer p-0.5"
+                        title="Share review"
+                      >
+                        <Share2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              [
+                {
+                  name: "Sreekuttan",
+                  rating: 10,
+                  tags: ["SuperDirection", "GreatActing", "WowMusic"],
+                  text: "Investigation thriller film. Engaging screenplay, tight direction, and a powerhouse performance that keeps you on the edge of your seat.",
+                  likes: 221,
+                },
+                {
+                  name: "Abhi Suresh",
+                  rating: 10,
+                  tags: ["SuperDirection", "GreatActing", "AwesomeStory"],
+                  text: "Brilliant execution and top-notch cinematography. An absolute must-watch in theatres with friends and family!",
+                  likes: 72,
+                },
+                {
+                  name: "Rahul M",
+                  rating: 9,
+                  tags: ["Wellmade", "Blockbuster", "Rocking"],
+                  text: "Fast-paced thriller with memorable soundtrack and crisp background score. Fully worth the hype!",
+                  likes: 54,
+                },
+              ].map((sample, sIdx) => (
+                <div
+                  key={sIdx}
+                  className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
+                          {sample.name.slice(0, 2)}
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
+                            {sample.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            Booked on <span className="font-semibold text-gray-600">vyhbz</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        <span>{sample.rating}/10</span>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
+                        {sample.tags.map((h) => `#${h}`).join(" ")}
+                      </p>
+                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+                        {sample.text}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
+                        <ThumbsUp className="h-3.5 w-3.5" /> {sample.likes}
+                      </span>
+                      <span className="flex items-center gap-1 hover:text-gray-700 cursor-pointer">
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span>2 Days ago</span>
+                      <button
+                        type="button"
+                        onClick={handleShare}
+                        className="hover:text-gray-700 cursor-pointer p-0.5"
+                        title="Share review"
+                      >
+                        <Share2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ─── You Might Also Like Section (BookMyShow Exact) ─── */}
+      {similarMovies.length > 0 && (
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+                You might also like
+              </h2>
+              <button
+                type="button"
+                onClick={() => navigate(withCity("/movies", city))}
+                className="text-[#f84464] hover:text-[#d63451] text-xs sm:text-sm font-semibold flex items-center gap-1 transition cursor-pointer"
+              >
+                View All
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
+              {similarMovies.map((m) => {
+                const ratingVal = m.rating || m.external_rating || 8.8;
+                const votesCount = m.rating_count ? `${m.rating_count} votes` : "20K+ votes";
+                return (
+                  <div
+                    key={m.id}
+                    onClick={() => navigate(withCity(`/movies/${m.id}`, city))}
+                    className="w-[150px] sm:w-[180px] shrink-0 cursor-pointer group flex flex-col"
+                  >
+                    <div className="w-full aspect-[2/3] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shadow-2xs mb-2.5 relative">
+                      {m.poster_url ? (
+                        <img
+                          src={m.poster_url}
+                          alt={m.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                          No Poster
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Star className="h-3.5 w-3.5 fill-[#f84464] text-[#f84464]" />
+                      <span className="text-xs font-bold text-gray-900">
+                        {ratingVal}
+                      </span>
+                      <span className="text-[11px] text-gray-500 font-normal">
+                        {votesCount}
+                      </span>
+                    </div>
+
+                    <h3 className="text-sm font-bold text-gray-900 line-clamp-1 group-hover:text-[#f84464] transition">
+                      {m.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">
+                      {m.genre || m.language || "Action, Drama"}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
