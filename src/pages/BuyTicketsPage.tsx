@@ -454,13 +454,8 @@ export default function BuyTicketsPage() {
   };
 
   const handleShowtimeClick = (slotId: string) => {
-    if (movie?.certificate?.toUpperCase() === "A" && !ageVerified) {
-      setPendingSlotId(slotId);
-      setShowAgeWarningModal(true);
-      return;
-    }
-    proceedWithSlot(slotId);
-  };
+  proceedWithSlot(slotId);
+};
 
   const currentSlotTiers = useMemo(() => {
     if (selectedSlotId && showtimePricingMap[selectedSlotId]?.length) {
