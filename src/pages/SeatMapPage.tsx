@@ -14,6 +14,7 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "./AuthModal";
 import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
@@ -26,10 +27,26 @@ function isUserLoggedIn(): boolean {
   );
 }
 
+function loadScript(src: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
 
   const city = searchParams.get("city") || "";
 
@@ -39,7 +56,8 @@ export default function SeatMapPage() {
   );
 
   const [mapData, setMapData] = useState<SeatMapDetail | null>(null);
-
+  const [showBookingOverlay, setShowBookingOverlay] = useState(false);
+const [bookingResult, setBookingResult] = useState<{ refCode: string; bookingId: string } | null>(null);
   const isCoupleScreen = useMemo(() => {
     const sName = (mapData?.screen_name || "").toLowerCase();
     const fmt = (mapData?.format || "").toLowerCase();
@@ -311,9 +329,85 @@ export default function SeatMapPage() {
     idempotencyKeyRef.current = crypto.randomUUID();
   };
 
+  const startRazorpayPayment = async (booking: any, contactDetails: any) => {
+    const isLoaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    if (!isLoaded) {
+      toast.error("Failed to load payment gateway. Please check your connection.");
+      setIsCommitLoading(false);
+      return;
+    }
+
+    const rzpKey =
+      import.meta.env.VITE_RAZORPAY_KEY_ID ||
+      import.meta.env.VITE_RAZORPAY_KEY ||
+      "rzp_test_Td8PA3wLtNQ2m3";
+
+    const amount =
+      booking.total_paise ||
+      selectedSeats.reduce(
+        (acc, s) => acc + (s.price_paise || 0),
+        0
+      );
+
+    const movieTitle = mapData?.movie_title || "Movie Booking";
+    const seatList = selectedSeats
+      .map((s) => s.code || `${s.row_label}${s.number}`)
+      .join(", ");
+
+    const options = {
+      key: rzpKey,
+      amount: amount,
+      currency: booking.currency || "INR",
+      name: "Vyhbz Cinemas",
+      description: `${movieTitle} - Seats: ${seatList}`,
+      handler: async function (response: any) {
+        toast.info("Payment verified! Confirming seats...");
+        try {
+          const commitRes = await unwrap<any>(
+            api.post(`/bookings/${booking.id}/commit`, {
+              payment_ref: response.razorpay_payment_id,
+            })
+          );
+          toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
+          if (isUserLoggedIn()) {
+            setBookingResult({ refCode: commitRes.ref_code, bookingId: booking.id });
+            setShowBookingOverlay(true);
+            setIsCommitLoading(false);
+          } else {
+            navigate(
+              `/confirmation?ref=${encodeURIComponent(commitRes.ref_code ?? "")}&id=${booking.id}`
+            );
+          }
+        } catch (err: any) {
+          toast.error(err.message || "Confirmation failed after payment.");
+        } finally {
+          setIsCommitLoading(false);
+        }
+      },
+      prefill: {
+        name: contactDetails?.name || user?.full_name || "Customer",
+        email: contactDetails?.email || user?.email || "customer@vybhz.com",
+        contact: contactDetails?.phone || user?.phone || "9999999999",
+      },
+      theme: {
+        color: "#7B1E3D",
+      },
+      modal: {
+        ondismiss: function () {
+          toast.warning("Payment cancelled. Seats are still on hold for a limited time.");
+          setIsCommitLoading(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  };
+
   const handleCheckout = async (contact?: {
     email?: string;
     phone?: string;
+    name?: string;
   }) => {
     if (selectedSeats.length !== requiredSeatCount) {
       toast.warning(
@@ -371,19 +465,16 @@ export default function SeatMapPage() {
         setHoldId(res.id);
         setHeldUntil(new Date(res.held_until));
 
-        const commitRes = await unwrap<any>(
-          api.post(`/bookings/${res.id}/commit`, {
-            payment_ref: `no-payment-${crypto.randomUUID()}`,
-          }),
-        );
-        toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
+        await startRazorpayPayment(res, saved);
+      } else {
+        toast.success(`Booking confirmed successfully!`);
         if (isUserLoggedIn()) {
-          navigate(`/profile`);
+          setBookingResult({ refCode: res.ref_code, bookingId: res.id });
+          setShowBookingOverlay(true);
         } else {
-          navigate(
-            `/confirmation?ref=${encodeURIComponent(commitRes.ref_code ?? "")}&id=${res.id}`,
-          );
+          navigate(`/confirmation?id=${res.id}`);
         }
+        setIsCommitLoading(false);
       }
     } catch (err: any) {
   setHoldId(null);
@@ -1094,7 +1185,81 @@ export default function SeatMapPage() {
         onClose={() => setIsAuthModalOpen(false)}
         onSubmit={handleContactSubmit}
       />
-      
+
+      {showBookingOverlay && bookingResult && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-[#7B1E3D] text-white text-center py-5 px-6">
+              <div className="text-3xl mb-1">🎟️</div>
+              <h2 className="text-lg font-bold">Booking Confirmed!</h2>
+            </div>
+
+            <div className="p-6 space-y-3">
+              <div>
+                <p className="text-xs text-gray-400 font-medium">Movie</p>
+                <p className="text-sm font-bold text-gray-900">
+                  {mapData?.movie_title}
+                </p>
+              </div>
+              <div className="flex justify-between gap-4">
+                <div>
+                  <p className="text-xs text-gray-400 font-medium">Venue</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {mapData?.venue_name || mapData?.cinema_name}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-medium">Screen</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {mapData?.screen_name}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 font-medium">Showtime</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {formattedDate} | {formattedTime}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 font-medium">Seats</p>
+                <p className="text-sm font-semibold text-gray-800">
+                  {selectedSeats
+                    .map((s) => s.code || `${s.row_label}${s.number}`)
+                    .join(", ")}
+                </p>
+              </div>
+              <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between items-center">
+                <p className="text-xs text-gray-400 font-medium">Booking Ref</p>
+                <p className="text-sm font-bold text-[#7B1E3D] tracking-wide">
+                  {bookingResult.refCode}
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gray-50 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowBookingOverlay(false)}
+                className="flex-1 border border-gray-300 text-gray-700 font-semibold rounded-lg py-2.5 text-sm hover:bg-gray-100 transition cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowBookingOverlay(false);
+                  navigate("/profile");
+                }}
+                className="flex-1 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold rounded-lg py-2.5 text-sm transition cursor-pointer"
+              >
+                View in Orders
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
 
   );
