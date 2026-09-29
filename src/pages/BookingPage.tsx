@@ -28,6 +28,15 @@ import {
   Plus,
   Ticket,
   Loader2,
+  HelpCircle,
+  FileText,
+  UserCheck,
+  Layers,
+  Phone,
+  ChevronDown,
+  ChevronUp,
+  Maximize2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { format, parseISO, differenceInHours, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
@@ -52,6 +61,10 @@ export default function BookingPage() {
   const [loading, setLoading] = useState(true);
   const [interestedCount, setInterestedCount] = useState(16);
   const [isInterested, setIsInterested] = useState(false);
+
+  // Preview & Accordion States
+  const [activeImagePreview, setActiveImagePreview] = useState<string | null>(null);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   // Booking Modal States
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
@@ -256,7 +269,7 @@ export default function BookingPage() {
             </div>
 
             {/* Interest Section */}
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <ThumbsUp className="h-5 w-5 text-green-600" />
                 <span className="text-sm text-gray-700">
@@ -274,7 +287,7 @@ export default function BookingPage() {
               >
                 {isInterested ? 'Interested ✓' : "I'm Interested"}
               </Button>
-            </div>
+            </div> */}
 
             {/* About Section */}
             <div className="space-y-3">
@@ -306,6 +319,183 @@ export default function BookingPage() {
                 </div>
               </div>
             )}
+
+            {/* Artists Section */}
+            {eventData.artists && eventData.artists.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Users className="h-6 w-6 text-[#7B1E3D]" />
+                  Artists & Performers
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {eventData.artists.map((artist: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex flex-col items-center text-center p-3 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="h-20 w-20 rounded-full overflow-hidden bg-slate-200 border-2 border-[#7B1E3D]/20 mb-2 flex items-center justify-center">
+                        {artist.image_url ? (
+                          <img
+                            src={artist.image_url}
+                            alt={artist.name}
+                            className="h-full w-full object-cover"
+                            onError={(e) => ((e.target as any).style.display = "none")}
+                          />
+                        ) : (
+                          <Users className="h-8 w-8 text-gray-400" />
+                        )}
+                      </div>
+                      <p className="font-semibold text-gray-900 text-sm">{artist.name}</p>
+                      {artist.role && (
+                        <p className="text-xs text-[#7B1E3D] font-medium">{artist.role}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Seating / Stage Layout */}
+            {eventData.layout_image_url && (
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Layers className="h-6 w-6 text-[#7B1E3D]" />
+                  Seating & Venue Layout
+                </h2>
+                <div
+                  onClick={() => setActiveImagePreview(eventData.layout_image_url)}
+                  className="group relative cursor-pointer overflow-hidden rounded-xl border border-gray-200 bg-slate-50 p-2 transition-all hover:shadow-md"
+                >
+                  <img
+                    src={eventData.layout_image_url}
+                    alt="Venue layout"
+                    className="max-h-80 w-full object-contain rounded-lg"
+                  />
+                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-medium text-sm">
+                    <Maximize2 className="h-5 w-5" />
+                    <span>Click to view full layout</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Gallery Images */}
+            {eventData.gallery_images && eventData.gallery_images.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <ImageIcon className="h-6 w-6 text-[#7B1E3D]" />
+                  Event Gallery
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {eventData.gallery_images.map((imgUrl: string, idx: number) => (
+                    <div
+                      key={idx}
+                      onClick={() => setActiveImagePreview(imgUrl)}
+                      className="group relative h-36 rounded-xl overflow-hidden cursor-pointer border border-gray-100 bg-gray-100"
+                    >
+                      <img
+                        src={imgUrl}
+                        alt={`Gallery ${idx + 1}`}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <Maximize2 className="h-5 w-5" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Official Offline Promoter */}
+            {eventData.offline_promoter &&
+              (eventData.offline_promoter.name ||
+                eventData.offline_promoter.contact ||
+                eventData.offline_promoter.details) && (
+                <div className="space-y-3">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <UserCheck className="h-6 w-6 text-[#7B1E3D]" />
+                    Official Offline Promoter
+                  </h2>
+                  <div className="rounded-xl border border-wine-200 bg-[#7B1E3D]/5 p-5 space-y-2">
+                    {eventData.offline_promoter.name && (
+                      <p className="font-bold text-gray-900 text-base">
+                        {eventData.offline_promoter.name}
+                      </p>
+                    )}
+                    {eventData.offline_promoter.contact && (
+                      <p className="text-sm text-gray-700 flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-[#7B1E3D]" />
+                        <span>{eventData.offline_promoter.contact}</span>
+                      </p>
+                    )}
+                    {eventData.offline_promoter.details && (
+                      <p className="text-xs text-gray-600">
+                        {eventData.offline_promoter.details}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+            {/* FAQs */}
+            {eventData.faqs && eventData.faqs.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <HelpCircle className="h-6 w-6 text-[#7B1E3D]" />
+                  Frequently Asked Questions
+                </h2>
+                <div className="space-y-2">
+                  {eventData.faqs.map((faq: any, idx: number) => {
+                    const isOpen = openFaqIndex === idx;
+                    return (
+                      <div
+                        key={idx}
+                        className="rounded-xl border border-gray-200 bg-white overflow-hidden transition-colors"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                          className="w-full flex items-center justify-between p-4 text-left font-semibold text-gray-900 text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                          <span>{faq.question}</span>
+                          {isOpen ? (
+                            <ChevronUp className="h-4 w-4 text-gray-500 shrink-0 ml-2" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 text-gray-500 shrink-0 ml-2" />
+                          )}
+                        </button>
+                        {isOpen && (
+                          <div className="px-4 pb-4 text-sm text-gray-600 border-t border-gray-100 pt-3">
+                            <p className="whitespace-pre-line">{faq.answer}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Terms and Conditions */}
+            {eventData.terms_and_conditions &&
+              eventData.terms_and_conditions.length > 0 && (
+                <div className="space-y-3">
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <FileText className="h-6 w-6 text-[#7B1E3D]" />
+                    Terms & Conditions
+                  </h2>
+                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+                    <ul className="list-disc list-inside space-y-1.5 text-xs text-gray-600 leading-relaxed">
+                      {eventData.terms_and_conditions.map((term: string, idx: number) => (
+                        <li key={idx} className="marker:text-[#7B1E3D]">
+                          {term}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
           </div>
 
           {/* Right Booking Card */}
@@ -407,7 +597,7 @@ export default function BookingPage() {
                 </div>
 
                 {/* Additional Info */}
-                <div className="space-y-2 text-xs text-gray-500 pt-2 border-t border-gray-100">
+                {/* <div className="space-y-2 text-xs text-gray-500 pt-2 border-t border-gray-100">
                   <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
                     <span>Instant booking confirmation</span>
@@ -416,7 +606,7 @@ export default function BookingPage() {
                     <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
                     <span>e-Ticket on email & SMS</span>
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -580,6 +770,22 @@ export default function BookingPage() {
               )}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Lightbox */}
+      <Dialog
+        open={Boolean(activeImagePreview)}
+        onOpenChange={(open) => !open && setActiveImagePreview(null)}
+      >
+        <DialogContent className="max-w-4xl p-2 bg-black/95 border-0 flex items-center justify-center rounded-2xl overflow-hidden">
+          {activeImagePreview && (
+            <img
+              src={activeImagePreview}
+              alt="Preview"
+              className="max-h-[85vh] w-auto max-w-full rounded-lg object-contain"
+            />
+          )}
         </DialogContent>
       </Dialog>
 
