@@ -36,6 +36,15 @@ export interface EventItem {
   is_fast_filling?: boolean;
   is_must_attend?: boolean;
   is_unmissable?: boolean;
+  venue_address?: string;
+latitude?: number;
+longitude?: number;
+layout_image_url?: string;
+gallery_images?: string[];
+artists?: { name: string; role?: string; image_url?: string }[];
+faqs?: { question: string; answer: string }[];
+terms_and_conditions?: string[];
+offline_promoter?: { name?: string; contact?: string; details?: string };
   is_kids_allowed?: boolean;
   is_masterclass?: boolean;
   is_new_year_party?: boolean;
@@ -63,6 +72,15 @@ export interface EventCreatePayload {
   is_kids_allowed?: boolean;
   is_masterclass?: boolean;
   is_new_year_party?: boolean;
+    venue_address?: string;
+  latitude?: number;
+  longitude?: number;
+  layout_image_url?: string;
+  gallery_images?: string[];
+  artists?: { name: string; role?: string; image_url?: string }[];
+  faqs?: { question: string; answer: string }[];
+  terms_and_conditions?: string[];
+  offline_promoter?: { name?: string; contact?: string; details?: string };
   ticket_categories: TicketCategory[];
 }
 
@@ -85,6 +103,15 @@ export interface EventUpdatePayload {
   is_kids_allowed?: boolean;
   is_masterclass?: boolean;
   is_new_year_party?: boolean;
+    venue_address?: string;
+  latitude?: number;
+  longitude?: number;
+  layout_image_url?: string;
+  gallery_images?: string[];
+  artists?: { name: string; role?: string; image_url?: string }[];
+  faqs?: { question: string; answer: string }[];
+  terms_and_conditions?: string[];
+  offline_promoter?: { name?: string; contact?: string; details?: string };
 }
 
 export interface AdminContentStatusPayload {

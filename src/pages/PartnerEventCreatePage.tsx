@@ -43,7 +43,9 @@ import {
   Palette,
   Sparkles,
   MapPin,
+  Users,
 } from "lucide-react";
+import { fileToDataUrl } from "@/utils/fileToDataUrl";
 
 const categoryMeta: Record<
   EventCategory,
@@ -115,6 +117,33 @@ const eventSchema = z
     is_kids_allowed: z.boolean().default(false),
     is_masterclass: z.boolean().default(false),
     is_new_year_party: z.boolean().default(false),
+    layout_image_url: z.string().optional(),
+    gallery_images: z.array(z.string()).default([]),
+        artists: z
+      .array(
+        z.object({
+          name: z.string().optional(),
+          role: z.string().optional(),
+          image_url: z.string().optional(),
+        }),
+      )
+      .default([]),
+    faqs: z
+      .array(
+        z.object({
+          question: z.string().optional(),
+          answer: z.string().optional(),
+        }),
+      )
+      .default([]),
+    terms_text: z.string().optional(),
+    offline_promoter: z
+      .object({
+        name: z.string().optional(),
+        contact: z.string().optional(),
+        details: z.string().optional(),
+      })
+      .optional(),
     ticket_categories: z
       .array(ticketSchema)
       .min(1, "Add at least one ticket tier"),
@@ -134,6 +163,7 @@ const steps = [
   { id: 1, label: "Event Details", icon: CalendarDays },
   { id: 2, label: "Poster & Description", icon: ImageIcon },
   { id: 3, label: "Ticket Tiers", icon: Ticket },
+  { id: 4, label: "Artists & Info", icon: Users },
 ];
 
 export default function PartnerEventCreatePage() {
@@ -142,17 +172,17 @@ export default function PartnerEventCreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [currentMin, setCurrentMin] = useState("");
 
-useEffect(() => {
-  const updateMin = () => {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    setCurrentMin(now.toISOString().slice(0, 16));
-  };
-  
-  updateMin();
-  const interval = setInterval(updateMin, 60000); 
-  return () => clearInterval(interval);
-}, []);
+  useEffect(() => {
+    const updateMin = () => {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      setCurrentMin(now.toISOString().slice(0, 16));
+    };
+
+    updateMin();
+    const interval = setInterval(updateMin, 60000);
+    return () => clearInterval(interval);
+  }, []);
   const {
     register,
     handleSubmit,
@@ -175,6 +205,9 @@ useEffect(() => {
       is_kids_allowed: false,
       is_masterclass: false,
       is_new_year_party: false,
+      artists: [],
+      faqs: [],
+      gallery_images: [],
       ticket_categories: [
         { name: "", price_paise: 0, capacity: 0, max_per_booking: 1 },
       ],
@@ -189,7 +222,16 @@ useEffect(() => {
     control,
     name: "ticket_categories",
   });
-
+  const {
+    fields: artistFields,
+    append: appendArtist,
+    remove: removeArtist,
+  } = useFieldArray({ control, name: "artists" });
+  const {
+    fields: faqFields,
+    append: appendFaq,
+    remove: removeFaq,
+  } = useFieldArray({ control, name: "faqs" });
   const nextStep = async () => {
     const fieldsByStep: Record<number, (keyof EventFormData)[]> = {
       1: [
@@ -203,6 +245,7 @@ useEffect(() => {
       ],
       2: ["poster_image_url"],
       3: ["ticket_categories"],
+      4: [],
     };
 
     const valid = await trigger(fieldsByStep[step], { shouldFocus: true });
@@ -227,7 +270,7 @@ useEffect(() => {
       });
     }
 
-    if (valid) setStep((s) => Math.min(s + 1, 3));
+    if (valid) setStep((s) => Math.min(s + 1, 4));
   };
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
@@ -251,8 +294,26 @@ useEffect(() => {
         is_fast_filling: Boolean(data.is_fast_filling),
         is_must_attend: Boolean(data.is_must_attend),
         is_unmissable: Boolean(data.is_unmissable),
+        venue_address: data.venue_address,
+        latitude: data.latitude,
+        longitude: data.longitude,
         is_kids_allowed: Boolean(data.is_kids_allowed),
         is_masterclass: Boolean(data.is_masterclass),
+        layout_image_url: data.layout_image_url || undefined,
+        gallery_images: data.gallery_images || [],
+        artists: (data.artists || []).filter((a) => a.name?.trim()),
+faqs: (data.faqs || []).filter((f) => f.question?.trim() && f.answer?.trim()),
+        terms_and_conditions: (data.terms_text || "")
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        offline_promoter:
+          data.offline_promoter &&
+          (data.offline_promoter.name ||
+            data.offline_promoter.contact ||
+            data.offline_promoter.details)
+            ? data.offline_promoter
+            : undefined,
         is_new_year_party: Boolean(data.is_new_year_party),
         ticket_categories: data.ticket_categories.map((t) => ({
           ...t,
@@ -355,7 +416,11 @@ useEffect(() => {
           })}
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form
+  onSubmit={handleSubmit(onSubmit, () =>
+    toast.error("Please fix the errors in earlier steps"),
+  )}
+>
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
             <AnimatePresence mode="wait">
               {/* Step 1: Event Details */}
@@ -500,13 +565,15 @@ useEffect(() => {
                         Start Date & Time *
                       </Label>
                       <Input
-  type="datetime-local"
-  className={`h-11 rounded-xl ${
-    errors.starts_at ? "border-destructive focus-visible:ring-destructive" : ""
-  }`}
-  min={currentMin}
-  {...register("starts_at")}
-/>
+                        type="datetime-local"
+                        className={`h-11 rounded-xl ${
+                          errors.starts_at
+                            ? "border-destructive focus-visible:ring-destructive"
+                            : ""
+                        }`}
+                        min={currentMin}
+                        {...register("starts_at")}
+                      />
                       {errors.starts_at && (
                         <p className="text-xs text-rose-600">
                           {errors.starts_at.message}
@@ -519,13 +586,15 @@ useEffect(() => {
                         End Date & Time *
                       </Label>
                       <Input
-  type="datetime-local"
-  className={`h-11 rounded-xl ${
-    errors.ends_at ? "border-destructive focus-visible:ring-destructive" : ""
-  }`}
-  min={startsAt || currentMin}
-  {...register("ends_at")}
-/>
+                        type="datetime-local"
+                        className={`h-11 rounded-xl ${
+                          errors.ends_at
+                            ? "border-destructive focus-visible:ring-destructive"
+                            : ""
+                        }`}
+                        min={startsAt || currentMin}
+                        {...register("ends_at")}
+                      />
                       {errors.ends_at && (
                         <p className="text-xs text-rose-600">
                           {errors.ends_at.message}
@@ -626,7 +695,9 @@ useEffect(() => {
                               if (isSelected) {
                                 setValue(
                                   "tags",
-                                  currentTags.filter((x: string) => x !== t.key)
+                                  currentTags.filter(
+                                    (x: string) => x !== t.key,
+                                  ),
                                 );
                               } else {
                                 setValue("tags", [...currentTags, t.key]);
@@ -638,7 +709,8 @@ useEffect(() => {
                                 : "bg-white text-slate-700 border-slate-200 hover:border-[#7B1E3D]"
                             }`}
                           >
-                            {isSelected ? "✓ " : "+ "}{t.label}
+                            {isSelected ? "✓ " : "+ "}
+                            {t.label}
                           </button>
                         );
                       })}
@@ -646,7 +718,9 @@ useEffect(() => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Event Attributes & Flags</Label>
+                    <Label className="text-sm font-medium">
+                      Event Attributes & Flags
+                    </Label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
                       {[
                         { id: "is_online", label: "Online Event" },
@@ -844,6 +918,244 @@ useEffect(() => {
                   </div>
                 </motion.div>
               )}
+              {step === 4 && (
+                <motion.div
+                  key="step4"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-8"
+                >
+                  <h2 className="font-serif text-xl font-semibold text-slate-900">
+                    Artists & Extra Info{" "}
+                    <span className="text-sm text-slate-500">(optional)</span>
+                  </h2>
+
+                  {/* Artists */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Artists</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={() =>
+                          appendArtist({ name: "", role: "", image_url: "" })
+                        }
+                      >
+                        <Plus className="h-4 w-4" /> Add Artist
+                      </Button>
+                    </div>
+                    {artistFields.map((f, i) => {
+                      const img = watch(`artists.${i}.image_url`);
+                      return (
+                        <div
+                          key={f.id}
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 p-3"
+                        >
+                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-slate-100">
+                            {img && (
+                              <img
+                                src={img}
+                                className="h-full w-full object-cover"
+                              />
+                            )}
+                          </div>
+                          <div className="grid flex-1 gap-2 sm:grid-cols-2">
+                            <Input
+                              placeholder="Artist name"
+                              className="h-9 rounded-lg"
+                              {...register(`artists.${i}.name` as const)}
+                            />
+                            <Input
+                              placeholder="Role (Headliner)"
+                              className="h-9 rounded-lg"
+                              {...register(`artists.${i}.role` as const)}
+                            />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="text-xs sm:col-span-2"
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setValue(
+                                  `artists.${i}.image_url`,
+                                  await fileToDataUrl(file, 300, 0.7),
+                                );
+                              }}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeArtist(i)}
+                            className="h-8 w-8 text-rose-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Layout image */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Stage / Seating Layout
+                    </Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="text-xs"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file)
+                          setValue(
+                            "layout_image_url",
+                            await fileToDataUrl(file, 1400, 0.8),
+                          );
+                      }}
+                    />
+                    {watch("layout_image_url") && (
+                      <img
+                        src={watch("layout_image_url")}
+                        className="max-h-40 rounded-lg border"
+                      />
+                    )}
+                  </div>
+
+                  {/* Gallery */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Gallery Images
+                    </Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="text-xs"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        const urls = await Promise.all(
+                          files.map((f) => fileToDataUrl(f, 800, 0.7)),
+                        );
+                        setValue("gallery_images", [
+                          ...(watch("gallery_images") || []),
+                          ...urls,
+                        ]);
+                      }}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {(watch("gallery_images") || []).map((u, i) => (
+                        <div key={i} className="relative">
+                          <img
+                            src={u}
+                            className="h-16 w-24 rounded-lg object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setValue(
+                                "gallery_images",
+                                (watch("gallery_images") || []).filter(
+                                  (_, x) => x !== i,
+                                ),
+                              )
+                            }
+                            className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-rose-600 text-xs text-white"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Promoter */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Official Offline Promoter
+                    </Label>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Input
+                        placeholder="Name"
+                        className="h-10 rounded-xl"
+                        {...register("offline_promoter.name")}
+                      />
+                      <Input
+                        placeholder="Phone number"
+                        className="h-10 rounded-xl"
+                        {...register("offline_promoter.contact")}
+                      />
+                      <Input
+                        placeholder="Details (address, timings)"
+                        className="h-10 rounded-xl sm:col-span-2"
+                        {...register("offline_promoter.details")}
+                      />
+                    </div>
+                  </div>
+
+                  {/* FAQs */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">FAQs</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="rounded-xl"
+                        onClick={() => appendFaq({ question: "", answer: "" })}
+                      >
+                        <Plus className="h-4 w-4" /> Add FAQ
+                      </Button>
+                    </div>
+                    {faqFields.map((f, i) => (
+                      <div
+                        key={f.id}
+                        className="space-y-2 rounded-xl border border-slate-200 p-3"
+                      >
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Question"
+                            className="h-9 rounded-lg"
+                            {...register(`faqs.${i}.question` as const)}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeFaq(i)}
+                            className="h-9 w-9 text-rose-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          placeholder="Answer"
+                          className="rounded-lg"
+                          {...register(`faqs.${i}.answer` as const)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Terms */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Terms & Conditions{" "}
+                      <span className="text-slate-500">(one per line)</span>
+                    </Label>
+                    <Textarea
+                      className="min-h-[100px] rounded-xl"
+                      {...register("terms_text")}
+                    />
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
 
             {/* Navigation */}
@@ -862,7 +1174,7 @@ useEffect(() => {
                 <div />
               )}
 
-              {step < 3 ? (
+              {step < 4 ? (
                 <Button
                   type="button"
                   onClick={nextStep}
