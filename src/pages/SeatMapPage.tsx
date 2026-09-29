@@ -357,6 +357,10 @@ const [bookingResult, setBookingResult] = useState<{ refCode: string; bookingId:
             })
           );
           toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
+          setHeldUntil(null);
+setHoldId(null);
+setCountdown(0);
+          
           if (isUserLoggedIn()) {
             setBookingResult({ refCode: commitRes.ref_code, bookingId: booking.id });
             setShowBookingOverlay(true);
