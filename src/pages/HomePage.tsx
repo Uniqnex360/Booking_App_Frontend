@@ -295,27 +295,7 @@ export default function HomePage() {
         </section>
 
         {/* Categories */}
-        <section className="bg-white border-b border-gray-200">
-          <div className="max-w-[1240px] mx-auto px-4 py-6">
-            <div className="flex items-center justify-center gap-6 sm:gap-12">
-              {CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.title}
-                  to={withCity(cat.link, city)}
-                  className="group flex flex-col items-center gap-2"
-                >
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 group-hover:bg-[#7B1E3D]/10 transition-colors">
-                    <cat.icon className="h-6 w-6 text-gray-600 group-hover:text-[#7B1E3D]" />
-                  </div>
-                  <span className="font-medium text-gray-700 text-sm group-hover:text-[#7B1E3D] transition-colors">
-                    {cat.title}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
+        
         {/* Recommended Movies */}
         <section className="max-w-[1240px] mx-auto px-4 py-10">
           <div className="flex items-center justify-between mb-6">
