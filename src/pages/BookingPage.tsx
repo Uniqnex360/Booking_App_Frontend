@@ -237,7 +237,7 @@ export default function BookingPage() {
       // Status is HELD / PENDING: Proceed to Razorpay checkout
       await startRazorpayPayment(booking);
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to complete booking.');
+      toast.error(err?.response?.data?.detail || err?.message || 'Failed to complete booking.');
       setIsBooking(false);
     }
   };
