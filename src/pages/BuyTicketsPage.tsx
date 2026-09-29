@@ -1556,7 +1556,7 @@ export default function BuyTicketsPage() {
           </div>
         </div>
       )}
-      <AgeRestrictionModal
+      {/* <AgeRestrictionModal
         isOpen={showAgeWarningModal}
         movieTitle={movie?.title}
         onClose={() => {
@@ -1571,7 +1571,7 @@ export default function BuyTicketsPage() {
             setPendingSlotId(null);
           }
         }}
-      />
+      /> */}
       <Footer />
     </div>
   );
