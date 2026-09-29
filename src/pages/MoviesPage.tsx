@@ -31,7 +31,11 @@ interface MovieItem {
   external_rating?: number;
   votes_count?: number;
 }
-
+const splitLangs = (s?: string) =>
+  (s || "")
+    .split(/[,/&]/)
+    .map((l) => l.trim())
+    .filter(Boolean);
 export default function MoviesPage() {
   const navigate = useNavigate();
   const [movies, setMovies] = useState<MovieItem[]>([]);
@@ -96,7 +100,9 @@ export default function MoviesPage() {
 
   // Derive unique languages and genres for filter lists
   const availableLanguages = useMemo(() => {
-    return Array.from(new Set(movies.map((m) => m.language))).filter(Boolean);
+    const set = new Set<string>();
+    movies.forEach((m) => splitLangs(m.language).forEach((l) => set.add(l)));
+    return Array.from(set).sort();
   }, [movies]);
 
   const availableGenres = useMemo(() => {
@@ -117,9 +123,9 @@ export default function MoviesPage() {
         return false;
       }
       // Languages
-      if (
+            if (
         selectedLanguages.length > 0 &&
-        !selectedLanguages.includes(m.language)
+        !splitLangs(m.language).some((l) => selectedLanguages.includes(l))
       ) {
         return false;
       }
@@ -135,10 +141,8 @@ export default function MoviesPage() {
     });
   }, [movies, search, selectedLanguages, selectedGenres]);
 
-  const toggleLanguageFilter = (lang: string) => {
-    setSelectedLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang],
-    );
+   const toggleLanguageFilter = (lang: string) => {
+    setSelectedLanguages((prev) => (prev.includes(lang) ? [] : [lang]));
   };
 
   const toggleGenreFilter = (genre: string) => {
