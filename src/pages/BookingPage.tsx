@@ -72,6 +72,7 @@ export default function BookingPage() {
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [ticketQuantity, setTicketQuantity] = useState(1);
   const [isBooking, setIsBooking] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);  
 
   useEffect(() => {
     const fetchEventDetails = async () => {
@@ -155,6 +156,7 @@ export default function BookingPage() {
       name: 'Vyhbz',
       description: `${eventData?.title || 'Event'} - ${selectedTier?.name || 'Tickets'} x ${ticketQuantity}`,
       handler: async (response: any) => {
+        setIsConfirming(true);
         try {
           const commitRes = await unwrap<any>(
             api.post(`/bookings/${booking.id}/commit`, {
@@ -172,6 +174,7 @@ export default function BookingPage() {
           );
         } finally {
           setIsBooking(false);
+          setIsConfirming(false);
         }
       },
       prefill: {
@@ -701,7 +704,13 @@ export default function BookingPage() {
       </main>
 
       {/* Ticket Selection Dialog */}
-      <Dialog open={bookingModalOpen} onOpenChange={setBookingModalOpen}>
+     <Dialog
+  open={bookingModalOpen}
+  onOpenChange={(open) => {
+    if (isBooking || isConfirming) return;
+    setBookingModalOpen(open);
+  }}
+>
         <DialogContent className="sm:max-w-md bg-white border border-gray-200 p-6 rounded-2xl shadow-xl">
           <DialogHeader className="border-b border-gray-100 pb-4 text-left">
             <div className="flex items-center gap-2 text-xs text-[#7B1E3D] font-semibold uppercase tracking-wider mb-1">
@@ -875,7 +884,15 @@ export default function BookingPage() {
           )}
         </DialogContent>
       </Dialog>
-
+          {isConfirming && (
+  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm text-white px-6 text-center">
+    <Loader2 className="h-10 w-10 animate-spin" />
+    <p className="text-lg font-semibold">Confirming your payment...</p>
+    <p className="text-sm text-white/80">
+      Please do not close or refresh this page.
+    </p>
+  </div>
+)}
       <Footer />
     </div>
   );
