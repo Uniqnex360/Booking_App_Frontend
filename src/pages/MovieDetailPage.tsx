@@ -745,126 +745,30 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                     </div>
                   );
                 })
-              : [
-                  {
-                    name: "Sreekuttan",
-                    rating: 10,
-                    tags: ["SuperDirection", "GreatActing", "WowMusic"],
-                    text: "Investigation thriller film. Engaging screenplay, tight direction, and a powerhouse performance that keeps you on the edge of your seat.",
-                    likes: 221,
-                  },
-                  {
-                    name: "Abhi Suresh",
-                    rating: 10,
-                    tags: ["SuperDirection", "GreatActing", "AwesomeStory"],
-                    text: "Brilliant execution and top-notch cinematography. An absolute must-watch in theatres with friends and family!",
-                    likes: 72,
-                  },
-                  {
-                    name: "Rahul M",
-                    rating: 9,
-                    tags: ["Wellmade", "Blockbuster", "Rocking"],
-                    text: "Fast-paced thriller with memorable soundtrack and crisp background score. Fully worth the hype!",
-                    likes: 54,
-                  },
-                ].map((sample, sIdx) => {
-                  const sId = `sample-${sIdx}`;
-                  const reaction = reviewReactions[sId];
-                  const isLiked = reaction === "like";
-                  const currentLikes = sample.likes + (isLiked ? 1 : 0);
-
-                  return (
-                    <div
-                      key={sIdx}
-                      className="w-[300px] sm:w-[360px] shrink-0 border border-gray-200 rounded-2xl p-5 bg-white shadow-2xs flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase">
-                              {sample.name.slice(0, 2)}
-                            </div>
-                            <div>
-                              <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
-                                {sample.name}
-                              </p>
-                              <p className="text-[10px] text-gray-400 mt-0.5">
-                                Booked on{" "}
-                                <span className="font-semibold text-gray-600">
-                                  vyhbz
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded text-amber-700 text-xs font-bold border border-amber-200">
-                            <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                            <span>{sample.rating}/10</span>
-                          </div>
-                        </div>
-
-                        <div className="mb-4">
-                          <p className="text-xs font-bold text-gray-900 mb-1.5 line-clamp-1">
-                            {sample.tags.map((h) => `#${h}`).join(" ")}
-                          </p>
-                          <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                            {sample.text}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
-                        <div className="flex items-center gap-4">
-                          <button
-                            type="button"
-                            onClick={() => handleReviewReaction(sId, "like")}
-                            className={`flex items-center gap-1.5 transition cursor-pointer ${
-                              isLiked
-                                ? "text-[#7B1E3D] font-bold"
-                                : "text-gray-400 hover:text-gray-700"
-                            }`}
-                            title={isLiked ? "Unlike" : "Helpful"}
-                          >
-                            <ThumbsUp
-                              className={`h-3.5 w-3.5 ${isLiked ? "fill-current" : ""}`}
-                            />
-                            <span>{currentLikes}</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleReviewReaction(sId, "dislike")}
-                            className={`flex items-center gap-1 transition cursor-pointer ${
-                              reaction === "dislike"
-                                ? "text-[#7B1E3D] font-bold"
-                                : "text-gray-400 hover:text-gray-700"
-                            }`}
-                            title={
-                              reaction === "dislike"
-                                ? "Remove dislike"
-                                : "Not helpful"
-                            }
-                          >
-                            <ThumbsDown
-                              className={`h-3.5 w-3.5 ${reaction === "dislike" ? "fill-current" : ""}`}
-                            />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span>2 Days ago</span>
-                          <button
-                            type="button"
-                            onClick={handleShare}
-                            className="hover:text-gray-700 cursor-pointer p-0.5"
-                            title="Share review"
-                          >
-                            <Share2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+              : (
+                <div className="w-full border border-dashed border-gray-300 rounded-2xl py-12 px-6 flex flex-col items-center justify-center text-center bg-gray-50/60">
+                  <div className="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3">
+                    <Star className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-bold text-gray-800 mb-1">
+                    No reviews yet
+                  </p>
+                  <p className="text-xs text-gray-500 max-w-sm mb-4">
+                    Be the first to share what you thought about{" "}
+                    <span className="font-semibold text-gray-700">
+                      {movie.title}
+                    </span>
+                    .
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleRateNow}
+                    className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white text-xs font-bold px-5 py-2.5 rounded-lg transition"
+                  >
+                    Write a review
+                  </button>
+                </div>
+              )}
           </div>
         </div>
       </div>
