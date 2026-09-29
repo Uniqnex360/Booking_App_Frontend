@@ -41,6 +41,7 @@ import {
 import { format, parseISO, differenceInHours, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
 import { LoadingPage } from './LoadingPage';
+import { loadScript } from '@/utils/loadScript';
 
 const categoryLabels: Record<string, string> = {
   concert: 'Music Shows',
@@ -128,29 +129,115 @@ export default function BookingPage() {
     setBookingModalOpen(true);
   };
 
+  const startRazorpayPayment = async (booking: any) => {
+    const isLoaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+    if (!isLoaded) {
+      toast.error('Failed to load payment gateway.');
+      setIsBooking(false);
+      return;
+    }
+
+    const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+    if (!rzpKey) {
+      toast.error('Payment configuration missing. Please contact support.');
+      setIsBooking(false);
+      return;
+    }
+
+    const amount =
+      booking.total_paise ??
+      (selectedTier ? selectedTier.price_paise * ticketQuantity : 0);
+
+    const options = {
+      key: rzpKey,
+      amount: amount,
+      currency: booking.currency || 'INR',
+      name: 'Vyhbz',
+      description: `${eventData?.title || 'Event'} - ${selectedTier?.name || 'Tickets'} x ${ticketQuantity}`,
+      handler: async (response: any) => {
+        try {
+          const commitRes = await unwrap<any>(
+            api.post(`/bookings/${booking.id}/commit`, {
+              payment_ref: response.razorpay_payment_id,
+            })
+          );
+          toast.success('Tickets booked successfully!');
+          setBookingModalOpen(false);
+          navigate(
+            `/confirmation?id=${booking.id}&ref=${encodeURIComponent(commitRes.ref_code ?? booking.id)}`
+          );
+        } catch (err: any) {
+          toast.error(
+            `Confirmation failed after payment. Please contact support with Payment ID: ${response.razorpay_payment_id}`
+          );
+        } finally {
+          setIsBooking(false);
+        }
+      },
+      prefill: {
+        name: user?.full_name || '',
+        email: user?.email || '',
+        contact: (user as any)?.phone || '',
+      },
+      theme: { color: '#7B1E3D' },
+      modal: {
+        ondismiss: () => {
+          toast.warning('Payment cancelled.');
+          setIsBooking(false);
+        },
+      },
+    };
+
+    const rzp = new (window as any).Razorpay(options);
+    rzp.on('payment.failed', (r: any) => {
+      toast.error(r?.error?.description || 'Payment failed.');
+      setIsBooking(false);
+    });
+    rzp.open();
+  };
+
   const handleConfirmBooking = async () => {
     if (!selectedTier) {
       toast.error('Please select a ticket category');
       return;
     }
+    if (!user) {
+      toast.error('Please login to book tickets');
+      navigate('/login', { state: { from: `/events/${id}` } });
+      return;
+    }
+
     try {
       setIsBooking(true);
-      const payload = {
-        tier_id: selectedTier.id,
-        quantity: ticketQuantity,
-        idempotency_key:
-          typeof crypto !== 'undefined' && crypto.randomUUID
-            ? crypto.randomUUID()
-            : `book-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      };
-      const res = await unwrap<any>(api.post('/bookings', payload));
-      const bookingId = res?.booking?.id || res?.id;
-      toast.success('Tickets booked successfully!');
-      setBookingModalOpen(false);
-      navigate(`/confirmation?id=${bookingId}&ref=${bookingId}`);
+      const idempotencyKey =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `book-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      const res = await unwrap<any>(
+        api.post('/bookings', {
+          tier_id: selectedTier.id,
+          quantity: ticketQuantity,
+          idempotency_key: idempotencyKey,
+        })
+      );
+      const booking = res?.booking || res;
+
+      // Free event (or already confirmed by server), navigate directly
+      if (booking.status === 'CONFIRMED') {
+        toast.success('Tickets reserved successfully!');
+        setBookingModalOpen(false);
+        navigate(
+          `/confirmation?id=${booking.id}&ref=${encodeURIComponent(booking.ref_code ?? booking.id)}`
+        );
+        setIsBooking(false);
+        return;
+      }
+
+      // Status is HELD / PENDING: Proceed to Razorpay checkout
+      await startRazorpayPayment(booking);
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to complete booking. Please try again.');
-    } finally {
+      toast.error(err?.message || 'Failed to complete booking.');
       setIsBooking(false);
     }
   };

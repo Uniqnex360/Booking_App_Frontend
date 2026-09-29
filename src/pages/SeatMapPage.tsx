@@ -19,27 +19,13 @@ import AuthModal from "./AuthModal";
 import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
 import { SeatItem, SeatMapDetail, VenueShowtimeItem } from "@/types/movie.types";
+import { loadScript } from "@/utils/loadScript";
 
 function isUserLoggedIn(): boolean {
   return Boolean(
     localStorage.getItem("access_token") ||
       localStorage.getItem("vyhbz_access_token"),
   );
-}
-
-function loadScript(src: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const existing = document.querySelector(`script[src="${src}"]`);
-    if (existing) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = src;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
 }
 
 export default function SeatMapPage() {
@@ -337,10 +323,12 @@ const [bookingResult, setBookingResult] = useState<{ refCode: string; bookingId:
       return;
     }
 
-    const rzpKey =
-      import.meta.env.VITE_RAZORPAY_KEY_ID ||
-      import.meta.env.VITE_RAZORPAY_KEY ||
-      "rzp_test_Td8PA3wLtNQ2m3";
+    const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+    if (!rzpKey) {
+      toast.error("Payment configuration missing. Please contact support.");
+      setIsCommitLoading(false);
+      return;
+    }
 
     const amount =
       booking.total_paise ||
@@ -379,7 +367,9 @@ const [bookingResult, setBookingResult] = useState<{ refCode: string; bookingId:
             );
           }
         } catch (err: any) {
-          toast.error(err.message || "Confirmation failed after payment.");
+          toast.error(
+            `Confirmation failed after payment. Please contact support with Payment ID: ${response.razorpay_payment_id}`
+          );
         } finally {
           setIsCommitLoading(false);
         }
