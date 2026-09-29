@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   getWishlist,
@@ -11,18 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/common/Loader";
 import { useAuth } from "@/hooks/useAuth";
-import { getBookings, cancelBooking } from "@/api/booking.api";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { getBookings } from "@/api/booking.api";
 import { getExtendedProfile, updateProfile } from "@/api/profile.api";
 import type { Booking } from "@/types/booking.types";
 import type {
@@ -166,57 +155,27 @@ export default function ProfilePage() {
     };
   }, [user]);
 
-  const fetchBookings = useCallback(async () => {
-    try {
-      const data = await getBookings();
-      setBookings(data);
-    } catch {
-      setBookings([]);
-    } finally {
-      setBookingsLoading(false);
-    }
-  }, []);
-
   // Load Bookings (Memory-Leak Safe)
   useEffect(() => {
     let isMounted = true;
 
-    if (user) {
-      getBookings()
-        .then((data) => {
-          if (isMounted) setBookings(data);
-        })
-        .catch(() => {
-          if (isMounted) setBookings([]);
-        })
-        .finally(() => {
-          if (isMounted) setBookingsLoading(false);
-        });
-    }
+    const fetchBookings = async () => {
+      try {
+        const data = await getBookings();
+        if (isMounted) setBookings(data);
+      } catch {
+        if (isMounted) setBookings([]);
+      } finally {
+        if (isMounted) setBookingsLoading(false);
+      }
+    };
+
+    if (user) fetchBookings();
 
     return () => {
       isMounted = false; // Prevents updating state after component unmount
     };
   }, [user]);
-
-  const handleCancelBooking = async (bookingId: string) => {
-    try {
-      await cancelBooking(bookingId);
-      toast.success("Booking cancelled successfully");
-      setBookings((prev) =>
-        prev.map((b) =>
-          b.id === bookingId ? { ...b, status: "CANCELLED" } : b
-        )
-      );
-      fetchBookings();
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.detail ||
-        (err instanceof Error ? err.message : "Failed to cancel booking");
-      toast.error(message);
-      throw err;
-    }
-  };
 
   if (loading || !user) {
     return <LoadingPage showFooter={false} />;
@@ -699,11 +658,7 @@ export default function ProfilePage() {
                       </h3>
                       <div className="grid gap-4">
                         {upcoming.map((b) => (
-                          <BookingCard
-                            key={b.id}
-                            booking={b}
-                            onCancel={handleCancelBooking}
-                          />
+                          <BookingCard key={b.id} booking={b} />
                         ))}
                       </div>
                     </div>
@@ -715,12 +670,7 @@ export default function ProfilePage() {
                       </h3>
                       <div className="grid gap-4">
                         {past.map((b) => (
-                          <BookingCard
-                            key={b.id}
-                            booking={b}
-                            past
-                            onCancel={handleCancelBooking}
-                          />
+                          <BookingCard key={b.id} booking={b} past />
                         ))}
                       </div>
                     </div>
@@ -881,29 +831,14 @@ function SidebarItem({ icon: Icon, label, active, onClick }: any) {
 function BookingCard({
   booking,
   past = false,
-  onCancel,
 }: {
   booking: Booking;
   past?: boolean;
-  onCancel?: (bookingId: string) => Promise<void>;
 }) {
-  const [cancelling, setCancelling] = useState(false);
   const isMovie = booking.type === "MOVIE" && !!booking.starts_at;
   const bookingDate = new Date(booking.starts_at || booking.booking_date);
   const title = booking.movie_title ?? booking.title;
   const seatCount = booking.seat_codes?.length ?? 0;
-
-  const handleConfirmCancel = async () => {
-    if (!onCancel) return;
-    try {
-      setCancelling(true);
-      await onCancel(booking.id);
-    } catch {
-      // Handled in parent
-    } finally {
-      setCancelling(false);
-    }
-  };
 
   const statusLabel =
     booking.status === "CANCELLED"
@@ -954,13 +889,7 @@ function BookingCard({
               </p>
             ) : null}
           </div>
-          <Badge
-            className={`${
-              booking.status === "CANCELLED"
-                ? "bg-red-100 text-red-700 hover:bg-red-100"
-                : "bg-green-100 text-green-700 hover:bg-green-100"
-            } text-[10px] font-bold uppercase`}
-          >
+          <Badge className="bg-green-100 text-green-700 hover:bg-green-100 text-[10px] font-bold uppercase">
             {statusLabel}
           </Badge>
         </div>
@@ -968,42 +897,9 @@ function BookingCard({
           <span className="font-mono text-sm font-bold text-gray-900">
             {booking.ref_code}
           </span>
-          <div className="flex items-center gap-3">
-            {!past && booking.status !== "CANCELLED" && onCancel && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    disabled={cancelling}
-                    className="text-xs text-red-600 hover:text-red-700 font-medium transition-colors disabled:opacity-50"
-                  >
-                    {cancelling ? "Cancelling..." : "Cancel"}
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to cancel your booking for{" "}
-                      <strong>{title}</strong>? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Keep Booking</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleConfirmCancel}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      Confirm Cancellation
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            <span className="text-sm font-bold text-gray-900">
-              {formatCurrency(booking.total_price)}
-            </span>
-          </div>
+          <span className="text-sm font-bold text-gray-900">
+            {formatCurrency(booking.total_price)}
+          </span>
         </div>
       </div>
     );
@@ -1107,42 +1003,15 @@ function BookingCard({
         </p>
 
         {/* Actions */}
-        <div className="mt-4 mb-4 grid grid-cols-2 gap-2 text-center items-center">
-          {past || booking.status === "CANCELLED" ? (
-            <span className="py-2 text-xs text-gray-400 font-medium">
-              {booking.status === "CANCELLED" ? "Booking Cancelled" : "Completed"}
-            </span>
-          ) : (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  type="button"
-                  disabled={cancelling}
-                  className="py-2 text-xs text-red-600 hover:text-red-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                >
-                  {cancelling ? "Cancelling..." : "Cancel booking"}
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel Movie Booking?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to cancel your tickets for{" "}
-                    <strong>{title}</strong>? Your seats ({booking.seat_codes?.join(", ") || `${seatCount} seats`}) will be released and this cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Keep Booking</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleConfirmCancel}
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                  >
-                    Confirm Cancellation
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+        <div className="mt-4 mb-4 grid grid-cols-2 gap-2 text-center">
+          <button
+            type="button"
+            disabled={past || booking.status === "CANCELLED"}
+            onClick={() => toast.info("Cancellation coming soon")}
+            className="py-2 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Cancel booking
+          </button>
           <Link
             to="/contact"
             className="py-2 text-xs text-gray-400 hover:text-gray-700"
