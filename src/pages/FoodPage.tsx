@@ -43,15 +43,16 @@ export default function FoodPage() {
         });
         setCart(pre);
 
-        const m = await unwrap<FnbItem[]>(
-          api.get(`/showtimes/${b.showtime_id}/fnb-menu`),
-        );
-        if (!Array.isArray(m) || m.length === 0) {
-          setNoMenu(true); 
-          setShowTerms(true);
-          return;
-        }
-        setMenu(m);
+        const res = await unwrap<{ items: FnbItem[] }>(
+  api.get(`/showtimes/${b.showtime_id}/fnb-menu`),
+);
+const m = res?.items ?? [];
+if (!Array.isArray(m) || m.length === 0) {
+  setNoMenu(true);
+  setShowTerms(true);
+  return;
+}
+setMenu(m);
       } catch {
         toast.error("Booking not found or expired.");
         navigate("/", { replace: true });
