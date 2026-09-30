@@ -289,7 +289,41 @@ const [bookingResult, setBookingResult] = useState<{ refCode: string; bookingId:
       (s) => s.seat_ref === clickedSeat.seat_ref,
     );
     if (clickedIdx === -1) return;
+ if (
+      selectedSeats.length === requiredSeatCount &&
+      selectedSeats.every((s) => s.row_label === clickedSeat.row_label)
+    ) {
+      const selIdxs = selectedSeats
+        .map((s) => sortedRow.findIndex((r) => r.seat_ref === s.seat_ref))
+        .filter((i) => i !== -1)
+        .sort((a, b) => a - b);
 
+      if (selIdxs.length === requiredSeatCount) {
+        const firstIdx = selIdxs[0];
+        const lastIdx = selIdxs[selIdxs.length - 1];
+        let start = -1;
+
+        if (clickedIdx === lastIdx + 1) {
+          start = clickedIdx - requiredSeatCount + 1; 
+        } else if (clickedIdx === firstIdx - 1) {
+          start = clickedIdx; 
+        }
+
+        if (start >= 0 && start + requiredSeatCount <= sortedRow.length) {
+          const win = sortedRow.slice(start, start + requiredSeatCount);
+          const ok =
+            win.every((s) => s.is_available) &&
+            win.every(
+              (s, i) => i === 0 || s.number === win[i - 1].number + 1,
+            );
+          if (ok) {
+            setSelectedSeats(win);
+            idempotencyKeyRef.current = crypto.randomUUID();
+            return;
+          }
+        }
+      }
+    }
     for (let shift = 0; shift < requiredSeatCount; shift++) {
       const startIdx = clickedIdx - shift;
       const endIdx = startIdx + requiredSeatCount;
@@ -1080,10 +1114,6 @@ setCountdown(0);
         </div>
 
         <div className="border-t border-gray-100 py-1.5 px-4 sm:px-8 flex items-center justify-between text-[11px] text-gray-500 bg-[#FAFAFA]">
-          <div className="flex items-center gap-1.5 mx-auto sm:mx-0">
-            <span className="text-[#7B1E3D] font-bold">✓</span>
-            <span>YES Private Debit Card Offer</span>
-          </div>
           <span className="hidden sm:inline text-gray-400 font-mono text-[10px]">
             1/3
           </span>
