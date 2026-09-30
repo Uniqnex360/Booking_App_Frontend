@@ -119,7 +119,7 @@ export function FoodStep({
             onClick={onProceed}
             className="bg-[#7B1E3D] text-white text-xs font-semibold px-4 py-2 rounded-md cursor-pointer shrink-0"
           >
-            {cartItems.length ? "Proceed" : "Skip"}
+          {cartItems.length ? "Pay" : "Skip"}   
           </button>
         </div>
       </div>
@@ -261,9 +261,9 @@ export function FoodStep({
           onClick={onProceed}
           className="w-full max-w-md bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3 rounded-lg text-sm cursor-pointer"
         >
-          {cartItems.length
-            ? `Proceed • ${formatRupees(ticketPaise + fnbTotal)}`
-            : "Skip & Continue"}
+         {cartItems.length
+  ? `Pay • ${formatRupees(ticketPaise + fnbTotal)}`
+  : `Pay ${formatRupees(ticketPaise)}`}
         </button>
       </div>
     </div>

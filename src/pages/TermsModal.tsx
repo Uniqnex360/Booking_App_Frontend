@@ -25,11 +25,7 @@ export function TermsModal({
   onClose: () => void;
   onAccept: () => void;
 }) {
-  const [agreed, setAgreed] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) setAgreed(false);
-  }, [isOpen]);
+  
 
   if (!isOpen) return null;
   const list = terms && terms.length > 0 ? terms : DEFAULT_TERMS;
@@ -65,31 +61,15 @@ export function TermsModal({
           </ul>
         </div>
 
-        <div className="border-t border-gray-100 p-4 space-y-3 bg-white">
-          <label className="flex items-start gap-2.5 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={agreed}
-              onChange={(e) => setAgreed(e.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-[#7B1E3D] cursor-pointer"
-            />
-            <span className="text-xs text-gray-700">
-              I have read and agree to the Terms &amp; Conditions.
-            </span>
-          </label>
-          <button
-            type="button"
-            disabled={!agreed}
-            onClick={onAccept}
-            className={`w-full font-bold py-3 rounded-lg text-sm transition ${
-              agreed
-                ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer shadow-md"
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {amountLabel ? `Accept & Pay ${amountLabel}` : "Accept & Continue"}
-          </button>
-        </div>
+        <div className="border-t border-gray-100 p-4 bg-white">
+  <button
+    type="button"
+    onClick={onAccept}
+    className="w-full bg-[#D6445B] hover:bg-[#c33a4f] text-white font-bold py-3 rounded-lg text-sm cursor-pointer"
+  >
+    Accept
+  </button>
+</div>
       </div>
     </div>
   );

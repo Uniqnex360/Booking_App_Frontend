@@ -20,7 +20,6 @@ import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
 import { SeatItem, SeatMapDetail, VenueShowtimeItem } from "@/types/movie.types";
 import { loadScript } from "@/utils/loadScript";
-import { TermsModal } from "./TermsModal";
 
 function isUserLoggedIn(): boolean {
   return Boolean(
@@ -34,7 +33,6 @@ export default function SeatMapPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-  const [showTerms, setShowTerms] = useState(false);
   const city = searchParams.get("city") || "";
 
   const requiredSeatCount = Math.min(
@@ -533,14 +531,50 @@ setCountdown(0);
   handleProceed(); // hold seats, go to food page
 };
 
-const handleProceed = () => {
-  setShowTerms(false);
-  const savedContact = localStorage.getItem("vyhbz_contact_details");
-  if (!savedContact) {
-    setIsAuthModalOpen(true);
+const handleProceed = async () => {
+  if (!user) {
+    toast.info("Please sign in to continue.");
+    navigate("/login", {
+      state: { from: window.location.pathname + window.location.search },
+    });
     return;
   }
-  handleCheckout(JSON.parse(savedContact));
+
+  setIsCommitLoading(true);
+  const saved = JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
+
+  try {
+    const res = await unwrap<any>(
+      api.post(
+        `/bookings/hold`,
+        {
+          showtime_id: id,
+          seat_ids: selectedSeats.map((s) => s.seat_ref),
+          seat_codes: selectedSeats.map(
+            (s) => s.code || `${s.row_label}${s.number}`,
+          ),
+          contact_email: saved.email ?? null,
+          contact_phone: saved.phone ?? null,
+        },
+        { headers: { "Idempotency-Key": idempotencyKeyRef.current } },
+      ),
+    );
+    navigate(
+      `/bookings/${res.id}/food${city ? `?city=${encodeURIComponent(city)}` : ""}`,
+    );
+  } catch (err: any) {
+    if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
+      toast.error("One or more selected seats were just taken. Refreshing...");
+      fetchSeatMap();
+    } else if (err.code === "HOLD_EXPIRED") {
+      toast.error("Hold expired. Please select seats again.");
+      fetchSeatMap();
+    } else {
+      toast.error(err.message || "Booking failed.");
+    }
+  } finally {
+    setIsCommitLoading(false);
+  }
 };
 
   const handleContactSubmit = (details: { email: string; phone: string }) => {
