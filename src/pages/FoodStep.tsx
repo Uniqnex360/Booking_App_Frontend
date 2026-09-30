@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, Minus, Plus, Search } from "lucide-react";
+import { ChevronLeft, Loader2, Minus, Plus, Search } from "lucide-react";
 import { formatRupees } from "@/utils/currencyFormatter";
 
 export interface FnbItem {
@@ -30,6 +30,7 @@ interface FoodStepProps {
   setCart: (c: Record<string, number>) => void;
   onBack: () => void;
   onProceed: () => void; // used for both Skip and Proceed
+  loading?: boolean;   
 }
 
 export function FoodStep({
@@ -42,6 +43,7 @@ export function FoodStep({
   setCart,
   onBack,
   onProceed,
+   loading = false,  
 }: FoodStepProps) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
@@ -116,11 +118,12 @@ export function FoodStep({
             </div>
           </div>
           <button
-            onClick={onProceed}
-            className="bg-[#7B1E3D] text-white text-xs font-semibold px-4 py-2 rounded-md cursor-pointer shrink-0"
-          >
-          {cartItems.length ? "Pay" : "Skip"}   
-          </button>
+  onClick={onProceed}
+  disabled={loading}
+  className="bg-[#7B1E3D] text-white text-xs font-semibold px-4 py-2 rounded-md cursor-pointer shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+>
+  {loading ? "..." : cartItems.length ? "Pay" : "Skip"}
+</button>
         </div>
       </div>
 
@@ -258,13 +261,21 @@ export function FoodStep({
       {/* Bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
-          onClick={onProceed}
-          className="w-full max-w-md bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3 rounded-lg text-sm cursor-pointer"
-        >
-         {cartItems.length
-  ? `Pay • ${formatRupees(ticketPaise + fnbTotal)}`
-  : `Pay ${formatRupees(ticketPaise)}`}
-        </button>
+  onClick={onProceed}
+  disabled={loading}
+  className="w-full max-w-md bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3 rounded-lg text-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+>
+  {loading ? (
+    <>
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Processing...
+    </>
+  ) : cartItems.length ? (
+    `Pay • ${formatRupees(ticketPaise + fnbTotal)}`
+  ) : (
+    `Pay ${formatRupees(ticketPaise)}`
+  )}
+</button>
       </div>
     </div>
   );

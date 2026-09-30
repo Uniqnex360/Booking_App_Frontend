@@ -207,11 +207,13 @@ setMenu(m);
           setCart={setCart}
           onBack={goBack}
           onProceed={() => setShowTerms(true)}
+           loading={saving} 
         />
       )}
 
       <TermsModal
         isOpen={showTerms}
+        
         onClose={() => {
           setShowTerms(false);
           if (noMenu) goBack(); 

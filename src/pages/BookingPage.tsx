@@ -899,6 +899,7 @@ const [showTerms, setShowTerms] = useState(false);
 )}
 <TermsModal
   isOpen={showTerms}
+  
   terms={eventData.terms_and_conditions}
   amountLabel={
     selectedTier
