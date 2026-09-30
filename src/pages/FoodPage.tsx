@@ -129,11 +129,7 @@ export default function FoodPage() {
 
       
       const fresh = await unwrap<any>(api.get(`/bookings/${bookingId}`));
-      if (fresh.payment_mode === "PROVIDER") {
-        toast.info("Payment for this show is at the venue. Your seats are held.");
-        navigate(`/confirmation?id=${bookingId}`, { replace: true });
-        return;
-      }
+     
 
       
       const res = await payForBooking({
