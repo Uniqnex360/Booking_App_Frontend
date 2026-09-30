@@ -98,6 +98,7 @@ setMenu(m);
   
   const startPay = () => {
     const c = knownContact();
+     console.log("startPay", c);
     if (!c.email || !c.phone) {
       setShowContact(true);
       return;
@@ -107,6 +108,7 @@ setMenu(m);
 
   
   const goPay = async (contact: Contact) => {
+    console.log("goPay", { saving });
     if (saving) return;
     setSaving(true);
     try {
@@ -205,7 +207,10 @@ setMenu(m);
           cart={cart}
           setCart={setCart}
           onBack={goBack}
-          onProceed={() => (termsAccepted ? startPay() : setShowTerms(true))}
+          onProceed={() => {
+  console.log("proceed", { termsAccepted });
+  termsAccepted ? startPay() : setShowTerms(true);
+}}
            loading={saving} 
         />
       )}
