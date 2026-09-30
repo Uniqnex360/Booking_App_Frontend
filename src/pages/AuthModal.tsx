@@ -31,12 +31,10 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
    
 
     onSubmit(contactData);
-    onClose();
-  };
+    };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden zoom-in-95 animate-in duration-200">
+<div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">      <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden zoom-in-95 animate-in duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#F8F8FA]">
