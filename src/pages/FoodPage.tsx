@@ -7,7 +7,10 @@ import { payForBooking } from "@/lib/razorpayCheckout";
 import { FoodStep } from "./FoodStep";
 import type { FnbItem } from "./FoodStep";
 import { TermsModal } from "./TermsModal";
+import AuthModal from "./AuthModal";
 import { LoadingPage } from "./LoadingPage";
+
+type Contact = { email: string; phone: string };
 
 export default function FoodPage() {
   const { bookingId } = useParams();
@@ -20,19 +23,20 @@ export default function FoodPage() {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
+  const [showContact, setShowContact] = useState(false);
 
   const seatMapUrl = booking
     ? `/showtimes/${booking.showtime_id}/seat-map`
     : "/";
 
-  // Load booking + menu
+  
   useEffect(() => {
     (async () => {
       try {
         const b = await unwrap<any>(api.get(`/bookings/${bookingId}`));
         setBooking(b);
 
-        // Pre-fill cart (user came back after cancelling payment)
+        
         const pre: Record<string, number> = {};
         (b.fnb_lines || []).forEach((l: any) => {
           pre[l.item_id] = l.quantity;
@@ -43,7 +47,7 @@ export default function FoodPage() {
           api.get(`/showtimes/${b.showtime_id}/fnb-menu`),
         );
         if (!Array.isArray(m) || m.length === 0) {
-          setNoMenu(true); // no menu: go to Terms then pay seats only
+          setNoMenu(true); 
           setShowTerms(true);
           return;
         }
@@ -55,7 +59,7 @@ export default function FoodPage() {
     })();
   }, [bookingId]);
 
-  // Hold expiry: back to seat map
+  
   useEffect(() => {
     if (!booking?.held_until) return;
     const check = () => {
@@ -69,29 +73,61 @@ export default function FoodPage() {
     return () => clearInterval(t);
   }, [booking]);
 
-  // Back = release seats, return to seat map
+  
   const goBack = async () => {
     try {
       await api.delete(`/bookings/hold/${bookingId}`);
     } catch {
-      /* already released or expired */
+     
     }
     navigate(seatMapUrl, { replace: true });
   };
 
-  // Save food, then pay seats + food in one Razorpay payment
-  const goPay = async () => {
+  
+  const knownContact = (): Contact => {
+    const saved = JSON.parse(
+      localStorage.getItem("vyhbz_contact_details") || "{}",
+    );
+    return {
+      email: booking?.contact_email || saved.email || user?.email || "",
+      phone:
+        booking?.contact_phone || saved.phone || (user as any)?.phone || "",
+    };
+  };
+
+  
+  const startPay = () => {
+    const c = knownContact();
+    if (!c.email || !c.phone) {
+      setShowContact(true);
+      return;
+    }
+    goPay(c);
+  };
+
+  
+  const goPay = async (contact: Contact) => {
     if (saving) return;
     setSaving(true);
     try {
-      // 1. Save food. Empty cart clears it.
+      
       await api.put(`/bookings/${bookingId}/fnb`, {
         items: Object.entries(cart)
           .filter(([, q]) => q > 0)
           .map(([item_id, quantity]) => ({ item_id, quantity })),
       });
 
-      // 2. Provider-backed: no online payment
+      
+      try {
+        await api.patch(`/bookings/${bookingId}/contact`, {
+          contact_email: contact.email,
+          contact_phone: contact.phone,
+        });
+      } catch {
+       
+      }
+
+      
       const fresh = await unwrap<any>(api.get(`/bookings/${bookingId}`));
       if (fresh.payment_mode === "PROVIDER") {
         toast.info("Payment for this show is at the venue. Your seats are held.");
@@ -99,21 +135,17 @@ export default function FoodPage() {
         return;
       }
 
-      // 3. Contact details for Razorpay prefill
-      const saved = JSON.parse(
-        localStorage.getItem("vyhbz_contact_details") || "{}",
-      );
-      const email = fresh.contact_email || saved.email || user?.email || "";
-      const phone =
-        fresh.contact_phone || saved.phone || (user as any)?.phone || "";
-
-      // 4. Open Razorpay with the final amount
+      
       const res = await payForBooking({
         bookingId: bookingId!,
         description: `${fresh.movie_title} - Seats: ${(
           fresh.seat_codes || []
         ).join(", ")}`,
-        prefill: { name: user?.full_name, email, contact: phone },
+        prefill: {
+          name: user?.full_name,
+          email: contact.email,
+          contact: contact.phone,
+        },
       });
 
       if (res.kind === "DISMISSED") {
@@ -123,7 +155,7 @@ export default function FoodPage() {
         return;
       }
 
-      // 5. Paid: fetch ref_code once, go to confirmation
+      
       const done = await unwrap<any>(api.get(`/bookings/${bookingId}`));
       navigate(
         `/confirmation?id=${bookingId}&ref=${encodeURIComponent(
@@ -185,11 +217,24 @@ export default function FoodPage() {
         isOpen={showTerms}
         onClose={() => {
           setShowTerms(false);
-          if (noMenu) goBack(); // no food screen behind it, so release seats
+          if (noMenu) goBack(); 
         }}
         onAccept={() => {
           setShowTerms(false);
-          goPay();
+          startPay();
+        }}
+      />
+
+      <AuthModal
+        isOpen={showContact}
+        onClose={() => {
+          setShowContact(false);
+          if (noMenu) goBack();
+        }}
+        onSubmit={(d: Contact) => {
+          setShowContact(false);
+          localStorage.setItem("vyhbz_contact_details", JSON.stringify(d));
+          goPay(d);
         }}
       />
     </>

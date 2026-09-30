@@ -4,7 +4,6 @@ import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
   ChevronLeft,
-  X,
   Edit2,
   RefreshCw,
   AlertCircle,
@@ -15,18 +14,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import AuthModal from "./AuthModal";
 import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
 import { SeatItem, SeatMapDetail, VenueShowtimeItem } from "@/types/movie.types";
-import { loadScript } from "@/utils/loadScript";
 
-function isUserLoggedIn(): boolean {
-  return Boolean(
-    localStorage.getItem("access_token") ||
-      localStorage.getItem("vyhbz_access_token"),
-  );
-}
+
 
 export default function SeatMapPage() {
   const { id } = useParams();
@@ -41,8 +33,6 @@ export default function SeatMapPage() {
   );
 
   const [mapData, setMapData] = useState<SeatMapDetail | null>(null);
-  const [showBookingOverlay, setShowBookingOverlay] = useState(false);
-const [bookingResult, setBookingResult] = useState<{ refCode: string; bookingId: string } | null>(null);
   const isCoupleScreen = useMemo(() => {
     const sName = (mapData?.screen_name || "").toLowerCase();
     const fmt = (mapData?.format || "").toLowerCase();
@@ -348,180 +338,8 @@ const [bookingResult, setBookingResult] = useState<{ refCode: string; bookingId:
     idempotencyKeyRef.current = crypto.randomUUID();
   };
 
-  const startRazorpayPayment = async (booking: any, contactDetails: any) => {
-    const isLoaded = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
-    if (!isLoaded) {
-      toast.error("Failed to load payment gateway. Please check your connection.");
-      setIsCommitLoading(false);
-      return;
-    }
 
-    const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-    if (!rzpKey) {
-      toast.error("Payment configuration missing. Please contact support.");
-      setIsCommitLoading(false);
-      return;
-    }
-
-    const amount =
-      booking.total_paise ||
-      selectedSeats.reduce(
-        (acc, s) => acc + (s.price_paise || 0),
-        0
-      );
-
-    const movieTitle = mapData?.movie_title || "Movie Booking";
-    const seatList = selectedSeats
-      .map((s) => s.code || `${s.row_label}${s.number}`)
-      .join(", ");
-
-    const options = {
-      key: rzpKey,
-      amount: amount,
-      currency: booking.currency || "INR",
-      name: "Vyhbz Cinemas",
-      description: `${movieTitle} - Seats: ${seatList}`,
-      handler: async function (response: any) {
-        toast.info("Payment verified! Confirming seats...");
-        try {
-          const commitRes = await unwrap<any>(
-            api.post(`/bookings/${booking.id}/commit`, {
-              payment_ref: response.razorpay_payment_id,
-            })
-          );
-          toast.success(`Booking confirmed! Ref: ${commitRes.ref_code}`);
-          setHeldUntil(null);
-setHoldId(null);
-setCountdown(0);
-          
-          if (isUserLoggedIn()) {
-            setBookingResult({ refCode: commitRes.ref_code, bookingId: booking.id });
-            setShowBookingOverlay(true);
-            setIsCommitLoading(false);
-          } else {
-            navigate(
-              `/confirmation?ref=${encodeURIComponent(commitRes.ref_code ?? "")}&id=${booking.id}`
-            );
-          }
-        } catch (err: any) {
-          toast.error(
-            `Confirmation failed after payment. Please contact support with Payment ID: ${response.razorpay_payment_id}`
-          );
-        } finally {
-          setIsCommitLoading(false);
-        }
-      },
-      prefill: {
-        name: contactDetails?.name || user?.full_name || "Customer",
-        email: contactDetails?.email || user?.email || "customer@vybhz.com",
-        contact: contactDetails?.phone || user?.phone || "9999999999",
-      },
-      theme: {
-        color: "#7B1E3D",
-      },
-      modal: {
-        ondismiss: function () {
-          toast.warning("Payment cancelled. Seats are still on hold for a limited time.");
-          setIsCommitLoading(false);
-        },
-      },
-    };
-
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
-  };
-
-  const handleCheckout = async (contact?: {
-    email?: string;
-    phone?: string;
-    name?: string;
-  }) => {
-    if (selectedSeats.length !== requiredSeatCount) {
-      toast.warning(
-        `Please select exactly ${requiredSeatCount} contiguous seats.`,
-      );
-      return;
-    }
-
-    if (isCoupleScreen) {
-      if (selectedSeats.length % 2 !== 0) {
-        toast.error("Couple seats must be booked in pairs of 2.");
-        return;
-      }
-      const selectedNumsByRow = new Map<string, Set<number>>();
-      for (const s of selectedSeats) {
-        if (!selectedNumsByRow.has(s.row_label)) {
-          selectedNumsByRow.set(s.row_label, new Set());
-        }
-        selectedNumsByRow.get(s.row_label)!.add(s.number);
-      }
-      for (const s of selectedSeats) {
-        const partnerNum = s.number % 2 === 1 ? s.number + 1 : s.number - 1;
-        if (!selectedNumsByRow.get(s.row_label)?.has(partnerNum)) {
-          toast.error("Both seats of each couple pair must be selected together.");
-          return;
-        }
-      }
-    }
-    setIsCommitLoading(true);
-
-    const saved =
-      contact ??
-      JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
-
-    try {
-      const res = await unwrap<any>(
-        api.post(
-          `/bookings/hold`,
-          {
-            showtime_id: id,
-            seat_ids: selectedSeats.map((s) => s.seat_ref),
-            seat_codes: selectedSeats.map(
-              (s) => s.code || `${s.row_label}${s.number}`,
-            ),
-            contact_email: saved.email ?? null,
-            contact_phone: saved.phone ?? null,
-          },
-          {
-            headers: { "Idempotency-Key": idempotencyKeyRef.current },
-          },
-        ),
-      );
-
-      if (res.status === "HELD") {
-        setHoldId(res.id);
-        setHeldUntil(new Date(res.held_until));
-
-        await startRazorpayPayment(res, saved);
-      } else {
-        toast.success(`Booking confirmed successfully!`);
-        if (isUserLoggedIn()) {
-          setBookingResult({ refCode: res.ref_code, bookingId: res.id });
-          setShowBookingOverlay(true);
-        } else {
-          navigate(`/confirmation?id=${res.id}`);
-        }
-        setIsCommitLoading(false);
-      }
-    } catch (err: any) {
-  setHoldId(null);
-  setHeldUntil(null);
-  if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
-        toast.error(
-          "One or more selected seats were just taken. Refreshing...",
-        );
-        fetchSeatMap();
-      } else if (err.code === "HOLD_EXPIRED") {
-        toast.error("Hold expired. Please select seats again.");
-        fetchSeatMap();
-      } else if (err.code === "VALIDATION_ERROR") {
-        setIsAuthModalOpen(true);
-      } else {
-        toast.error(err.message || "Booking failed.");
-      }
-      setIsCommitLoading(false);
-    }
-  };
+  
 
   const handlePayClick = () => {
   if (selectedSeats.length !== requiredSeatCount) {
@@ -531,15 +349,8 @@ setCountdown(0);
   handleProceed(); // hold seats, go to food page
 };
 
-const handleProceed = async (contact?: { email?: string; phone?: string }) => {
-  const saved =
-    contact ?? JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
-
-  // Guest with no saved details: ask for email and phone first
-  if (!user && !(saved.email && saved.phone)) {
-    setIsAuthModalOpen(true);
-    return;
-  }
+const handleProceed = async () => {
+  const saved = JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
 
   setIsCommitLoading(true);
   try {
@@ -568,8 +379,6 @@ const handleProceed = async (contact?: { email?: string; phone?: string }) => {
     } else if (err.code === "HOLD_EXPIRED") {
       toast.error("Hold expired. Please select seats again.");
       fetchSeatMap();
-    } else if (err.code === "VALIDATION_ERROR") {
-      setIsAuthModalOpen(true);
     } else {
       toast.error(err.message || "Booking failed.");
     }
@@ -577,12 +386,7 @@ const handleProceed = async (contact?: { email?: string; phone?: string }) => {
     setIsCommitLoading(false);
   }
 };
-  const handleContactSubmit = (details: { email: string; phone: string }) => {
-  setIsAuthModalOpen(false);
-  localStorage.setItem("vyhbz_contact_details", JSON.stringify(details));
-  toast.success(`Booking confirmation will be sent to ${details.email}`);
-  handleProceed(details);
-};
+ 
 
   const handleSeatCountConfirm = (newCount: number) => {
     setShowTicketModal(false);
@@ -1241,13 +1045,9 @@ const handleProceed = async (contact?: { email?: string; phone?: string }) => {
         </div>
       )}
 
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        onSubmit={handleContactSubmit}
-      />
+      
 
-      {showBookingOverlay && bookingResult && (
+      {/* {showBookingOverlay && bookingResult && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="bg-[#7B1E3D] text-white text-center py-5 px-6">
@@ -1319,7 +1119,7 @@ const handleProceed = async (contact?: { email?: string; phone?: string }) => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
     </div>
 
