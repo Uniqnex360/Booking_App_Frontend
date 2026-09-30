@@ -531,18 +531,17 @@ setCountdown(0);
   handleProceed(); // hold seats, go to food page
 };
 
-const handleProceed = async () => {
-  if (!user) {
-    toast.info("Please sign in to continue.");
-    navigate("/login", {
-      state: { from: window.location.pathname + window.location.search },
-    });
+const handleProceed = async (contact?: { email?: string; phone?: string }) => {
+  const saved =
+    contact ?? JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
+
+  // Guest with no saved details: ask for email and phone first
+  if (!user && !(saved.email && saved.phone)) {
+    setIsAuthModalOpen(true);
     return;
   }
 
   setIsCommitLoading(true);
-  const saved = JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
-
   try {
     const res = await unwrap<any>(
       api.post(
@@ -553,8 +552,8 @@ const handleProceed = async () => {
           seat_codes: selectedSeats.map(
             (s) => s.code || `${s.row_label}${s.number}`,
           ),
-          contact_email: saved.email ?? null,
-          contact_phone: saved.phone ?? null,
+          contact_email: saved.email ?? user?.email ?? null,
+          contact_phone: saved.phone ?? (user as any)?.phone ?? null,
         },
         { headers: { "Idempotency-Key": idempotencyKeyRef.current } },
       ),
@@ -569,6 +568,8 @@ const handleProceed = async () => {
     } else if (err.code === "HOLD_EXPIRED") {
       toast.error("Hold expired. Please select seats again.");
       fetchSeatMap();
+    } else if (err.code === "VALIDATION_ERROR") {
+      setIsAuthModalOpen(true);
     } else {
       toast.error(err.message || "Booking failed.");
     }
@@ -576,12 +577,12 @@ const handleProceed = async () => {
     setIsCommitLoading(false);
   }
 };
-
   const handleContactSubmit = (details: { email: string; phone: string }) => {
-    setIsAuthModalOpen(false);
-    toast.success(`Booking confirmation will be sent to ${details.email}`);
-    handleCheckout(details);
-  };
+  setIsAuthModalOpen(false);
+  localStorage.setItem("vyhbz_contact_details", JSON.stringify(details));
+  toast.success(`Booking confirmation will be sent to ${details.email}`);
+  handleProceed(details);
+};
 
   const handleSeatCountConfirm = (newCount: number) => {
     setShowTicketModal(false);
