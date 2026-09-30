@@ -20,6 +20,7 @@ import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
 import { SeatItem, SeatMapDetail, VenueShowtimeItem } from "@/types/movie.types";
 import { loadScript } from "@/utils/loadScript";
+import { TermsModal } from "./TermsModal";
 
 function isUserLoggedIn(): boolean {
   return Boolean(
@@ -33,7 +34,7 @@ export default function SeatMapPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-
+  const [showTerms, setShowTerms] = useState(false);
   const city = searchParams.get("city") || "";
 
   const requiredSeatCount = Math.min(
@@ -525,21 +526,24 @@ setCountdown(0);
   };
 
   const handlePayClick = () => {
-    if (selectedSeats.length !== requiredSeatCount) {
-      toast.warning(
-        `Please select exactly ${requiredSeatCount} contiguous seats.`,
-      );
-      return;
-    }
+  if (selectedSeats.length !== requiredSeatCount) {
+    toast.warning(
+      `Please select exactly ${requiredSeatCount} contiguous seats.`,
+    );
+    return;
+  }
+  setShowTerms(true); // terms first
+};
 
-    const savedContact = localStorage.getItem("vyhbz_contact_details");
-    if (!savedContact) {
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    handleCheckout(JSON.parse(savedContact));
-  };
+const handleTermsAccepted = () => {
+  setShowTerms(false);
+  const savedContact = localStorage.getItem("vyhbz_contact_details");
+  if (!savedContact) {
+    setIsAuthModalOpen(true);
+    return;
+  }
+  handleCheckout(JSON.parse(savedContact));
+};
 
   const handleContactSubmit = (details: { email: string; phone: string }) => {
     setIsAuthModalOpen(false);
@@ -1209,7 +1213,12 @@ setCountdown(0);
         onClose={() => setIsAuthModalOpen(false)}
         onSubmit={handleContactSubmit}
       />
-
+<TermsModal
+  isOpen={showTerms}
+  amountLabel={formatRupees(totalPricePaise)}
+  onClose={() => setShowTerms(false)}
+  onAccept={handleTermsAccepted}
+/>
       {showBookingOverlay && bookingResult && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] overflow-hidden animate-in zoom-in-95 duration-200">

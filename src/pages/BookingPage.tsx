@@ -42,6 +42,7 @@ import { format, parseISO, differenceInHours, differenceInMinutes } from 'date-f
 import { toast } from 'sonner';
 import { LoadingPage } from './LoadingPage';
 import { loadScript } from '@/utils/loadScript';
+import { TermsModal } from './TermsModal';
 
 const categoryLabels: Record<string, string> = {
   concert: 'Music Shows',
@@ -73,7 +74,7 @@ export default function BookingPage() {
   const [ticketQuantity, setTicketQuantity] = useState(1);
   const [isBooking, setIsBooking] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);  
-
+const [showTerms, setShowTerms] = useState(false);
   useEffect(() => {
     const fetchEventDetails = async () => {
       setLoading(true);
@@ -847,7 +848,10 @@ export default function BookingPage() {
           {/* Action buttons */}
           <div className="pt-2">
             <Button
-              onClick={handleConfirmBooking}
+              onClick={() => {
+  setBookingModalOpen(false); // close ticket dialog first
+  setShowTerms(true);
+}}
               disabled={isBooking || !selectedTier}
               className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold py-3 rounded-xl text-base shadow-sm transition-colors flex items-center justify-center gap-2"
             >
@@ -893,6 +897,23 @@ export default function BookingPage() {
     </p>
   </div>
 )}
+<TermsModal
+  isOpen={showTerms}
+  terms={eventData.terms_and_conditions}
+  amountLabel={
+    selectedTier
+      ? `₹${Math.round((selectedTier.price_paise * ticketQuantity) / 100).toLocaleString('en-IN')}`
+      : undefined
+  }
+  onClose={() => {
+    setShowTerms(false);
+    setBookingModalOpen(true); // back to ticket picker
+  }}
+  onAccept={() => {
+    setShowTerms(false);
+    handleConfirmBooking();
+  }}
+/>
       <Footer />
     </div>
   );
