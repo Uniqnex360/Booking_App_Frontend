@@ -25,7 +25,15 @@ export interface SeatItem {
   price_paise: number;
   is_available: boolean;
 }
-
+export interface FnbItem {
+  id: string;
+  name: string;
+  description?: string;
+  price_paise: number;
+  image_url?: string | null;
+  is_veg?: boolean;
+  category: string;
+}
 export interface SeatMapDetail {
   showtime_id: string;
   movie_title: string;

@@ -527,15 +527,13 @@ setCountdown(0);
 
   const handlePayClick = () => {
   if (selectedSeats.length !== requiredSeatCount) {
-    toast.warning(
-      `Please select exactly ${requiredSeatCount} contiguous seats.`,
-    );
+    toast.warning(`Please select exactly ${requiredSeatCount} contiguous seats.`);
     return;
   }
-  setShowTerms(true); // terms first
+  handleProceed(); // hold seats, go to food page
 };
 
-const handleTermsAccepted = () => {
+const handleProceed = () => {
   setShowTerms(false);
   const savedContact = localStorage.getItem("vyhbz_contact_details");
   if (!savedContact) {
@@ -1071,7 +1069,7 @@ const handleTermsAccepted = () => {
                 <RefreshCw className="h-4 w-4 animate-spin" /> Processing...
               </>
             ) : (
-              <>Pay {formatRupees(totalPricePaise)}</>
+              <>Proceed • {formatRupees(totalPricePaise)}</>  
             )}
           </button>
         </div>
@@ -1213,12 +1211,7 @@ const handleTermsAccepted = () => {
         onClose={() => setIsAuthModalOpen(false)}
         onSubmit={handleContactSubmit}
       />
-<TermsModal
-  isOpen={showTerms}
-  amountLabel={formatRupees(totalPricePaise)}
-  onClose={() => setShowTerms(false)}
-  onAccept={handleTermsAccepted}
-/>
+
       {showBookingOverlay && bookingResult && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] overflow-hidden animate-in zoom-in-95 duration-200">

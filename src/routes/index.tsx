@@ -26,6 +26,7 @@ import MovieReviewsPage from "@/pages/MovieReviewsPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import VenuesPage from "@/pages/VenuesPage";
+import FoodPage from "@/pages/FoodPage";
 
 export function AppRoutes() {
   return (
@@ -51,6 +52,7 @@ export function AppRoutes() {
       <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
     <Route path="/venues" element={<VenuesPage />} />
       <Route path="/booking/:type/:id" element={<BookingPage />} />
+      <Route path="/bookings/:bookingId/food" element={<FoodPage />} />
       <Route
         path="/bookings/:id"
         element={
