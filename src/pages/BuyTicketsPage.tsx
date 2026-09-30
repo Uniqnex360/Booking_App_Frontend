@@ -497,8 +497,7 @@ export default function BuyTicketsPage() {
       : langFormatFilter;
 
   return (
-    <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans">
-      <Header />
+<div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">        <Header />
 
       {/* ─── Movie Title & Metadata Header (White background matching BookMyShow) ─── */}
       <div className="bg-white border-b border-gray-200 pt-[128px] lg:pt-[144px] pb-6">
@@ -577,8 +576,7 @@ export default function BuyTicketsPage() {
             <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full">
               
               {/* Left Side: Date Strip with spacious gap on the right before vertical divider */}
-              <div className="flex items-center gap-2 h-full border-r border-gray-200 pr-12 md:pr-20 mr-4 md:mr-6 shrink-0 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1.5">
-                {dateKeys.map((dk) => {
+<div className="flex items-center gap-2 h-full border-r border-gray-200 pr-4 md:pr-8 mr-2 md:mr-4 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1.5">                {dateKeys.map((dk) => {
                   const { weekday, day, month } = dateTabParts(dk);
                   const isActive = activeDate === dk;
                   return (
@@ -1166,7 +1164,7 @@ export default function BuyTicketsPage() {
                             >
                               {/* Price Tooltip on Hover (Fetched dynamically from API) */}
                               {!isPast && (
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                                   {isCouple && (
                                     <div className="text-[10px] font-bold text-[#be185d] text-center mb-1 pb-1 border-b border-pink-100">
                                       💑 Screen 4 (Couple Recliners) • ₹900 / pair
@@ -1193,8 +1191,7 @@ export default function BuyTicketsPage() {
                                     ))}
                                   </div>
                                   {/* Tooltip Downward Caret */}
-                                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45 border-r border-b border-gray-100" />
-                                </div>
+<div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-white rotate-45 border-r border-b border-gray-100" />                                </div>
                               )}
 
                               <button

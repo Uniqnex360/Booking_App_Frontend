@@ -223,7 +223,6 @@ export default function HomePage() {
       <Header />
 
       <div className="pt-16 lg:pt-[104px]">
-        {/* Hero — location specific */}
         <section className="bg-white pb-6 pt-2">
           <div className="relative h-[180px] sm:h-[260px] md:h-[320px] max-w-[1240px] mx-auto overflow-hidden rounded-xl shadow-sm cursor-pointer group">
             {heroBanners.map((banner, idx) => (
@@ -358,7 +357,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* Promo */}
         <section className="max-w-[1240px] mx-auto px-4 py-4">
           <div
             onClick={() => navigate(withCity('/movies', city))}
@@ -380,7 +378,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Events */}
         <section className="max-w-[1240px] mx-auto px-4 py-10">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-[#333333]">The Best Events</h2>
