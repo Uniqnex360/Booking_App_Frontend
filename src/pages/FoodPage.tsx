@@ -49,7 +49,6 @@ export default function FoodPage() {
 const m = res?.items ?? [];
 if (!Array.isArray(m) || m.length === 0) {
   setNoMenu(true);
-  setShowTerms(true);
   return;
 }
 setMenu(m);
