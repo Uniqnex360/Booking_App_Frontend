@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { LoadingPage } from "./LoadingPage";
 import { SeatVehicle } from "./SeatVehicle";
 import { SeatItem, SeatMapDetail, VenueShowtimeItem } from "@/types/movie.types";
+import { ensureHoldToken } from "@/lib/holdToken";
 
 
 
@@ -348,9 +349,15 @@ export default function SeatMapPage() {
   }
   handleProceed(); // hold seats, go to food page
 };
-
 const handleProceed = async () => {
   const saved = JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
+
+  const headers: Record<string, string> = {
+    "Idempotency-Key": idempotencyKeyRef.current,
+  };
+  if (!user) {
+    headers["X-Hold-Token"] = ensureHoldToken();
+  }
 
   setIsCommitLoading(true);
   try {
@@ -366,7 +373,7 @@ const handleProceed = async () => {
           contact_email: saved.email ?? user?.email ?? null,
           contact_phone: saved.phone ?? (user as any)?.phone ?? null,
         },
-        { headers: { "Idempotency-Key": idempotencyKeyRef.current } },
+        { headers },
       ),
     );
     navigate(

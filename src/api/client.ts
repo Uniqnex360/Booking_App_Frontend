@@ -60,6 +60,11 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // NEW: attach guest hold token when present
+    const holdToken = sessionStorage.getItem("vyhbz_hold_pending");
+    if (holdToken && config.headers && !config.headers["X-Hold-Token"]) {
+      config.headers["X-Hold-Token"] = holdToken;
+    }
     return config;
   },
   (error) => Promise.reject(error)
