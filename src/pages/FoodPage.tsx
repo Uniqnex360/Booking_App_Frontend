@@ -16,7 +16,7 @@ export default function FoodPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-
+const [termsAccepted, setTermsAccepted] = useState(false);
   const [booking, setBooking] = useState<any>(null);
   const [menu, setMenu] = useState<FnbItem[]>([]);
   const [noMenu, setNoMenu] = useState(false);
@@ -205,7 +205,7 @@ setMenu(m);
           cart={cart}
           setCart={setCart}
           onBack={goBack}
-          onProceed={() => setShowTerms(true)}
+          onProceed={() => (termsAccepted ? startPay() : setShowTerms(true))}
            loading={saving} 
         />
       )}
@@ -218,9 +218,10 @@ setMenu(m);
           if (noMenu) goBack(); 
         }}
         onAccept={() => {
-          setShowTerms(false);
-          startPay();
-        }}
+  setTermsAccepted(true);
+  setShowTerms(false);
+  startPay();
+}}
       />
 
       <AuthModal
