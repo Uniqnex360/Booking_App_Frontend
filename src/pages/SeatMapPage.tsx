@@ -1,7 +1,11 @@
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 const SeatView360 = lazy(() => import("./SeatView360"));
-const PANOS = { front: "/panoramas/mid.png", mid: "/panoramas/mid.png", back: "/panoramas/mid.png" };
+const PANOS = {
+  front: "/panoramas/front.png",
+  mid: "/panoramas/mid.png",
+  back: "/panoramas/back.png",
+};
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
