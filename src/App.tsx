@@ -5,7 +5,7 @@ import { QuickAuthModal } from '@/components/auth/QuickAuthModal';
 export default function App() {
   return (
     <>
-<Toaster richColors position="top-right" duration={5000} />
+<Toaster richColors position="top-right" duration={3000} />
       <AppRoutes />
       <QuickAuthModal />
     </>
