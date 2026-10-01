@@ -538,12 +538,17 @@ export default function SeatMapPage() {
               </button>
             )}
 
-            {holdId && countdown > 0 && (
+                        {holdId && countdown > 0 && (
               <div className="bg-[#7B1E3D] text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse">
                 <Clock className="h-3 w-3" /> {Math.floor(countdown / 60)}:
                 {(countdown % 60).toString().padStart(2, "0")}
               </div>
             )}
+
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-gray-500 font-semibold shrink-0 px-2.5 py-1 border border-gray-200 rounded">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+              {allSeats.length} seats
+            </div>
 
             <button
               onClick={() => setShowTicketModal(true)}
@@ -557,10 +562,7 @@ export default function SeatMapPage() {
               </span>
             </button>
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-gray-500 font-semibold shrink-0 px-2.5 py-1 border border-gray-200 rounded">
-  <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-  {allSeats.length} seats
-</div>
+          
         </div>
       </header>
 
