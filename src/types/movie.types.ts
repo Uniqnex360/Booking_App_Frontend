@@ -24,7 +24,8 @@ export interface SeatItem {
   code: string;
   price_paise: number;
   is_available: boolean;
-   is_bestseller?: boolean; 
+   is_bestseller?: boolean;
+    is_couple?: boolean;   
 }
 export interface FnbItem {
   id: string;

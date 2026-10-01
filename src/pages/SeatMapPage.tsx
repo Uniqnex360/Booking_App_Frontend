@@ -41,7 +41,8 @@ export default function SeatMapPage() {
     const fmt = (mapData?.format || "").toLowerCase();
     return sName.includes("couple") || fmt.includes("couple");
   }, [mapData]);
-
+  const isCoupleSeat = (seat: SeatItem) =>
+  isCoupleScreen || Boolean(seat.is_couple);
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState<SeatItem[]>([]);
   const [isCommitLoading, setIsCommitLoading] = useState(false);
@@ -188,7 +189,8 @@ export default function SeatMapPage() {
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
 
-    if (isCoupleScreen) {
+    if (isCoupleSeat(clickedSeat)) {
+
       const partnerNum =
         clickedSeat.number % 2 === 1
           ? clickedSeat.number + 1
@@ -691,6 +693,7 @@ export default function SeatMapPage() {
                     <div className="space-y-1.5 flex flex-col items-center w-full">
                       {Object.entries(tier.rows).map(([rowLabel, seatList]) => {
                         const blocks = splitIntoBlocks(seatList);
+                        const rowIsCouple = seatList.some((s) => s.is_couple) || isCoupleScreen; 
 
                         return (
                           <div
@@ -711,7 +714,8 @@ export default function SeatMapPage() {
                             <div className="bg-gray-100 self-stretch" />
 
                             <div className="flex items-center justify-center">
-                              {isCoupleScreen ? (
+                             {rowIsCouple ? (
+
                                 <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
                                   {(() => {
                                     const sorted = [...seatList].sort(
