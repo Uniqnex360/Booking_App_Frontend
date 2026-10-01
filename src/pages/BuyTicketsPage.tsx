@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useNavigate, useParams, useSearchParams, Link } from "react-router-dom";
+import {
+  useNavigate,
+  useParams,
+  useSearchParams,
+  Link,
+} from "react-router-dom";
 
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -99,7 +104,7 @@ function istHour(iso: string): number {
       timeZone: "Asia/Kolkata",
       hour: "2-digit",
       hour12: false,
-    })
+    }),
   );
 }
 const PRICE_RANGES = [
@@ -112,7 +117,7 @@ const PRICE_RANGES = [
 ];
 function matchesPriceRange(
   tiers: Array<{ price: string }> | undefined,
-  selectedRanges: { min: number; max: number }[]
+  selectedRanges: { min: number; max: number }[],
 ): boolean {
   if (selectedRanges.length === 0) return true;
   if (!tiers || tiers.length === 0) return true; // pricing not fetched yet, don't hide
@@ -138,7 +143,7 @@ export default function BuyTicketsPage() {
 
   const ticketCount = Math.min(
     10,
-    Math.max(1, parseInt(searchParams.get("qty") || "2", 10))
+    Math.max(1, parseInt(searchParams.get("qty") || "2", 10)),
   );
 
   const [movie, setMovie] = useState<MovieDetail | null>(null);
@@ -156,16 +161,33 @@ export default function BuyTicketsPage() {
   const [openDropdown, setOpenDropdown] = useState<
     "langFormat" | "time" | "price" | "special" | "other" | "sort" | null
   >(null);
-    const [showSubtitleNotice, setShowSubtitleNotice] = useState(true);
-  const [selectedPriceRanges, setSelectedPriceRanges] = useState<{ min: number; max: number }[]>([]);
-  const [selectedSpecialFormats, setSelectedSpecialFormats] = useState<string[]>([]);
-  const [selectedOtherFilters, setSelectedOtherFilters] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<"relevance" | "popularity" | "distance">("relevance");
+  const [showSubtitleNotice, setShowSubtitleNotice] = useState(true);
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState<
+    { min: number; max: number }[]
+  >([]);
+  const [selectedSpecialFormats, setSelectedSpecialFormats] = useState<
+    string[]
+  >([]);
+  const [selectedOtherFilters, setSelectedOtherFilters] = useState<string[]>(
+    [],
+  );
+  const [sortBy, setSortBy] = useState<"relevance" | "popularity" | "distance">(
+    "relevance",
+  );
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
-  const [selectedCinemaInfo, setSelectedCinemaInfo] = useState<VenueGroup | null>(null);
+  const [selectedCinemaInfo, setSelectedCinemaInfo] =
+    useState<VenueGroup | null>(null);
 
   const [showtimePricingMap, setShowtimePricingMap] = useState<
-    Record<string, Array<{ price: string; tier: string; status: string; statusColor: string }>>
+    Record<
+      string,
+      Array<{
+        price: string;
+        tier: string;
+        status: string;
+        statusColor: string;
+      }>
+    >
   >({});
 
   const now = Date.now();
@@ -180,9 +202,9 @@ export default function BuyTicketsPage() {
         venuesInCity.flatMap((v) =>
           v.showtimes
             .filter((s) => new Date(s.starts_at).getTime() > now)
-            .map((s) => istDateKey(s.starts_at))
-        )
-      )
+            .map((s) => istDateKey(s.starts_at)),
+        ),
+      ),
     ).sort();
   }, [venuesInCity, now]);
 
@@ -194,7 +216,7 @@ export default function BuyTicketsPage() {
       v.showtimes
         .filter((s) => new Date(s.starts_at).getTime() > now)
         .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
-        .forEach((s) => set.add(`${s.language} - ${s.format}`))
+        .forEach((s) => set.add(`${s.language} - ${s.format}`)),
     );
     return Array.from(set).sort();
   }, [venuesInCity, activeDate, now]);
@@ -219,7 +241,7 @@ export default function BuyTicketsPage() {
           .filter(
             (s) =>
               langFormatFilter === "all" ||
-              `${s.language} - ${s.format}` === langFormatFilter
+              `${s.language} - ${s.format}` === langFormatFilter,
           )
           .filter((s) => {
             if (selectedSpecialFormats.length === 0) return true;
@@ -236,29 +258,26 @@ export default function BuyTicketsPage() {
               );
             });
           })
-          .filter((s) => matchesPriceRange(showtimePricingMap[s.id], selectedPriceRanges))
+          .filter((s) =>
+            matchesPriceRange(showtimePricingMap[s.id], selectedPriceRanges),
+          )
           .filter((s) => matchesPreferredTime(s.starts_at, preferredTime))
           .sort(
             (a, b) =>
-              new Date(a.starts_at).getTime() -
-              new Date(b.starts_at).getTime()
+              new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
           ),
       }))
       .filter((v) =>
         searchQuery
           ? v.venue_name.toLowerCase().includes(searchQuery.toLowerCase())
-          : true
+          : true,
       )
       .filter((v) => v.showtimes.length > 0);
 
     if (sortBy === "popularity") {
-      list = [...list].sort(
-        (a, b) => b.showtimes.length - a.showtimes.length
-      );
+      list = [...list].sort((a, b) => b.showtimes.length - a.showtimes.length);
     } else if (sortBy === "distance") {
-      list = [...list].sort((a, b) =>
-        a.venue_name.localeCompare(b.venue_name)
-      );
+      list = [...list].sort((a, b) => a.venue_name.localeCompare(b.venue_name));
     }
     return list;
   }, [
@@ -271,76 +290,107 @@ export default function BuyTicketsPage() {
     preferredTime,
     searchQuery,
     sortBy,
-    showtimePricingMap
+    showtimePricingMap,
   ]);
 
-  const fetchShowtimePricing = useCallback(async (slotId: string) => {
-    if (showtimePricingMap[slotId]) return;
-    try {
-      const data = await unwrap<any>(api.get(`/showtimes/${slotId}/seat-map`));
-      if (data) {
-        const allSeats: any[] = [];
-        if (data.seats && Array.isArray(data.seats) && data.seats.length > 0) {
-          allSeats.push(...data.seats);
-        } else if (data.rows && Array.isArray(data.rows)) {
-          data.rows.forEach((r: any) => {
-            if (r.seats && Array.isArray(r.seats)) {
-              r.seats.forEach((s: any) => {
-                allSeats.push({
-                  row_label: r.label,
-                  price_paise: s.price_paise || r.price_paise || 25000,
-                  is_available: s.status === "AVAILABLE",
+  const fetchShowtimePricing = useCallback(
+    async (slotId: string) => {
+      if (showtimePricingMap[slotId]) return;
+      try {
+        const data = await unwrap<any>(
+          api.get(`/showtimes/${slotId}/seat-map`),
+        );
+        if (data) {
+          const allSeats: any[] = [];
+          if (
+            data.seats &&
+            Array.isArray(data.seats) &&
+            data.seats.length > 0
+          ) {
+            allSeats.push(...data.seats);
+          } else if (data.rows && Array.isArray(data.rows)) {
+            data.rows.forEach((r: any) => {
+              if (r.seats && Array.isArray(r.seats)) {
+                r.seats.forEach((s: any) => {
+                  allSeats.push({
+                    row_label: r.label,
+                    price_paise: s.price_paise || r.price_paise || 25000,
+                    is_available: s.status === "AVAILABLE",
+                  });
                 });
-              });
+              }
+            });
+          }
+
+          const rawRows: Record<string, { price_paise: number; seats: any[] }> =
+            {};
+          allSeats.forEach((seat) => {
+            if (!rawRows[seat.row_label]) {
+              rawRows[seat.row_label] = {
+                price_paise: seat.price_paise,
+                seats: [],
+              };
             }
+            rawRows[seat.row_label].seats.push(seat);
           });
-        }
 
-        const rawRows: Record<string, { price_paise: number; seats: any[] }> = {};
-        allSeats.forEach((seat) => {
-          if (!rawRows[seat.row_label]) {
-            rawRows[seat.row_label] = { price_paise: seat.price_paise, seats: [] };
+          const tiers: {
+            name: string;
+            price_paise: number;
+            totalSeats: number;
+            availSeats: number;
+          }[] = [];
+          Object.entries(rawRows).forEach(([_, rowData]) => {
+            let tierName = "CLASSIC";
+            const priceRupees = rowData.price_paise / 100;
+            if (priceRupees >= 350) tierName = "RECLINER";
+            else if (priceRupees >= 250) tierName = "PRIME PLUS";
+            else if (priceRupees >= 200) tierName = "PRIME";
+
+            let existing = tiers.find(
+              (t) => t.price_paise === rowData.price_paise,
+            );
+            if (!existing) {
+              existing = {
+                name: tierName,
+                price_paise: rowData.price_paise,
+                totalSeats: 0,
+                availSeats: 0,
+              };
+              tiers.push(existing);
+            }
+            existing.totalSeats += rowData.seats.length;
+            existing.availSeats += rowData.seats.filter(
+              (s) => s.is_available,
+            ).length;
+          });
+
+          tiers.sort((a, b) => b.price_paise - a.price_paise);
+
+          const parsedTiers = tiers.map((t) => {
+            const isFillingFast =
+              t.totalSeats > 0 && t.availSeats / t.totalSeats < 0.4;
+            return {
+              price: `₹ ${(t.price_paise / 100).toFixed(2)}`,
+              tier: t.name,
+              status: isFillingFast ? "Filling Fast" : "Available",
+              statusColor: isFillingFast ? "text-[#FFB000]" : "text-[#34A853]",
+            };
+          });
+
+          if (parsedTiers.length > 0) {
+            setShowtimePricingMap((prev) => ({
+              ...prev,
+              [slotId]: parsedTiers,
+            }));
           }
-          rawRows[seat.row_label].seats.push(seat);
-        });
-
-        const tiers: { name: string; price_paise: number; totalSeats: number; availSeats: number }[] = [];
-        Object.entries(rawRows).forEach(([_, rowData]) => {
-          let tierName = "CLASSIC";
-          const priceRupees = rowData.price_paise / 100;
-          if (priceRupees >= 350) tierName = "RECLINER";
-          else if (priceRupees >= 250) tierName = "PRIME PLUS";
-          else if (priceRupees >= 200) tierName = "PRIME";
-
-          let existing = tiers.find((t) => t.price_paise === rowData.price_paise);
-          if (!existing) {
-            existing = { name: tierName, price_paise: rowData.price_paise, totalSeats: 0, availSeats: 0 };
-            tiers.push(existing);
-          }
-          existing.totalSeats += rowData.seats.length;
-          existing.availSeats += rowData.seats.filter((s) => s.is_available).length;
-        });
-
-        tiers.sort((a, b) => b.price_paise - a.price_paise);
-
-        const parsedTiers = tiers.map((t) => {
-          const isFillingFast = t.totalSeats > 0 && t.availSeats / t.totalSeats < 0.4;
-          return {
-            price: `₹ ${(t.price_paise / 100).toFixed(2)}`,
-            tier: t.name,
-            status: isFillingFast ? "Filling Fast" : "Available",
-            statusColor: isFillingFast ? "text-[#FFB000]" : "text-[#34A853]",
-          };
-        });
-
-        if (parsedTiers.length > 0) {
-          setShowtimePricingMap((prev) => ({ ...prev, [slotId]: parsedTiers }));
         }
+      } catch (err) {
+        console.error("Failed to fetch showtime pricing", err);
       }
-    } catch (err) {
-      console.error("Failed to fetch showtime pricing", err);
-    }
-  }, [showtimePricingMap]);
+    },
+    [showtimePricingMap],
+  );
 
   useEffect(() => {
     const fetchMovie = async () => {
@@ -391,7 +441,7 @@ export default function BuyTicketsPage() {
     if (selectedSlotId) {
       try {
         const parentVenue = venuesInCity.find((v) =>
-          v.showtimes.some((s) => s.id === selectedSlotId)
+          v.showtimes.some((s) => s.id === selectedSlotId),
         );
         if (parentVenue) {
           sessionStorage.setItem(
@@ -406,7 +456,7 @@ export default function BuyTicketsPage() {
                 screen_name: s.screen_name,
                 language: s.language,
               })),
-            })
+            }),
           );
         }
       } catch (err) {
@@ -416,8 +466,8 @@ export default function BuyTicketsPage() {
       navigate(
         withCity(
           `/showtimes/${selectedSlotId}/seat-map?qty=${tempTicketCount}`,
-          city
-        )
+          city,
+        ),
       );
     }
   };
@@ -428,19 +478,23 @@ export default function BuyTicketsPage() {
 
   const isSelectedSlotCouple = useMemo(() => {
     if (!selectedSlotId) return false;
-    const slot = venuesInCity.flatMap((v) => v.showtimes).find((s) => s.id === selectedSlotId);
+    const slot = venuesInCity
+      .flatMap((v) => v.showtimes)
+      .find((s) => s.id === selectedSlotId);
     return Boolean(
       slot?.screen_name?.toLowerCase().includes("couple") ||
-      slot?.format?.toLowerCase().includes("couple")
+      slot?.format?.toLowerCase().includes("couple"),
     );
   }, [selectedSlotId, venuesInCity]);
 
   const proceedWithSlot = (slotId: string) => {
     setSelectedSlotId(slotId);
-    const slot = venuesInCity.flatMap((v) => v.showtimes).find((s) => s.id === slotId);
+    const slot = venuesInCity
+      .flatMap((v) => v.showtimes)
+      .find((s) => s.id === slotId);
     const isCouple = Boolean(
       slot?.screen_name?.toLowerCase().includes("couple") ||
-      slot?.format?.toLowerCase().includes("couple")
+      slot?.format?.toLowerCase().includes("couple"),
     );
     let qty = ticketCount;
     if (isCouple && (qty % 2 !== 0 || qty < 2)) {
@@ -454,22 +508,37 @@ export default function BuyTicketsPage() {
   };
 
   const handleShowtimeClick = (slotId: string) => {
-  proceedWithSlot(slotId);
-};
+    proceedWithSlot(slotId);
+  };
 
   const currentSlotTiers = useMemo(() => {
     if (selectedSlotId && showtimePricingMap[selectedSlotId]?.length) {
       return showtimePricingMap[selectedSlotId];
     }
     return [
-      { tier: "RECLINER", price: "₹500", status: "FILLING FAST", statusColor: "text-[#E5A100]" },
-      { tier: "ELITE", price: "₹210", status: "AVAILABLE", statusColor: "text-[#34A853]" },
-      { tier: "CLASSIC", price: "₹170", status: "AVAILABLE", statusColor: "text-[#34A853]" },
+      {
+        tier: "RECLINER",
+        price: "₹500",
+        status: "FILLING FAST",
+        statusColor: "text-[#E5A100]",
+      },
+      {
+        tier: "ELITE",
+        price: "₹210",
+        status: "AVAILABLE",
+        statusColor: "text-[#34A853]",
+      },
+      {
+        tier: "CLASSIC",
+        price: "₹170",
+        status: "AVAILABLE",
+        statusColor: "text-[#34A853]",
+      },
     ];
   }, [selectedSlotId, showtimePricingMap]);
 
   const toggleDropdown = (
-    name: "langFormat" | "time" | "price" | "special" | "other" | "sort"
+    name: "langFormat" | "time" | "price" | "special" | "other" | "sort",
   ) => setOpenDropdown((cur) => (cur === name ? null : name));
 
   const handleOpenCityModal = () => {
@@ -492,15 +561,13 @@ export default function BuyTicketsPage() {
   }
 
   const activeFormatDisplay =
-    langFormatFilter === "all"
-      ? `${movie.language} - 2D`
-      : langFormatFilter;
+    langFormatFilter === "all" ? `${movie.language} - 2D` : langFormatFilter;
 
   return (
-<div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">        <Header />
-
-      {/* ─── Movie Title & Metadata Header (White background matching BookMyShow) ─── */}
-      <div className="bg-white border-b border-gray-200 pt-[128px] lg:pt-[144px] pb-6">
+    <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">
+      {" "}
+      <Header />
+      <div className="bg-white border-b border-gray-200 pt-[96px] lg:pt-[144px] pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
             {movie.title} - ({movie.language})
@@ -517,7 +584,9 @@ export default function BuyTicketsPage() {
                     : "border-gray-300 text-gray-600"
                 }`}
               >
-                {movie.certificate?.toUpperCase() === "A" ? "A • 18+" : movie.certificate}
+                {movie.certificate?.toUpperCase() === "A"
+                  ? "A • 18+"
+                  : movie.certificate}
               </span>
             )}
             {genres.map((g) => (
@@ -532,12 +601,14 @@ export default function BuyTicketsPage() {
           {movie.certificate?.toUpperCase() === "A" && (
             <div className="mt-3 inline-flex items-center gap-2 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-1.5 rounded-md font-medium">
               <span className="font-bold">Age Restriction:</span>
-              <span>This movie is rated 'A' (Adults Only) and strictly for viewers aged 18 and above. Please carry valid government ID.</span>
+              <span>
+                This movie is rated 'A' (Adults Only) and strictly for viewers
+                aged 18 and above. Please carry valid government ID.
+              </span>
             </div>
           )}
         </div>
       </div>
-
       {dateKeys.length === 0 ? (
         <div className="max-w-[1240px] mx-auto px-4">
           <div className="text-center py-16 text-gray-500">
@@ -549,7 +620,6 @@ export default function BuyTicketsPage() {
               Try selecting a different city
             </p>
 
-            {/* ─── Unable to find prompt / Change Location button ─── */}
             <div className="text-center py-4 bg-white rounded-xl border border-gray-100 shadow-2xs max-w-md mx-auto">
               <button
                 type="button"
@@ -570,13 +640,10 @@ export default function BuyTicketsPage() {
         </div>
       ) : (
         <>
-          {/* ─── Date Strip & Filter Bar (Exact BookMyShow Match with Spacing) ─── */}
-
- <div className="sticky top-[104px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs h-[72px] sm:h-[74px]">
-            <div className="max-w-[1240px] mx-auto px-4 flex items-center justify-between h-full">
-              
-              {/* Left Side: Date Strip with spacious gap on the right before vertical divider */}
-<div className="flex items-center gap-2 h-full border-r border-gray-200 pr-4 md:pr-8 mr-2 md:mr-4 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1.5">                {dateKeys.map((dk) => {
+          <div className="sticky top-[104px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs lg:h-[74px]">
+            <div className="max-w-[1400px] mx-auto px-4 flex flex-col lg:flex-row lg:items-center lg:justify-between h-full">
+<div className="flex items-center gap-2 lg:h-full lg:border-r border-gray-200 lg:pr-10 lg:mr-8 min-w-0 w-full lg:flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1.5">                {" "}
+                {dateKeys.map((dk) => {
                   const { weekday, day, month } = dateTabParts(dk);
                   const isActive = activeDate === dk;
                   return (
@@ -614,23 +681,17 @@ export default function BuyTicketsPage() {
                   );
                 })}
               </div>
-
-              {/* Right Side: Filter Cells spanning full 100% height */}
-              <div className="flex items-center h-full shrink-0">
-                
-                {/* 1. Language - Format Active Tab */}
-                <div className="relative h-full flex items-center border-r border-gray-200 px-5">
+<div className="flex items-center h-[44px] lg:h-full w-full lg:w-auto lg:shrink-0 overflow-x-auto lg:overflow-visible border-t border-gray-100 lg:border-t-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">                <div className="relative h-full flex items-center border-r border-gray-200 px-5">
                   <button
                     onClick={() => toggleDropdown("langFormat")}
                     className="flex items-center gap-1 text-xs font-semibold text-gray-900 h-full whitespace-nowrap cursor-pointer"
                   >
                     <span>{activeFormatDisplay}</span>
                   </button>
-                  {/* Active Red Bottom Line */}
                   <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#7B1E3D]" />
 
                   {openDropdown === "langFormat" && (
-                    <div className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[180px]">
+                    <div className="fixed left-2 right-2 top-[216px] lg:absolute lg:left-0 lg:right-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[180px]">
                       <button
                         onClick={() => {
                           setLangFormatFilter("all");
@@ -664,7 +725,6 @@ export default function BuyTicketsPage() {
                   )}
                 </div>
 
-                {/* 2. Price Range */}
                 <div className="relative h-full flex items-center border-r border-gray-200 px-4 hover:bg-gray-50 transition">
                   <button
                     onClick={() => toggleDropdown("price")}
@@ -684,41 +744,47 @@ export default function BuyTicketsPage() {
                   {openDropdown === "price" && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[200px]"
+                      className="fixed left-2 right-2 top-[216px] lg:absolute lg:left-0 lg:right-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[200px]"
                     >
                       {PRICE_RANGES.map((range) => {
-  const isChecked = selectedPriceRanges.some(
-    (r) => r.min === range.min && r.max === range.max
-  );
-  return (
-    <div
-      key={range.label}
-      onClick={() => {
-        setSelectedPriceRanges((prev) =>
-          prev.some((r) => r.min === range.min && r.max === range.max)
-            ? prev.filter(
-                (r) => !(r.min === range.min && r.max === range.max)
-              )
-            : [...prev, range]
-        );
-      }}
-      className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
-    >
-      <span>{range.label}</span>
-      <input
-        type="checkbox"
-        checked={isChecked}
-        readOnly
-        className="h-4 w-4 rounded border-gray-300 text-[#7B1E3D] focus:ring-[#7B1E3D] accent-[#7B1E3D] pointer-events-none cursor-pointer"
-      />
-    </div>
-  );
-})}
+                        const isChecked = selectedPriceRanges.some(
+                          (r) => r.min === range.min && r.max === range.max,
+                        );
+                        return (
+                          <div
+                            key={range.label}
+                            onClick={() => {
+                              setSelectedPriceRanges((prev) =>
+                                prev.some(
+                                  (r) =>
+                                    r.min === range.min && r.max === range.max,
+                                )
+                                  ? prev.filter(
+                                      (r) =>
+                                        !(
+                                          r.min === range.min &&
+                                          r.max === range.max
+                                        ),
+                                    )
+                                  : [...prev, range],
+                              );
+                            }}
+                            className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
+                          >
+                            <span>{range.label}</span>
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              readOnly
+                              className="h-4 w-4 rounded border-gray-300 text-[#7B1E3D] focus:ring-[#7B1E3D] accent-[#7B1E3D] pointer-events-none cursor-pointer"
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
 
-                {/* 3. Special Formats */}
                 <div className="relative h-full flex items-center border-r border-gray-200 px-4 hover:bg-gray-50 transition">
                   <button
                     onClick={() => toggleDropdown("special")}
@@ -738,7 +804,7 @@ export default function BuyTicketsPage() {
                   {openDropdown === "special" && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[180px]"
+                      className="fixed left-2 right-2 top-[216px] lg:absolute lg:left-0 lg:right-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[180px]"
                     >
                       {["Dolby", "Luxe", "Couple Recliners"].map((fmt) => {
                         const isChecked = selectedSpecialFormats.includes(fmt);
@@ -749,7 +815,7 @@ export default function BuyTicketsPage() {
                               setSelectedSpecialFormats((prev) =>
                                 prev.includes(fmt)
                                   ? prev.filter((s) => s !== fmt)
-                                  : [...prev, fmt]
+                                  : [...prev, fmt],
                               );
                             }}
                             className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
@@ -768,7 +834,6 @@ export default function BuyTicketsPage() {
                   )}
                 </div>
 
-                {/* 4. Other Filters */}
                 <div className="relative h-full flex items-center border-r border-gray-200 px-4 hover:bg-gray-50 transition">
                   <button
                     onClick={() => toggleDropdown("other")}
@@ -788,7 +853,7 @@ export default function BuyTicketsPage() {
                   {openDropdown === "other" && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute left-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[210px]"
+                      className="fixed left-2 right-2 top-[216px] lg:absolute lg:left-0 lg:right-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[210px]"
                     >
                       {[
                         "Cancellation available",
@@ -804,7 +869,7 @@ export default function BuyTicketsPage() {
                               setSelectedOtherFilters((prev) =>
                                 prev.includes(filterName)
                                   ? prev.filter((o) => o !== filterName)
-                                  : [...prev, filterName]
+                                  : [...prev, filterName],
                               );
                             }}
                             className="flex items-center justify-between px-4 py-2 text-xs text-gray-700 hover:bg-gray-50 cursor-pointer select-none"
@@ -823,7 +888,6 @@ export default function BuyTicketsPage() {
                   )}
                 </div>
 
-                {/* 5. Preferred Time */}
                 <div className="relative h-full flex items-center border-r border-gray-200 px-4 hover:bg-gray-50 transition">
                   <button
                     onClick={() => toggleDropdown("time")}
@@ -846,7 +910,7 @@ export default function BuyTicketsPage() {
                     />
                   </button>
                   {openDropdown === "time" && (
-                    <div className="absolute right-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[220px]">
+                    <div className="fixed left-2 right-2 top-[216px] lg:absolute lg:right-0 lg:left-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[220px]">
                       {(
                         [
                           "any",
@@ -884,7 +948,6 @@ export default function BuyTicketsPage() {
                   )}
                 </div>
 
-                {/* 6. Sort By (Exact BookMyShow Radio Popup) */}
                 <div className="relative h-full flex items-center border-r border-gray-200 px-4 hover:bg-gray-50 transition">
                   <button
                     onClick={() => toggleDropdown("sort")}
@@ -898,7 +961,7 @@ export default function BuyTicketsPage() {
                     />
                   </button>
                   {openDropdown === "sort" && (
-                    <div className="absolute right-0 top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-3 min-w-[240px]">
+                    <div className="fixed left-2 right-2 top-[216px] lg:absolute lg:right-0 lg:left-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-3 min-w-[240px]">
                       {[
                         {
                           id: "relevance",
@@ -952,7 +1015,6 @@ export default function BuyTicketsPage() {
                   )}
                 </div>
 
-                {/* 7. Search Toggle Icon */}
                 <div className="relative h-full flex items-center px-4 hover:bg-gray-50 transition">
                   {isSearchOpen ? (
                     <div className="flex items-center bg-gray-100 rounded-full px-2.5 py-1">
@@ -989,7 +1051,6 @@ export default function BuyTicketsPage() {
             </div>
           </div>
 
-          {/* ─── Subtitle Notice & Availability Legend Bar ─── */}
           <div className="bg-[#F5F5FA] border-b border-gray-200">
             <div className="max-w-[1240px] mx-auto px-4 py-2 flex items-center justify-between gap-4 text-xs text-gray-500">
               {showSubtitleNotice ? (
@@ -1025,7 +1086,6 @@ export default function BuyTicketsPage() {
             </div>
           </div>
 
-          {/* ─── Cinema Venue List ─── */}
           <div className="max-w-[1240px] mx-auto px-4 py-4 w-full">
             <div className="flex flex-col bg-white rounded-lg border border-gray-200 divide-y divide-gray-100 shadow-xs">
               {venuesForDate.length === 0 ? (
@@ -1050,10 +1110,8 @@ export default function BuyTicketsPage() {
                       key={venue.venue_id}
                       className="p-5 flex flex-col gap-3 hover:bg-gray-50/50 transition"
                     >
-                      {/* Top Row: Cinema Details & Bookmark */}
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-2.5 min-w-0">
-                          {/* Logo badge */}
                           {isPVR ? (
                             <div className="text-[11px] font-black text-amber-500 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-serif shrink-0 mt-0.5">
                               PVR
@@ -1087,7 +1145,6 @@ export default function BuyTicketsPage() {
                           </div>
                         </div>
 
-                        {/* Top Right: Favorite Heart Button */}
                         <button
                           type="button"
                           onClick={() => toggleFavorite(venue.venue_id)}
@@ -1102,9 +1159,7 @@ export default function BuyTicketsPage() {
                         </button>
                       </div>
 
-                      {/* Second Row: Square Icon Badges (F&B and M-Ticket with hover text expanding to the right) */}
                       <div className="flex items-center gap-2.5">
-                        {/* Food & Beverage Badge */}
                         <div
                           className="group flex items-center gap-1.5 bg-[#FFF8E7] text-[#FF9800] border border-[#FFE8B3] rounded-md px-2 py-1.5 text-xs font-semibold cursor-pointer transition-all duration-200"
                           title="Food & Beverage Available"
@@ -1115,7 +1170,6 @@ export default function BuyTicketsPage() {
                           </span>
                         </div>
 
-                        {/* M-Ticket Badge */}
                         <div
                           className="group flex items-center gap-1.5 bg-[#E8F8EE] text-[#1EA83C] border border-[#C5F0D5] rounded-md px-2 py-1.5 text-xs font-semibold cursor-pointer transition-all duration-200"
                           title="M-Ticket Available"
@@ -1127,7 +1181,6 @@ export default function BuyTicketsPage() {
                         </div>
                       </div>
 
-                      {/* Third Row: Showtime Slots with Live Dynamic Pricing Tooltip from API */}
                       <div className="flex flex-wrap items-center gap-3 pt-1">
                         {venue.showtimes.map((slot) => {
                           const isPast =
@@ -1139,18 +1192,48 @@ export default function BuyTicketsPage() {
 
                           const fallbackPricing = isCouple
                             ? [
-                                { price: "₹ 450.00", tier: "COUPLE RECLINER", status: "Available", statusColor: "text-[#34A853]" },
+                                {
+                                  price: "₹ 450.00",
+                                  tier: "COUPLE RECLINER",
+                                  status: "Available",
+                                  statusColor: "text-[#34A853]",
+                                },
                               ]
                             : fmt.includes("LUXE")
-                            ? [
-                                { price: "₹ 650.00", tier: "LUXE PRIME", status: "Filling Fast", statusColor: "text-[#FFB000]" },
-                                { price: "₹ 500.00", tier: "LUXE", status: "Available", statusColor: "text-[#34A853]" },
-                              ]
-                            : [
-                                { price: "₹ 390.00", tier: "RECLINER", status: "Available", statusColor: "text-[#34A853]" },
-                                { price: "₹ 290.00", tier: "PRIME PLUS", status: "Available", statusColor: "text-[#34A853]" },
-                                { price: "₹ 190.00", tier: "CLASSIC", status: "Available", statusColor: "text-[#34A853]" },
-                              ];
+                              ? [
+                                  {
+                                    price: "₹ 650.00",
+                                    tier: "LUXE PRIME",
+                                    status: "Filling Fast",
+                                    statusColor: "text-[#FFB000]",
+                                  },
+                                  {
+                                    price: "₹ 500.00",
+                                    tier: "LUXE",
+                                    status: "Available",
+                                    statusColor: "text-[#34A853]",
+                                  },
+                                ]
+                              : [
+                                  {
+                                    price: "₹ 390.00",
+                                    tier: "RECLINER",
+                                    status: "Available",
+                                    statusColor: "text-[#34A853]",
+                                  },
+                                  {
+                                    price: "₹ 290.00",
+                                    tier: "PRIME PLUS",
+                                    status: "Available",
+                                    statusColor: "text-[#34A853]",
+                                  },
+                                  {
+                                    price: "₹ 190.00",
+                                    tier: "CLASSIC",
+                                    status: "Available",
+                                    statusColor: "text-[#34A853]",
+                                  },
+                                ];
                           const pricingTiers =
                             showtimePricingMap[slot.id] || fallbackPricing;
 
@@ -1158,16 +1241,14 @@ export default function BuyTicketsPage() {
                             <div
                               key={slot.id}
                               className="relative group"
-                              onMouseEnter={() =>
-                                fetchShowtimePricing(slot.id)
-                              }
+                              onMouseEnter={() => fetchShowtimePricing(slot.id)}
                             >
-                              {/* Price Tooltip on Hover (Fetched dynamically from API) */}
                               {!isPast && (
                                 <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                                   {isCouple && (
                                     <div className="text-[10px] font-bold text-[#be185d] text-center mb-1 pb-1 border-b border-pink-100">
-                                      💑 Screen 4 (Couple Recliners) • ₹900 / pair
+                                      💑 Screen 4 (Couple Recliners) • ₹900 /
+                                      pair
                                     </div>
                                   )}
                                   <div className="flex items-center justify-around gap-4 text-center">
@@ -1190,8 +1271,8 @@ export default function BuyTicketsPage() {
                                       </div>
                                     ))}
                                   </div>
-                                  {/* Tooltip Downward Caret */}
-<div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-white rotate-45 border-r border-b border-gray-100" />                                </div>
+                                  <div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-white rotate-45 border-r border-b border-gray-100" />{" "}
+                                </div>
                               )}
 
                               <button
@@ -1203,8 +1284,8 @@ export default function BuyTicketsPage() {
                                   isPast
                                     ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
                                     : isCouple
-                                    ? "border border-[#f472b6] border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs"
-                                    : "border border-[#34A853] border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
+                                      ? "border border-[#f472b6] border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs"
+                                      : "border border-[#34A853] border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
                                 }`}
                               >
                                 <div className="flex items-center justify-center gap-1 leading-none">
@@ -1213,8 +1294,8 @@ export default function BuyTicketsPage() {
                                       isPast
                                         ? "text-gray-300"
                                         : isCouple
-                                        ? "text-[#831843]"
-                                        : "text-gray-800"
+                                          ? "text-[#831843]"
+                                          : "text-gray-800"
                                     }`}
                                   >
                                     {istTimeLabel(slot.starts_at)}
@@ -1226,15 +1307,21 @@ export default function BuyTicketsPage() {
                                         : "border-gray-400 text-gray-600"
                                     }`}
                                   >
-                                    {slot.language ? slot.language.substring(0, 3).toUpperCase() : "ENG"}
+                                    {slot.language
+                                      ? slot.language
+                                          .substring(0, 3)
+                                          .toUpperCase()
+                                      : "ENG"}
                                   </span>
                                 </div>
                                 <div
                                   className={`text-[8px] font-bold uppercase tracking-wider leading-none mt-1 flex items-center justify-center gap-0.5 ${
-                                    isCouple ? "text-[#be185d]" : "text-gray-400"
+                                    isCouple
+                                      ? "text-[#be185d]"
+                                      : "text-gray-400"
                                   }`}
                                 >
-                                  {isCouple ? "💑 COUPLE" : (slot.format || "2D")}
+                                  {isCouple ? "💑 COUPLE" : slot.format || "2D"}
                                 </div>
                               </button>
                             </div>
@@ -1248,7 +1335,6 @@ export default function BuyTicketsPage() {
             </div>
           </div>
 
-          {/* ─── Unable to find prompt / Change Location button ─── */}
           <div className="text-center py-6 bg-white border-t border-gray-100 mt-6">
             <button
               type="button"
@@ -1266,7 +1352,6 @@ export default function BuyTicketsPage() {
             </button>
           </div>
 
-          {/* ─── Breadcrumb Trail (Matching BMS Exact Reference) ─── */}
           <div className="max-w-[1240px] mx-auto px-4 py-4">
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500 font-normal">
               <Link to="/" className="hover:text-gray-900 transition">
@@ -1285,7 +1370,6 @@ export default function BuyTicketsPage() {
             </div>
           </div>
 
-          {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
           <div className="bg-[#404046] text-white py-4 px-4 sm:px-8 mt-4">
             <div className="max-w-[1240px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -1298,7 +1382,8 @@ export default function BuyTicketsPage() {
                       List your Show
                     </span>
                     <span className="text-xs text-gray-300">
-                      Got a show, event, activity or a great experience? Partner with us &amp; get listed on Vyhbhz
+                      Got a show, event, activity or a great experience? Partner
+                      with us &amp; get listed on Vyhbhz
                     </span>
                   </div>
                 </div>
@@ -1313,8 +1398,6 @@ export default function BuyTicketsPage() {
           </div>
         </>
       )}
-
-      {/* ─── Seat Count Change Modal (Matching BMS exact vehicle illustrations) ─── */}
       {showTicketModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -1352,8 +1435,8 @@ export default function BuyTicketsPage() {
                       isOddOnCouple
                         ? "opacity-30 cursor-not-allowed text-gray-300"
                         : tempTicketCount === n
-                        ? "bg-[#D6445B] text-white shadow-md font-bold cursor-pointer"
-                        : "text-gray-700 hover:bg-gray-100 cursor-pointer"
+                          ? "bg-[#D6445B] text-white shadow-md font-bold cursor-pointer"
+                          : "text-gray-700 hover:bg-gray-100 cursor-pointer"
                     }`}
                   >
                     {n}
@@ -1362,14 +1445,15 @@ export default function BuyTicketsPage() {
               })}
             </div>
 
-            {/* Tiers & Seat Pricing Breakdown */}
             <div className="border-t border-gray-100 px-6 py-4">
               <div className="flex items-center justify-around text-center gap-3">
                 {currentSlotTiers.map((t, idx) => {
                   const displayPrice = t.price.startsWith("₹")
                     ? t.price.replace("₹ ", "₹").split(".")[0]
                     : `₹${t.price}`;
-                  const isFillingFast = t.status.toLowerCase().includes("filling");
+                  const isFillingFast = t.status
+                    .toLowerCase()
+                    .includes("filling");
                   return (
                     <div key={idx} className="flex flex-col items-center">
                       <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
@@ -1391,7 +1475,6 @@ export default function BuyTicketsPage() {
               </div>
             </div>
 
-            {/* Bestseller seats banner */}
             <div className="bg-[#F8F9FA] border-t border-gray-100 py-2.5 px-4 text-center text-xs text-gray-600 flex items-center justify-center flex-wrap gap-1">
               <span>Book the</span>
               <span className="inline-block w-3.5 h-3.5 border-2 border-[#E5A100] rounded-xs bg-[#FFF8E7] mx-0.5" />
@@ -1411,15 +1494,12 @@ export default function BuyTicketsPage() {
           </div>
         </div>
       )}
-
       {openDropdown && (
         <div
           className="fixed inset-0 z-30"
           onClick={() => setOpenDropdown(null)}
         />
       )}
-
-      {/* ─── Cinema Info Modal (BookMyShow exact clone) ─── */}
       {selectedCinemaInfo && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
@@ -1429,7 +1509,6 @@ export default function BuyTicketsPage() {
             className="bg-white rounded-2xl w-full max-w-[460px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header with Title & Close button */}
             <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100 bg-white">
               <h3 className="text-base sm:text-lg font-bold text-gray-900 pr-4 truncate">
                 {selectedCinemaInfo.venue_name}
@@ -1444,7 +1523,6 @@ export default function BuyTicketsPage() {
               </button>
             </div>
 
-            {/* Map Preview */}
             <div className="relative w-full h-44 bg-slate-100 overflow-hidden border-b border-gray-100">
               <iframe
                 title="Cinema Location Map"
@@ -1453,14 +1531,14 @@ export default function BuyTicketsPage() {
                 style={{ border: 0 }}
                 loading="lazy"
                 src={`https://maps.google.com/maps?q=${encodeURIComponent(
-                  selectedCinemaInfo.venue_name + ", " + selectedCinemaInfo.city
+                  selectedCinemaInfo.venue_name +
+                    ", " +
+                    selectedCinemaInfo.city,
                 )}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
               />
             </div>
 
-            {/* Modal Body */}
             <div className="p-5 bg-white">
-              {/* Address Row */}
               <div className="flex items-start justify-between gap-3 border-b border-gray-100 pb-4">
                 <div className="flex items-start gap-2.5 min-w-0">
                   <MapPin className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
@@ -1471,7 +1549,9 @@ export default function BuyTicketsPage() {
                 </div>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    selectedCinemaInfo.venue_name + ", " + selectedCinemaInfo.city
+                    selectedCinemaInfo.venue_name +
+                      ", " +
+                      selectedCinemaInfo.city,
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1482,7 +1562,6 @@ export default function BuyTicketsPage() {
                 </a>
               </div>
 
-              {/* Favorites Row */}
               <div
                 onClick={() => toggleFavorite(selectedCinemaInfo.venue_id)}
                 className="flex items-center gap-2.5 py-3.5 border-b border-gray-100 cursor-pointer group select-none"
@@ -1501,13 +1580,11 @@ export default function BuyTicketsPage() {
                 </span>
               </div>
 
-              {/* Available Facilities Section */}
               <div className="pt-4">
                 <h4 className="text-xs font-bold text-gray-900 tracking-wide uppercase mb-3">
                   Available Facilities
                 </h4>
                 <div className="flex items-start gap-8">
-                  {/* Wheel Chair */}
                   <div className="flex flex-col items-center text-center">
                     <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-1.5 text-gray-700">
                       <Accessibility className="h-5 w-5 text-gray-700" />
@@ -1519,7 +1596,6 @@ export default function BuyTicketsPage() {
                     </span>
                   </div>
 
-                  {/* Parking */}
                   <div className="flex flex-col items-center text-center">
                     <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-1.5 text-gray-700">
                       <Car className="h-5 w-5 text-gray-700" />
@@ -1531,7 +1607,6 @@ export default function BuyTicketsPage() {
                     </span>
                   </div>
 
-                  {/* Food Court */}
                   <div className="flex flex-col items-center text-center">
                     <div className="w-10 h-10 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center mb-1.5 text-gray-700">
                       <Utensils className="h-5 w-5 text-gray-700" />
@@ -1548,22 +1623,6 @@ export default function BuyTicketsPage() {
           </div>
         </div>
       )}
-      {/* <AgeRestrictionModal
-        isOpen={showAgeWarningModal}
-        movieTitle={movie?.title}
-        onClose={() => {
-          setShowAgeWarningModal(false);
-          setPendingSlotId(null);
-        }}
-        onConfirm={() => {
-          setAgeVerified(true);
-          setShowAgeWarningModal(false);
-          if (pendingSlotId) {
-            proceedWithSlot(pendingSlotId);
-            setPendingSlotId(null);
-          }
-        }}
-      /> */}
       <Footer />
     </div>
   );

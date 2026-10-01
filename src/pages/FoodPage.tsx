@@ -99,7 +99,7 @@ setMenu(m);
   const startPay = () => {
     const c = knownContact();
      console.log("startPay", c);
-    if (!c.email || !c.phone) {
+    if (!c.email) {
       setShowContact(true);
       return;
     }

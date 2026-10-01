@@ -58,7 +58,9 @@ export default function SeatMapPage() {
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [tempTicketCount, setTempTicketCount] =
     useState<number>(requiredSeatCount);
-  const [zoom, setZoom] = useState<number>(1.0);
+  const [zoom, setZoom] = useState<number>(
+  typeof window !== "undefined" && window.innerWidth < 640 ? 0.55 : 1.0,
+);
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const venueShowtimes = useMemo<VenueShowtimeItem[]>(() => {
     try {
@@ -638,7 +640,7 @@ export default function SeatMapPage() {
           </div>
         ) : (
           <div
-            className="w-full max-w-[1280px] mx-auto px-4 sm:px-6 flex flex-col items-center transition-transform duration-150 origin-top"
+            className="w-max min-w-full mx-auto px-4 sm:px-6 flex flex-col items-center transition-transform duration-150 origin-top-left lg:origin-top"
             style={{ transform: `scale(${zoom})` }}
           >
             <div className="flex items-start">
@@ -930,7 +932,7 @@ export default function SeatMapPage() {
         </button>
         <button
           onClick={() =>
-            setZoom((z) => Math.max(0.7, Number((z - 0.1).toFixed(1))))
+            setZoom((z) => Math.max(0.4, Number((z - 0.1).toFixed(1))))
           }
           className="w-8 h-8 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
           title="Zoom Out"
@@ -939,8 +941,7 @@ export default function SeatMapPage() {
         </button>
       </div>
       {selectedSeats.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-3 px-4 z-40 flex flex-col items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
-          <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
+<div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 pt-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">          <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
             {selDist !== undefined && (
               <span>
                 Row {selRow}: <b>~{selDist} m</b> from screen

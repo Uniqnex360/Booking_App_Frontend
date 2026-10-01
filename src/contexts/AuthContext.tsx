@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthModalOpen(false);
   };
 
-  const fetchUser = useCallback(async (): Promise<boolean> => {
+ const fetchUser = useCallback(async (): Promise<boolean> => {
   const token = getAccessToken();
   if (!token) {
     setLoading(false);
@@ -92,9 +92,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const data = await getCurrentUser();
     setUser(data);
     return true;
-  } catch {
-    clearTokens();
-    setUser(null);
+  } catch (err: any) {
+    const status = err?.statusCode ?? err?.response?.status;
+    if (status === 401 || status === 403) {
+      clearTokens();
+      setUser(null);
+    }
     return false;
   } finally {
     setLoading(false);

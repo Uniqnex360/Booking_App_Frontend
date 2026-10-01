@@ -30,7 +30,7 @@ interface FoodStepProps {
   setCart: (c: Record<string, number>) => void;
   onBack: () => void;
   onProceed: () => void; // used for both Skip and Proceed
-  loading?: boolean;   
+  loading?: boolean;
 }
 
 export function FoodStep({
@@ -43,7 +43,7 @@ export function FoodStep({
   setCart,
   onBack,
   onProceed,
-   loading = false,  
+  loading = false,
 }: FoodStepProps) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
@@ -101,10 +101,10 @@ export function FoodStep({
     );
 
   return (
-    <div className="fixed inset-0 z-[140] bg-[#F5F5FA] overflow-y-auto">
+    <div className="fixed inset-0 z-[140] bg-[#F5F5FA] overflow-y-auto overflow-x-hidden">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-[1000px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-[1000px] mx-auto px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={onBack}
@@ -118,19 +118,21 @@ export function FoodStep({
             </div>
           </div>
           <button
-  onClick={onProceed}
-  disabled={loading}
-  className="bg-[#7B1E3D] text-white text-xs font-semibold px-4 py-2 rounded-md cursor-pointer shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
->
-  {loading ? "..." : cartItems.length ? "Pay" : "Skip"}
-</button>
+            onClick={onProceed}
+            disabled={loading}
+            className="bg-[#7B1E3D] text-white text-xs font-semibold px-4 py-2 rounded-md cursor-pointer shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? "..." : cartItems.length ? "Pay" : "Skip"}
+          </button>
         </div>
       </div>
 
-      <div className="max-w-[1000px] mx-auto px-4 py-4 grid gap-4 lg:grid-cols-[1fr_320px] pb-28">
+<div className="max-w-[1000px] mx-auto px-4 py-4 grid gap-4 lg:grid-cols-[1fr_320px] pb-28 min-w-0">
+        {" "}
         {/* Menu */}
-        <div className="space-y-3">
-          <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center justify-between gap-3">
+        <div className="space-y-3 min-w-0">
+          <div className="bg-white rounded-lg border border-gray-200 p-3 flex flex-wrap items-center justify-between gap-3">
+            {" "}
             <span className="text-sm font-bold">Grab a Bite!</span>
             <div className="flex items-center gap-2 border border-gray-300 rounded px-2 py-1.5 flex-1 max-w-[320px]">
               <Search className="h-3.5 w-3.5 text-gray-400" />
@@ -216,7 +218,6 @@ export function FoodStep({
             )}
           </div>
         </div>
-
         {/* Cart */}
         <div className="bg-white rounded-lg border border-gray-200 h-fit lg:sticky lg:top-20">
           <div className="flex justify-between items-center px-4 py-3 border-b border-gray-100 text-xs">
@@ -259,23 +260,23 @@ export function FoodStep({
       </div>
 
       {/* Bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pt-3 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
-  onClick={onProceed}
-  disabled={loading}
-  className="w-full max-w-md bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3 rounded-lg text-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
->
-  {loading ? (
-    <>
-      <Loader2 className="h-4 w-4 animate-spin" />
-      Processing...
-    </>
-  ) : cartItems.length ? (
-    `Pay • ${formatRupees(ticketPaise + fnbTotal)}`
-  ) : (
-    `Pay ${formatRupees(ticketPaise)}`
-  )}
-</button>
+          onClick={onProceed}
+          disabled={loading}
+          className="w-full max-w-md bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3 rounded-lg text-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : cartItems.length ? (
+            `Pay • ${formatRupees(ticketPaise + fnbTotal)}`
+          ) : (
+            `Pay ${formatRupees(ticketPaise)}`
+          )}
+        </button>
       </div>
     </div>
   );
