@@ -27,7 +27,6 @@ import {
   ChevronRight,
   Ticket,
   Heart,
-  HelpCircle,
   Headphones,
   Settings,
   Gift,
@@ -385,7 +384,6 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 font-sans">
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16 sm:h-[72px]">
-        {/* Brand Logo */}
         <Link to={withCity("/", city)} className="flex items-center shrink-0 py-1">
           <img
             src="/logo.png"
@@ -394,7 +392,6 @@ export function Header() {
           />
         </Link>
 
-        {/* Search Bar (Triggers Full BookMyShow Search Overlay) */}
         <div
           onClick={() => setIsSearchModalOpen(true)}
           className="relative hidden md:flex flex-1 max-w-[550px] lg:max-w-[620px] ml-4 cursor-pointer group"
@@ -407,9 +404,7 @@ export function Header() {
           </div>
         </div>
 
-        {/* Right Section: Aligned to the far right with ml-auto */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
-          {/* Mobile Search Trigger */}
           <button
             type="button"
             className="md:hidden text-gray-600 hover:text-gray-900 transition p-1"
@@ -422,7 +417,6 @@ export function Header() {
             )}
           </button>
 
-          {/* City Selector (Modal Trigger) */}
           <button
             type="button"
             onClick={() => setIsCityModalOpen(true)}
@@ -432,7 +426,6 @@ export function Header() {
             <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
           </button>
 
-          {/* User Sign In / Profile Avatar */}
           {user ? (
             <button
               onClick={() => {
@@ -459,7 +452,6 @@ export function Header() {
             </Button>
           )}
 
-          {/* Hamburger Menu Trigger (Visible on all devices!) */}
           <button
             onClick={() => {
               setDrawerTab("main");
@@ -473,7 +465,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Sub Navigation Bar */}
       <div className="hidden lg:block bg-[#F5F5FA] border-t border-gray-200">
         <div className="mx-auto flex max-w-[1240px] items-center justify-between px-4 h-10">
           <div className="flex items-center gap-6">
@@ -500,7 +491,6 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Search Overlay */}
       {mobileSearchOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white p-3 shadow-md">
           <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
@@ -547,7 +537,6 @@ export function Header() {
         </div>
       )}
 
-      {/* Unified Side Drawer */}
       <Sheet open={drawerOpen} onOpenChange={(open) => {
         setDrawerOpen(open);
         if (!open) {
@@ -558,10 +547,8 @@ export function Header() {
           side="right"
           className="w-full sm:w-[420px] p-0 flex flex-col bg-white border-l border-gray-200 z-[100] outline-none"
         >
-          {/* TAB 1: MAIN MENU */}
           {drawerTab === "main" && (
             <div className="flex flex-col h-full animate-in fade-in duration-200">
-              {/* Profile / Guest Header */}
               {user ? (
                 <div
                   className="p-6 flex items-center justify-between border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition mt-6"
@@ -604,7 +591,6 @@ export function Header() {
                 </div>
               )}
 
-              {/* Mobile City Selector */}
               <div
                 onClick={() => {
                   setDrawerOpen(false);
@@ -623,9 +609,7 @@ export function Header() {
                 </div>
               </div>
 
-              {/* Menu Items List */}
               <div className="flex-1 overflow-y-auto py-2 divide-y divide-gray-50">
-                {/* Mobile Navigation Links (if on small screen) */}
                 <div className="lg:hidden py-1 border-b border-gray-100">
                   {navLinks.map((link) => (
                     <button
@@ -640,7 +624,6 @@ export function Header() {
                 </div>
 
                 <div className="py-1">
-                  {/* Notifications */}
                   <DrawerMenuItem
                     icon={Bell}
                     title="Notifications"
@@ -648,7 +631,6 @@ export function Header() {
                     onClick={() => setDrawerTab("notifications")}
                   />
 
-                  {/* Your Orders */}
                   <DrawerMenuItem
                     icon={Ticket}
                     title="Your Orders"
@@ -656,14 +638,12 @@ export function Header() {
                     onClick={() => handleProfileNavigation(withCity("/profile?tab=orders", city))}
                   />
 
-                  {/* Your Wishlist */}
                   <DrawerMenuItem
                     icon={Heart}
                     title="Your Wishlist"
                     onClick={() => handleProfileNavigation(withCity("/profile?tab=saved", city))}
                   />
 
-                  {/* Stream Library */}
                   <DrawerMenuItem
                     icon={Tv}
                     title="Stream Library"
@@ -671,15 +651,8 @@ export function Header() {
                     onClick={() => handleProfileNavigation(withCity("/movies", city))}
                   />
 
-                  {/* Play Credit Card */}
-                  <DrawerMenuItem
-                    icon={CreditCard}
-                    title="Play Credit Card"
-                    subtitle="View your Play Credit Card details and offers"
-                    onClick={() => setDrawerTab("playCard")}
-                  />
+                  
 
-                  {/* Help & Support */}
                   <DrawerMenuItem
                     icon={MessageSquare}
                     title="Help & Support"
@@ -687,7 +660,6 @@ export function Header() {
                     onClick={() => handleProfileNavigation("/support")}
                   />
 
-                  {/* Accounts & Settings */}
                   <DrawerMenuItem
                     icon={Settings}
                     title="Accounts & Settings"
@@ -695,7 +667,6 @@ export function Header() {
                     onClick={() => setDrawerTab("settings")}
                   />
 
-                  {/* Rewards */}
                   <DrawerMenuItem
                     icon={Gift}
                     title="Rewards"
@@ -703,7 +674,6 @@ export function Header() {
                     onClick={() => setDrawerTab("rewards")}
                   />
 
-                  {/* BookAChange */}
                   <DrawerMenuItem
                     icon={HeartHandshake}
                     title="BookAChange"
@@ -712,7 +682,6 @@ export function Header() {
                 </div>
 
                 <div className="py-1">
-                  {/* Partner actions */}
                   {user?.role === "PARTNER" && (
                     <DrawerMenuItem
                       icon={LayoutDashboard}
@@ -750,7 +719,6 @@ export function Header() {
                 </div>
               </div>
 
-              {/* Sign out (if logged in) */}
               {user && (
                 <div className="p-4 border-t border-gray-100 bg-white">
                   <Button
@@ -768,7 +736,6 @@ export function Header() {
             </div>
           )}
 
-                    {/* TAB: NOTIFICATIONS */}
           {drawerTab === "notifications" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
               <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
@@ -881,82 +848,8 @@ export function Header() {
             </div>
           )}
 
-          {/* TAB: PLAY CREDIT CARD */}
-          {drawerTab === "playCard" && (
-            <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setDrawerTab("main")}
-                    className="p-1.5 hover:bg-gray-100 rounded-full text-gray-600 hover:text-gray-900 transition"
-                    title="Back"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <h2 className="text-lg font-bold text-gray-900 leading-tight">
-                    Play Credit Card
-                  </h2>
-                </div>
-                <SheetClose className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500">
-                  <X className="h-5 w-5" />
-                </SheetClose>
-              </div>
+          
 
-              <div className="flex-1 overflow-y-auto p-5 space-y-6">
-                <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white p-5 rounded-2xl shadow-xl border border-gray-700 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 -mr-6 -mt-6 w-32 h-32 bg-[#7B1E3D]/30 rounded-full blur-2xl pointer-events-none" />
-                  <div className="flex justify-between items-start mb-8">
-                    <div>
-                      <span className="text-xs font-bold tracking-widest uppercase text-gray-300">
-                        Play Card
-                      </span>
-                      <p className="text-[10px] text-gray-400">Powered by RBL Bank</p>
-                    </div>
-                    <CreditCard className="w-6 h-6 text-amber-400" />
-                  </div>
-                  <p className="font-mono text-base tracking-widest mb-6">•••• •••• •••• 4289</p>
-                  <div className="flex justify-between text-xs text-gray-400">
-                    <span className="uppercase font-semibold tracking-wider">{user?.full_name || "MEMBER"}</span>
-                    <span>EXP 12/29</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Card Benefits</h3>
-                  <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
-                    <Ticket className="w-5 h-5 text-[#7B1E3D] shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-gray-900">2 Free Movie Tickets</p>
-                      <p className="text-[11px] text-gray-500">Every month up to ₹500 off</p>
-                    </div>
-                  </div>
-                  <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
-                    <Gift className="w-5 h-5 text-[#7B1E3D] shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-gray-900">20% Off Food & Beverage</p>
-                      <p className="text-[11px] text-gray-500">At partner multiplexes across India</p>
-                    </div>
-                  </div>
-                  <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-3">
-                    <Sparkles className="w-5 h-5 text-[#7B1E3D] shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-gray-900">Zero Joining Fee</p>
-                      <p className="text-[11px] text-gray-500">Instant approval for active users</p>
-                    </div>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => toast.success("Application started! Our team will contact you shortly.")}
-                  className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold py-2.5 rounded-lg text-sm transition shadow-sm"
-                >
-                  Apply for Play Card
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* TAB: BOOKACHANGE */}
           {drawerTab === "bookAChange" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
               <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
@@ -1009,10 +902,8 @@ export function Header() {
             </div>
           )}
 
-          {/* TAB 2: HELP & SUPPORT */}
           {drawerTab === "help" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              {/* Help Header */}
               <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
                 <div className="flex items-center gap-3">
                   <button
@@ -1037,7 +928,6 @@ export function Header() {
                 </SheetClose>
               </div>
 
-              {/* Help Search */}
               <div className="p-4 bg-gray-50 border-b border-gray-100">
                 <div className="flex items-center bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-inner">
                   <Search className="h-4 w-4 text-gray-400 mr-2 shrink-0" />
@@ -1055,7 +945,6 @@ export function Header() {
                   )}
                 </div>
 
-                {/* Filter categories */}
                 <div className="flex gap-1.5 overflow-x-auto mt-3 pb-1 no-scrollbar text-xs">
                   {[
                     { id: "all", label: "All Topics" },
@@ -1079,7 +968,6 @@ export function Header() {
                 </div>
               </div>
 
-              {/* FAQs Accordion List */}
               <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-1">
                   Frequently Asked Questions
@@ -1120,7 +1008,6 @@ export function Header() {
                   })
                 )}
 
-                {/* Contact Options Box */}
                 <div className="mt-6 p-4 rounded-xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white shadow-sm space-y-3">
                   <div className="flex items-center gap-2">
                     <Headphones className="h-4 w-4 text-[#7B1E3D]" />
@@ -1158,10 +1045,8 @@ export function Header() {
             </div>
           )}
 
-          {/* TAB 3: ACCOUNT & SETTINGS */}
           {drawerTab === "settings" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              {/* Settings Header */}
               <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
                 <div className="flex items-center gap-3">
                   <button
@@ -1184,7 +1069,6 @@ export function Header() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {/* City Preference */}
                 <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-2 shadow-sm">
                   <label className="text-xs font-semibold text-gray-700 block uppercase tracking-wider">
                     Current City
@@ -1205,7 +1089,6 @@ export function Header() {
                   </button>
                 </div>
 
-                {/* Notifications */}
                 <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -1225,7 +1108,6 @@ export function Header() {
                   </p>
                 </div>
 
-                {/* Legal & Policies */}
                 <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-2 shadow-sm">
                   <p className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
                     Legal & Compliance
@@ -1248,7 +1130,6 @@ export function Header() {
                   </Link>
                 </div>
 
-                {/* App Version */}
                 <div className="text-center text-[11px] text-gray-400 pt-4">
                   <p>Vyhbz Entertainment v1.2.0</p>
                   <p className="mt-0.5">Made with Wine branding</p>
@@ -1257,10 +1138,8 @@ export function Header() {
             </div>
           )}
 
-          {/* TAB 4: REWARDS & OFFERS */}
           {drawerTab === "rewards" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              {/* Rewards Header */}
               <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
                 <div className="flex items-center gap-3">
                   <button
@@ -1283,7 +1162,6 @@ export function Header() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {/* Coupon Card 1 */}
                 <div className="p-4 rounded-xl border border-[#7B1E3D]/20 bg-[#7B1E3D]/5 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 bg-[#7B1E3D] text-white text-[10px] font-bold rounded uppercase tracking-wider">
@@ -1312,7 +1190,6 @@ export function Header() {
                   </p>
                 </div>
 
-                {/* Coupon Card 2 */}
                 <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-2 shadow-sm">
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded uppercase tracking-wider">
