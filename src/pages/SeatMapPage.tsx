@@ -1,7 +1,11 @@
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 const SeatView360 = lazy(() => import("./SeatView360"));
-const DEMO_PANO = "/panoramas/demo-theatre.jpg";
+const PANOS = {
+  front: "/panoramas/front.png",
+  mid: "/panoramas/mid.png",
+  back: "/panoramas/back.png",
+};
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
@@ -46,6 +50,7 @@ export default function SeatMapPage() {
   const [selectedSeats, setSelectedSeats] = useState<SeatItem[]>([]);
   const [isCommitLoading, setIsCommitLoading] = useState(false);
   const [viewSrc, setViewSrc] = useState<string | null>(null);
+  const [viewOpts, setViewOpts] = useState({ yaw: 0, pitch: 0, zoom: 40 });
   const [holdId, setHoldId] = useState<string | null>(null);
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
@@ -436,6 +441,23 @@ export default function SeatMapPage() {
   const backDist = distVals.length ? Math.max(...distVals) : null;
   const selRow = selectedSeats[0]?.row_label;
   const selDist = selRow ? rowDistances[selRow] : undefined;
+  const panoForRow = (row?: string) => {
+    const i = row ? rowOrder.indexOf(row) : -1;
+    const f = rowOrder.length > 1 && i >= 0 ? i / (rowOrder.length - 1) : 0.5;
+    return f < 0.34 ? PANOS.front : f < 0.67 ? PANOS.mid : PANOS.back;
+  };
+
+  const buildViewOpts = () => {
+    if (selectedSeats.length === 0) return { yaw: 0, pitch: 0, zoom: 40 };
+    const row = selectedSeats[0].row_label;
+    const nums = (rawRows[row]?.seats || []).map((s) => s.number);
+    const minN = Math.min(...nums);
+    const maxN = Math.max(...nums);
+    const avgNum =
+      selectedSeats.reduce((a, s) => a + s.number, 0) / selectedSeats.length;
+    const colFrac = maxN > minN ? (avgNum - minN) / (maxN - minN) : 0.5;
+    return { yaw: (0.5 - colFrac) * 0.8, pitch: 0, zoom: 40 };
+  };
   const canProceed = selectedSeats.length === requiredSeatCount;
   const splitIntoBlocks = (seats: SeatItem[]) => {
     const len = seats.length;
@@ -884,12 +906,17 @@ export default function SeatMapPage() {
             </div>
           </div>
         )}
-        <button
-          onClick={() => setViewSrc(DEMO_PANO)}
-          className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer"
-        >
-          Explore theatre in 360°
-        </button>
+        {!isSourceUnavailable && (
+          <button
+            onClick={() => {
+              setViewOpts({ yaw: 0, pitch: 0, zoom: 40 });
+              setViewSrc(PANOS.mid);
+            }}
+            className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer"
+          >
+            Explore theatre in 360°
+          </button>
+        )}
       </main>
       <div className="fixed bottom-40 right-4 sm:right-6 flex flex-col gap-2 z-20">
         <button
@@ -912,7 +939,7 @@ export default function SeatMapPage() {
         </button>
       </div>
       {selectedSeats.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-3 px-4z-40 flex flex-col items-center justify-center shadow--[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-3 px-4 z-40 flex flex-col items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
           <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
             {selDist !== undefined && (
               <span>
@@ -920,7 +947,10 @@ export default function SeatMapPage() {
               </span>
             )}
             <button
-              onClick={() => setViewSrc(DEMO_PANO)}
+              onClick={() => {
+                setViewOpts(buildViewOpts());
+                setViewSrc(panoForRow(selRow));
+              }}
               className="text-[#7B1E3D] font-semibold underline cursor-pointer"
             >
               View from your seat
@@ -1075,7 +1105,10 @@ export default function SeatMapPage() {
         <Suspense fallback={null}>
           <SeatView360
             src={viewSrc}
-            title={`${mapData?.screen_name || "Theatre"} • Demo view`}
+            title={`${mapData?.screen_name || "Theatre"} • Demo view (approx)`}
+            yaw={viewOpts.yaw}
+            pitch={viewOpts.pitch}
+            zoom={viewOpts.zoom}
             onClose={() => setViewSrc(null)}
           />
         </Suspense>
