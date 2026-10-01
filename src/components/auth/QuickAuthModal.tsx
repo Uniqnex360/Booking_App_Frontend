@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { X, ChevronLeft, Mail, Loader2, Lock } from "lucide-react";
+import { X, ChevronLeft, Mail, Loader2, EyeOff, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 export type AuthModalView =
@@ -28,13 +28,11 @@ export function QuickAuthModal() {
   const [view, setView] = useState<AuthModalView>("get-started");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Email flow state
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
-  // OTP state (6 digits for email)
   const [otpDigits, setOtpDigits] = useState<string[]>([
     "",
     "",
@@ -46,10 +44,8 @@ export function QuickAuthModal() {
   const [activeOtpIndex, setActiveOtpIndex] = useState(0);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Resend Countdown Timer (30s)
   const [resendTimer, setResendTimer] = useState(30);
 
-  // Sync initial view when modal opens
   useEffect(() => {
     if (isAuthModalOpen) {
       setView(authModalInitialView || "get-started");
@@ -57,11 +53,11 @@ export function QuickAuthModal() {
       setLoading(false);
       setOtpDigits(["", "", "", "", "", ""]);
       setPassword("");
+      setShowPassword(false);
       setResendTimer(30);
     }
   }, [isAuthModalOpen, authModalInitialView]);
 
-  // Countdown timer effect
   useEffect(() => {
     let interval: any = null;
     if (
@@ -78,9 +74,6 @@ export function QuickAuthModal() {
     };
   }, [isAuthModalOpen, view, resendTimer]);
 
-  // ---------------------------------------------
-  // Phone.Email Integration (SMS & WhatsApp OTP)
-  // ---------------------------------------------
   const isProcessingPhoneRef = useRef(false);
 
   const handlePhoneVerified = async (userJsonUrl: string) => {
@@ -108,7 +101,6 @@ export function QuickAuthModal() {
     }
   };
 
-  // Cross-window postMessage listener from Phone.Email popup
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (
@@ -128,7 +120,6 @@ export function QuickAuthModal() {
     };
   }, []);
 
-  // Dynamically attach Phone.Email listener and load script ONLY when modal & get-started view are active
   useEffect(() => {
     if (!isAuthModalOpen || view !== "get-started") return;
 
@@ -139,7 +130,6 @@ export function QuickAuthModal() {
       }
     };
 
-    // Remove any previous script element to allow fresh initialization of the sign_in_button
     const prevScript = document.getElementById("phone-email-script");
     if (prevScript) {
       prevScript.remove();
@@ -178,14 +168,10 @@ export function QuickAuthModal() {
 
   if (!isAuthModalOpen) return null;
 
-  // Validation
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const otpCode = otpDigits.join("");
   const isOtpComplete = otpCode.length === 6;
 
-  // ---------------------------------------------
-  // Handlers for Email OTP inputs
-  // ---------------------------------------------
   const handleOtpDigitChange = (val: string, index: number) => {
     const clean = val.replace(/\D/g, "");
     if (!clean) {
@@ -237,9 +223,6 @@ export function QuickAuthModal() {
     otpInputRefs.current[nextIndex]?.focus();
   };
 
-  // ---------------------------------------------
-  // Social Sign-In Handlers
-  // ---------------------------------------------
   const handleGoogleSignIn = async () => {
     setError(null);
     setLoading(true);
@@ -263,9 +246,6 @@ export function QuickAuthModal() {
     }
   };
 
-  // ---------------------------------------------
-  // Email Flow Handlers
-  // ---------------------------------------------
   const handleSendEmailOtp = async () => {
     if (!isEmailValid) return;
     setError(null);
@@ -561,7 +541,7 @@ export function QuickAuthModal() {
                 </label>
                 <div className="relative flex items-center border border-gray-300 rounded-lg px-3.5 py-3 focus-within:border-[#7B1E3D]">
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     disabled={loading}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -569,7 +549,20 @@ export function QuickAuthModal() {
                     required
                     className="w-full text-sm text-gray-900 outline-none bg-transparent"
                   />
-                  <Lock className="w-4 h-4 text-gray-400 shrink-0 ml-2" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="text-gray-400 hover:text-gray-700 shrink-0 ml-2"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
               </div>
 
