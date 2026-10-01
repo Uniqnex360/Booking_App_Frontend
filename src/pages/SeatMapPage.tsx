@@ -771,7 +771,11 @@ export default function SeatMapPage() {
                                             } else if (isSelected) {
                                               seatStyle =
                                                 "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
-                                            } else {
+                                            } 
+                                            else if (seat.is_bestseller) {
+  seatStyle =
+    "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
+} else {
                                               seatStyle =
                                                 "bg-white border border-[#1ea83c] text-[#1ea83c] group-hover/pair:bg-[#1ea83c] group-hover/pair:text-white cursor-pointer";
                                             }
@@ -838,7 +842,11 @@ export default function SeatMapPage() {
                                         } else if (isSelected) {
                                           seatStyle =
                                             "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
-                                        } else {
+                                        }
+                                        else if (seat.is_bestseller) {
+  seatStyle =
+    "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
+}  else {
                                           seatStyle =
                                             "bg-white border border-[#1ea83c] text-[#1ea83c] hover:bg-[#1ea83c] hover:text-white cursor-pointer";
                                         }
