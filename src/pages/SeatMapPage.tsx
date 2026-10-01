@@ -1,5 +1,7 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+const SeatView360 = lazy(() => import("./SeatView360"));
+const DEMO_PANO = "/panoramas/demo-theatre.jpg";
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
@@ -22,19 +24,16 @@ import {
   VenueShowtimeItem,
 } from "@/types/movie.types";
 import { ensureHoldToken } from "@/lib/holdToken";
-
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const city = searchParams.get("city") || "";
-
   const requiredSeatCount = Math.min(
     10,
     Math.max(1, parseInt(searchParams.get("qty") || "2", 10) || 2),
   );
-
   const [mapData, setMapData] = useState<SeatMapDetail | null>(null);
   const isCoupleScreen = useMemo(() => {
     const sName = (mapData?.screen_name || "").toLowerCase();
@@ -42,23 +41,20 @@ export default function SeatMapPage() {
     return sName.includes("couple") || fmt.includes("couple");
   }, [mapData]);
   const isCoupleSeat = (seat: SeatItem) =>
-  isCoupleScreen || Boolean(seat.is_couple);
+    isCoupleScreen || Boolean(seat.is_couple);
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState<SeatItem[]>([]);
   const [isCommitLoading, setIsCommitLoading] = useState(false);
-
+  const [viewSrc, setViewSrc] = useState<string | null>(null);
   const [holdId, setHoldId] = useState<string | null>(null);
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
-
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [tempTicketCount, setTempTicketCount] =
     useState<number>(requiredSeatCount);
   const [zoom, setZoom] = useState<number>(1.0);
-
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
-
   const venueShowtimes = useMemo<VenueShowtimeItem[]>(() => {
     try {
       const cached = sessionStorage.getItem("vyhbz_venue_showtimes");
@@ -73,7 +69,6 @@ export default function SeatMapPage() {
     }
     return [];
   }, [id]);
-
   const allShowtimes = useMemo(() => {
     if (!mapData) return venueShowtimes;
     const merged = venueShowtimes.some((s) => s.id === id)
@@ -88,18 +83,15 @@ export default function SeatMapPage() {
           },
           ...venueShowtimes,
         ];
-
     const currentDay = new Date(mapData.starts_at).toDateString();
     const sameDay = merged.filter(
       (s) => new Date(s.starts_at).toDateString() === currentDay,
     );
-
     return sameDay.sort(
       (a, b) =>
         new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
     );
   }, [venueShowtimes, mapData, id]);
-
   const fetchSeatMap = async () => {
     setLoading(true);
     try {
@@ -114,15 +106,12 @@ export default function SeatMapPage() {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchSeatMap();
   }, [id]);
-
   useEffect(() => {
     setTempTicketCount(requiredSeatCount);
   }, [requiredSeatCount]);
-
   useEffect(() => {
     if (isCoupleScreen && requiredSeatCount % 2 !== 0) {
       const evenQty = Math.max(2, requiredSeatCount + 1);
@@ -132,7 +121,6 @@ export default function SeatMapPage() {
       setTempTicketCount(evenQty);
     }
   }, [isCoupleScreen, requiredSeatCount, searchParams, setSearchParams]);
-
   useEffect(() => {
     if (!heldUntil) return;
     const interval = setInterval(() => {
@@ -151,17 +139,14 @@ export default function SeatMapPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, [heldUntil]);
-
   if (loading) {
     return <LoadingPage showFooter={false} />;
   }
-
   const isSourceUnavailable =
     mapData?.code === "SOURCE_UNAVAILABLE" || !mapData;
   const isStale =
     mapData?.fetched_at &&
     Date.now() - new Date(mapData.fetched_at).getTime() > 60000;
-
   const allSeats: SeatItem[] = [];
   if (
     mapData?.seats &&
@@ -185,25 +170,20 @@ export default function SeatMapPage() {
       }
     });
   }
-
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
-
     if (isCoupleSeat(clickedSeat)) {
-
       const partnerNum =
         clickedSeat.number % 2 === 1
           ? clickedSeat.number + 1
           : clickedSeat.number - 1;
       const partnerSeat = rowSeats.find((s) => s.number === partnerNum);
-
       if (!partnerSeat || !partnerSeat.is_available) {
         toast.error(
           "Both seats of a couple recliner must be available to book.",
         );
         return;
       }
-
       // If clicked seat or partner is already selected, deselect
       const isAlreadySelected = selectedSeats.some(
         (s) =>
@@ -215,7 +195,6 @@ export default function SeatMapPage() {
         idempotencyKeyRef.current = crypto.randomUUID();
         return;
       }
-
       // Ensure requiredSeatCount is an even number >= 2
       let effectiveQty = requiredSeatCount;
       if (effectiveQty % 2 !== 0 || effectiveQty < 2) {
@@ -231,9 +210,7 @@ export default function SeatMapPage() {
           `Couple seats can only be booked in pairs of 2. Quantity updated to ${effectiveQty}.`,
         );
       }
-
       const pairsNeeded = Math.floor(effectiveQty / 2);
-
       // Build sorted pairs in this row
       const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
       const rowPairs: SeatItem[][] = [];
@@ -246,17 +223,14 @@ export default function SeatMapPage() {
           }
         }
       }
-
       const clickedPairIdx = rowPairs.findIndex((p) =>
         p.some((s) => s.seat_ref === clickedSeat.seat_ref),
       );
       if (clickedPairIdx === -1) return;
-
       // Try contiguous window of pairs
       for (let shift = 0; shift < pairsNeeded; shift++) {
         const startIdx = clickedPairIdx - shift;
         const endIdx = startIdx + pairsNeeded;
-
         if (startIdx >= 0 && endIdx <= rowPairs.length) {
           const candidatePairs = rowPairs.slice(startIdx, endIdx);
           const allAvailable = candidatePairs.every((pair) =>
@@ -269,13 +243,11 @@ export default function SeatMapPage() {
           }
         }
       }
-
       // Fallback: select just the clicked pair
       setSelectedSeats([clickedSeat, partnerSeat]);
       idempotencyKeyRef.current = crypto.randomUUID();
       return;
     }
-
     const isAlreadySelected = selectedSeats.some(
       (s) => s.seat_ref === clickedSeat.seat_ref,
     );
@@ -284,7 +256,6 @@ export default function SeatMapPage() {
       idempotencyKeyRef.current = crypto.randomUUID();
       return;
     }
-
     const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
     const clickedIdx = sortedRow.findIndex(
       (s) => s.seat_ref === clickedSeat.seat_ref,
@@ -298,18 +269,15 @@ export default function SeatMapPage() {
         .map((s) => sortedRow.findIndex((r) => r.seat_ref === s.seat_ref))
         .filter((i) => i !== -1)
         .sort((a, b) => a - b);
-
       if (selIdxs.length === requiredSeatCount) {
         const firstIdx = selIdxs[0];
         const lastIdx = selIdxs[selIdxs.length - 1];
         let start = -1;
-
         if (clickedIdx === lastIdx + 1) {
           start = clickedIdx - requiredSeatCount + 1;
         } else if (clickedIdx === firstIdx - 1) {
           start = clickedIdx;
         }
-
         if (start >= 0 && start + requiredSeatCount <= sortedRow.length) {
           const win = sortedRow.slice(start, start + requiredSeatCount);
           const ok =
@@ -326,16 +294,13 @@ export default function SeatMapPage() {
     for (let shift = 0; shift < requiredSeatCount; shift++) {
       const startIdx = clickedIdx - shift;
       const endIdx = startIdx + requiredSeatCount;
-
       if (startIdx >= 0 && endIdx <= sortedRow.length) {
         const candidateWindow = sortedRow.slice(startIdx, endIdx);
-
         const allAvailable = candidateWindow.every((s) => s.is_available);
         const isContiguous = candidateWindow.every((s, i) => {
           if (i === 0) return true;
           return s.number === candidateWindow[i - 1].number + 1;
         });
-
         if (allAvailable && isContiguous) {
           setSelectedSeats(candidateWindow);
           idempotencyKeyRef.current = crypto.randomUUID();
@@ -343,11 +308,9 @@ export default function SeatMapPage() {
         }
       }
     }
-
     setSelectedSeats([clickedSeat]);
     idempotencyKeyRef.current = crypto.randomUUID();
   };
-
   const handlePayClick = () => {
     if (selectedSeats.length !== requiredSeatCount) {
       toast.warning(
@@ -361,14 +324,12 @@ export default function SeatMapPage() {
     const saved = JSON.parse(
       localStorage.getItem("vyhbz_contact_details") || "{}",
     );
-
     const headers: Record<string, string> = {
       "Idempotency-Key": idempotencyKeyRef.current,
     };
     if (!user) {
       headers["X-Hold-Token"] = ensureHoldToken();
     }
-
     setIsCommitLoading(true);
     try {
       const res = await unwrap<any>(
@@ -405,7 +366,6 @@ export default function SeatMapPage() {
       setIsCommitLoading(false);
     }
   };
-
   const handleSeatCountConfirm = (newCount: number) => {
     setShowTicketModal(false);
     setSelectedSeats([]);
@@ -413,13 +373,11 @@ export default function SeatMapPage() {
     params.set("qty", String(newCount));
     setSearchParams(params, { replace: true });
   };
-
   const tiers: {
     name: string;
     price_paise: number;
     rows: Record<string, SeatItem[]>;
   }[] = [];
-
   const rawRows: Record<string, { price_paise: number; seats: SeatItem[] }> =
     {};
   allSeats.forEach((seat) => {
@@ -428,7 +386,6 @@ export default function SeatMapPage() {
     }
     rawRows[seat.row_label].seats.push(seat);
   });
-
   Object.entries(rawRows).forEach(([rowLabel, rowData]) => {
     let tierName = "CLASSIC";
     const priceRupees = rowData.price_paise / 100;
@@ -441,7 +398,6 @@ export default function SeatMapPage() {
       else if (priceRupees >= 200) tierName = "GOLD";
       else if (priceRupees >= 150) tierName = "SILVER";
     }
-
     let existingTier = tiers.find((t) => t.price_paise === rowData.price_paise);
     if (!existingTier) {
       existingTier = {
@@ -455,7 +411,6 @@ export default function SeatMapPage() {
       (a, b) => a.number - b.number,
     );
   });
-
   if (isCoupleScreen) {
     tiers.sort((a, b) => {
       const aFirst = Object.keys(a.rows).sort()[0];
@@ -465,14 +420,23 @@ export default function SeatMapPage() {
   } else {
     tiers.sort((a, b) => b.price_paise - a.price_paise);
   }
-
   const totalPricePaise = selectedSeats.reduce(
     (acc, s) => acc + (s.price_paise || 0),
     0,
   );
-
+  const rowOrder = Object.keys(rawRows).sort();
+  const FRONT_M = 4.5;
+  const PITCH_M = isCoupleScreen ? 1.4 : 1.1;
+  const rowDistances: Record<string, number> = {};
+  rowOrder.forEach((r, i) => {
+    rowDistances[r] = Number((FRONT_M + i * PITCH_M).toFixed(1));
+  });
+  const distVals = Object.values(rowDistances);
+  const frontDist = distVals.length ? Math.min(...distVals) : null;
+  const backDist = distVals.length ? Math.max(...distVals) : null;
+  const selRow = selectedSeats[0]?.row_label;
+  const selDist = selRow ? rowDistances[selRow] : undefined;
   const canProceed = selectedSeats.length === requiredSeatCount;
-
   const splitIntoBlocks = (seats: SeatItem[]) => {
     const len = seats.length;
     if (len <= 8) return [seats];
@@ -488,7 +452,6 @@ export default function SeatMapPage() {
       seats.slice(rightStart),
     ];
   };
-
   const formattedDate = mapData?.starts_at
     ? new Date(mapData.starts_at).toLocaleDateString("en-US", {
         weekday: "short",
@@ -497,7 +460,6 @@ export default function SeatMapPage() {
         year: "numeric",
       })
     : "";
-
   const formattedTime = mapData?.starts_at
     ? new Date(mapData.starts_at).toLocaleTimeString("en-US", {
         hour: "2-digit",
@@ -505,7 +467,6 @@ export default function SeatMapPage() {
         hour12: true,
       })
     : "";
-
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
       <header className="bg-white border-b border-gray-200 py-2.5 sticky top-0 z-30 shadow-xs">
@@ -518,7 +479,6 @@ export default function SeatMapPage() {
             >
               <ChevronLeft className="h-6 w-6" />
             </button>
-
             <div className="min-w-0">
               <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
                 {mapData?.movie_title}
@@ -529,7 +489,6 @@ export default function SeatMapPage() {
               </p>
             </div>
           </div>
-
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isStale && !isSourceUnavailable && (
               <button
@@ -539,19 +498,16 @@ export default function SeatMapPage() {
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
               </button>
             )}
-
-                        {holdId && countdown > 0 && (
+            {holdId && countdown > 0 && (
               <div className="bg-[#7B1E3D] text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse">
                 <Clock className="h-3 w-3" /> {Math.floor(countdown / 60)}:
                 {(countdown % 60).toString().padStart(2, "0")}
               </div>
             )}
-
             <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-gray-500 font-semibold shrink-0 px-2.5 py-1 border border-gray-200 rounded">
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
               {allSeats.length} seats
             </div>
-
             <button
               onClick={() => setShowTicketModal(true)}
               className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
@@ -564,10 +520,8 @@ export default function SeatMapPage() {
               </span>
             </button>
           </div>
-          
         </div>
       </header>
-
       {allShowtimes.length > 1 && (
         <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
@@ -583,7 +537,6 @@ export default function SeatMapPage() {
                 },
               );
               const subLabel = s.format || mapData?.format || "4K LASER ATMOS";
-
               if (isCurrent) {
                 return (
                   <div
@@ -599,7 +552,6 @@ export default function SeatMapPage() {
                   </div>
                 );
               }
-
               if (hasStarted) {
                 return (
                   <button
@@ -617,7 +569,6 @@ export default function SeatMapPage() {
                   </button>
                 );
               }
-
               return (
                 <button
                   key={s.id}
@@ -642,10 +593,9 @@ export default function SeatMapPage() {
           </div>
         </div>
       )}
-
       <main
         className={`flex-grow bg-white flex flex-col items-center justify-start py-8 overflow-auto relative ${
-          selectedSeats.length > 0 ? "pb-28 sm:pb-32" : "pb-12"
+          selectedSeats.length > 0 ? "pb-40" : "pb-12"
         }`}
       >
         {isSourceUnavailable ? (
@@ -689,12 +639,11 @@ export default function SeatMapPage() {
                       </span>
                       <div className="flex-grow h-px bg-gray-200" />
                     </div>
-
                     <div className="space-y-1.5 flex flex-col items-center w-full">
                       {Object.entries(tier.rows).map(([rowLabel, seatList]) => {
                         const blocks = splitIntoBlocks(seatList);
-                        const rowIsCouple = seatList.some((s) => s.is_couple) || isCoupleScreen; 
-
+                        const rowIsCouple =
+                          seatList.some((s) => s.is_couple) || isCoupleScreen;
                         return (
                           <div
                             key={rowLabel}
@@ -712,10 +661,8 @@ export default function SeatMapPage() {
                               </span>
                             </div>
                             <div className="bg-gray-100 self-stretch" />
-
                             <div className="flex items-center justify-center">
-                             {rowIsCouple ? (
-
+                              {rowIsCouple ? (
                                 <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
                                   {(() => {
                                     const sorted = [...seatList].sort(
@@ -734,7 +681,6 @@ export default function SeatMapPage() {
                                         pairs.push([sorted[i]]);
                                       }
                                     }
-
                                     return pairs.map((pair, pIdx) => {
                                       const isPairSelected = pair.every((s) =>
                                         selectedSeats.some(
@@ -744,7 +690,6 @@ export default function SeatMapPage() {
                                       const isPairSold = pair.some(
                                         (s) => !s.is_available,
                                       );
-
                                       return (
                                         <div
                                           key={pIdx}
@@ -764,7 +709,6 @@ export default function SeatMapPage() {
                                               );
                                             const isLeft = sIdx === 0;
                                             const isRight = sIdx === 1;
-
                                             let seatStyle = "";
                                             if (
                                               !seat.is_available ||
@@ -775,22 +719,19 @@ export default function SeatMapPage() {
                                             } else if (isSelected) {
                                               seatStyle =
                                                 "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
-                                            } 
-                                            else if (seat.is_bestseller) {
-  seatStyle =
-    "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
-} else {
+                                            } else if (seat.is_bestseller) {
+                                              seatStyle =
+                                                "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
+                                            } else {
                                               seatStyle =
                                                 "bg-white border border-[#1ea83c] text-[#1ea83c] group-hover/pair:bg-[#1ea83c] group-hover/pair:text-white cursor-pointer";
                                             }
-
                                             const rounding =
                                               pair.length === 2
                                                 ? isLeft
                                                   ? "rounded-l-[5px] rounded-r-none border-r-0"
                                                   : "rounded-r-[5px] rounded-l-none border-l-0"
                                                 : "rounded-[3px]";
-
                                             return (
                                               <button
                                                 key={seat.seat_ref}
@@ -838,7 +779,6 @@ export default function SeatMapPage() {
                                         const isSelected = selectedSeats.some(
                                           (s) => s.seat_ref === seat.seat_ref,
                                         );
-
                                         let seatStyle = "";
                                         if (!seat.is_available) {
                                           seatStyle =
@@ -846,15 +786,13 @@ export default function SeatMapPage() {
                                         } else if (isSelected) {
                                           seatStyle =
                                             "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
-                                        }
-                                        else if (seat.is_bestseller) {
-  seatStyle =
-    "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
-}  else {
+                                        } else if (seat.is_bestseller) {
+                                          seatStyle =
+                                            "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
+                                        } else {
                                           seatStyle =
                                             "bg-white border border-[#1ea83c] text-[#1ea83c] hover:bg-[#1ea83c] hover:text-white cursor-pointer";
                                         }
-
                                         return (
                                           <button
                                             key={seat.seat_ref}
@@ -892,7 +830,6 @@ export default function SeatMapPage() {
                     </div>
                   </div>
                 ))}
-
                 <div className="w-full flex flex-col items-center mt-12 mb-8 select-none">
                   <div className="w-64 sm:w-80 h-7 relative flex items-center justify-center">
                     <svg
@@ -930,14 +867,31 @@ export default function SeatMapPage() {
                   <div className="text-xs text-gray-400 font-normal mt-3 tracking-normal select-none">
                     All eyes this way please
                   </div>
+                  {frontDist !== null && backDist !== null && (
+                    <div className="mt-2 flex items-center gap-4 text-[11px] text-gray-500">
+                      <span>
+                        Screen → front row:{" "}
+                        <b className="text-gray-800">~{frontDist} m</b>
+                      </span>
+                      <span>
+                        Screen → back row:{" "}
+                        <b className="text-gray-800">~{backDist} m</b>
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         )}
+        <button
+          onClick={() => setViewSrc(DEMO_PANO)}
+          className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer"
+        >
+          Explore theatre in 360°
+        </button>
       </main>
-
-      <div className="fixed bottom-24 sm:bottom-20 right-4 sm:right-6 flex flex-col gap-2 z-20">
+      <div className="fixed bottom-40 right-4 sm:right-6 flex flex-col gap-2 z-20">
         <button
           onClick={() =>
             setZoom((z) => Math.min(1.4, Number((z + 0.1).toFixed(1))))
@@ -957,9 +911,21 @@ export default function SeatMapPage() {
           <ZoomOut className="h-4 w-4" />
         </button>
       </div>
-
       {selectedSeats.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-3 px-4 z-40 flex items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 py-3 px-4z-40 flex flex-col items-center justify-center shadow--[0_-4px_20px_rgba(0,0,0,0.1)]">
+          <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
+            {selDist !== undefined && (
+              <span>
+                Row {selRow}: <b>~{selDist} m</b> from screen
+              </span>
+            )}
+            <button
+              onClick={() => setViewSrc(DEMO_PANO)}
+              className="text-[#7B1E3D] font-semibold underline cursor-pointer"
+            >
+              View from your seat
+            </button>
+          </div>
           <button
             onClick={handlePayClick}
             disabled={isCommitLoading || !canProceed}
@@ -979,10 +945,9 @@ export default function SeatMapPage() {
           </button>
         </div>
       )}
-
       <footer
         className={`sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-30 shadow-[0_-2px_8px_rgba(0,0,0,0.04)] select-none transition-all ${
-          selectedSeats.length > 0 ? "mb-16 sm:mb-20" : ""
+          selectedSeats.length > 0 ? "mb-28 sm:mb-28" : ""
         }`}
       >
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2 flex items-center justify-center gap-5 sm:gap-8 text-xs text-gray-600 flex-wrap">
@@ -1019,14 +984,12 @@ export default function SeatMapPage() {
             </div>
           )}
         </div>
-
         <div className="border-t border-gray-100 py-1.5 px-4 sm:px-8 flex items-center justify-between text-[11px] text-gray-500 bg-[#FAFAFA]">
           <span className="hidden sm:inline text-gray-400 font-mono text-[10px]">
             1/3
           </span>
         </div>
       </footer>
-
       {showTicketModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -1046,11 +1009,9 @@ export default function SeatMapPage() {
                 </p>
               )}
             </div>
-
             <div className="flex items-center justify-center py-4">
               <SeatVehicle count={tempTicketCount} />
             </div>
-
             <div className="flex items-center justify-between px-6 pt-2 pb-5 overflow-hidden select-none">
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
                 const isOddOnCouple = isCoupleScreen && n % 2 !== 0;
@@ -1081,7 +1042,6 @@ export default function SeatMapPage() {
                 );
               })}
             </div>
-
             <div className="border-t border-gray-100 px-6 py-4">
               <div className="flex items-center justify-around text-center gap-3">
                 {tiers.map((t, idx) => (
@@ -1099,7 +1059,6 @@ export default function SeatMapPage() {
                 ))}
               </div>
             </div>
-
             <div className="p-4 bg-white border-t border-gray-100">
               <button
                 type="button"
@@ -1112,80 +1071,15 @@ export default function SeatMapPage() {
           </div>
         </div>
       )}
-
-      {/* {showBookingOverlay && bookingResult && (
-        <div className="fixed inset-0 z-[130] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="bg-[#7B1E3D] text-white text-center py-5 px-6">
-              <div className="text-3xl mb-1">🎟️</div>
-              <h2 className="text-lg font-bold">Booking Confirmed!</h2>
-            </div>
-
-            <div className="p-6 space-y-3">
-              <div>
-                <p className="text-xs text-gray-400 font-medium">Movie</p>
-                <p className="text-sm font-bold text-gray-900">
-                  {mapData?.movie_title}
-                </p>
-              </div>
-              <div className="flex justify-between gap-4">
-                <div>
-                  <p className="text-xs text-gray-400 font-medium">Venue</p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {mapData?.venue_name || mapData?.cinema_name}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-medium">Screen</p>
-                  <p className="text-sm font-semibold text-gray-800">
-                    {mapData?.screen_name}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 font-medium">Showtime</p>
-                <p className="text-sm font-semibold text-gray-800">
-                  {formattedDate} | {formattedTime}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 font-medium">Seats</p>
-                <p className="text-sm font-semibold text-gray-800">
-                  {selectedSeats
-                    .map((s) => s.code || `${s.row_label}${s.number}`)
-                    .join(", ")}
-                </p>
-              </div>
-              <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between items-center">
-                <p className="text-xs text-gray-400 font-medium">Booking Ref</p>
-                <p className="text-sm font-bold text-[#7B1E3D] tracking-wide">
-                  {bookingResult.refCode}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-gray-50 flex gap-3">
-              <button
-                type="button"
-                onClick={() => setShowBookingOverlay(false)}
-                className="flex-1 border border-gray-300 text-gray-700 font-semibold rounded-lg py-2.5 text-sm hover:bg-gray-100 transition cursor-pointer"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowBookingOverlay(false);
-                  navigate("/profile");
-                }}
-                className="flex-1 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold rounded-lg py-2.5 text-sm transition cursor-pointer"
-              >
-                View in Orders
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
+      {viewSrc && (
+        <Suspense fallback={null}>
+          <SeatView360
+            src={viewSrc}
+            title={`${mapData?.screen_name || "Theatre"} • Demo view`}
+            onClose={() => setViewSrc(null)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
