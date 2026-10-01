@@ -1,20 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  X,
-  ChevronLeft,
-  Mail,
-  Loader2,
-  Lock,
-} from "lucide-react";
+import { X, ChevronLeft, Mail, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export type AuthModalView =
   | "get-started"
   | "email"
   | "email-otp"
-  | "mobile-otp"
-  | "password-login";
+  | "mobile-otp";
 
 export function QuickAuthModal() {
   const {
@@ -29,7 +22,8 @@ export function QuickAuthModal() {
     signInWithPhoneEmail,
   } = useAuth() as any;
 
-  const clientId = import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID || "16879666373804430168";
+  const clientId =
+    import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID || "16879666373804430168";
 
   const [view, setView] = useState<AuthModalView>("get-started");
   const [loading, setLoading] = useState(false);
@@ -40,10 +34,15 @@ export function QuickAuthModal() {
   const [password, setPassword] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
 
-
-
   // OTP state (6 digits for email)
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
+  const [otpDigits, setOtpDigits] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
   const [activeOtpIndex, setActiveOtpIndex] = useState(0);
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -57,6 +56,7 @@ export function QuickAuthModal() {
       setError(null);
       setLoading(false);
       setOtpDigits(["", "", "", "", "", ""]);
+      setPassword("");
       setResendTimer(30);
     }
   }, [isAuthModalOpen, authModalInitialView]);
@@ -169,10 +169,10 @@ export function QuickAuthModal() {
 
     window.open(
       `https://auth.phone.email/log-in?client_id=${clientId}&auth_type=8&origin=${encodeURIComponent(
-        currUrl
+        currUrl,
       )}`,
       "peLoginWindow",
-      `toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=${w},height=${h},top=${top},left=${left}`
+      `toolbar=0,scrollbars=0,location=0,statusbar=0,menubar=0,resizable=0,width=${w},height=${h},top=${top},left=${left}`,
     );
   };
 
@@ -206,7 +206,10 @@ export function QuickAuthModal() {
     }
   };
 
-  const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+  const handleOtpKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number,
+  ) => {
     if (e.key === "Backspace") {
       if (!otpDigits[index] && index > 0) {
         setActiveOtpIndex(index - 1);
@@ -217,7 +220,10 @@ export function QuickAuthModal() {
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (!pasted) return;
 
     const updated = [...otpDigits];
@@ -256,8 +262,6 @@ export function QuickAuthModal() {
       setLoading(false);
     }
   };
-
-  
 
   // ---------------------------------------------
   // Email Flow Handlers
@@ -381,7 +385,6 @@ export function QuickAuthModal() {
           </div>
         )}
 
-        {/* VIEW 1: GET STARTED */}
         {view === "get-started" && (
           <div>
             <button
@@ -431,8 +434,6 @@ export function QuickAuthModal() {
                 />
                 <span>Continue with Email</span>
               </button>
-
-              
             </div>
 
             <div className="relative my-6 flex items-center justify-center">
@@ -442,7 +443,6 @@ export function QuickAuthModal() {
               </span>
             </div>
 
-            {/* Phone.Email Official Green Button Section */}
             <div className="flex flex-col items-center justify-center">
               <p className="text-xs text-gray-500 mb-3 text-center">
                 Sign in securely with your mobile number via OTP
@@ -497,7 +497,6 @@ export function QuickAuthModal() {
           </div>
         )}
 
-        {/* VIEW 2: LOGIN WITH EMAIL */}
         {view === "email" && (
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -530,72 +529,93 @@ export function QuickAuthModal() {
               </div>
             )}
 
-            <div className="mb-8">
-              <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                Email
-              </label>
-              <div
-                className={`relative flex items-center border rounded-lg px-3.5 py-3 transition ${
-                  isEmailValid
-                    ? "border-emerald-500 ring-1 ring-emerald-500/20"
-                    : "border-gray-300 focus-within:border-[#7B1E3D]"
+            <form onSubmit={handlePasswordLogin} className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Email
+                </label>
+                <div
+                  className={`relative flex items-center border rounded-lg px-3.5 py-3 transition ${
+                    isEmailValid
+                      ? "border-emerald-500 ring-1 ring-emerald-500/20"
+                      : "border-gray-300 focus-within:border-[#7B1E3D]"
+                  }`}
+                >
+                  <input
+                    type="email"
+                    disabled={loading}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoFocus
+                    className="w-full text-sm text-gray-900 outline-none bg-transparent"
+                  />
+                  {isEmailValid && (
+                    <Mail className="w-4 h-4 text-emerald-600 shrink-0 ml-2" />
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                  Password
+                </label>
+                <div className="relative flex items-center border border-gray-300 rounded-lg px-3.5 py-3 focus-within:border-[#7B1E3D]">
+                  <input
+                    type="password"
+                    disabled={loading}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                    className="w-full text-sm text-gray-900 outline-none bg-transparent"
+                  />
+                  <Lock className="w-4 h-4 text-gray-400 shrink-0 ml-2" />
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <a
+                  href="/forgot-password"
+                  className="text-xs text-[#7B1E3D] hover:underline"
+                >
+                  Forgot password?
+                </a>
+              </div>
+
+              <button
+                type="submit"
+                disabled={!isEmailValid || !password || loading}
+                className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
+                  isEmailValid && password && !loading
+                    ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
+                    : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
                 }`}
               >
-                <input
-                  type="email"
-                  disabled={loading}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && isEmailValid) {
-                      handleSendEmailOtp();
-                    }
-                  }}
-                  placeholder=""
-                  autoFocus
-                  className="w-full text-sm text-gray-900 outline-none bg-transparent"
-                />
-                {isEmailValid && (
-                  <Mail className="w-4 h-4 text-emerald-600 shrink-0 ml-2" />
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Sign In"
                 )}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleSendEmailOtp}
-              disabled={!isEmailValid || loading}
-              className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
-                isEmailValid && !loading
-                  ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
-                  : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
-              }`}
-            >
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Continue"
-              )}
-            </button>
+              </button>
+            </form>
 
             <div className="mt-4 text-center">
-             <button
-  disabled={!isEmailValid || loading}
-  type="button"
-  onClick={() => setView("password-login")}
-  className={`text-xs underline transition ${
-    isEmailValid && !loading
-      ? "text-gray-500 hover:text-[#7B1E3D] cursor-pointer"
-      : "text-gray-300 cursor-not-allowed no-underline"
-  }`}
->
-  Sign in with Password instead
-</button>
+              <button
+                type="button"
+                disabled={!isEmailValid || loading}
+                onClick={handleSendEmailOtp}
+                className={`text-xs underline transition ${
+                  isEmailValid && !loading
+                    ? "text-gray-500 hover:text-[#7B1E3D] cursor-pointer"
+                    : "text-gray-300 cursor-not-allowed no-underline"
+                }`}
+              >
+                Login with OTP instead
+              </button>
             </div>
           </div>
         )}
 
-        {/* VIEW 3: VERIFY EMAIL OTP */}
         {view === "email-otp" && (
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -650,8 +670,8 @@ export function QuickAuthModal() {
                     activeOtpIndex === idx
                       ? "border-red-500 ring-1 ring-red-500/20"
                       : digit
-                      ? "border-gray-800"
-                      : "border-gray-300"
+                        ? "border-gray-800"
+                        : "border-gray-300"
                   }`}
                 />
               ))}
@@ -693,88 +713,6 @@ export function QuickAuthModal() {
                 "Continue"
               )}
             </button>
-          </div>
-        )}
-
-        {/* VIEW 5: PASSWORD LOGIN */}
-        {view === "password-login" && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setError(null);
-                  setView("email");
-                }}
-                className="p-1 -ml-2 text-gray-700 hover:text-gray-900 rounded-full hover:bg-gray-100 transition"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                type="button"
-                onClick={closeAuthModal}
-                className="text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <h2 className="text-xl font-bold text-gray-900 mt-2 mb-1">
-              Enter Password
-            </h2>
-            <p className="text-xs text-gray-500 mb-6">{email}</p>
-
-            {error && (
-              <div className="mb-4 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg text-center font-medium border border-red-100">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                  Password
-                </label>
-                <div className="relative flex items-center border border-gray-300 rounded-lg px-3.5 py-3 focus-within:border-[#7B1E3D]">
-                  <input
-                    type="password"
-                    disabled={loading}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    autoFocus
-                    className="w-full text-sm text-gray-900 outline-none bg-transparent"
-                  />
-                  <Lock className="w-4 h-4 text-gray-400 shrink-0 ml-2" />
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <a
-                  href="/forgot-password"
-                  className="text-xs text-[#7B1E3D] hover:underline"
-                >
-                  Forgot password?
-                </a>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!isEmailValid || !password || loading}
-                className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
-                  isEmailValid && password && !loading
-                    ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
-                    : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Sign In"
-                )}
-              </button>
-            </form>
           </div>
         )}
       </div>

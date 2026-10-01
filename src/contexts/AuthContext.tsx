@@ -44,8 +44,8 @@ initiateSignUp: (payload: RegisterPayload) => Promise<{ userId: string | null; e
   continueWithApple: () => Promise<{ error: string | null; cancelled?: boolean }>;
   signOut: () => Promise<void>;
   isAuthModalOpen: boolean;
-  authModalInitialView: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login";
-  openAuthModal: (initialView?: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login") => void;
+  authModalInitialView: "get-started" | "email" | "mobile-otp" | "email-otp";
+  openAuthModal: (initialView?: "get-started" | "email" | "mobile-otp" | "email-otp") => void;
   closeAuthModal: () => void;
 }
 const getErrorMessage = (err: any): string => {
@@ -68,11 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalInitialView, setAuthModalInitialView] = useState<
-    "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login"
+    "get-started" | "email" | "mobile-otp" | "email-otp"
   >("get-started");
 
   const openAuthModal = (
-    initialView: "get-started" | "email" | "mobile-otp" | "email-otp" | "password-login" = "get-started"
+    initialView: "get-started" | "email" | "mobile-otp" | "email-otp" = "get-started"
   ) => {
     setAuthModalInitialView(initialView);
     setIsAuthModalOpen(true);
