@@ -498,16 +498,37 @@ export default function SeatMapPage() {
       panoUrl = THEATRE_PANOS.mid;
     }
 
-    // Camera angles calibrated per physical seat position:
-    const yaw = Number(((0.5 - colFrac) * 0.9).toFixed(3));
-    const pitch = Number(
-      positionType === "front"
-        ? 0.22
-        : positionType === "back"
-        ? -0.12
-        : (0.15 - rowFrac * 0.25).toFixed(3),
-    );
-    const zoom = positionType === "front" ? 58 : positionType === "back" ? 34 : 44;
+    // Camera angles calibrated per physical seat position with the AI panoramas:
+    let yaw = 0;
+    let pitch = 0;
+    let zoom = 42;
+
+    if (positionType === "left") {
+      // Far left wing: screen is to the right
+      yaw = Number((0.28 + (0.22 - colFrac) * 0.5).toFixed(3));
+      pitch = 0.04;
+      zoom = 45;
+    } else if (positionType === "right") {
+      // Far right wing: screen is to the left
+      yaw = Number((-0.28 - (colFrac - 0.78) * 0.5).toFixed(3));
+      pitch = 0.04;
+      zoom = 45;
+    } else if (positionType === "front") {
+      // Front rows: close to screen, looking slightly up
+      yaw = Number(((0.5 - colFrac) * 0.4).toFixed(3));
+      pitch = 0.16;
+      zoom = 52;
+    } else if (positionType === "back") {
+      // Back rows: elevated view of whole hall
+      yaw = Number(((0.5 - colFrac) * 0.4).toFixed(3));
+      pitch = -0.05;
+      zoom = 36;
+    } else {
+      // Middle rows: prime eye-level sweet spot
+      yaw = Number(((0.5 - colFrac) * 0.5).toFixed(3));
+      pitch = Number((0.08 - rowFrac * 0.12).toFixed(3));
+      zoom = 44;
+    }
 
     const distM =
       rowDistances[row] ??
