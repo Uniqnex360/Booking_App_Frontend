@@ -1,16 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  MessageCircle,
   X,
   Send,
   Loader2,
-  Bot,
-  User,
   RefreshCw,
-  ChevronDown,
   ArrowLeft,
   ChevronRight,
   ShieldCheck,
+  User,
+  Bot,
 } from "lucide-react";
 import { api } from "@/api/client";
 
@@ -30,76 +28,77 @@ interface SupportTopic {
   initialPrompt: string;
 }
 
+// Exactly matches the BookMyShow topics shown in user screenshot
 const SUPPORT_TOPICS: SupportTopic[] = [
+  {
+    id: "stream",
+    letter: "B",
+    color: "bg-[#7986CB] text-white",
+    title: "BookMyShow Stream",
+    subtitle: "Can we connect you to an advis...",
+    initialPrompt: "I have a question about Stream rental, download, and playback.",
+  },
   {
     id: "cancellation",
     letter: "C",
-    color: "bg-[#e11d48] text-white",
+    color: "bg-[#D85A5A] text-white",
     title: "Cancellation/Exchange request",
-    subtitle: "Can we connect you to an advisor or help cancel?",
+    subtitle: "Can we connect you to an advis...",
     initialPrompt: "I want to know about cancelling my ticket and the cancellation policy.",
-  },
-  {
-    id: "confirmation",
-    letter: "C",
-    color: "bg-[#ea580c] text-white",
-    title: "Confirmation not received?",
-    subtitle: "Can we connect you to an advisor or resend SMS/Email?",
-    initialPrompt: "I have not received my booking confirmation SMS or email.",
-  },
-  {
-    id: "payment",
-    letter: "P",
-    color: "bg-[#059669] text-white",
-    title: "Payment & Refund status",
-    subtitle: "Can we connect you to an advisor regarding refund timelines?",
-    initialPrompt: "Where is my refund, or my payment was deducted without tickets.",
   },
   {
     id: "cinema-feedback",
     letter: "C",
-    color: "bg-[#d97706] text-white",
-    title: "Cinema & screen feedback",
-    subtitle: "Can we connect you to an advisor for auditorium issues?",
-    initialPrompt: "I have feedback about the cinema screen, sound, or showtime.",
+    color: "bg-[#D85A5A] text-white",
+    title: "Cinema related feedback",
+    subtitle: "Can we connect you to an advis...",
+    initialPrompt: "I have feedback about the cinema auditorium, screen, sound, or showtime.",
   },
   {
-    id: "booking-queries",
-    letter: "T",
-    color: "bg-[#2563eb] text-white",
-    title: "Ticket booking queries",
-    subtitle: "Can we connect you to an advisor for seat selection?",
-    initialPrompt: "I have questions about booking seats, couple recliners, or showtimes.",
+    id: "confirmation",
+    letter: "C",
+    color: "bg-[#D85A5A] text-white",
+    title: "Confirmation not received?",
+    subtitle: "Can we connect you to an advis...",
+    initialPrompt: "I have not received my booking confirmation SMS or email.",
   },
   {
-    id: "offers",
-    letter: "O",
-    color: "bg-[#7c3aed] text-white",
-    title: "Offers & Promocodes",
-    subtitle: "Can we connect you to an advisor about discount codes?",
-    initialPrompt: "How do I apply offers or bank promo codes on checkout?",
-  },
-  {
-    id: "stream",
-    letter: "S",
-    color: "bg-[#4f46e5] text-white",
-    title: "Vyhbz Stream & Online",
-    subtitle: "Can we connect you to an advisor for streaming content?",
-    initialPrompt: "I have a question about Vyhbz Stream movie rental and playback.",
+    id: "ed-sheeran",
+    letter: "E",
+    color: "bg-[#66BB6A] text-white",
+    title: "Ed Sheeran",
+    subtitle: "Can we connect you to an advis...",
+    initialPrompt: "I have a query regarding Ed Sheeran concert passes, entry, and schedule.",
   },
   {
     id: "general",
     letter: "G",
-    color: "bg-[#4b5563] text-white",
-    title: "General queries",
-    subtitle: "Can we connect you to an advisor for anything else?",
-    initialPrompt: "Hi, I need assistance with my account and general queries.",
+    color: "bg-[#E57373] text-white",
+    title: "General",
+    subtitle: "Can we connect you to an advis...",
+    initialPrompt: "Hi, I need assistance with general booking or account queries.",
+  },
+  {
+    id: "lollapalooza",
+    letter: "L",
+    color: "bg-[#E57373] text-white",
+    title: "Lollapalooza",
+    subtitle: "Can we connect you to an advis...",
+    initialPrompt: "I have a query regarding Lollapalooza wristbands, schedule, and festival entry.",
+  },
+  {
+    id: "offers",
+    letter: "O",
+    color: "bg-[#7986CB] text-white",
+    title: "Offers",
+    subtitle: "Can we connect you to an advis...",
+    initialPrompt: "How do I apply offers, bank discounts, or promocodes on checkout?",
   },
 ];
 
 const LOCAL_FALLBACKS: Record<string, string> = {
   cancellation:
-    "Here is the ticket cancellation policy for Vyhbz:\n\n" +
+    "Here is the ticket cancellation policy:\n\n" +
     "1. Go to **Profile > Purchase History**.\n" +
     "2. Select your booking and click **Cancel Booking**.\n" +
     "3. Review the refundable amount and confirm cancellation.\n\n" +
@@ -113,17 +112,25 @@ const LOCAL_FALLBACKS: Record<string, string> = {
     "2. Your confirmed ticket with QR code is always saved there — this digital pass is 100% accepted at cinema gates.\n" +
     "3. Click **Resend Confirmation** to trigger fresh SMS and WhatsApp delivery.",
 
-  payment:
-    "Payment and refund guidelines:\n\n" +
-    "• **UPI / Wallets:** Credited in 24 to 48 hours.\n" +
-    "• **Credit & Debit Cards:** Credited in 5 to 7 working days.\n" +
-    "• **Money debited without ticket?** Banking network drops reverse automatically within 2-4 business days.\n" +
-    "• Check **Profile > Purchase History** for your Bank RRN tracking number.",
+  "cinema-feedback":
+    "We appreciate your feedback regarding the cinema.\n\n" +
+    "• Please share the cinema name, screen number, and show date/time.\n" +
+    "• Our exhibitor relation team will investigate sound, projection, or seating issues directly with theater management.",
+
+  stream:
+    "Guidelines for online streaming & rental:\n\n" +
+    "• Once rented, you have 30 days to start watching, and 48 hours to finish once playback begins.\n" +
+    "• Supported on web browsers, Android TV, Apple TV, and mobile app.",
+
+  offers:
+    "Applying offers & promo codes:\n\n" +
+    "• Select your movie and seats, then proceed to the Payment screen.\n" +
+    "• Under 'Unlock Offers or Apply Promocodes', enter your card or bank details.\n" +
+    "• Applicable discount will be deducted automatically from your total amount.",
 };
 
 export default function SupportChatbot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
   const [currentTopic, setCurrentTopic] = useState<SupportTopic | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
@@ -132,16 +139,16 @@ export default function SupportChatbot() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen && currentTopic && !isMinimized) {
+    if (isOpen && currentTopic) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen, currentTopic, isMinimized]);
+  }, [messages, isOpen, currentTopic]);
 
   useEffect(() => {
-    if (isOpen && currentTopic && !isMinimized) {
+    if (isOpen && currentTopic) {
       setTimeout(() => inputRef.current?.focus(), 250);
     }
-  }, [isOpen, currentTopic, isMinimized]);
+  }, [isOpen, currentTopic]);
 
   const handleSelectTopic = (topic: SupportTopic) => {
     setCurrentTopic(topic);
@@ -169,7 +176,6 @@ export default function SupportChatbot() {
     }));
 
     try {
-      // Secure backend call (OpenAI key stays completely secret on server)
       const res = await api.post("/support/chat", {
         message: text,
         category: categoryName || currentTopic?.title,
@@ -189,10 +195,9 @@ export default function SupportChatbot() {
       ]);
     } catch (err) {
       console.warn("Backend chat endpoint fallback:", err);
-      // Instant client-side intelligent fallback so user never gets stuck
-      let fallbackText =
+      const fallbackText =
         LOCAL_FALLBACKS[currentTopic?.id || ""] ||
-        "I'm here to help with your Vyhbz booking, cancellations, and refunds.\n\n" +
+        "I'm here to help with your booking, cancellations, and refunds.\n\n" +
           "• You can view and manage all bookings under **Profile > Purchase History**.\n" +
           "• To request personal assistance, click **+ New support ticket** on the Support page.";
 
@@ -247,241 +252,231 @@ export default function SupportChatbot() {
 
   return (
     <>
-      {/* Floating Trigger Button in bottom right */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2.5">
-        {!isOpen && (
-          <div
-            onClick={() => setIsOpen(true)}
-            className="bg-white border border-gray-200 rounded-2xl rounded-br-none shadow-xl px-4 py-2 text-xs text-gray-800 font-semibold cursor-pointer hover:shadow-2xl transition-all flex items-center gap-2 group animate-in slide-in-from-bottom-2 duration-300"
-          >
-            <span className="w-2 h-2 rounded-full bg-[#7B1E3D] animate-ping" />
-            <span>Chat with us</span>
-          </div>
-        )}
-
+      {/* 1. Floating Trigger Button matching image 1 exactly */}
+      {!isOpen && (
         <button
-          onClick={() => {
-            setIsOpen(!isOpen);
-            setIsMinimized(false);
-          }}
-          className="w-14 h-14 rounded-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-2xl flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer ring-4 ring-white/50"
+          onClick={() => setIsOpen(true)}
+          className="fixed bottom-6 right-6 z-50 group flex items-center justify-center cursor-pointer transition-transform duration-200 active:scale-95 drop-shadow-xl"
           aria-label="Open support chat"
         >
-          {isOpen ? <X size={22} /> : <MessageCircle size={24} />}
+          {/* Custom Asymmetrical Organic Shape matching screenshot 1 */}
+          <div className="w-[62px] h-[62px] bg-[#C61D2E] rounded-full rounded-tr-[18px] flex items-center justify-center shadow-lg hover:brightness-105 transition-all">
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-[#1A1A1A]"
+            >
+              <rect x="2" y="4" width="20" height="15" rx="5" fill="currentColor" />
+              <path
+                d="M6 9H16M6 13H13"
+                stroke="#C61D2E"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
         </button>
-      </div>
+      )}
 
-      {/* Main Drawer (Signature BookMyShow Red & White styling) */}
+      {/* 2. Chat Modal Matching User Screenshot 2 Exactly */}
       {isOpen && (
-        <div
-          className={`fixed bottom-24 right-4 sm:right-6 z-50 w-[380px] max-w-[calc(100vw-1.5rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ${
-            isMinimized ? "h-14" : "h-[540px]"
-          }`}
-        >
-          {/* Header Bar */}
-          <div className="bg-[#7B1E3D] text-white px-4 py-3 flex items-center justify-between shrink-0 shadow-sm">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {currentTopic && !isMinimized ? (
-                <button
-                  onClick={() => setCurrentTopic(null)}
-                  className="p-1 rounded-full hover:bg-white/15 text-white transition cursor-pointer"
-                  title="Back to topics"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-              ) : (
-                <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                  <Bot className="h-4 w-4 text-white" />
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="text-sm font-bold truncate leading-tight">
-                  {currentTopic && !isMinimized ? currentTopic.title : "Chat with us"}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span className="text-[10px] text-white/80 font-medium">
-                    Vyhbz Support Assistant
-                  </span>
-                </div>
-              </div>
-            </div>
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+          {/* Circular Close Button positioned directly above the card on the right */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              setCurrentTopic(null);
+            }}
+            className="w-8 h-8 rounded-full bg-[#525B62] hover:bg-[#3E454B] text-white flex items-center justify-center mb-2 shadow-md transition cursor-pointer"
+            aria-label="Close chat"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
 
-            <div className="flex items-center gap-1 shrink-0">
-              {currentTopic && !isMinimized && (
+          {/* Main Card Container with Red Top Shape and Dark Body */}
+          <div className="w-[340px] max-w-[calc(100vw-2rem)] h-[490px] rounded-xl overflow-hidden shadow-2xl flex flex-col border border-[#2b2b2b] bg-[#141517]">
+            {/* Asymmetrical Crimson Red Curved Banner */}
+            <div className="relative bg-[#B91C28] px-4 pt-4 pb-5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                {currentTopic ? (
+                  <button
+                    onClick={() => setCurrentTopic(null)}
+                    className="p-1 rounded-full hover:bg-black/20 text-white transition cursor-pointer mr-1"
+                    title="Back to topics"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                ) : null}
+
+                {/* Green Rounded App Icon Badge with white chat symbol */}
+                <div className="w-7 h-7 rounded-lg bg-[#2E7D32] flex items-center justify-center shadow-inner">
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect x="2" y="5" width="20" height="14" rx="4" fill="white" />
+                    <line x1="6" y1="10" x2="16" y2="10" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" />
+                    <line x1="6" y1="14" x2="12" y2="14" stroke="#2E7D32" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+
+                {currentTopic && (
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white truncate">
+                      {currentTopic.title}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {currentTopic && (
                 <button
                   onClick={handleResetConversation}
-                  className="p-1.5 rounded-full hover:bg-white/15 text-white/80 hover:text-white transition cursor-pointer"
+                  className="p-1.5 rounded-full hover:bg-black/20 text-white/80 hover:text-white transition cursor-pointer"
                   title="Reset conversation"
                 >
                   <RefreshCw size={14} />
                 </button>
               )}
-              <button
-                onClick={() => setIsMinimized(!isMinimized)}
-                className="p-1.5 rounded-full hover:bg-white/15 text-white/80 hover:text-white transition cursor-pointer"
-                title={isMinimized ? "Expand" : "Minimize"}
-              >
-                <ChevronDown
-                  size={16}
-                  className={`transition-transform duration-200 ${
-                    isMinimized ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-full hover:bg-white/15 text-white/80 hover:text-white transition cursor-pointer"
-                title="Close"
-              >
-                <X size={16} />
-              </button>
             </div>
-          </div>
 
-          {!isMinimized && (
-            <>
-              {/* VIEW 1: Topic Category Selection (BookMyShow Signature List) */}
-              {!currentTopic ? (
-                <div className="flex-1 flex flex-col overflow-hidden bg-white">
-                  <div className="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                      Select a topic to chat
-                    </span>
-                    <span className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3 text-emerald-600" /> Verified Support
-                    </span>
-                  </div>
+            {/* Subheader Title Bar: "Chat with us" */}
+            <div className="bg-[#1C1D21] px-4 py-2.5 border-b border-[#2A2B30] flex items-center justify-between shrink-0">
+              <span className="text-xs font-bold text-white tracking-wide">
+                Chat with us
+              </span>
+              <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                <ShieldCheck className="h-3 w-3 text-emerald-400" /> Support
+              </span>
+            </div>
 
-                  <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-                    {SUPPORT_TOPICS.map((topic) => (
-                      <button
-                        key={topic.id}
-                        onClick={() => handleSelectTopic(topic)}
-                        className="w-full text-left px-4 py-3 hover:bg-rose-50/40 active:bg-rose-50 transition flex items-center justify-between gap-3 group cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-9 h-9 rounded-lg shrink-0 flex items-center justify-center font-bold text-sm shadow-xs ${topic.color}`}
-                          >
-                            {topic.letter}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-gray-900 group-hover:text-[#7B1E3D] transition truncate">
-                              {topic.title}
-                            </p>
-                            <p className="text-[11px] text-gray-500 truncate mt-0.5">
-                              {topic.subtitle}
-                            </p>
-                          </div>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-gray-300 group-hover:text-[#7B1E3D] group-hover:translate-x-0.5 transition shrink-0" />
-                      </button>
-                    ))}
-                  </div>
+            {/* VIEW 1: Topic Category List matching screenshot 2 */}
+            {!currentTopic ? (
+              <div className="flex-1 overflow-y-auto divide-y divide-[#26282E] bg-[#141517]">
+                {SUPPORT_TOPICS.map((topic) => (
+                  <button
+                    key={topic.id}
+                    onClick={() => handleSelectTopic(topic)}
+                    className="w-full text-left px-4 py-3 hover:bg-[#1E2024] active:bg-[#25272C] transition flex items-center gap-3 cursor-pointer group"
+                  >
+                    {/* Circle Avatar with Single Letter */}
+                    <div
+                      className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-bold text-xs shadow-sm ${topic.color}`}
+                    >
+                      {topic.letter}
+                    </div>
 
-                  {/* Bottom quick tip banner */}
-                  <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
-                    <p className="text-[11px] text-gray-500">
-                      Looking for instant ticket actions?{" "}
-                      <a href="/profile" className="text-[#7B1E3D] font-bold hover:underline">
-                        Go to Purchase History &rarr;
-                      </a>
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                /* VIEW 2: Active Chat Thread */
-                <div className="flex-1 flex flex-col overflow-hidden bg-gray-50">
-                  {/* Messages Scroll Area */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
-                    {messages.map((msg) => (
+                    {/* Topic Title and Subtitle */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[#EEEEEE] group-hover:text-white truncate">
+                        {topic.title}
+                      </p>
+                      <p className="text-[11px] text-[#8E9299] truncate mt-0.5">
+                        {topic.subtitle}
+                      </p>
+                    </div>
+
+                    <ChevronRight className="h-4 w-4 text-[#4E5259] group-hover:text-white transition shrink-0" />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              /* VIEW 2: Active Chat Conversation View */
+              <div className="flex-1 flex flex-col overflow-hidden bg-[#141517]">
+                {/* Messages Container */}
+                <div className="flex-1 overflow-y-auto p-3.5 space-y-3">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex items-start gap-2 ${
+                        msg.role === "user" ? "flex-row-reverse" : "flex-row"
+                      }`}
+                    >
                       <div
-                        key={msg.id}
-                        className={`flex items-start gap-2.5 ${
-                          msg.role === "user" ? "flex-row-reverse" : "flex-row"
+                        className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-white text-[10px] font-bold ${
+                          msg.role === "assistant" ? "bg-[#B91C28]" : "bg-[#454950]"
+                        }`}
+                      >
+                        {msg.role === "assistant" ? <Bot size={12} /> : <User size={12} />}
+                      </div>
+
+                      <div
+                        className={`max-w-[82%] flex flex-col gap-0.5 ${
+                          msg.role === "user" ? "items-end" : "items-start"
                         }`}
                       >
                         <div
-                          className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold shadow-xs ${
-                            msg.role === "assistant" ? "bg-[#7B1E3D]" : "bg-gray-700"
+                          className={`px-3 py-2 rounded-xl text-xs leading-relaxed ${
+                            msg.role === "user"
+                              ? "bg-[#B91C28] text-white"
+                              : "bg-[#202227] text-[#E0E0E0] border border-[#2F323A]"
                           }`}
                         >
-                          {msg.role === "assistant" ? <Bot size={13} /> : <User size={13} />}
+                          {renderContent(msg.content)}
                         </div>
+                        <span className="text-[9px] text-[#70747C] px-1">
+                          {formatTime(msg.timestamp)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
 
-                        <div
-                          className={`max-w-[82%] flex flex-col gap-0.5 ${
-                            msg.role === "user" ? "items-end" : "items-start"
-                          }`}
-                        >
-                          <div
-                            className={`px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed shadow-2xs ${
-                              msg.role === "user"
-                                ? "bg-[#7B1E3D] text-white rounded-tr-xs"
-                                : "bg-white text-gray-800 border border-gray-200 rounded-tl-xs"
-                            }`}
-                          >
-                            {renderContent(msg.content)}
-                          </div>
-                          <span className="text-[9px] text-gray-400 px-1">
-                            {formatTime(msg.timestamp)}
-                          </span>
+                  {/* Typing Indicator */}
+                  {isLoading && (
+                    <div className="flex items-start gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#B91C28] flex items-center justify-center text-white shrink-0">
+                        <Bot size={12} />
+                      </div>
+                      <div className="bg-[#202227] border border-[#2F323A] rounded-xl px-3 py-2">
+                        <div className="flex gap-1.5 items-center">
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
                         </div>
                       </div>
-                    ))}
-
-                    {/* Typing Animation */}
-                    {isLoading && (
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-[#7B1E3D] flex items-center justify-center text-white shrink-0 shadow-xs">
-                          <Bot size={13} />
-                        </div>
-                        <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-xs px-4 py-2.5 shadow-2xs">
-                          <div className="flex gap-1.5 items-center">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:0ms]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:150ms]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce [animation-delay:300ms]" />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  {/* Input Box */}
-                  <div className="px-3 py-2.5 border-t border-gray-200 bg-white flex items-center gap-2 shrink-0">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendCustomMessage();
-                        }
-                      }}
-                      placeholder="Type your question..."
-                      disabled={isLoading}
-                      className="flex-1 bg-gray-100 rounded-full px-4 py-2 text-xs text-gray-800 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#7B1E3D]/30 disabled:opacity-50"
-                    />
-                    <button
-                      onClick={handleSendCustomMessage}
-                      disabled={!input.trim() || isLoading}
-                      className="w-8 h-8 rounded-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0 shadow-xs"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Send className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
-              )}
-            </>
-          )}
+
+                {/* Message Input Box */}
+                <div className="px-3 py-2.5 border-t border-[#26282E] bg-[#1A1B1F] flex items-center gap-2 shrink-0">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendCustomMessage();
+                      }
+                    }}
+                    placeholder="Type your message..."
+                    disabled={isLoading}
+                    className="flex-1 bg-[#25272D] border border-[#363942] rounded-full px-3.5 py-1.5 text-xs text-white placeholder:text-[#7A7E87] outline-none focus:border-[#B91C28] disabled:opacity-50"
+                  />
+                  <button
+                    onClick={handleSendCustomMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="w-7 h-7 rounded-full bg-[#B91C28] hover:bg-[#9B1520] text-white flex items-center justify-center transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Send className="h-3 w-3" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </>
