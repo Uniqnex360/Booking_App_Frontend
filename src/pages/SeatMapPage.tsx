@@ -1,19 +1,18 @@
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 const SeatView360 = lazy(() => import("./SeatView360"));
-// Real equirectangular theatre interior panoramas (2:1 ratio, 4096x2048)
-// theatre-overview.jpg -> Boston Opera House auditorium (CC BY-SA)
-// theatre-hall.jpg     -> Auditorium hall interior photosphere (CC BY-SA)
+// Real equirectangular cinema auditorium panoramas (2:1 ratio, 4096x2048)
+// Multiplex cinema hall with glowing screen, red seats & Atmos acoustic ambiance
 const THEATRE_OVERVIEW = "/panoramas/theatre-overview.jpg";
 const THEATRE_SEAT_VIEW = "/panoramas/theatre-hall.jpg";
 
 const buildSeatViewConfig = (rowFrac: number, colFrac: number) => {
   // Yaw: colFrac shifts horizontal angle toward center of screen
   const yaw = (0.5 - colFrac) * 0.7;
-  // Pitch: front rows tilt up at screen (+), back rows tilt slightly down (-)
-  const pitch = rowFrac < 0.34 ? 0.14 : rowFrac < 0.67 ? 0.02 : -0.08;
-  // Zoom: front rows closer / larger (52), back rows wider field of view (34)
-  const zoom = rowFrac < 0.34 ? 52 : rowFrac < 0.67 ? 42 : 34;
+  // Pitch: front rows tilt up at screen (+), back rows tilt slightly down overlooking rows (-)
+  const pitch = rowFrac < 0.34 ? 0.20 : rowFrac < 0.67 ? 0.05 : -0.12;
+  // Zoom: front rows closer / larger (56), back rows wider field of view (32)
+  const zoom = rowFrac < 0.34 ? 56 : rowFrac < 0.67 ? 44 : 32;
   return { yaw, pitch, zoom };
 };
 import { api, unwrap } from "@/api/client";
@@ -1131,10 +1130,10 @@ export default function SeatMapPage() {
             src={viewSrc}
             title={
               viewSrc === THEATRE_OVERVIEW
-                ? `${mapData?.screen_name || "Theatre"} • 360° Theatre Overview`
+                ? `${mapData?.cinema_name || mapData?.screen_name || "Cinema"} • 360° Auditorium View`
                 : selRow && selDist !== undefined
-                  ? `View from Row ${selRow} (Seats ${selectedSeats.map((s) => s.number).join(", ")}) • ~${selDist} m from screen`
-                  : `${mapData?.screen_name || "Theatre"} • View from your seat`
+                  ? `View from Row ${selRow} (Seat ${selectedSeats.map((s) => s.number).join(", ")}) • ~${selDist} m from screen`
+                  : `${mapData?.cinema_name || "Cinema"} • View from your seat`
             }
             yaw={viewOpts.yaw}
             pitch={viewOpts.pitch}
