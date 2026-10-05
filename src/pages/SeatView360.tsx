@@ -62,6 +62,14 @@ export default function SeatView360({
   const initialPano = currentSeat?.panoUrl || src;
   const [currentPanoramaSrc, setCurrentPanoramaSrc] = useState(initialPano);
 
+  const [activeZone, setActiveZone] = useState<"front" | "center" | "back">(
+    currentSeat?.positionType === "front"
+      ? "front"
+      : currentSeat?.positionType === "back"
+      ? "back"
+      : "center",
+  );
+
   const currentYaw = currentSeat ? currentSeat.yaw : yaw;
   const currentPitch = currentSeat ? currentSeat.pitch : pitch;
   const currentZoom = currentSeat ? currentSeat.zoom : zoom;
@@ -103,35 +111,45 @@ export default function SeatView360({
     };
   }, [initialPano]);
 
-  // When selected seat changes, update panorama (if position changed) or smoothly animate
+  // When selected seat changes, smoothly animate camera to that seat's exact angle
   const handleSelectSeat = (seat: SeatPerspectiveItem) => {
     setSelectedSeatId(seat.id);
-    const newPano = seat.panoUrl || src;
+    if (seat.positionType === "front") setActiveZone("front");
+    else if (seat.positionType === "back") setActiveZone("back");
+    else setActiveZone("center");
 
     if (viewerRef.current) {
-      if (newPano !== currentPanoramaSrc) {
-        setCurrentPanoramaSrc(newPano);
-        viewerRef.current
-          .setPanorama(newPano, {
-            position: {
-              yaw: seat.yaw,
-              pitch: seat.pitch,
-            },
-          })
-          .then(() => {
-            viewerRef.current?.zoom(seat.zoom);
-          })
-          .catch((err) => {
-            console.error("Failed to change panorama", err);
-          });
-      } else {
-        viewerRef.current.animate({
-          yaw: seat.yaw,
-          pitch: seat.pitch,
-          zoom: seat.zoom,
-          speed: 1000,
-        });
-      }
+      viewerRef.current.animate({
+        yaw: seat.yaw,
+        pitch: seat.pitch,
+        zoom: seat.zoom,
+        speed: 1000,
+      });
+    }
+  };
+
+  // Jump camera directly to Front, Center, or Back view of screen
+  const handleJumpToZone = (zone: "front" | "center" | "back") => {
+    setActiveZone(zone);
+    setSelectedSeatId(null);
+    let targetPitch = 0.04;
+    let targetZoom = 50;
+
+    if (zone === "front") {
+      targetPitch = 0.18;
+      targetZoom = 82;
+    } else if (zone === "back") {
+      targetPitch = -0.06;
+      targetZoom = 22;
+    }
+
+    if (viewerRef.current) {
+      viewerRef.current.animate({
+        yaw: 0,
+        pitch: targetPitch,
+        zoom: targetZoom,
+        speed: 1000,
+      });
     }
   };
 
@@ -146,18 +164,20 @@ export default function SeatView360({
     }
   };
 
-  // Human-readable angle description
+  // Human-readable perspective description
   const getAngleDescription = () => {
     if (!currentSeat) {
-      return "Full auditorium overview • Screen centered";
+      if (activeZone === "front") return "Front Row View • Screen towering close overhead • ~3.5m from screen";
+      if (activeZone === "back") return "Back Row View • Elevated full auditorium wide overview • ~14.0m from screen";
+      return "Center Row View • Prime eye-level sweet spot • ~7.5m from screen";
     }
 
     const pos = currentSeat.positionType;
-    let posText = "Middle Row (Prime view)";
-    if (pos === "front") posText = "Front Row (Close to screen)";
-    else if (pos === "back") posText = "Far Back Row (Elevated overview)";
-    else if (pos === "left") posText = "Far Left Corner Seat (Side angle)";
-    else if (pos === "right") posText = "Far Right Corner Seat (Side angle)";
+    let posText = "Center Row (Prime View)";
+    if (pos === "front") posText = "Front Row (Close-up Screen View)";
+    else if (pos === "back") posText = "Back Row (Full Hall Overview)";
+    else if (pos === "left") posText = "Left Wing Seat (Side Screen View)";
+    else if (pos === "right") posText = "Right Wing Seat (Side Screen View)";
 
     const degYaw = Math.round((currentSeat.yaw * 180) / Math.PI);
     const angleText =
@@ -165,7 +185,7 @@ export default function SeatView360({
         ? `${Math.abs(degYaw)}° ${degYaw > 0 ? "left" : "right"}`
         : "center";
 
-    return `${posText} • ${angleText} • ~${currentSeat.distanceM ?? 5.5} m from screen`;
+    return `${posText} • ${angleText} • ~${currentSeat.distanceM ?? 6.5}m from screen`;
   };
 
   return (
@@ -225,37 +245,69 @@ export default function SeatView360({
           </div>
         </div>
 
-        {/* Selected Seats Switcher Bar */}
-        {seats.length > 1 && (
-          <div className="flex items-center gap-2 pt-1 border-t border-white/10 overflow-x-auto no-scrollbar">
-            <span className="text-[11px] text-gray-400 font-medium shrink-0">
-              Selected Seats:
+        {/* Viewpoint Presets: Front / Center / Back View of Screen */}
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] text-gray-400 font-medium mr-1 hidden sm:inline">
+              Auditorium View:
             </span>
-            <div className="flex items-center gap-1.5">
-              {seats.map((st) => {
-                const isActive = st.id === selectedSeatId;
-                return (
-                  <button
-                    key={st.id}
-                    onClick={() => handleSelectSeat(st)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-                      isActive
-                        ? "bg-[#2dc492] text-white shadow-md ring-2 ring-white/40 scale-105"
-                        : "bg-white/10 hover:bg-white/20 text-gray-200"
-                    }`}
-                  >
-                    <span>Seat {st.label}</span>
-                    {st.distanceM && (
-                      <span className="text-[10px] opacity-75 font-normal">
-                        ({st.distanceM}m)
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <button
+              type="button"
+              onClick={() => handleJumpToZone("front")}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                activeZone === "front" && !selectedSeatId
+                  ? "bg-[#7B1E3D] text-white shadow-md ring-1 ring-white/50"
+                  : "bg-white/10 hover:bg-white/20 text-gray-300"
+              }`}
+            >
+              <span>Front View (Close)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleJumpToZone("center")}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                activeZone === "center" && !selectedSeatId
+                  ? "bg-[#7B1E3D] text-white shadow-md ring-1 ring-white/50"
+                  : "bg-white/10 hover:bg-white/20 text-gray-300"
+              }`}
+            >
+              <span>Center View (Prime)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleJumpToZone("back")}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                activeZone === "back" && !selectedSeatId
+                  ? "bg-[#7B1E3D] text-white shadow-md ring-1 ring-white/50"
+                  : "bg-white/10 hover:bg-white/20 text-gray-300"
+              }`}
+            >
+              <span>Back View (Wide)</span>
+            </button>
           </div>
-        )}
+
+          {/* Selected Seats Pills (when user selects specific seats) */}
+          {seats.length > 1 && (
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <span className="text-[11px] text-gray-400 font-medium shrink-0">
+                Selected:
+              </span>
+              {seats.map((st) => (
+                <button
+                  key={st.id}
+                  onClick={() => handleSelectSeat(st)}
+                  className={`px-2.5 py-0.5 rounded-full text-xs font-bold transition cursor-pointer shrink-0 ${
+                    st.id === selectedSeatId
+                      ? "bg-[#2dc492] text-white shadow-md ring-1 ring-white/40"
+                      : "bg-white/10 hover:bg-white/20 text-gray-300"
+                  }`}
+                >
+                  {st.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Auditorium Seat Map Picker Drawer */}
