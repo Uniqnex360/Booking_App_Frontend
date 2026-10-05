@@ -11,6 +11,8 @@ export interface SeatPerspectiveItem {
   rowLabel: string;
   seatNumber: number;
   distanceM?: number;
+  positionType?: "front" | "mid" | "back" | "left" | "right";
+  panoUrl?: string;
   yaw: number;
   pitch: number;
   zoom: number;
@@ -45,18 +47,20 @@ export default function SeatView360({
   );
 
   const currentSeat = seats.find((s) => s.id === selectedSeatId) || null;
+  const initialPano = currentSeat?.panoUrl || src;
+  const [currentPanoramaSrc, setCurrentPanoramaSrc] = useState(initialPano);
 
   const currentYaw = currentSeat ? currentSeat.yaw : yaw;
   const currentPitch = currentSeat ? currentSeat.pitch : pitch;
   const currentZoom = currentSeat ? currentSeat.zoom : zoom;
 
-  // Initialize Viewer on container mount or src change
+  // Initialize Viewer on container mount or initialPano change
   useEffect(() => {
     if (!containerRef.current) return;
 
     const viewer = new Viewer({
       container: containerRef.current,
-      panorama: src,
+      panorama: initialPano,
       defaultYaw: currentYaw,
       defaultPitch: currentPitch,
       defaultZoomLvl: currentZoom,
@@ -70,18 +74,34 @@ export default function SeatView360({
       viewerRef.current = null;
       viewer.destroy();
     };
-  }, [src]);
+  }, [initialPano]);
 
-  // When selected seat changes, smoothly animate to the new seat perspective
+  // When selected seat changes, update panorama (if position changed) or smoothly animate
   const handleSelectSeat = (seat: SeatPerspectiveItem) => {
     setSelectedSeatId(seat.id);
+    const newPano = seat.panoUrl || src;
+
     if (viewerRef.current) {
-      viewerRef.current.animate({
-        yaw: seat.yaw,
-        pitch: seat.pitch,
-        zoom: seat.zoom,
-        speed: 1200,
-      });
+      if (newPano !== currentPanoramaSrc) {
+        setCurrentPanoramaSrc(newPano);
+        viewerRef.current
+          .setPanorama(newPano, {
+            position: {
+              yaw: seat.yaw,
+              pitch: seat.pitch,
+            },
+          })
+          .then(() => {
+            viewerRef.current?.zoom(seat.zoom);
+          });
+      } else {
+        viewerRef.current.animate({
+          yaw: seat.yaw,
+          pitch: seat.pitch,
+          zoom: seat.zoom,
+          speed: 1000,
+        });
+      }
     }
   };
 
@@ -91,7 +111,7 @@ export default function SeatView360({
         yaw: currentYaw,
         pitch: currentPitch,
         zoom: currentZoom,
-        speed: 1000,
+        speed: 800,
       });
     }
   };
@@ -99,20 +119,17 @@ export default function SeatView360({
   // Human-readable angle description
   const getAngleDescription = () => {
     if (!currentSeat) {
-      return "Central overview • Cinema screen centered";
+      return "Full auditorium overview • Screen centered";
     }
-    const degYaw = Math.round((currentSeat.yaw * 180) / Math.PI);
-    const degPitch = Math.round((currentSeat.pitch * 180) / Math.PI);
 
-    let hText = "Center view";
-    if (degYaw > 8) hText = `Left side (${Math.abs(degYaw)}° angle)`;
-    else if (degYaw < -8) hText = `Right side (${Math.abs(degYaw)}° angle)`;
+    const pos = currentSeat.positionType;
+    let posText = "Middle Row (Prime view)";
+    if (pos === "front") posText = "Front Row (Close to screen)";
+    else if (pos === "back") posText = "Far Back Row (Elevated overview)";
+    else if (pos === "left") posText = "Far Left Corner Seat (Side angle)";
+    else if (pos === "right") posText = "Far Right Corner Seat (Side angle)";
 
-    let vText = "Eye-level";
-    if (degPitch > 10) vText = `Looking up (${degPitch}° tilt)`;
-    else if (degPitch < -4) vText = `Elevated view (${Math.abs(degPitch)}° down)`;
-
-    return `${hText} • ${vText} • ~${currentSeat.distanceM ?? 5.5} m from screen`;
+    return `${posText} • ~${currentSeat.distanceM ?? 5.5} m from screen`;
   };
 
   return (

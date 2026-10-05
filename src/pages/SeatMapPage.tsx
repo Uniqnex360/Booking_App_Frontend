@@ -2,19 +2,15 @@ import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 const SeatView360 = lazy(() => import("./SeatView360"));
 import type { SeatPerspectiveItem } from "./SeatView360";
-// Real equirectangular cinema auditorium panoramas (2:1 ratio, 4096x2048)
-// Multiplex cinema hall with glowing screen, red seats & Atmos acoustic ambiance
-const THEATRE_OVERVIEW = "/panoramas/theatre-overview.jpg";
-const THEATRE_SEAT_VIEW = "/panoramas/theatre-hall.jpg";
-
-const buildSeatViewConfig = (rowFrac: number, colFrac: number) => {
-  // Yaw: colFrac shifts horizontal angle toward center of screen
-  const yaw = (0.5 - colFrac) * 0.7;
-  // Pitch: front rows tilt up at screen (+), back rows tilt slightly down overlooking rows (-)
-  const pitch = rowFrac < 0.34 ? 0.20 : rowFrac < 0.67 ? 0.05 : -0.12;
-  // Zoom: front rows closer / larger (56), back rows wider field of view (32)
-  const zoom = rowFrac < 0.34 ? 56 : rowFrac < 0.67 ? 44 : 32;
-  return { yaw, pitch, zoom };
+// Real equirectangular cinema auditorium panoramas (2:1 ratio, 3840x1920)
+// Distinct physical viewpoints across the multiplex auditorium
+const THEATRE_PANOS = {
+  overview: "/panoramas/theatre-overview.jpg",
+  front: "/panoramas/theatre-front.jpg",
+  mid: "/panoramas/theatre-mid.jpg",
+  back: "/panoramas/theatre-back.jpg",
+  left: "/panoramas/theatre-left.jpg",
+  right: "/panoramas/theatre-right.jpg",
 };
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
@@ -468,12 +464,42 @@ export default function SeatMapPage() {
     const maxN = nums.length ? Math.max(...nums) : 20;
     const colFrac = maxN > minN ? (seat.number - minN) / (maxN - minN) : 0.5;
 
-    // Horizontal yaw: left seats turn right (+), right seats turn left (-) toward screen center
-    const yaw = Number(((0.5 - colFrac) * 1.1).toFixed(3));
-    // Vertical pitch: front rows tilt upward, back rows tilt slightly downward
-    const pitch = Number((0.26 - rowFrac * 0.40).toFixed(3));
-    // Zoom: front rows closer (62), back rows wider field of view (30)
-    const zoom = Math.round(62 - rowFrac * 32);
+    let positionType: "front" | "mid" | "back" | "left" | "right" = "mid";
+    let panoUrl = THEATRE_PANOS.mid;
+
+    // Detect distinct physical location in theatre:
+    if (colFrac <= 0.22) {
+      // Far left wing / corner seat
+      positionType = "left";
+      panoUrl = THEATRE_PANOS.left;
+    } else if (colFrac >= 0.78) {
+      // Far right wing / corner seat
+      positionType = "right";
+      panoUrl = THEATRE_PANOS.right;
+    } else if (rowFrac < 0.34) {
+      // Front rows: close to curved screen
+      positionType = "front";
+      panoUrl = THEATRE_PANOS.front;
+    } else if (rowFrac >= 0.67) {
+      // Far back rows: elevated overview of whole hall
+      positionType = "back";
+      panoUrl = THEATRE_PANOS.back;
+    } else {
+      // Middle rows: prime eye-level view
+      positionType = "mid";
+      panoUrl = THEATRE_PANOS.mid;
+    }
+
+    // Camera angles calibrated per physical seat position:
+    const yaw = Number(((0.5 - colFrac) * 0.9).toFixed(3));
+    const pitch = Number(
+      positionType === "front"
+        ? 0.22
+        : positionType === "back"
+        ? -0.12
+        : (0.15 - rowFrac * 0.25).toFixed(3),
+    );
+    const zoom = positionType === "front" ? 58 : positionType === "back" ? 34 : 44;
 
     const distM =
       rowDistances[row] ??
@@ -485,6 +511,8 @@ export default function SeatMapPage() {
       rowLabel: seat.row_label,
       seatNumber: seat.number,
       distanceM: distM,
+      positionType,
+      panoUrl,
       yaw,
       pitch,
       zoom,
@@ -570,7 +598,7 @@ export default function SeatMapPage() {
               onClick={() => {
                 setActiveSeatPerspective(null);
                 setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
-                setViewSrc(THEATRE_OVERVIEW);
+                setViewSrc(THEATRE_PANOS.overview);
               }}
               className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-2.5 sm:px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-gray-300 shadow-2xs"
               title="View theatre in 360°"
@@ -960,7 +988,7 @@ export default function SeatMapPage() {
             onClick={() => {
               setActiveSeatPerspective(null);
               setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
-              setViewSrc(THEATRE_OVERVIEW);
+              setViewSrc(THEATRE_PANOS.overview);
             }}
             className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3.5 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer flex items-center gap-1.5"
           >
@@ -1001,7 +1029,7 @@ export default function SeatMapPage() {
                 onClick={() => {
                   setActiveSeatPerspective(sp);
                   setViewOpts({ yaw: sp.yaw, pitch: sp.pitch, zoom: sp.zoom });
-                  setViewSrc(THEATRE_SEAT_VIEW);
+                  setViewSrc(sp.panoUrl || THEATRE_PANOS.mid);
                 }}
                 className="bg-[#7B1E3D]/10 hover:bg-[#7B1E3D] hover:text-white text-[#7B1E3D] border border-[#7B1E3D]/30 px-2.5 py-0.5 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95"
                 title={`View 360° from Seat ${sp.label}`}
@@ -1163,9 +1191,9 @@ export default function SeatMapPage() {
       {viewSrc && (
         <Suspense fallback={null}>
           <SeatView360
-            src={viewSrc}
+            src={activeSeatPerspective?.panoUrl || viewSrc}
             title={
-              viewSrc === THEATRE_OVERVIEW
+              viewSrc === THEATRE_PANOS.overview
                 ? `${mapData?.cinema_name || mapData?.screen_name || "Cinema"} • 360° Auditorium View`
                 : activeSeatPerspective
                   ? `Seat ${activeSeatPerspective.label} • Row ${activeSeatPerspective.rowLabel}`
@@ -1174,7 +1202,7 @@ export default function SeatMapPage() {
             yaw={activeSeatPerspective?.yaw ?? viewOpts.yaw}
             pitch={activeSeatPerspective?.pitch ?? viewOpts.pitch}
             zoom={activeSeatPerspective?.zoom ?? viewOpts.zoom}
-            seats={viewSrc === THEATRE_SEAT_VIEW ? selectedSeatPerspectives : []}
+            seats={viewSrc !== THEATRE_PANOS.overview ? selectedSeatPerspectives : []}
             activeSeatId={activeSeatPerspective?.id}
             onClose={() => {
               setViewSrc(null);
