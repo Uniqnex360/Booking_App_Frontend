@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import SupportChatbot from '@/pages/SupportChatbot';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -728,6 +729,7 @@ export default function SupportPage() {
       </Dialog>
 
       <Footer />
+      <SupportChatbot />
     </div>
   );
 }
