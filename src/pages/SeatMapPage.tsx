@@ -491,9 +491,9 @@ export default function SeatMapPage() {
     };
   };
 
-  const selectedSeatPerspectives: SeatPerspectiveItem[] = useMemo(() => {
-    return selectedSeats.map((s) => getSeatPerspective(s));
-  }, [selectedSeats, rowOrder, rawRows, rowDistances]);
+  const selectedSeatPerspectives: SeatPerspectiveItem[] = selectedSeats.map(
+    (s) => getSeatPerspective(s),
+  );
   const canProceed = selectedSeats.length === requiredSeatCount;
   const splitIntoBlocks = (seats: SeatItem[]) => {
     const len = seats.length;
