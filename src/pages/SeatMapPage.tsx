@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 const SeatView360 = lazy(() => import("./SeatView360"));
+import type { SeatPerspectiveItem } from "./SeatView360";
 // Real equirectangular cinema auditorium panoramas (2:1 ratio, 4096x2048)
 // Multiplex cinema hall with glowing screen, red seats & Atmos acoustic ambiance
 const THEATRE_OVERVIEW = "/panoramas/theatre-overview.jpg";
@@ -61,6 +62,7 @@ export default function SeatMapPage() {
   const [isCommitLoading, setIsCommitLoading] = useState(false);
   const [viewSrc, setViewSrc] = useState<string | null>(null);
   const [viewOpts, setViewOpts] = useState({ yaw: 0, pitch: 0, zoom: 40 });
+  const [activeSeatPerspective, setActiveSeatPerspective] = useState<SeatPerspectiveItem | null>(null);
   const [holdId, setHoldId] = useState<string | null>(null);
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
@@ -453,20 +455,45 @@ export default function SeatMapPage() {
   const backDist = distVals.length ? Math.max(...distVals) : null;
   const selRow = selectedSeats[0]?.row_label;
   const selDist = selRow ? rowDistances[selRow] : undefined;
-  const getSelFracs = () => {
-    if (selectedSeats.length === 0) return { rowFrac: 0.5, colFrac: 0.5 };
-    const row = selectedSeats[0].row_label;
+  // Calculate exact angle and perspective for any given seat
+  const getSeatPerspective = (seat: SeatItem): SeatPerspectiveItem => {
+    const row = seat.row_label;
     const rowIdx = rowOrder.indexOf(row);
     const rowFrac =
       rowOrder.length > 1 && rowIdx >= 0 ? rowIdx / (rowOrder.length - 1) : 0.5;
-    const nums = (rawRows[row]?.seats || []).map((s) => s.number);
-    const minN = Math.min(...nums);
-    const maxN = Math.max(...nums);
-    const avgNum =
-      selectedSeats.reduce((a, s) => a + s.number, 0) / selectedSeats.length;
-    const colFrac = maxN > minN ? (avgNum - minN) / (maxN - minN) : 0.5;
-    return { rowFrac, colFrac };
+
+    const rowSeats = rawRows[row]?.seats || [];
+    const nums = rowSeats.map((s) => s.number);
+    const minN = nums.length ? Math.min(...nums) : 1;
+    const maxN = nums.length ? Math.max(...nums) : 20;
+    const colFrac = maxN > minN ? (seat.number - minN) / (maxN - minN) : 0.5;
+
+    // Horizontal yaw: left seats turn right (+), right seats turn left (-) toward screen center
+    const yaw = Number(((0.5 - colFrac) * 1.1).toFixed(3));
+    // Vertical pitch: front rows tilt upward, back rows tilt slightly downward
+    const pitch = Number((0.26 - rowFrac * 0.40).toFixed(3));
+    // Zoom: front rows closer (62), back rows wider field of view (30)
+    const zoom = Math.round(62 - rowFrac * 32);
+
+    const distM =
+      rowDistances[row] ??
+      Number((FRONT_M + (rowIdx >= 0 ? rowIdx : 0) * PITCH_M).toFixed(1));
+
+    return {
+      id: seat.seat_ref,
+      label: seat.code || `${seat.row_label}${seat.number}`,
+      rowLabel: seat.row_label,
+      seatNumber: seat.number,
+      distanceM: distM,
+      yaw,
+      pitch,
+      zoom,
+    };
   };
+
+  const selectedSeatPerspectives: SeatPerspectiveItem[] = useMemo(() => {
+    return selectedSeats.map((s) => getSeatPerspective(s));
+  }, [selectedSeats, rowOrder, rawRows, rowDistances]);
   const canProceed = selectedSeats.length === requiredSeatCount;
   const splitIntoBlocks = (seats: SeatItem[]) => {
     const len = seats.length;
@@ -541,7 +568,8 @@ export default function SeatMapPage() {
             </div>
             <button
               onClick={() => {
-                setViewOpts({ yaw: 0, pitch: 0, zoom: 40 });
+                setActiveSeatPerspective(null);
+                setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
                 setViewSrc(THEATRE_OVERVIEW);
               }}
               className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-2.5 sm:px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-gray-300 shadow-2xs"
@@ -930,7 +958,8 @@ export default function SeatMapPage() {
         {!isSourceUnavailable && (
           <button
             onClick={() => {
-              setViewOpts({ yaw: 0, pitch: 0, zoom: 40 });
+              setActiveSeatPerspective(null);
+              setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
               setViewSrc(THEATRE_OVERVIEW);
             }}
             className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3.5 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer flex items-center gap-1.5"
@@ -961,23 +990,30 @@ export default function SeatMapPage() {
         </button>
       </div>
       {selectedSeats.length > 0 && (
-<div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 pt-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">          <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
-            {selDist !== undefined && (
-              <span>
-                Row {selRow}: <b>~{selDist} m</b> from screen
-              </span>
-            )}
-            <button
-              onClick={() => {
-                const { rowFrac, colFrac } = getSelFracs();
-                setViewOpts(buildSeatViewConfig(rowFrac, colFrac));
-                setViewSrc(THEATRE_SEAT_VIEW);
-              }}
-              className="text-[#7B1E3D] font-semibold underline cursor-pointer flex items-center gap-1"
-            >
-              <Eye className="h-3.5 w-3.5" />
-              <span>View from your seat</span>
-            </button>
+<div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 pt-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">          <div className="flex items-center gap-2 text-xs text-gray-600 mb-2 flex-wrap justify-center">
+            <span className="font-semibold text-gray-800 flex items-center gap-1">
+              <Eye className="h-3.5 w-3.5 text-[#7B1E3D]" />
+              <span>360° View from:</span>
+            </span>
+            {selectedSeatPerspectives.map((sp) => (
+              <button
+                key={sp.id}
+                onClick={() => {
+                  setActiveSeatPerspective(sp);
+                  setViewOpts({ yaw: sp.yaw, pitch: sp.pitch, zoom: sp.zoom });
+                  setViewSrc(THEATRE_SEAT_VIEW);
+                }}
+                className="bg-[#7B1E3D]/10 hover:bg-[#7B1E3D] hover:text-white text-[#7B1E3D] border border-[#7B1E3D]/30 px-2.5 py-0.5 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95"
+                title={`View 360° from Seat ${sp.label}`}
+              >
+                <span>Seat {sp.label}</span>
+                {sp.distanceM && (
+                  <span className="text-[10px] opacity-75 font-normal">
+                    (~{sp.distanceM}m)
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
           <button
             onClick={handlePayClick}
@@ -1131,14 +1167,19 @@ export default function SeatMapPage() {
             title={
               viewSrc === THEATRE_OVERVIEW
                 ? `${mapData?.cinema_name || mapData?.screen_name || "Cinema"} • 360° Auditorium View`
-                : selRow && selDist !== undefined
-                  ? `View from Row ${selRow} (Seat ${selectedSeats.map((s) => s.number).join(", ")}) • ~${selDist} m from screen`
+                : activeSeatPerspective
+                  ? `Seat ${activeSeatPerspective.label} • Row ${activeSeatPerspective.rowLabel}`
                   : `${mapData?.cinema_name || "Cinema"} • View from your seat`
             }
-            yaw={viewOpts.yaw}
-            pitch={viewOpts.pitch}
-            zoom={viewOpts.zoom}
-            onClose={() => setViewSrc(null)}
+            yaw={activeSeatPerspective?.yaw ?? viewOpts.yaw}
+            pitch={activeSeatPerspective?.pitch ?? viewOpts.pitch}
+            zoom={activeSeatPerspective?.zoom ?? viewOpts.zoom}
+            seats={viewSrc === THEATRE_SEAT_VIEW ? selectedSeatPerspectives : []}
+            activeSeatId={activeSeatPerspective?.id}
+            onClose={() => {
+              setViewSrc(null);
+              setActiveSeatPerspective(null);
+            }}
           />
         </Suspense>
       )}
