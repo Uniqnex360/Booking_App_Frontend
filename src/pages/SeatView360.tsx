@@ -54,3 +54,4 @@ export default function SeatView360({
     </div>
   );
 }
+
