@@ -12,7 +12,7 @@ export interface SeatPerspectiveItem {
   seatNumber: number;
   tierName?: string;
   distanceM?: number;
-  positionType?: "silver" | "prime" | "recliner" | "front" | "mid" | "back" | "left" | "right";
+  positionType?: "silver" | "prime" | "recliner" | "left" | "right";
   panoUrl?: string;
   yaw: number;
   pitch: number;
@@ -52,33 +52,20 @@ export default function SeatView360({
     return map;
   }, [allAuditoriumSeats, seats]);
 
-  // Selected seat state
   const [selectedSeatId, setSelectedSeatId] = useState<string | null>(
     activeSeatId || seats[0]?.id || null,
   );
-
   const [showAuditoriumPicker, setShowAuditoriumPicker] = useState(false);
 
   const currentSeat = selectedSeatId ? allSeatPool.get(selectedSeatId) || null : null;
-  const initialPano = currentSeat?.panoUrl || src || "/panoramas/theatre-prime.jpg";
-  const [currentPanoramaSrc, setCurrentPanoramaSrc] = useState(initialPano);
-  const currentPanoRef = useRef(initialPano);
 
   const [activeZone, setActiveZone] = useState<"silver" | "prime" | "recliner">(
-    currentSeat?.tierName?.toUpperCase().includes("RECLINER") ||
-    currentSeat?.positionType === "back" ||
     currentSeat?.positionType === "recliner"
       ? "recliner"
-      : currentSeat?.tierName?.toUpperCase().includes("SILVER") ||
-        currentSeat?.positionType === "front" ||
-        currentSeat?.positionType === "silver"
+      : currentSeat?.positionType === "silver"
       ? "silver"
       : "prime",
   );
-
-  const currentYaw = currentSeat ? currentSeat.yaw : yaw;
-  const currentPitch = currentSeat ? currentSeat.pitch : pitch;
-  const currentZoom = currentSeat ? currentSeat.zoom : zoom;
 
   // Group all auditorium seats by row for the interactive picker
   const rowGroups = useMemo(() => {
@@ -95,16 +82,20 @@ export default function SeatView360({
       }));
   }, [allAuditoriumSeats]);
 
-  // Initialize Viewer once on mount
+  // Initialize Viewer once on mount — single panorama for the entire hall
   useEffect(() => {
     if (!containerRef.current) return;
 
+    const initYaw = currentSeat?.yaw ?? yaw;
+    const initPitch = currentSeat?.pitch ?? pitch;
+    const initZoom = currentSeat?.zoom ?? zoom;
+
     const viewer = new Viewer({
       container: containerRef.current,
-      panorama: initialPano,
-      defaultYaw: currentYaw,
-      defaultPitch: currentPitch,
-      defaultZoomLvl: currentZoom,
+      panorama: src,
+      defaultYaw: initYaw,
+      defaultPitch: initPitch,
+      defaultZoomLvl: initZoom,
       navbar: ["zoom", "move", "gyroscope", "stereo", "fullscreen"],
       plugins: [GyroscopePlugin, StereoPlugin],
     });
@@ -117,141 +108,84 @@ export default function SeatView360({
     };
   }, []);
 
-  // Smoothly transition panorama and camera position
-  const transitionToPanoAndAngle = (
-    newPanoUrl: string,
-    targetYaw: number,
-    targetPitch: number,
-    targetZoom: number,
-  ) => {
+  // Smoothly animate camera to the target seat position
+  const animateToAngle = (targetYaw: number, targetPitch: number, targetZoom: number) => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-
-    if (currentPanoRef.current !== newPanoUrl) {
-      currentPanoRef.current = newPanoUrl;
-      setCurrentPanoramaSrc(newPanoUrl);
-      viewer
-        .setPanorama(newPanoUrl, {
-          position: { yaw: targetYaw, pitch: targetPitch },
-          zoom: targetZoom,
-          transition: { speed: 800, effect: "fade" },
-          showLoader: false,
-        })
-        .catch((err) => {
-          console.warn("Panorama set error:", err);
-        });
-    } else {
-      viewer.animate({
-        yaw: targetYaw,
-        pitch: targetPitch,
-        zoom: targetZoom,
-        speed: 800,
-      });
-    }
+    viewer.animate({
+      yaw: targetYaw,
+      pitch: targetPitch,
+      zoom: targetZoom,
+      speed: 1000,
+    });
   };
 
-  // Handle seat selection
+  // Handle seat selection from picker or seat pills
   const handleSelectSeat = (seat: SeatPerspectiveItem) => {
     setSelectedSeatId(seat.id);
-    const targetPano = seat.panoUrl || "/panoramas/theatre-prime.jpg";
-
-    if (
-      seat.tierName?.toUpperCase().includes("RECLINER") ||
-      seat.positionType === "back" ||
-      seat.positionType === "recliner"
-    ) {
-      setActiveZone("recliner");
-    } else if (
-      seat.tierName?.toUpperCase().includes("SILVER") ||
-      seat.positionType === "front" ||
-      seat.positionType === "silver"
-    ) {
-      setActiveZone("silver");
-    } else {
-      setActiveZone("prime");
-    }
-
-    transitionToPanoAndAngle(targetPano, seat.yaw, seat.pitch, seat.zoom);
+    if (seat.positionType === "recliner") setActiveZone("recliner");
+    else if (seat.positionType === "silver") setActiveZone("silver");
+    else setActiveZone("prime");
+    animateToAngle(seat.yaw, seat.pitch, seat.zoom);
   };
 
   // Sync when activeSeatId prop changes
   useEffect(() => {
     if (activeSeatId && activeSeatId !== selectedSeatId) {
       const st = allSeatPool.get(activeSeatId);
-      if (st) {
-        handleSelectSeat(st);
-      }
+      if (st) handleSelectSeat(st);
     }
   }, [activeSeatId]);
 
-  // Jump camera directly to Silver (Front), Prime Plus (Center), or Recliner (Back) tier
+  // Quick jump to tier view - same panorama, different camera angle
   const handleJumpToTier = (tier: "silver" | "prime" | "recliner") => {
     setActiveZone(tier);
     setSelectedSeatId(null);
-
-    let targetPano = "/panoramas/theatre-prime.jpg";
-    let targetYaw = 0;
-    let targetPitch = 0.04;
-    let targetZoom = 44;
-
     if (tier === "silver") {
-      targetPano = "/panoramas/theatre-silver.jpg";
-      targetPitch = 0.16;
-      targetZoom = 52;
+      // Front rows: screen fills view, looking up at massive screen
+      animateToAngle(0, 0.18, 75);
     } else if (tier === "recliner") {
-      targetPano = "/panoramas/theatre-recliner.jpg";
-      targetPitch = -0.05;
-      targetZoom = 36;
+      // Back rows: wide elevated view of whole hall, screen looks smaller
+      animateToAngle(0, -0.06, 22);
+    } else {
+      // Prime Plus center rows: balanced eye-level view
+      animateToAngle(0, 0.05, 50);
     }
-
-    transitionToPanoAndAngle(targetPano, targetYaw, targetPitch, targetZoom);
   };
 
   const handleResetToCenter = () => {
-    if (viewerRef.current) {
-      viewerRef.current.animate({
-        yaw: currentSeat?.yaw ?? 0,
-        pitch:
-          currentSeat?.pitch ??
-          (activeZone === "silver" ? 0.16 : activeZone === "recliner" ? -0.05 : 0.04),
-        zoom:
-          currentSeat?.zoom ??
-          (activeZone === "silver" ? 52 : activeZone === "recliner" ? 36 : 44),
-        speed: 800,
-      });
+    const t = currentSeat;
+    if (t) {
+      animateToAngle(t.yaw, t.pitch, t.zoom);
+    } else if (activeZone === "silver") {
+      animateToAngle(0, 0.18, 75);
+    } else if (activeZone === "recliner") {
+      animateToAngle(0, -0.06, 22);
+    } else {
+      animateToAngle(0, 0.05, 50);
     }
   };
 
-  // Human-readable perspective description
   const getAngleDescription = () => {
     if (!currentSeat) {
       if (activeZone === "silver")
-        return "Silver Tier • Screen towering close overhead • ~4.5m from screen";
+        return "Silver Tier • Front row • Screen towering close overhead (~4.5m)";
       if (activeZone === "recliner")
-        return "Recliner Tier • Elevated luxury back row wide overview • ~14.5m from screen";
-      return "Prime Plus Tier • Eye-level sweet spot auditorium center • ~8.0m from screen";
+        return "Recliner Tier • Back row • Wide view of full hall (~14.5m from screen)";
+      return "Prime Plus Tier • Center rows • Balanced eye-level view (~8m from screen)";
     }
-
-    const tier =
-      currentSeat.tierName ||
-      (currentSeat.positionType === "silver" || currentSeat.positionType === "front"
-        ? "Silver"
-        : currentSeat.positionType === "recliner" || currentSeat.positionType === "back"
-        ? "Recliner"
-        : "Prime Plus");
-
+    const tier = currentSeat.tierName || "Seat";
     const pos = currentSeat.positionType;
-    let posText = `${tier} Tier`;
-    if (pos === "left") posText = `${tier} • Left Wing Seat`;
-    else if (pos === "right") posText = `${tier} • Right Wing Seat`;
-
+    let extra = "";
+    if (pos === "left") extra = " • Left wing angle";
+    else if (pos === "right") extra = " • Right wing angle";
+    const dist = currentSeat.distanceM ?? 7.5;
     const degYaw = Math.round((currentSeat.yaw * 180) / Math.PI);
     const angleText =
       Math.abs(degYaw) > 4
         ? `${Math.abs(degYaw)}° ${degYaw > 0 ? "left" : "right"}`
-        : "center facing";
-
-    return `${posText} • ${angleText} • ~${currentSeat.distanceM ?? 7.5}m from screen`;
+        : "straight ahead";
+    return `${tier} • Row ${currentSeat.rowLabel}${extra} • ${angleText} • ~${dist}m from screen`;
   };
 
   return (
@@ -266,7 +200,7 @@ export default function SeatView360({
             <div className="flex flex-col min-w-0">
               <span className="text-xs sm:text-sm font-semibold truncate leading-tight">
                 {currentSeat
-                  ? `View from Seat ${currentSeat.label} • Row ${currentSeat.rowLabel} (${currentSeat.tierName || "Seat"})`
+                  ? `Seat ${currentSeat.label} • ${currentSeat.tierName || "Row " + currentSeat.rowLabel}`
                   : title}
               </span>
               <span className="text-[10px] sm:text-[11px] text-[#2dc492] font-medium leading-tight mt-0.5">
@@ -279,7 +213,6 @@ export default function SeatView360({
             {allAuditoriumSeats.length > 0 && (
               <button
                 onClick={() => setShowAuditoriumPicker(!showAuditoriumPicker)}
-                title="Pick any seat in the auditorium"
                 className={`p-1.5 rounded-full transition cursor-pointer flex items-center gap-1 text-xs px-2.5 sm:px-3 font-semibold ${
                   showAuditoriumPicker
                     ? "bg-[#2dc492] text-white shadow-md ring-1 ring-white/30"
@@ -287,20 +220,17 @@ export default function SeatView360({
                 }`}
               >
                 <LayoutGrid className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Pick Any Seat</span>
+                <span className="hidden sm:inline">Pick Seat</span>
                 <span className="sm:hidden">Seats</span>
               </button>
             )}
-
             <button
               onClick={handleResetToCenter}
-              title="Reset angle to screen"
               className="p-1.5 rounded-full hover:bg-white/15 text-gray-300 hover:text-white transition cursor-pointer flex items-center gap-1 text-[11px] px-2.5 bg-white/5"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Center Screen</span>
+              <span className="hidden sm:inline">Reset View</span>
             </button>
-
             <button
               onClick={onClose}
               aria-label="Close"
@@ -311,11 +241,11 @@ export default function SeatView360({
           </div>
         </div>
 
-        {/* Viewpoint Presets: Silver (Front) / Prime Plus (Center) / Recliner (Back) */}
+        {/* Tier quick-switch buttons — same panorama, just rotates/zooms the camera */}
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10 flex-wrap">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] text-gray-400 font-medium mr-1 hidden sm:inline">
-              Auditorium Tier:
+              View from:
             </span>
             <button
               type="button"
@@ -326,8 +256,8 @@ export default function SeatView360({
                   : "bg-white/10 hover:bg-white/20 text-gray-300"
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-              <span>Silver (Front)</span>
+              <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0"></span>
+              Silver (Front)
             </button>
             <button
               type="button"
@@ -338,8 +268,8 @@ export default function SeatView360({
                   : "bg-white/10 hover:bg-white/20 text-gray-300"
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-              <span>Prime Plus (Center)</span>
+              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+              Prime (Center)
             </button>
             <button
               type="button"
@@ -350,16 +280,16 @@ export default function SeatView360({
                   : "bg-white/10 hover:bg-white/20 text-gray-300"
               }`}
             >
-              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
-              <span>Recliner (Back)</span>
+              <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span>
+              Recliner (Back)
             </button>
           </div>
 
-          {/* Selected Seats Pills (when user selects specific seats) */}
+          {/* Selected Seats Pills */}
           {seats.length > 0 && (
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <span className="text-[11px] text-gray-400 font-medium shrink-0">
-                Selected:
+                Your seat{seats.length > 1 ? "s" : ""}:
               </span>
               {seats.map((st) => (
                 <button
@@ -371,7 +301,12 @@ export default function SeatView360({
                       : "bg-white/10 hover:bg-white/20 text-gray-300"
                   }`}
                 >
-                  {st.label} ({st.tierName ? st.tierName.split(" ")[0] : st.rowLabel})
+                  {st.label}
+                  {st.tierName && (
+                    <span className="ml-1 opacity-70 font-normal">
+                      ({st.tierName.split(" ")[0]})
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -386,7 +321,7 @@ export default function SeatView360({
             <div className="flex items-center gap-2">
               <LayoutGrid className="h-4 w-4 text-[#2dc492]" />
               <span className="text-sm font-bold text-white">
-                Pick Any Seat in Theatre to View in 360°
+                Pick Any Seat — Experience the View
               </span>
               <span className="text-xs text-gray-400">
                 ({allAuditoriumSeats.length} seats)
@@ -399,40 +334,33 @@ export default function SeatView360({
               <X size={18} />
             </button>
           </div>
-
           <div className="overflow-y-auto max-h-[42vh] py-3 space-y-2 no-scrollbar">
             {rowGroups.map(({ row, seats: rSeats }) => {
-              const firstSeat = rSeats[0];
-              const tierLabel = firstSeat?.tierName || "Standard";
+              const tierLabel = rSeats[0]?.tierName || "";
               return (
                 <div key={row} className="flex items-center gap-2">
-                  <div className="w-16 flex flex-col items-start shrink-0">
-                    <span className="text-[11px] font-bold text-gray-200">Row {row}</span>
-                    <span className="text-[9px] text-gray-400 font-medium truncate max-w-[60px]">
-                      {tierLabel}
-                    </span>
+                  <div className="w-16 shrink-0">
+                    <span className="text-[11px] font-bold text-gray-200 block">Row {row}</span>
+                    <span className="text-[9px] text-gray-400 block truncate">{tierLabel}</span>
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap flex-1">
-                    {rSeats.map((st) => {
-                      const isCurrent = st.id === selectedSeatId;
-                      return (
-                        <button
-                          key={st.id}
-                          onClick={() => {
-                            handleSelectSeat(st);
-                            setShowAuditoriumPicker(false);
-                          }}
-                          className={`w-7 h-7 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center ${
-                            isCurrent
-                              ? "bg-[#2dc492] text-white ring-2 ring-white scale-110 shadow-md"
-                              : "bg-white/10 hover:bg-white/25 text-gray-200"
-                          }`}
-                          title={`Seat ${st.label} • Row ${st.rowLabel} (${st.tierName || "Auditorium"}) • ~${st.distanceM}m from screen`}
-                        >
-                          {st.seatNumber}
-                        </button>
-                      );
-                    })}
+                    {rSeats.map((st) => (
+                      <button
+                        key={st.id}
+                        onClick={() => {
+                          handleSelectSeat(st);
+                          setShowAuditoriumPicker(false);
+                        }}
+                        className={`w-7 h-7 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center ${
+                          st.id === selectedSeatId
+                            ? "bg-[#2dc492] text-white ring-2 ring-white scale-110 shadow-md"
+                            : "bg-white/10 hover:bg-white/25 text-gray-200"
+                        }`}
+                        title={`${st.label} • ${st.tierName || "Seat"} • ~${st.distanceM}m from screen`}
+                      >
+                        {st.seatNumber}
+                      </button>
+                    ))}
                   </div>
                 </div>
               );
@@ -441,7 +369,7 @@ export default function SeatView360({
         </div>
       )}
 
-      {/* 360 Viewer Canvas Container */}
+      {/* 360 Viewer Canvas */}
       <div ref={containerRef} className="flex-1 w-full h-full" />
     </div>
   );

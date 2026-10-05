@@ -5,15 +5,16 @@ import type { SeatPerspectiveItem } from "./SeatView360";
 // Real equirectangular cinema auditorium panoramas (2:1 ratio, 3840x1920)
 // Distinct physical viewpoints across the multiplex auditorium
 const THEATRE_PANOS = {
+  hall: "/panoramas/theatre-overview.jpg",
   overview: "/panoramas/theatre-overview.jpg",
-  silver: "/panoramas/theatre-silver.jpg",
-  prime: "/panoramas/theatre-prime.jpg",
-  recliner: "/panoramas/theatre-recliner.jpg",
-  left: "/panoramas/theatre-left.jpg",
-  right: "/panoramas/theatre-right.jpg",
-  front: "/panoramas/theatre-silver.jpg",
-  mid: "/panoramas/theatre-prime.jpg",
-  back: "/panoramas/theatre-recliner.jpg",
+  silver: "/panoramas/theatre-overview.jpg",
+  prime: "/panoramas/theatre-overview.jpg",
+  recliner: "/panoramas/theatre-overview.jpg",
+  left: "/panoramas/theatre-overview.jpg",
+  right: "/panoramas/theatre-overview.jpg",
+  front: "/panoramas/theatre-overview.jpg",
+  mid: "/panoramas/theatre-overview.jpg",
+  back: "/panoramas/theatre-overview.jpg",
 };
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
@@ -489,35 +490,26 @@ export default function SeatMapPage() {
       else tierName = "SILVER";
     }
 
-    let positionType: "silver" | "prime" | "recliner" | "left" | "right" = "prime";
-    let panoUrl = THEATRE_PANOS.prime;
+    // All seats use the same hall panorama — only camera angle/zoom changes
+    const panoUrl = THEATRE_PANOS.hall;
 
-    // Detect distinct physical location in theatre:
+    // Determine position type for camera calibration
+    let positionType: "silver" | "prime" | "recliner" | "left" | "right" = "prime";
     if (colFrac <= 0.18) {
-      // Far left wing / corner seat
       positionType = "left";
-      panoUrl = THEATRE_PANOS.left;
     } else if (colFrac >= 0.82) {
-      // Far right wing / corner seat
       positionType = "right";
-      panoUrl = THEATRE_PANOS.right;
     } else if (tierName === "SILVER" || rowFrac < 0.32) {
-      // Front Silver tier rows: sitting right under the towering screen
       positionType = "silver";
-      panoUrl = THEATRE_PANOS.silver;
     } else if (
       tierName === "RECLINER" ||
       tierName.includes("RECLINER") ||
       tierName.includes("LOUNGER") ||
       rowFrac >= 0.68
     ) {
-      // Top Recliner rows: elevated luxury view overlooking whole hall
       positionType = "recliner";
-      panoUrl = THEATRE_PANOS.recliner;
     } else {
-      // Prime / Prime Plus middle rows: sweet spot eye-level view
       positionType = "prime";
-      panoUrl = THEATRE_PANOS.prime;
     }
 
     // Camera angles calibrated per physical seat position with the AI panoramas:
@@ -525,31 +517,35 @@ export default function SeatMapPage() {
     let pitch = 0;
     let zoom = 44;
 
+    // Camera calibrated for single-panorama experience:
+    // Silver (front) = zoomed in, screen fills view, looking slightly up
+    // Prime (center) = balanced zoom, eye-level
+    // Recliner (back) = zoomed out wide, see entire hall
     if (positionType === "left") {
-      // Far left wing: screen is to the right
-      yaw = Number((0.32 + (0.18 - colFrac) * 0.4).toFixed(3));
-      pitch = 0.04;
-      zoom = 45;
+      // Left wing: angle camera right toward screen
+      yaw = Number((0.3 + (0.18 - colFrac) * 0.3).toFixed(3));
+      pitch = 0.06;
+      zoom = 50;
     } else if (positionType === "right") {
-      // Far right wing: screen is to the left
-      yaw = Number((-0.32 - (colFrac - 0.82) * 0.4).toFixed(3));
-      pitch = 0.04;
-      zoom = 45;
+      // Right wing: angle camera left toward screen
+      yaw = Number((-0.3 - (colFrac - 0.82) * 0.3).toFixed(3));
+      pitch = 0.06;
+      zoom = 50;
     } else if (positionType === "silver") {
-      // Front Silver rows: towering screen view, looking slightly up
-      yaw = Number(((0.5 - colFrac) * 0.35).toFixed(3));
-      pitch = 0.16;
-      zoom = 52;
+      // Silver front rows: zoomed in, screen dominates, upward pitch = neck-crane feel
+      yaw = Number(((0.5 - colFrac) * 0.3).toFixed(3));
+      pitch = 0.18;
+      zoom = 75;
     } else if (positionType === "recliner") {
-      // Back Recliner rows: elevated wide view looking down over auditorium
-      yaw = Number(((0.5 - colFrac) * 0.35).toFixed(3));
-      pitch = -0.05;
-      zoom = 36;
+      // Recliner back rows: zoomed out, see whole hall, screen looks smaller
+      yaw = Number(((0.5 - colFrac) * 0.3).toFixed(3));
+      pitch = -0.06;
+      zoom = 22;
     } else {
-      // Middle Prime Plus rows: eye-level center sweet spot
-      yaw = Number(((0.5 - colFrac) * 0.45).toFixed(3));
-      pitch = Number((0.08 - rowFrac * 0.08).toFixed(3));
-      zoom = 44;
+      // Prime Plus center rows: sweet spot balanced view
+      yaw = Number(((0.5 - colFrac) * 0.35).toFixed(3));
+      pitch = Number((0.05 - rowFrac * 0.04).toFixed(3));
+      zoom = 50;
     }
 
     const distM =
@@ -653,7 +649,7 @@ export default function SeatMapPage() {
               onClick={() => {
                 setActiveSeatPerspective(null);
                 setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
-                setViewSrc(THEATRE_PANOS.overview);
+                setViewSrc(THEATRE_PANOS.hall);
               }}
               className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-2.5 sm:px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-gray-300 shadow-2xs"
               title="View theatre in 360°"
@@ -1094,7 +1090,7 @@ export default function SeatMapPage() {
             onClick={() => {
               setActiveSeatPerspective(null);
               setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
-              setViewSrc(THEATRE_PANOS.overview);
+              setViewSrc(THEATRE_PANOS.hall);
             }}
             className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3.5 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer flex items-center gap-1.5"
           >
