@@ -6,11 +6,14 @@ import type { SeatPerspectiveItem } from "./SeatView360";
 // Distinct physical viewpoints across the multiplex auditorium
 const THEATRE_PANOS = {
   overview: "/panoramas/theatre-overview.jpg",
-  front: "/panoramas/theatre-front.jpg",
-  mid: "/panoramas/theatre-mid.jpg",
-  back: "/panoramas/theatre-back.jpg",
+  silver: "/panoramas/theatre-silver.jpg",
+  prime: "/panoramas/theatre-prime.jpg",
+  recliner: "/panoramas/theatre-recliner.jpg",
   left: "/panoramas/theatre-left.jpg",
   right: "/panoramas/theatre-right.jpg",
+  front: "/panoramas/theatre-silver.jpg",
+  mid: "/panoramas/theatre-prime.jpg",
+  back: "/panoramas/theatre-recliner.jpg",
 };
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
@@ -191,7 +194,7 @@ export default function SeatMapPage() {
       const p = getSeatPerspective(clickedSeat);
       setActiveSeatPerspective(p);
       setViewOpts({ yaw: p.yaw, pitch: p.pitch, zoom: p.zoom });
-      setViewSrc(p.panoUrl || THEATRE_PANOS.mid);
+      setViewSrc(p.panoUrl || THEATRE_PANOS.prime);
       return;
     }
     if (!clickedSeat.is_available || holdId) return;
@@ -472,61 +475,80 @@ export default function SeatMapPage() {
     const maxN = nums.length ? Math.max(...nums) : 20;
     const colFrac = maxN > minN ? (seat.number - minN) / (maxN - minN) : 0.5;
 
-    let positionType: "front" | "mid" | "back" | "left" | "right" = "mid";
-    let panoUrl = THEATRE_PANOS.mid;
+    const pricePaise = seat.price_paise || rawRows[row]?.price_paise || 25000;
+    const priceRupees = pricePaise / 100;
+
+    let tierName = "PRIME PLUS";
+    if (isCoupleScreen) {
+      tierName = priceRupees >= 480 ? "COUPLE ROYAL LOUNGER" : "COUPLE RECLINER";
+    } else {
+      if (priceRupees >= 350) tierName = "RECLINER";
+      else if (priceRupees >= 250) tierName = "PRIME PLUS";
+      else if (priceRupees >= 200) tierName = "GOLD";
+      else if (priceRupees >= 150) tierName = "SILVER";
+      else tierName = "SILVER";
+    }
+
+    let positionType: "silver" | "prime" | "recliner" | "left" | "right" = "prime";
+    let panoUrl = THEATRE_PANOS.prime;
 
     // Detect distinct physical location in theatre:
-    if (colFrac <= 0.22) {
+    if (colFrac <= 0.18) {
       // Far left wing / corner seat
       positionType = "left";
       panoUrl = THEATRE_PANOS.left;
-    } else if (colFrac >= 0.78) {
+    } else if (colFrac >= 0.82) {
       // Far right wing / corner seat
       positionType = "right";
       panoUrl = THEATRE_PANOS.right;
-    } else if (rowFrac < 0.34) {
-      // Front rows: close to curved screen
-      positionType = "front";
-      panoUrl = THEATRE_PANOS.front;
-    } else if (rowFrac >= 0.67) {
-      // Far back rows: elevated overview of whole hall
-      positionType = "back";
-      panoUrl = THEATRE_PANOS.back;
+    } else if (tierName === "SILVER" || rowFrac < 0.32) {
+      // Front Silver tier rows: sitting right under the towering screen
+      positionType = "silver";
+      panoUrl = THEATRE_PANOS.silver;
+    } else if (
+      tierName === "RECLINER" ||
+      tierName.includes("RECLINER") ||
+      tierName.includes("LOUNGER") ||
+      rowFrac >= 0.68
+    ) {
+      // Top Recliner rows: elevated luxury view overlooking whole hall
+      positionType = "recliner";
+      panoUrl = THEATRE_PANOS.recliner;
     } else {
-      // Middle rows: prime eye-level view
-      positionType = "mid";
-      panoUrl = THEATRE_PANOS.mid;
+      // Prime / Prime Plus middle rows: sweet spot eye-level view
+      positionType = "prime";
+      panoUrl = THEATRE_PANOS.prime;
     }
 
     // Camera angles calibrated per physical seat position with the AI panoramas:
     let yaw = 0;
     let pitch = 0;
-    let zoom = 42;
+    let zoom = 44;
 
     if (positionType === "left") {
       // Far left wing: screen is to the right
-      yaw = Number((0.28 + (0.22 - colFrac) * 0.5).toFixed(3));
+      yaw = Number((0.32 + (0.18 - colFrac) * 0.4).toFixed(3));
       pitch = 0.04;
       zoom = 45;
     } else if (positionType === "right") {
       // Far right wing: screen is to the left
-      yaw = Number((-0.28 - (colFrac - 0.78) * 0.5).toFixed(3));
+      yaw = Number((-0.32 - (colFrac - 0.82) * 0.4).toFixed(3));
       pitch = 0.04;
       zoom = 45;
-    } else if (positionType === "front") {
-      // Front rows: close to screen, looking slightly up
-      yaw = Number(((0.5 - colFrac) * 0.4).toFixed(3));
+    } else if (positionType === "silver") {
+      // Front Silver rows: towering screen view, looking slightly up
+      yaw = Number(((0.5 - colFrac) * 0.35).toFixed(3));
       pitch = 0.16;
       zoom = 52;
-    } else if (positionType === "back") {
-      // Back rows: elevated view of whole hall
-      yaw = Number(((0.5 - colFrac) * 0.4).toFixed(3));
+    } else if (positionType === "recliner") {
+      // Back Recliner rows: elevated wide view looking down over auditorium
+      yaw = Number(((0.5 - colFrac) * 0.35).toFixed(3));
       pitch = -0.05;
       zoom = 36;
     } else {
-      // Middle rows: prime eye-level sweet spot
-      yaw = Number(((0.5 - colFrac) * 0.5).toFixed(3));
-      pitch = Number((0.08 - rowFrac * 0.12).toFixed(3));
+      // Middle Prime Plus rows: eye-level center sweet spot
+      yaw = Number(((0.5 - colFrac) * 0.45).toFixed(3));
+      pitch = Number((0.08 - rowFrac * 0.08).toFixed(3));
       zoom = 44;
     }
 
@@ -539,6 +561,7 @@ export default function SeatMapPage() {
       label: seat.code || `${seat.row_label}${seat.number}`,
       rowLabel: seat.row_label,
       seatNumber: seat.number,
+      tierName,
       distanceM: distM,
       positionType,
       panoUrl,
@@ -1112,7 +1135,7 @@ export default function SeatMapPage() {
                 onClick={() => {
                   setActiveSeatPerspective(sp);
                   setViewOpts({ yaw: sp.yaw, pitch: sp.pitch, zoom: sp.zoom });
-                  setViewSrc(sp.panoUrl || THEATRE_PANOS.mid);
+                  setViewSrc(sp.panoUrl || THEATRE_PANOS.prime);
                 }}
                 className="bg-[#7B1E3D]/10 hover:bg-[#7B1E3D] hover:text-white text-[#7B1E3D] border border-[#7B1E3D]/30 px-2.5 py-0.5 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95"
                 title={`View 360° from Seat ${sp.label}`}

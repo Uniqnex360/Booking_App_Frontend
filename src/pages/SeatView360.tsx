@@ -10,8 +10,9 @@ export interface SeatPerspectiveItem {
   label: string;
   rowLabel: string;
   seatNumber: number;
+  tierName?: string;
   distanceM?: number;
-  positionType?: "front" | "mid" | "back" | "left" | "right";
+  positionType?: "silver" | "prime" | "recliner" | "front" | "mid" | "back" | "left" | "right";
   panoUrl?: string;
   yaw: number;
   pitch: number;
@@ -43,13 +44,6 @@ export default function SeatView360({
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<Viewer | null>(null);
 
-  // Initialize selected seat
-  const [selectedSeatId, setSelectedSeatId] = useState<string | null>(
-    activeSeatId || seats[0]?.id || allAuditoriumSeats[0]?.id || null,
-  );
-
-  const [showAuditoriumPicker, setShowAuditoriumPicker] = useState(false);
-
   // Pool of all available seat perspective definitions
   const allSeatPool = useMemo(() => {
     const map = new Map<string, SeatPerspectiveItem>();
@@ -58,16 +52,28 @@ export default function SeatView360({
     return map;
   }, [allAuditoriumSeats, seats]);
 
-  const currentSeat = selectedSeatId ? allSeatPool.get(selectedSeatId) || null : null;
-  const initialPano = currentSeat?.panoUrl || src;
-  const [currentPanoramaSrc, setCurrentPanoramaSrc] = useState(initialPano);
+  // Selected seat state
+  const [selectedSeatId, setSelectedSeatId] = useState<string | null>(
+    activeSeatId || seats[0]?.id || null,
+  );
 
-  const [activeZone, setActiveZone] = useState<"front" | "center" | "back">(
-    currentSeat?.positionType === "front"
-      ? "front"
-      : currentSeat?.positionType === "back"
-      ? "back"
-      : "center",
+  const [showAuditoriumPicker, setShowAuditoriumPicker] = useState(false);
+
+  const currentSeat = selectedSeatId ? allSeatPool.get(selectedSeatId) || null : null;
+  const initialPano = currentSeat?.panoUrl || src || "/panoramas/theatre-prime.jpg";
+  const [currentPanoramaSrc, setCurrentPanoramaSrc] = useState(initialPano);
+  const currentPanoRef = useRef(initialPano);
+
+  const [activeZone, setActiveZone] = useState<"silver" | "prime" | "recliner">(
+    currentSeat?.tierName?.toUpperCase().includes("RECLINER") ||
+    currentSeat?.positionType === "back" ||
+    currentSeat?.positionType === "recliner"
+      ? "recliner"
+      : currentSeat?.tierName?.toUpperCase().includes("SILVER") ||
+        currentSeat?.positionType === "front" ||
+        currentSeat?.positionType === "silver"
+      ? "silver"
+      : "prime",
   );
 
   const currentYaw = currentSeat ? currentSeat.yaw : yaw;
@@ -89,7 +95,7 @@ export default function SeatView360({
       }));
   }, [allAuditoriumSeats]);
 
-  // Initialize Viewer on container mount or initialPano change
+  // Initialize Viewer once on mount
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -109,56 +115,108 @@ export default function SeatView360({
       viewerRef.current = null;
       viewer.destroy();
     };
-  }, [initialPano]);
+  }, []);
 
-  // When selected seat changes, smoothly animate camera to that seat's exact angle
-  const handleSelectSeat = (seat: SeatPerspectiveItem) => {
-    setSelectedSeatId(seat.id);
-    if (seat.positionType === "front") setActiveZone("front");
-    else if (seat.positionType === "back") setActiveZone("back");
-    else setActiveZone("center");
+  // Smoothly transition panorama and camera position
+  const transitionToPanoAndAngle = (
+    newPanoUrl: string,
+    targetYaw: number,
+    targetPitch: number,
+    targetZoom: number,
+  ) => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
 
-    if (viewerRef.current) {
-      viewerRef.current.animate({
-        yaw: seat.yaw,
-        pitch: seat.pitch,
-        zoom: seat.zoom,
-        speed: 1000,
+    if (currentPanoRef.current !== newPanoUrl) {
+      currentPanoRef.current = newPanoUrl;
+      setCurrentPanoramaSrc(newPanoUrl);
+      viewer
+        .setPanorama(newPanoUrl, {
+          position: { yaw: targetYaw, pitch: targetPitch },
+          zoom: targetZoom,
+          transition: { speed: 800, effect: "fade" },
+          showLoader: false,
+        })
+        .catch((err) => {
+          console.warn("Panorama set error:", err);
+        });
+    } else {
+      viewer.animate({
+        yaw: targetYaw,
+        pitch: targetPitch,
+        zoom: targetZoom,
+        speed: 800,
       });
     }
   };
 
-  // Jump camera directly to Front, Center, or Back view of screen
-  const handleJumpToZone = (zone: "front" | "center" | "back") => {
-    setActiveZone(zone);
+  // Handle seat selection
+  const handleSelectSeat = (seat: SeatPerspectiveItem) => {
+    setSelectedSeatId(seat.id);
+    const targetPano = seat.panoUrl || "/panoramas/theatre-prime.jpg";
+
+    if (
+      seat.tierName?.toUpperCase().includes("RECLINER") ||
+      seat.positionType === "back" ||
+      seat.positionType === "recliner"
+    ) {
+      setActiveZone("recliner");
+    } else if (
+      seat.tierName?.toUpperCase().includes("SILVER") ||
+      seat.positionType === "front" ||
+      seat.positionType === "silver"
+    ) {
+      setActiveZone("silver");
+    } else {
+      setActiveZone("prime");
+    }
+
+    transitionToPanoAndAngle(targetPano, seat.yaw, seat.pitch, seat.zoom);
+  };
+
+  // Sync when activeSeatId prop changes
+  useEffect(() => {
+    if (activeSeatId && activeSeatId !== selectedSeatId) {
+      const st = allSeatPool.get(activeSeatId);
+      if (st) {
+        handleSelectSeat(st);
+      }
+    }
+  }, [activeSeatId]);
+
+  // Jump camera directly to Silver (Front), Prime Plus (Center), or Recliner (Back) tier
+  const handleJumpToTier = (tier: "silver" | "prime" | "recliner") => {
+    setActiveZone(tier);
     setSelectedSeatId(null);
+
+    let targetPano = "/panoramas/theatre-prime.jpg";
+    let targetYaw = 0;
     let targetPitch = 0.04;
-    let targetZoom = 50;
+    let targetZoom = 44;
 
-    if (zone === "front") {
-      targetPitch = 0.18;
-      targetZoom = 82;
-    } else if (zone === "back") {
-      targetPitch = -0.06;
-      targetZoom = 22;
+    if (tier === "silver") {
+      targetPano = "/panoramas/theatre-silver.jpg";
+      targetPitch = 0.16;
+      targetZoom = 52;
+    } else if (tier === "recliner") {
+      targetPano = "/panoramas/theatre-recliner.jpg";
+      targetPitch = -0.05;
+      targetZoom = 36;
     }
 
-    if (viewerRef.current) {
-      viewerRef.current.animate({
-        yaw: 0,
-        pitch: targetPitch,
-        zoom: targetZoom,
-        speed: 1000,
-      });
-    }
+    transitionToPanoAndAngle(targetPano, targetYaw, targetPitch, targetZoom);
   };
 
   const handleResetToCenter = () => {
     if (viewerRef.current) {
       viewerRef.current.animate({
-        yaw: currentYaw,
-        pitch: currentPitch,
-        zoom: currentZoom,
+        yaw: currentSeat?.yaw ?? 0,
+        pitch:
+          currentSeat?.pitch ??
+          (activeZone === "silver" ? 0.16 : activeZone === "recliner" ? -0.05 : 0.04),
+        zoom:
+          currentSeat?.zoom ??
+          (activeZone === "silver" ? 52 : activeZone === "recliner" ? 36 : 44),
         speed: 800,
       });
     }
@@ -167,25 +225,33 @@ export default function SeatView360({
   // Human-readable perspective description
   const getAngleDescription = () => {
     if (!currentSeat) {
-      if (activeZone === "front") return "Front Row View • Screen towering close overhead • ~3.5m from screen";
-      if (activeZone === "back") return "Back Row View • Elevated full auditorium wide overview • ~14.0m from screen";
-      return "Center Row View • Prime eye-level sweet spot • ~7.5m from screen";
+      if (activeZone === "silver")
+        return "Silver Tier • Screen towering close overhead • ~4.5m from screen";
+      if (activeZone === "recliner")
+        return "Recliner Tier • Elevated luxury back row wide overview • ~14.5m from screen";
+      return "Prime Plus Tier • Eye-level sweet spot auditorium center • ~8.0m from screen";
     }
 
+    const tier =
+      currentSeat.tierName ||
+      (currentSeat.positionType === "silver" || currentSeat.positionType === "front"
+        ? "Silver"
+        : currentSeat.positionType === "recliner" || currentSeat.positionType === "back"
+        ? "Recliner"
+        : "Prime Plus");
+
     const pos = currentSeat.positionType;
-    let posText = "Center Row (Prime View)";
-    if (pos === "front") posText = "Front Row (Close-up Screen View)";
-    else if (pos === "back") posText = "Back Row (Full Hall Overview)";
-    else if (pos === "left") posText = "Left Wing Seat (Side Screen View)";
-    else if (pos === "right") posText = "Right Wing Seat (Side Screen View)";
+    let posText = `${tier} Tier`;
+    if (pos === "left") posText = `${tier} • Left Wing Seat`;
+    else if (pos === "right") posText = `${tier} • Right Wing Seat`;
 
     const degYaw = Math.round((currentSeat.yaw * 180) / Math.PI);
     const angleText =
-      Math.abs(degYaw) > 5
+      Math.abs(degYaw) > 4
         ? `${Math.abs(degYaw)}° ${degYaw > 0 ? "left" : "right"}`
-        : "center";
+        : "center facing";
 
-    return `${posText} • ${angleText} • ~${currentSeat.distanceM ?? 6.5}m from screen`;
+    return `${posText} • ${angleText} • ~${currentSeat.distanceM ?? 7.5}m from screen`;
   };
 
   return (
@@ -200,7 +266,7 @@ export default function SeatView360({
             <div className="flex flex-col min-w-0">
               <span className="text-xs sm:text-sm font-semibold truncate leading-tight">
                 {currentSeat
-                  ? `View from Seat ${currentSeat.label} • Row ${currentSeat.rowLabel}`
+                  ? `View from Seat ${currentSeat.label} • Row ${currentSeat.rowLabel} (${currentSeat.tierName || "Seat"})`
                   : title}
               </span>
               <span className="text-[10px] sm:text-[11px] text-[#2dc492] font-medium leading-tight mt-0.5">
@@ -245,49 +311,52 @@ export default function SeatView360({
           </div>
         </div>
 
-        {/* Viewpoint Presets: Front / Center / Back View of Screen */}
+        {/* Viewpoint Presets: Silver (Front) / Prime Plus (Center) / Recliner (Back) */}
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/10 flex-wrap">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] text-gray-400 font-medium mr-1 hidden sm:inline">
-              Auditorium View:
+              Auditorium Tier:
             </span>
             <button
               type="button"
-              onClick={() => handleJumpToZone("front")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                activeZone === "front" && !selectedSeatId
+              onClick={() => handleJumpToTier("silver")}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                activeZone === "silver" && !selectedSeatId
                   ? "bg-[#7B1E3D] text-white shadow-md ring-1 ring-white/50"
                   : "bg-white/10 hover:bg-white/20 text-gray-300"
               }`}
             >
-              <span>Front View (Close)</span>
+              <span className="w-2 h-2 rounded-full bg-slate-300"></span>
+              <span>Silver (Front)</span>
             </button>
             <button
               type="button"
-              onClick={() => handleJumpToZone("center")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                activeZone === "center" && !selectedSeatId
+              onClick={() => handleJumpToTier("prime")}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                activeZone === "prime" && !selectedSeatId
                   ? "bg-[#7B1E3D] text-white shadow-md ring-1 ring-white/50"
                   : "bg-white/10 hover:bg-white/20 text-gray-300"
               }`}
             >
-              <span>Center View (Prime)</span>
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span>Prime Plus (Center)</span>
             </button>
             <button
               type="button"
-              onClick={() => handleJumpToZone("back")}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                activeZone === "back" && !selectedSeatId
+              onClick={() => handleJumpToTier("recliner")}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                activeZone === "recliner" && !selectedSeatId
                   ? "bg-[#7B1E3D] text-white shadow-md ring-1 ring-white/50"
                   : "bg-white/10 hover:bg-white/20 text-gray-300"
               }`}
             >
-              <span>Back View (Wide)</span>
+              <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+              <span>Recliner (Back)</span>
             </button>
           </div>
 
           {/* Selected Seats Pills (when user selects specific seats) */}
-          {seats.length > 1 && (
+          {seats.length > 0 && (
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <span className="text-[11px] text-gray-400 font-medium shrink-0">
                 Selected:
@@ -302,7 +371,7 @@ export default function SeatView360({
                       : "bg-white/10 hover:bg-white/20 text-gray-300"
                   }`}
                 >
-                  {st.label}
+                  {st.label} ({st.tierName ? st.tierName.split(" ")[0] : st.rowLabel})
                 </button>
               ))}
             </div>
@@ -332,32 +401,42 @@ export default function SeatView360({
           </div>
 
           <div className="overflow-y-auto max-h-[42vh] py-3 space-y-2 no-scrollbar">
-            {rowGroups.map(({ row, seats: rSeats }) => (
-              <div key={row} className="flex items-center gap-2">
-                <span className="w-5 text-[11px] font-bold text-gray-400 text-center shrink-0">
-                  {row}
-                </span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {rSeats.map((st) => {
-                    const isCurrent = st.id === selectedSeatId;
-                    return (
-                      <button
-                        key={st.id}
-                        onClick={() => handleSelectSeat(st)}
-                        className={`w-7 h-7 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center ${
-                          isCurrent
-                            ? "bg-[#2dc492] text-white ring-2 ring-white scale-110 shadow-md"
-                            : "bg-white/10 hover:bg-white/25 text-gray-200"
-                        }`}
-                        title={`Seat ${st.label} • Row ${st.rowLabel} • ~${st.distanceM}m from screen`}
-                      >
-                        {st.seatNumber}
-                      </button>
-                    );
-                  })}
+            {rowGroups.map(({ row, seats: rSeats }) => {
+              const firstSeat = rSeats[0];
+              const tierLabel = firstSeat?.tierName || "Standard";
+              return (
+                <div key={row} className="flex items-center gap-2">
+                  <div className="w-16 flex flex-col items-start shrink-0">
+                    <span className="text-[11px] font-bold text-gray-200">Row {row}</span>
+                    <span className="text-[9px] text-gray-400 font-medium truncate max-w-[60px]">
+                      {tierLabel}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap flex-1">
+                    {rSeats.map((st) => {
+                      const isCurrent = st.id === selectedSeatId;
+                      return (
+                        <button
+                          key={st.id}
+                          onClick={() => {
+                            handleSelectSeat(st);
+                            setShowAuditoriumPicker(false);
+                          }}
+                          className={`w-7 h-7 rounded text-[10px] font-bold transition-all cursor-pointer flex items-center justify-center ${
+                            isCurrent
+                              ? "bg-[#2dc492] text-white ring-2 ring-white scale-110 shadow-md"
+                              : "bg-white/10 hover:bg-white/25 text-gray-200"
+                          }`}
+                          title={`Seat ${st.label} • Row ${st.rowLabel} (${st.tierName || "Auditorium"}) • ~${st.distanceM}m from screen`}
+                        >
+                          {st.seatNumber}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
