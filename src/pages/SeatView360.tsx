@@ -5,8 +5,6 @@ import { StereoPlugin } from "@photo-sphere-viewer/stereo-plugin";
 import "@photo-sphere-viewer/core/index.css";
 import { X } from "lucide-react";
 
-const FOV_DEG = 100;
-
 export default function SeatView360({
   src,
   title,
@@ -26,37 +24,17 @@ export default function SeatView360({
 
   useEffect(() => {
     if (!ref.current) return;
-    let viewer: Viewer | null = null;
-    let cancelled = false;
-    const img = new Image();
-    img.onload = () => {
-      if (cancelled || !ref.current) return;
-      const w = img.naturalWidth;
-      const h = img.naturalHeight;
-      const fullWidth = Math.round(w * (360 / FOV_DEG));
-      const fullHeight = Math.round(fullWidth / 2);
-      viewer = new Viewer({
-        container: ref.current,
-        panorama: src,
-        panoData: {
-          fullWidth,
-          fullHeight,
-          croppedWidth: w,
-          croppedHeight: h,
-          croppedX: Math.round((fullWidth - w) / 2),
-          croppedY: Math.round((fullHeight - h) / 2),
-        },
-        defaultYaw: yaw,
-        defaultPitch: pitch,
-        defaultZoomLvl: zoom,
-        navbar: ["zoom", "move", "gyroscope", "stereo", "fullscreen"],
-        plugins: [GyroscopePlugin, StereoPlugin],
-      });
-    };
-    img.src = src;
+    const viewer = new Viewer({
+      container: ref.current,
+      panorama: src,
+      defaultYaw: yaw,
+      defaultPitch: pitch,
+      defaultZoomLvl: zoom,
+      navbar: ["zoom", "move", "gyroscope", "stereo", "fullscreen"],
+      plugins: [GyroscopePlugin, StereoPlugin],
+    });
     return () => {
-      cancelled = true;
-      viewer?.destroy();
+      viewer.destroy();
     };
   }, [src, yaw, pitch, zoom]);
 
