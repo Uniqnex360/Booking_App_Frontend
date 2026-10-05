@@ -1,15 +1,26 @@
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 const SeatView360 = lazy(() => import("./SeatView360"));
-const PANOS = {
-  front: "/panoramas/front.jpg",
-  mid: "/panoramas/mid.jpg",
-  back: "/panoramas/back.jpg",
+// Real equirectangular theatre interior panoramas (2:1 ratio, 4096x2048)
+// theatre-overview.jpg -> Boston Opera House auditorium (CC BY-SA)
+// theatre-hall.jpg     -> Auditorium hall interior photosphere (CC BY-SA)
+const THEATRE_OVERVIEW = "/panoramas/theatre-overview.jpg";
+const THEATRE_SEAT_VIEW = "/panoramas/theatre-hall.jpg";
+
+const buildSeatViewConfig = (rowFrac: number, colFrac: number) => {
+  // Yaw: colFrac shifts horizontal angle toward center of screen
+  const yaw = (0.5 - colFrac) * 0.7;
+  // Pitch: front rows tilt up at screen (+), back rows tilt slightly down (-)
+  const pitch = rowFrac < 0.34 ? 0.14 : rowFrac < 0.67 ? 0.02 : -0.08;
+  // Zoom: front rows closer / larger (52), back rows wider field of view (34)
+  const zoom = rowFrac < 0.34 ? 52 : rowFrac < 0.67 ? 42 : 34;
+  return { yaw, pitch, zoom };
 };
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
   ChevronLeft,
+  Eye,
   Edit2,
   RefreshCw,
   AlertCircle,
@@ -443,22 +454,19 @@ export default function SeatMapPage() {
   const backDist = distVals.length ? Math.max(...distVals) : null;
   const selRow = selectedSeats[0]?.row_label;
   const selDist = selRow ? rowDistances[selRow] : undefined;
-  const panoForRow = (row?: string) => {
-    const i = row ? rowOrder.indexOf(row) : -1;
-    const f = rowOrder.length > 1 && i >= 0 ? i / (rowOrder.length - 1) : 0.5;
-    return f < 0.34 ? PANOS.front : f < 0.67 ? PANOS.mid : PANOS.back;
-  };
-
-  const buildViewOpts = () => {
-    if (selectedSeats.length === 0) return { yaw: 0, pitch: 0, zoom: 40 };
+  const getSelFracs = () => {
+    if (selectedSeats.length === 0) return { rowFrac: 0.5, colFrac: 0.5 };
     const row = selectedSeats[0].row_label;
+    const rowIdx = rowOrder.indexOf(row);
+    const rowFrac =
+      rowOrder.length > 1 && rowIdx >= 0 ? rowIdx / (rowOrder.length - 1) : 0.5;
     const nums = (rawRows[row]?.seats || []).map((s) => s.number);
     const minN = Math.min(...nums);
     const maxN = Math.max(...nums);
     const avgNum =
       selectedSeats.reduce((a, s) => a + s.number, 0) / selectedSeats.length;
     const colFrac = maxN > minN ? (avgNum - minN) / (maxN - minN) : 0.5;
-    return { yaw: (0.5 - colFrac) * 0.8, pitch: 0, zoom: 40 };
+    return { rowFrac, colFrac };
   };
   const canProceed = selectedSeats.length === requiredSeatCount;
   const splitIntoBlocks = (seats: SeatItem[]) => {
@@ -532,6 +540,18 @@ export default function SeatMapPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
               {allSeats.length} seats
             </div>
+            <button
+              onClick={() => {
+                setViewOpts({ yaw: 0, pitch: 0, zoom: 40 });
+                setViewSrc(THEATRE_OVERVIEW);
+              }}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-2.5 sm:px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-gray-300 shadow-2xs"
+              title="View theatre in 360°"
+            >
+              <Eye className="h-3.5 w-3.5 text-[#7B1E3D]" />
+              <span className="hidden sm:inline">360° Theatre View</span>
+              <span className="sm:hidden">360°</span>
+            </button>
             <button
               onClick={() => setShowTicketModal(true)}
               className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
@@ -912,11 +932,12 @@ export default function SeatMapPage() {
           <button
             onClick={() => {
               setViewOpts({ yaw: 0, pitch: 0, zoom: 40 });
-              setViewSrc(PANOS.mid);
+              setViewSrc(THEATRE_OVERVIEW);
             }}
-            className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer"
+            className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3.5 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer flex items-center gap-1.5"
           >
-            Explore theatre in 360°
+            <Eye className="h-3.5 w-3.5" />
+            <span>Explore theatre in 360°</span>
           </button>
         )}
       </main>
@@ -949,12 +970,14 @@ export default function SeatMapPage() {
             )}
             <button
               onClick={() => {
-                setViewOpts(buildViewOpts());
-                setViewSrc(panoForRow(selRow));
+                const { rowFrac, colFrac } = getSelFracs();
+                setViewOpts(buildSeatViewConfig(rowFrac, colFrac));
+                setViewSrc(THEATRE_SEAT_VIEW);
               }}
-              className="text-[#7B1E3D] font-semibold underline cursor-pointer"
+              className="text-[#7B1E3D] font-semibold underline cursor-pointer flex items-center gap-1"
             >
-              View from your seat
+              <Eye className="h-3.5 w-3.5" />
+              <span>View from your seat</span>
             </button>
           </div>
           <button
@@ -1106,7 +1129,13 @@ export default function SeatMapPage() {
         <Suspense fallback={null}>
           <SeatView360
             src={viewSrc}
-            title={`${mapData?.screen_name || "Theatre"} • Demo view (approx)`}
+            title={
+              viewSrc === THEATRE_OVERVIEW
+                ? `${mapData?.screen_name || "Theatre"} • 360° Theatre Overview`
+                : selRow && selDist !== undefined
+                  ? `View from Row ${selRow} (Seats ${selectedSeats.map((s) => s.number).join(", ")}) • ~${selDist} m from screen`
+                  : `${mapData?.screen_name || "Theatre"} • View from your seat`
+            }
             yaw={viewOpts.yaw}
             pitch={viewOpts.pitch}
             zoom={viewOpts.zoom}
