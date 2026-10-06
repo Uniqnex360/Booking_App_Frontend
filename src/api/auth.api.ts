@@ -84,3 +84,13 @@ export async function verifyEmailOtp(payload: {
   setTokens(result.access_token, result.refresh_token);
   return result;
 }
+
+export async function checkEmailExists(
+  email: string
+): Promise<{ exists: boolean; has_password: boolean }> {
+  const response = await api.post<
+    ApiResponse<{ exists: boolean; has_password: boolean }>
+  >("/auth/check-email", { email });
+  return response.data.data;
+}
+

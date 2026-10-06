@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { checkEmailExists } from "@/api/auth.api";
 import { X, ChevronLeft, Mail, Loader2, EyeOff, Eye } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,6 +27,7 @@ export function QuickAuthModal() {
     import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID || "16879666373804430168";
 
   const [view, setView] = useState<AuthModalView>("get-started");
+  const [emailStep, setEmailStep] = useState<"enter-email" | "password">("enter-email");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,6 +51,7 @@ export function QuickAuthModal() {
   useEffect(() => {
     if (isAuthModalOpen) {
       setView(authModalInitialView || "get-started");
+      setEmailStep("enter-email");
       setError(null);
       setLoading(false);
       setOtpDigits(["", "", "", "", "", ""]);
@@ -308,6 +311,44 @@ export function QuickAuthModal() {
     await handleSendEmailOtp();
   };
 
+  const handleEmailContinue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isEmailValid || loading) return;
+    setError(null);
+    setLoading(true);
+
+    try {
+      const emailStatus = await checkEmailExists(email.trim());
+      if (emailStatus.exists) {
+        // Existing user: reveal password input to sign in
+        setEmailStep("password");
+      } else {
+        // New user: immediately send OTP to verify and sign up
+        const res = await sendEmailOtpLogin({
+          email: email.trim(),
+          full_name: email.split("@")[0],
+        });
+
+        if (res.error) {
+          setError(res.error);
+          toast.error(res.error);
+        } else {
+          if (res.data?.user_id) {
+            setUserId(res.data.user_id);
+          }
+          setOtpDigits(["", "", "", "", "", ""]);
+          setResendTimer(30);
+          setView("email-otp");
+          toast.success(`Welcome! Verification OTP sent to ${email}`);
+        }
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to check email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -484,7 +525,11 @@ export function QuickAuthModal() {
                 type="button"
                 onClick={() => {
                   setError(null);
-                  setView("get-started");
+                  if (emailStep === "password") {
+                    setEmailStep("enter-email");
+                  } else {
+                    setView("get-started");
+                  }
                 }}
                 className="p-1 -ml-2 text-gray-700 hover:text-gray-900 rounded-full hover:bg-gray-100 transition"
               >
@@ -499,9 +544,14 @@ export function QuickAuthModal() {
               </button>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 mt-2 mb-6">
-              Login with Email
+            <h2 className="text-xl font-bold text-gray-900 mt-2 mb-2">
+              {emailStep === "password" ? "Enter your password" : "Continue with Email"}
             </h2>
+            <p className="text-xs text-gray-500 mb-6">
+              {emailStep === "password"
+                ? `Welcome back! Enter your password for ${email}`
+                : "Enter your email to sign in or get started"}
+            </p>
 
             {error && (
               <div className="mb-4 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg text-center font-medium border border-red-100">
@@ -509,103 +559,146 @@ export function QuickAuthModal() {
               </div>
             )}
 
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                  Email
-                </label>
-                <div
-                  className={`relative flex items-center border rounded-lg px-3.5 py-3 transition ${
-                    isEmailValid
-                      ? "border-emerald-500 ring-1 ring-emerald-500/20"
-                      : "border-gray-300 focus-within:border-[#7B1E3D]"
+            {emailStep === "enter-email" ? (
+              <form onSubmit={handleEmailContinue} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    Email
+                  </label>
+                  <div
+                    className={`relative flex items-center border rounded-lg px-3.5 py-3 transition ${
+                      isEmailValid
+                        ? "border-emerald-500 ring-1 ring-emerald-500/20"
+                        : "border-gray-300 focus-within:border-[#7B1E3D]"
+                    }`}
+                  >
+                    <input
+                      type="email"
+                      disabled={loading}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      autoFocus
+                      className="w-full text-sm text-gray-900 outline-none bg-transparent"
+                    />
+                    {isEmailValid && (
+                      <Mail className="w-4 h-4 text-emerald-600 shrink-0 ml-2" />
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!isEmailValid || loading}
+                  className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
+                    isEmailValid && !loading
+                      ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
+                      : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
                   }`}
                 >
-                  <input
-                    type="email"
-                    disabled={loading}
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoFocus
-                    className="w-full text-sm text-gray-900 outline-none bg-transparent"
-                  />
-                  {isEmailValid && (
-                    <Mail className="w-4 h-4 text-emerald-600 shrink-0 ml-2" />
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Continue"
                   )}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-medium text-gray-600">
+                      Email
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setError(null);
+                        setEmailStep("enter-email");
+                      }}
+                      className="text-xs text-[#7B1E3D] hover:underline font-medium"
+                    >
+                      Change
+                    </button>
+                  </div>
+                  <div className="flex items-center border border-gray-200 bg-gray-50 rounded-lg px-3.5 py-2.5 text-sm text-gray-700">
+                    <span className="truncate flex-1">{email}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                  Password
-                </label>
-                <div className="relative flex items-center border border-gray-300 rounded-lg px-3.5 py-3 focus-within:border-[#7B1E3D]">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    disabled={loading}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    className="w-full text-sm text-gray-900 outline-none bg-transparent"
-                  />
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative flex items-center border border-gray-300 rounded-lg px-3.5 py-3 focus-within:border-[#7B1E3D]">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      disabled={loading}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      autoFocus
+                      required
+                      className="w-full text-sm text-gray-900 outline-none bg-transparent"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="text-gray-400 hover:text-gray-700 shrink-0 ml-2"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <a
+                    href="/forgot-password"
+                    className="text-xs text-[#7B1E3D] hover:underline"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!isEmailValid || !password || loading}
+                  className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
+                    isEmailValid && password && !loading
+                      ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
+                      : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+
+                <div className="mt-4 text-center">
                   <button
                     type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
-                    className="text-gray-400 hover:text-gray-700 shrink-0 ml-2"
+                    disabled={!isEmailValid || loading}
+                    onClick={handleSendEmailOtp}
+                    className={`text-xs underline transition ${
+                      isEmailValid && !loading
+                        ? "text-gray-500 hover:text-[#7B1E3D] cursor-pointer"
+                        : "text-gray-300 cursor-not-allowed no-underline"
+                    }`}
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
+                    Login with OTP instead
                   </button>
                 </div>
-              </div>
-
-              <div className="flex justify-end">
-                <a
-                  href="/forgot-password"
-                  className="text-xs text-[#7B1E3D] hover:underline"
-                >
-                  Forgot password?
-                </a>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!isEmailValid || !password || loading}
-                className={`w-full py-3.5 rounded-lg text-sm font-semibold transition shadow-sm flex items-center justify-center ${
-                  isEmailValid && password && !loading
-                    ? "bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white cursor-pointer"
-                    : "bg-[#E0E0E0] text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Sign In"
-                )}
-              </button>
-            </form>
-
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                disabled={!isEmailValid || loading}
-                onClick={handleSendEmailOtp}
-                className={`text-xs underline transition ${
-                  isEmailValid && !loading
-                    ? "text-gray-500 hover:text-[#7B1E3D] cursor-pointer"
-                    : "text-gray-300 cursor-not-allowed no-underline"
-                }`}
-              >
-                Login with OTP instead
-              </button>
-            </div>
+              </form>
+            )}
           </div>
         )}
 
