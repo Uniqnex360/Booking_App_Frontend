@@ -27,11 +27,16 @@ import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import VenuesPage from "@/pages/VenuesPage";
 import FoodPage from "@/pages/FoodPage";
+import AdminDashboardPage from "@/pages/AdminDashboardPage";
 
 export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/admin" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/movies" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/users" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
       <Route path="/confirmation" element={<ConfirmationPage />} />
       <Route path="/movies/:id/reviews" element={<MovieReviewsPage />} />
       <Route path="/forgot-password" element={<PrivateRoute guest><ForgotPasswordPage /></PrivateRoute>} />

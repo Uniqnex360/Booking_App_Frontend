@@ -351,9 +351,7 @@ export default function SupportChatbot() {
               <span className="text-xs font-bold text-white tracking-wide">
                 Chat with us
               </span>
-              <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                <ShieldCheck className="h-3 w-3 text-emerald-400" /> Support
-              </span>
+              
             </div>
 
             {/* VIEW 1: Topic Category List matching screenshot 2 */}

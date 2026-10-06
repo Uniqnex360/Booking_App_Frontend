@@ -703,16 +703,34 @@ export function Header() {
                   {user?.role === "ADMIN" && (
                     <>
                       <DrawerMenuItem
+                        icon={LayoutDashboard}
+                        title="Admin Control Center"
+                        subtitle="Full platform control & metrics"
+                        onClick={() => handleProfileNavigation("/admin")}
+                      />
+                      <DrawerMenuItem
+                        icon={Film}
+                        title="Movies Control"
+                        subtitle="Manage catalog and visibility"
+                        onClick={() => handleProfileNavigation("/admin?tab=movies")}
+                      />
+                      <DrawerMenuItem
                         icon={Users}
-                        title="Partner Verification"
-                        subtitle="Verify partner requests"
-                        onClick={() => handleProfileNavigation("/admin/partners")}
+                        title="User Management"
+                        subtitle="Manage, block & inspect users"
+                        onClick={() => handleProfileNavigation("/admin?tab=users")}
                       />
                       <DrawerMenuItem
                         icon={ShieldCheck}
                         title="Event Moderation"
                         subtitle="Review and approve events"
                         onClick={() => handleProfileNavigation("/admin/moderation")}
+                      />
+                      <DrawerMenuItem
+                        icon={HeartHandshake}
+                        title="Partner Verification"
+                        subtitle="Verify partner requests"
+                        onClick={() => handleProfileNavigation("/admin/partners")}
                       />
                     </>
                   )}
