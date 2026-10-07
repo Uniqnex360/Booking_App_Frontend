@@ -387,6 +387,8 @@ export default function BookingPage() {
         setIsBooking(false);
       });
       rzp.open();
+      setShowTerms(false);
+      setIsBooking(false);
     } catch (err: any) {
       toast.error(err?.message || 'Failed to initiate payment.');
       setIsBooking(false);
@@ -1528,6 +1530,7 @@ export default function BookingPage() {
                   </div>
                   <button
                     type="button"
+                    disabled={isBooking}
                     onClick={() => {
                       if (!user) {
                         navigate('/login', { state: { from: `/events/${id}` } });
@@ -1535,9 +1538,18 @@ export default function BookingPage() {
                       }
                       setShowTerms(true);
                     }}
-                    className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-medium text-sm px-8 py-2.5 rounded-md shadow-sm transition-colors cursor-pointer"
+                    className="bg-[#7B1E3D] hover:bg-[#5C0F2A] disabled:bg-[#7B1E3D]/70 text-white font-medium text-sm px-8 py-2.5 rounded-md shadow-sm transition-colors cursor-pointer flex items-center gap-2"
                   >
-                    {user ? 'Proceed to Pay' : 'Login To Book'}
+                    {isBooking ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : user ? (
+                      'Proceed to Pay'
+                    ) : (
+                      'Login To Book'
+                    )}
                   </button>
                 </div>
               )
@@ -1561,33 +1573,45 @@ export default function BookingPage() {
           )}
         </DialogContent>
       </Dialog>
-          {isConfirming && (
-  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm text-white px-6 text-center">
-    <Loader2 className="h-10 w-10 animate-spin" />
-    <p className="text-lg font-semibold">Confirming your payment...</p>
-    <p className="text-sm text-white/80">
-      Please do not close or refresh this page.
-    </p>
-  </div>
-)}
-<TermsModal
-  isOpen={showTerms}
-  
-  terms={eventData.terms_and_conditions}
-  amountLabel={
-    selectedTier
-      ? `₹${Math.round(finalPaise / 100).toLocaleString('en-IN')}`
-      : undefined
-  }
-  onClose={() => {
-    setShowTerms(false);
-    setBookingModalOpen(true); // back to ticket picker
-  }}
-  onAccept={() => {
-    setShowTerms(false);
-    handleConfirmBooking();
-  }}
-/>
+      {isBooking && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm text-white px-6 text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-[#D6445B]" />
+          <p className="text-lg font-semibold">Initiating payment...</p>
+          <p className="text-sm text-white/80">
+            Connecting to secure payment gateway, please wait...
+          </p>
+        </div>
+      )}
+
+      {isConfirming && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm text-white px-6 text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-emerald-400" />
+          <p className="text-lg font-semibold">Confirming your payment...</p>
+          <p className="text-sm text-white/80">
+            Please do not close or refresh this page.
+          </p>
+        </div>
+      )}
+
+      <TermsModal
+        isOpen={showTerms}
+        terms={eventData.terms_and_conditions}
+        amountLabel={
+          selectedTier
+            ? `₹${Math.round(finalPaise / 100).toLocaleString('en-IN')}`
+            : undefined
+        }
+        isLoading={isBooking}
+        onClose={() => {
+          if (!isBooking) {
+            setShowTerms(false);
+            setBookingModalOpen(true);
+          }
+        }}
+        onAccept={() => {
+          handleConfirmBooking();
+        }}
+      />
       <Footer />
     </div>
   );

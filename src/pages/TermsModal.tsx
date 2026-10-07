@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 export const DEFAULT_TERMS = [
   "Tickets once booked cannot be exchanged or refunded, except where the cinema/organiser cancels the show.",
@@ -16,24 +16,24 @@ export function TermsModal({
   isOpen,
   terms,
   amountLabel,
+  isLoading,
   onClose,
   onAccept,
 }: {
   isOpen: boolean;
   terms?: string[];
   amountLabel?: string; // e.g. "₹380.00"
+  isLoading?: boolean;
   onClose: () => void;
   onAccept: () => void;
 }) {
-  
-
   if (!isOpen) return null;
   const list = terms && terms.length > 0 ? terms : DEFAULT_TERMS;
 
   return (
     <div
       className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 p-4 pointer-events-auto"
-      onClick={onClose}
+      onClick={isLoading ? undefined : onClose}
     >
       <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-[460px] max-h-[90vh] flex flex-col overflow-hidden"
@@ -43,9 +43,10 @@ export function TermsModal({
           <h3 className="text-base font-bold text-gray-900">Terms &amp; Conditions</h3>
           <button
             type="button"
+            disabled={isLoading}
             onClick={onClose}
             aria-label="Close"
-            className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center cursor-pointer"
+            className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center cursor-pointer disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -62,14 +63,22 @@ export function TermsModal({
         </div>
 
         <div className="border-t border-gray-100 p-4 bg-white">
-  <button
-    type="button"
-    onClick={onAccept}
-    className="w-full bg-[#D6445B] hover:bg-[#c33a4f] text-white font-bold py-3 rounded-lg text-sm cursor-pointer"
-  >
-    Accept
-  </button>
-</div>
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={onAccept}
+            className="w-full bg-[#D6445B] hover:bg-[#c33a4f] disabled:bg-[#D6445B]/60 text-white font-bold py-3 rounded-lg text-sm cursor-pointer flex items-center justify-center gap-2 transition"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Processing Payment...</span>
+              </>
+            ) : (
+              <span>Accept &amp; Pay {amountLabel ? amountLabel : ''}</span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
