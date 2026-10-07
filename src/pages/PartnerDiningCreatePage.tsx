@@ -104,6 +104,7 @@ const diningFormSchema = z
     description: z.string().min(10, "Please provide a detailed description (at least 10 chars)"),
     what_included: z.string().min(5, "Please describe what is included in this dining experience"),
     price_range: z.coerce.number().min(1).max(4).default(2),
+    age_restriction: z.string().default("All age groups"),
     cuisine: z.array(z.string()).min(1, "Select at least one cuisine"),
     tags: z.array(z.string()).default([]),
     poster_image_url: z.string().min(1, "Cover image is required"),
@@ -172,6 +173,7 @@ export default function PartnerDiningCreatePage() {
       description: "",
       what_included: "",
       price_range: 2,
+      age_restriction: "All age groups",
       cuisine: [],
       tags: ["FINE_DINING"],
       poster_image_url: "",
@@ -194,6 +196,7 @@ export default function PartnerDiningCreatePage() {
   const watchedCuisines = watch("cuisine") || [];
   const watchedTags = watch("tags") || [];
   const watchedPriceRange = watch("price_range") || 2;
+  const watchedAgeRestriction = watch("age_restriction") || "All age groups";
   const watchedPoster = watch("poster_image_url");
 
   // Prefill restaurant name and city from approved partner profile
@@ -266,6 +269,7 @@ export default function PartnerDiningCreatePage() {
         description: data.description.trim(),
         what_included: data.what_included.trim(),
         price_range: data.price_range,
+        age_restriction: data.age_restriction || "All age groups",
         cuisine: data.cuisine,
         tags: data.tags,
         poster_image_url: data.poster_image_url,
@@ -465,6 +469,35 @@ export default function PartnerDiningCreatePage() {
                   {errors.cuisine && (
                     <p className="text-xs text-rose-600 mt-1">{errors.cuisine.message}</p>
                   )}
+                </div>
+
+                {/* Age Group & Restriction */}
+                <div className="sm:col-span-2">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-gray-700 block mb-2">
+                    Age Group &amp; Restriction
+                  </Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {[
+                      { val: "All age groups", label: "All Age Groups", desc: "Everyone allowed" },
+                      { val: "18+", label: "18+ Only", desc: "Adults only entry" },
+                      { val: "21+", label: "21+ Only", desc: "Alcohol served / club" },
+                      { val: "Kids Allowed", label: "Kids Friendly", desc: "Family oriented" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.val}
+                        type="button"
+                        onClick={() => setValue("age_restriction", opt.val)}
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          watchedAgeRestriction === opt.val
+                            ? "border-[#7B1E3D] bg-rose-50/50 ring-2 ring-[#7B1E3D]/20 text-[#7B1E3D]"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
+                        }`}
+                      >
+                        <span className="font-bold text-xs block">{opt.label}</span>
+                        <span className="text-[11px] text-gray-500 block mt-0.5">{opt.desc}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Dining Features & Tags */}
