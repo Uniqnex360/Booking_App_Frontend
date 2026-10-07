@@ -13,8 +13,9 @@ import { Footer } from '@/components/Footer';
 import { getEvents } from '@/api/event.api';
 import type { EventItem } from '@/types/event.types';
 
-// BookMyShow Signature Colors
-const BMS_RED = '#F84464';
+// Vyhbz Wine Signature Colors
+const WINE_COLOR = '#7B1E3D';
+const WINE_HOVER = '#5C0F2A';
 
 interface CategoryPill {
   value: string;
@@ -83,7 +84,7 @@ function FilterBox({
           <button
             type="button"
             onClick={onClear}
-            className="text-xs text-gray-400 hover:text-[#F84464] transition-colors font-normal"
+            className="text-xs text-gray-400 hover:text-[#7B1E3D] transition-colors font-normal"
           >
             Clear
           </button>
@@ -208,7 +209,7 @@ export default function DiningListingPage() {
       <Header />
 
       {/* Main Container */}
-      <main className="max-w-[1240px] w-full mx-auto px-4 sm:px-6 pt-24 pb-16 flex-1">
+      <main className="max-w-[1240px] w-full mx-auto px-4 sm:px-6 pt-36 sm:pt-40 pb-16 flex-1">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
           {/* ==================== LEFT SIDEBAR: FILTERS ==================== */}
@@ -235,8 +236,8 @@ export default function DiningListingPage() {
                       onClick={() => toggleTag(pill.value)}
                       className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
                         isSelected
-                          ? 'bg-[#F84464] text-white border-[#F84464]'
-                          : 'bg-white text-[#F84464] border-gray-200 hover:border-[#F84464]/50'
+                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
+                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
                       }`}
                     >
                       {pill.label}
@@ -264,8 +265,8 @@ export default function DiningListingPage() {
                       onClick={() => updateQuery('date', isSelected ? null : opt.value)}
                       className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
                         isSelected
-                          ? 'bg-[#F84464] text-white border-[#F84464]'
-                          : 'bg-white text-[#F84464] border-gray-200 hover:border-[#F84464]/50'
+                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
+                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
                       }`}
                     >
                       {opt.label}
@@ -298,8 +299,8 @@ export default function DiningListingPage() {
                       onClick={() => toggleTag(opt.value)}
                       className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
                         isSelected
-                          ? 'bg-[#F84464] text-white border-[#F84464]'
-                          : 'bg-white text-[#F84464] border-gray-200 hover:border-[#F84464]/50'
+                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
+                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
                       }`}
                     >
                       {opt.label}
@@ -327,8 +328,8 @@ export default function DiningListingPage() {
                       onClick={() => updateQuery('price', isSelected ? null : opt.value)}
                       className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
                         isSelected
-                          ? 'bg-[#F84464] text-white border-[#F84464]'
-                          : 'bg-white text-[#F84464] border-gray-200 hover:border-[#F84464]/50'
+                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
+                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
                       }`}
                     >
                       {opt.label}
@@ -342,7 +343,7 @@ export default function DiningListingPage() {
             <button
               type="button"
               onClick={() => navigate('/venues')}
-              className="w-full mt-2 py-2.5 px-4 rounded-md border border-[#F84464] text-[#F84464] text-xs font-semibold hover:bg-[#F84464]/5 transition-colors text-center"
+              className="w-full mt-2 py-2.5 px-4 rounded-md border border-[#7B1E3D] text-[#7B1E3D] text-xs font-semibold hover:bg-[#7B1E3D]/5 transition-colors text-center"
             >
               Browse by Venues
             </button>
@@ -366,7 +367,7 @@ export default function DiningListingPage() {
                     onClick={() => toggleTag(pill.value)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors border ${
                       isSelected
-                        ? 'bg-[#F84464] text-white border-[#F84464]'
+                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
                         : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -403,7 +404,7 @@ export default function DiningListingPage() {
                     updateQuery('date', null);
                     updateQuery('price', null);
                   }}
-                  className="mt-4 px-4 py-2 bg-[#F84464] text-white text-xs font-semibold rounded-md hover:bg-[#d63351] transition-colors"
+                  className="mt-4 px-4 py-2 bg-[#7B1E3D] text-white text-xs font-semibold rounded-md hover:bg-[#5C0F2A] transition-colors"
                 >
                   Reset Filters
                 </button>
@@ -447,7 +448,7 @@ export default function DiningListingPage() {
 
                       {/* Card Details directly under the poster (BookMyShow standard) */}
                       <div className="pt-2.5 flex flex-col">
-                        <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#F84464] transition-colors">
+                        <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#7B1E3D] transition-colors">
                           {ev.title}
                         </h3>
 
