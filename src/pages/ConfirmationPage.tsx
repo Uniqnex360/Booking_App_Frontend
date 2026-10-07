@@ -31,10 +31,15 @@ export default function ConfirmationPage() {
     })();
   }, [id]);
 
+  const isDining = booking?.category === "dining";
+  const isEvent = booking?.type === "EVENT" || booking?.category;
+  const backLabel = isDining ? "Back to dining" : isEvent ? "Back to events" : "Back to movies";
+  const backPath = isDining ? "/dining" : isEvent ? "/events" : "/movies";
+
   const adapted = booking
     ? {
         ...booking,
-        type: "MOVIE",
+        type: booking.type || (booking.tier_id || booking.event_id ? "EVENT" : "MOVIE"),
         image_url: booking.poster_url ?? booking.image_url ?? null,
         total_price:
           typeof booking.total_paise === "number"
@@ -79,10 +84,10 @@ export default function ConfirmationPage() {
 
               <div className="mt-6 text-center">
                 <Link
-                  to="/"
+                  to={backPath}
                   className="block w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3 rounded-lg transition"
                 >
-                  Back to movies
+                  {backLabel}
                 </Link>
               </div>
             </>

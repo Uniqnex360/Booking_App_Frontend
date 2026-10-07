@@ -25,10 +25,18 @@ export function BookingCard({
         : 0;
   const qrValue = b.barcode || b.ref_code || b.id;
 
-  const isMovie = booking.type === "MOVIE" && !!booking.starts_at;
+  const isMovie = (booking.type === "MOVIE" || booking.type === "EVENT" || !booking.type) && !!(booking.starts_at || booking.booking_date);
   const bookingDate = new Date(booking.starts_at || booking.booking_date);
   const title = booking.movie_title ?? booking.title;
-  const seatCount = booking.seat_codes?.length ?? 0;
+  const seatCount =
+    typeof b.quantity === "number" && b.quantity > 0
+      ? b.quantity
+      : booking.seat_codes?.length
+        ? booking.seat_codes.length
+        : b.guests || 1;
+  const venueDisplay = booking.venue_name || booking.venue || booking.cinema_name;
+  const screenOrTier = booking.tier_name || booking.screen_name || (booking.type === "EVENT" ? "ENTRY PASS" : "SCREEN");
+  const ticketLabel = booking.type === "EVENT" ? "E-Ticket" : "M-Ticket";
 
   const statusLabel =
     booking.status === "CANCELLED"
@@ -154,17 +162,19 @@ export function BookingCard({
           <p className="mt-2 text-sm text-gray-700">
             {dateStr} | {timeStr}
           </p>
-          <p className="mt-1 text-sm text-gray-700 line-clamp-2">
-            {booking.cinema_name}
-          </p>
+          {venueDisplay && (
+            <p className="mt-1 text-sm text-gray-700 line-clamp-2">
+              {venueDisplay}
+            </p>
+          )}
         </div>
 
-        {/* Vertical "M-Ticket" label */}
+        {/* Vertical "M-Ticket" or "E-Ticket" label */}
         <span
           className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 tracking-wider"
           style={{ writingMode: "vertical-rl" }}
         >
-          M-Ticket
+          {ticketLabel}
         </span>
       </div>
 
@@ -183,14 +193,18 @@ export function BookingCard({
           </div>
           <div className="flex-1 text-center min-w-0">
             <p className="text-xs text-gray-500">
-              {seatCount} Ticket{seatCount === 1 ? "" : "s"}(s)
+              {seatCount} Ticket{seatCount === 1 ? "" : "s"}
             </p>
             <p className="mt-1 text-xl font-bold text-gray-900 truncate">
-              {booking.screen_name || "SCREEN"}
+              {screenOrTier}
             </p>
             {booking.seat_codes?.length ? (
               <p className="text-xs text-gray-500 mt-0.5 break-words">
                 {booking.seat_codes.join(", ")}
+              </p>
+            ) : booking.tier_name && venueDisplay ? (
+              <p className="text-xs text-gray-500 mt-0.5 break-words truncate">
+                {venueDisplay}
               </p>
             ) : null}
             {booking.ref_code && (
