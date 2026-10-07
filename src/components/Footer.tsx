@@ -16,7 +16,7 @@ const footerSections = [
       { name: 'About Us', path: '#' },
       { name: 'Contact Us', path: '/support' },
       { name: 'Terms & Conditions', path: '/terms' },
-      { name: 'Privacy Policy', path: '#' },
+      { name: 'Privacy Policy', path: '/privacy.html' },
       { name: 'FAQs', path: '/support' }
     ],
   },
@@ -91,6 +91,10 @@ export function Footer() {
                       <Link to="#" className="text-xs text-[#888888] transition-colors hover:text-white">
                         {link}
                       </Link>
+                    ) : link.path.endsWith('.html') ? (
+                      <a href={link.path} target="_blank" rel="noopener noreferrer" className="text-xs text-[#888888] transition-colors hover:text-white">
+                        {link.name}
+                      </a>
                     ) : (
                       <Link to={link.path} className="text-xs text-[#888888] transition-colors hover:text-white">
                         {link.name}

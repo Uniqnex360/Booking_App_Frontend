@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Privacy Policy | VybHz by Uniqnex360</title>
+  <meta name="description" content="Privacy Policy for VybHz mobile application and web platform by Uniqnex360, Chennai, India. Learn how we collect, use, and protect your personal data." />
+  <style>
+    :root {
+      --primary: #7B1E3D;
+      --primary-dark: #58142a;
+      --primary-light: #fdf2f4;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --accent: #0f172a;
+      --badge-bg: #f1f5f9;
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-stack);
+      line-height: 1.65;
+      color: var(--text-main);
+      background-color: var(--bg-page);
+      -webkit-font-smoothing: antialiased;
+      padding: 0;
+      margin: 0;
+    }
+
+    header {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #7B1E3D 0%, #4a1023 100%);
+      color: #ffffff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.2px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+      margin-top: -2px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1.25rem 4rem 1.25rem;
+    }
+
+    .doc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      padding: 2.5rem;
+    }
+
+    @media (max-width: 640px) {
+      .doc-card {
+        padding: 1.5rem 1.25rem;
+        border-radius: 10px;
+      }
+      .container {
+        margin: 1rem auto;
+      }
+    }
+
+    .doc-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .doc-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.813rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      background: var(--badge-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.2rem 0.6rem;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    .badge-primary {
+      background: var(--primary-light);
+      border-color: #fbcfe8;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .toc-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .toc-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.4rem;
+    }
+
+    @media (min-width: 680px) {
+      .toc-list {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .toc-list a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      display: inline-block;
+      transition: color 0.15s ease;
+    }
+
+    .toc-list a:hover {
+      text-decoration: underline;
+      color: var(--primary-dark);
+    }
+
+    section {
+      margin-bottom: 2.5rem;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      padding-top: 0.5rem;
+      border-top: 1px dashed #f1f5f9;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #334155;
+      margin: 1.25rem 0 0.5rem 0;
+    }
+
+    p {
+      margin-bottom: 0.9rem;
+      font-size: 0.938rem;
+      color: #334155;
+      line-height: 1.65;
+    }
+
+    ul, ol {
+      margin: 0.5rem 0 1rem 1.5rem;
+      font-size: 0.938rem;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 0.45rem;
+    }
+
+    strong {
+      color: #0f172a;
+    }
+
+    .highlight-box {
+      background-color: #f8fafc;
+      border-left: 4px solid var(--primary);
+      padding: 1rem 1.25rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+      color: #334155;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin: 1.25rem 0;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      text-align: left;
+      min-width: 580px;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-weight: 600;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      color: #334155;
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #fafbfc;
+    }
+
+    .contact-card {
+      background: #fdf2f4;
+      border: 1px solid #fbcfe8;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .contact-card h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .contact-details {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 0.875rem;
+    }
+
+    .contact-details li {
+      margin-bottom: 0.4rem;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: var(--primary-dark);
+    }
+
+    footer {
+      background-color: #ffffff;
+      border-top: 1px solid var(--border-color);
+      padding: 2rem 1.25rem;
+      text-align: center;
+      font-size: 0.813rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="brand-logo">
+        <div class="logo-badge">V</div>
+        <div>
+          <span class="brand-name">VybHz</span>
+          <span class="brand-subtitle">by Uniqnex360 &bull; Chennai, India</span>
+        </div>
+      </div>
+      <span class="badge badge-primary">Official Policy</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="doc-card">
+      <div class="doc-header">
+        <h1>Privacy Policy</h1>
+        <p>This document explains our practices regarding the collection, storage, processing, transfer, and deletion of personal data when you use the VybHz platform.</p>
+        <div class="meta-tags">
+          <span class="badge"><strong>Entity:</strong> Uniqnex360</span>
+          <span class="badge"><strong>Jurisdiction:</strong> Chennai, Tamil Nadu, India</span>
+          <span class="badge"><strong>Effective Date:</strong> October 7, 2026</span>
+          <span class="badge"><strong>Governing Law:</strong> Digital Personal Data Protection (DPDP) Act 2023</span>
+        </div>
+      </div>
+
+      <!-- Quick Navigation -->
+      <nav class="toc">
+        <div class="toc-title">Table of Contents</div>
+        <ul class="toc-list">
+          <li><a href="#section-1">1. Introduction & Overview</a></li>
+          <li><a href="#section-2">2. Personal Data We Collect</a></li>
+          <li><a href="#section-3">3. Purpose of Processing Data</a></li>
+          <li><a href="#section-4">4. Third-Party Integrations & Data Sharing</a></li>
+          <li><a href="#section-5">5. Payment Information & Security</a></li>
+          <li><a href="#section-6">6. Device, Location & Cookie Notice</a></li>
+          <li><a href="#section-7">7. Data Security Measures</a></li>
+          <li><a href="#section-8">8. Data Retention Policy</a></li>
+          <li><a href="#section-9">9. Account & Data Deletion Process</a></li>
+          <li><a href="#section-10">10. Children's Privacy (Under 18)</a></li>
+          <li><a href="#section-11">11. Your Rights as a Data Principal</a></li>
+          <li><a href="#section-12">12. Grievance Officer & Contact Information</a></li>
+        </ul>
+      </nav>
+
+      <!-- 1. Introduction -->
+      <section id="section-1">
+        <h2>1. Introduction & Overview</h2>
+        <p>
+          Welcome to <strong>VybHz</strong> ("Application", "Platform", "we", "us", or "our"), operated and owned by <strong>Uniqnex360</strong>, having its principal place of operations in Chennai, Tamil Nadu, India. VybHz is an entertainment discovery and ticketing platform offering online booking services for movies, live events, concerts, dining reservations, and curated experiences.
+        </p>
+        <p>
+          We respect your privacy and are committed to safeguarding your personal data in compliance with the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong>, the <strong>Information Technology Act, 2000</strong>, and the <strong>Information Technology (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011</strong> of India.
+        </p>
+        <div class="highlight-box">
+          <strong>Key Commitment:</strong> We never sell, rent, or trade your personal data to advertisers or third-party data brokers. Data collected is strictly used to fulfill your ticket reservations, process payments, prevent fraudulent abuse, and provide customer support.
+        </div>
+      </section>
+
+      <!-- 2. Personal Data We Collect -->
+      <section id="section-2">
+        <h2>2. Personal Data We Collect</h2>
+        <p>Depending on how you interact with our platform (guest browsing, registered user, or booking customer), we collect the following categories of data:</p>
+
+        <h3>A. Account & Contact Information</h3>
+        <ul>
+          <li><strong>Full Name:</strong> To personalize communications and issue named admission tickets.</li>
+          <li><strong>Email Address:</strong> Used for account identity, OTP verification, sending booking confirmation emails, e-tickets, tax invoices, and password resets.</li>
+          <li><strong>Mobile Phone Number:</strong> Used for SMS-based one-time password (OTP) verification, ticket delivery notifications, and urgent venue alerts.</li>
+          <li><strong>Password Hash:</strong> Stored strictly as a one-way cryptographic hash using <em>bcrypt</em> (work factor 12). Plaintext passwords are never visible or stored.</li>
+        </ul>
+
+        <h3>B. Optional User Profile & Saved Addresses</h3>
+        <ul>
+          <li><strong>Profile Details:</strong> Date of birth (to verify age appropriateness for cinema certifications such as 'A' rated films), gender, bio, and preferred language.</li>
+          <li><strong>Avatar Image:</strong> Uploaded profile photo or external avatar URL.</li>
+          <li><strong>Saved Delivery / Billing Addresses:</strong> Street address lines 1 & 2, city, state, postal pincode, address labels (Home/Work), and geographical latitude/longitude.</li>
+        </ul>
+
+        <h3>C. Booking, Reservation & Order Details</h3>
+        <ul>
+          <li><strong>Booking Identifiers:</strong> Unique booking ID, alphanumeric reference code (e.g. <code>ref_code</code>), and digital barcode/QR code data for venue entry scanning.</li>
+          <li><strong>Reservation Context:</strong> Selected event, movie title, dining slot, venue name, screen number, assigned seat identifiers (e.g. Row & Seat numbers), food and beverage (F&amp;B) menu selections, and ticket quantity.</li>
+          <li><strong>Transaction Totals:</strong> Base ticket fare, convenience fee, taxes, applied promotional coupons, and total amount payable.</li>
+        </ul>
+
+        <h3>D. Location & Geolocation Information</h3>
+        <ul>
+          <li><strong>City Selection:</strong> Browsing preference (e.g., Chennai, Kochi, Bangalore) stored in your device's local storage.</li>
+          <li><strong>GPS Coordinates (Precise):</strong> Collected solely upon your explicit browser/device permission when using "Detect My Location" or setting an address pin.</li>
+          <li><strong>Coarse IP Geolocation:</strong> Approximate city detection derived from your IP address via <code>ipapi.co</code> to display relevant cinema showtimes and events.</li>
+        </ul>
+
+        <h3>E. Device, Network & Diagnostic Metadata</h3>
+        <ul>
+          <li><strong>Session Identifiers:</strong> Secure JSON Web Tokens (JWT access & refresh tokens) and session hold tokens.</li>
+          <li><strong>Network Diagnostics:</strong> IP address and client User-Agent (browser type, operating system version, mobile device model) logged with session tokens for brute-force prevention and session hijacking detection.</li>
+          <li><strong>Rate Limit & Security Logs:</strong> Failed OTP attempt counts, login timestamps, and password reset requests.</li>
+        </ul>
+      </section>
+
+      <!-- 3. Purpose of Processing Data -->
+      <section id="section-3">
+        <h2>3. Purpose of Processing Data</h2>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Data Category</th>
+                <th>Purpose of Processing</th>
+                <th>Legal / Operational Basis</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Name, Email, Phone</td>
+                <td>Account creation, multi-factor OTP verification, sending valid m-tickets, tax invoices, and cancellation notices.</td>
+                <td>Contractual necessity &amp; user consent</td>
+              </tr>
+              <tr>
+                <td>Booking & Seat Selection</td>
+                <td>Reserving seats with venue partners/cinemas, barcode generation, dynamic seat locking, and entry validation.</td>
+                <td>Fulfillment of booking agreement</td>
+              </tr>
+              <tr>
+                <td>Location & City</td>
+                <td>Filtering available movies, concerts, and dining venues near you; calculating proximity.</td>
+                <td>User consent &amp; convenience</td>
+              </tr>
+              <tr>
+                <td>Date of Birth</td>
+                <td>Ensuring legal compliance with central board movie certifications (e.g., CBFC 'A' rated movies).</td>
+                <td>Regulatory compliance &amp; child protection</td>
+              </tr>
+              <tr>
+                <td>Support Messages & History</td>
+                <td>Resolving customer complaints, answering ticketing questions, and AI-assisted troubleshooting.</td>
+                <td>Customer service &amp; legitimate interest</td>
+              </tr>
+              <tr>
+                <td>IP Address & Device Data</td>
+                <td>Preventing automated ticket scalping bots, enforcing API rate limits (e.g. 20 req/min), and audit logging.</td>
+                <td>Platform security &amp; fraud prevention</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 4. Third Parties -->
+      <section id="section-4">
+        <h2>4. Third-Party Integrations & Data Sharing</h2>
+        <p>To deliver a smooth booking experience, VybHz integrates with verified third-party infrastructure and service providers. We disclose only the minimum data strictly necessary for each integration:</p>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Service Provider</th>
+                <th>Role / Function</th>
+                <th>Data Shared</th>
+                <th>Location / Compliance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Razorpay</strong><br>(Razorpay Software Pvt. Ltd.)</td>
+                <td>Payment Gateway Aggregator</td>
+                <td>Customer name, email, phone number, order ID, payable amount (INR).</td>
+                <td>India (RBI Authorized, PCI-DSS Level 1)</td>
+              </tr>
+              <tr>
+                <td><strong>Google Firebase</strong><br>(Google LLC)</td>
+                <td>Authentication (Google Sign-In / OAuth)</td>
+                <td>Federated Google ID token, email address, basic Google display profile.</td>
+                <td>Global / ISO 27001, SOC 2</td>
+              </tr>
+              <tr>
+                <td><strong>Phone.email</strong><br>(Phone Email Tech)</td>
+                <td>Phone Sign-In Verification</td>
+                <td>Phone number verification tokens.</td>
+                <td>Encrypted token authentication</td>
+              </tr>
+              <tr>
+                <td><strong>Resend &amp; SMTP Services</strong></td>
+                <td>Transactional Email Dispatch</td>
+                <td>Recipient email address, name, booking details, OTP verification codes.</td>
+                <td>Encrypted TLS communication</td>
+              </tr>
+              <tr>
+                <td><strong>OpenAI LLC</strong></td>
+                <td>AI Customer Support Assistant</td>
+                <td>User query text, first name, email, and recent booking metadata (status/title).</td>
+                <td>Zero data training on API endpoints</td>
+              </tr>
+              <tr>
+                <td><strong>OpenStreetMap &amp; ipapi.co</strong></td>
+                <td>Reverse Geocoding &amp; City Lookup</td>
+                <td>Coarse IP address (ipapi.co) or GPS coordinates (OpenStreetMap).</td>
+                <td>Public geocoding queries</td>
+              </tr>
+              <tr>
+                <td><strong>Venue &amp; Cinema Partners</strong></td>
+                <td>Ticket Validation &amp; Admittance</td>
+                <td>Booking reference code, ticket tier, seat labels, guest name for admittance.</td>
+                <td>Contractual fulfillment</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          We do not sell, rent, or monetize your personal information. Any disclosure to law enforcement authorities will occur strictly under formal, legally binding court orders or statutory notices under Indian law.
+        </p>
+      </section>
+
+      <!-- 5. Payment Security -->
+      <section id="section-5">
+        <h2>5. Payment Information & Security</h2>
+        <p>
+          All electronic financial transactions are handled through <strong>Razorpay Software Private Limited</strong>, an RBI-regulated Payment Aggregator. 
+        </p>
+        <div class="highlight-box">
+          <strong>Zero Storage of Card / Banking Credentials:</strong>
+          VybHz servers and databases <strong>never</strong> collect, handle, or store complete Credit Card numbers, Debit Card numbers, CVV codes, Net Banking passwords, or UPI PINs. All payment data is entered directly inside Razorpay's PCI-DSS compliant secure iframe or encrypted client SDK.
+        </div>
+        <p>
+          VybHz only stores payment confirmation artifacts: Razorpay Order ID, Razorpay Payment ID, transaction currency, timestamp, payment status (SUCCESS/FAILED/REFUNDED), and cryptographic webhook signatures for verification and accounting audits.
+        </p>
+      </section>
+
+      <!-- 6. Device, Location & Cookie Notice -->
+      <section id="section-6">
+        <h2>6. Device, Location & Local Storage Notice</h2>
+        <p>
+          VybHz does not utilize intrusive third-party cross-site advertising cookies. We utilize browser <code>localStorage</code> and <code>sessionStorage</code> strictly for functional and security operations:
+        </p>
+        <ul>
+          <li><strong>Authentication Tokens (<code>access_token</code>, <code>refresh_token</code>):</strong> Stored locally to keep you logged in securely without exposing credentials.</li>
+          <li><strong>Selected City (<code>vyhbz_city</code>):</strong> Retains your active city preference so you do not have to pick your city on every page reload.</li>
+          <li><strong>Guest Contact Details (<code>vyhbz_contact_details</code>):</strong> Optionally saves your email and phone in local storage so you do not have to retype them on repetitive quick bookings.</li>
+          <li><strong>Seat Hold Token (<code>vyhbz_hold_pending</code>):</strong> Preserves your temporary seat reservation during the 8-to-10 minute checkout countdown.</li>
+          <li><strong>Wishlist &amp; Search History (<code>vyhbz_wishlist</code>, <code>vyhbz_recent_searches</code>):</strong> Saves your bookmarks and recent searches entirely on your own local device.</li>
+        </ul>
+      </section>
+
+      <!-- 7. Data Security Measures -->
+      <section id="section-7">
+        <h2>7. Data Security Measures</h2>
+        <p>Uniqnex360 employs industry-standard technical, organizational, and administrative security measures:</p>
+        <ul>
+          <li><strong>Transport Layer Security (TLS/HTTPS):</strong> All communications between your mobile device/browser and our backend API are encrypted using modern TLS 1.3/1.2 protocols.</li>
+          <li><strong>Cryptographic Password &amp; Token Hashing:</strong> Passwords are protected using salted <em>bcrypt</em> hashing. OTPs and password reset tokens are stored as irreversible SHA-256 digests.</li>
+          <li><strong>Role-Based Access Control (RBAC):</strong> Administrative routes are restricted to authorized personnel. User data is partitioned by tenant and user ID.</li>
+          <li><strong>Rate Limiting &amp; Bot Defense:</strong> Sensitive endpoints (OTP generation, logins, AI support chat) are fortified with IP-level rate limiters to prevent brute-force attacks and resource exhaustion.</li>
+          <li><strong>Managed Database Backups:</strong> Cloud databases run on hardened enterprise environments with encryption at rest and automated disaster recovery.</li>
+        </ul>
+      </section>
+
+      <!-- 8. Data Retention Policy -->
+      <section id="section-8">
+        <h2>8. Data Retention Policy</h2>
+        <p>We retain your personal data only as long as necessary to fulfill the purposes for which it was gathered:</p>
+        <ul>
+          <li><strong>Account Data:</strong> Retained for the lifetime of your active account. If you request account closure, personal profile data is purged within 30 days.</li>
+          <li><strong>Booking &amp; Transaction Records:</strong> Retained for up to <strong>7 years</strong> following the transaction date to comply with mandatory statutory requirements under the Indian Companies Act, Goods &amp; Services Tax (GST) Act, and financial audit regulations.</li>
+          <li><strong>Temporary Hold &amp; OTP Records:</strong> Expired OTP tokens and unconfirmed seat holds are automatically deleted from memory and database tables within 15 to 60 minutes.</li>
+          <li><strong>System Access Logs:</strong> Server access and diagnostic logs are rotated and deleted after 90 days.</li>
+        </ul>
+      </section>
+
+      <!-- 9. Deletion Process -->
+      <section id="section-9">
+        <h2>9. Account & Data Deletion Process</h2>
+        <p>
+          You have full control over your personal information. You may update or delete your personal data through the following methods:
+        </p>
+
+        <h3>Method 1: Direct In-App Deletion</h3>
+        <p>
+          You can immediately remove saved delivery addresses, phone details, and profile bios by navigating to:
+          <br>
+          <strong>Account &rarr; Edit Profile &rarr; Addresses &rarr; Delete</strong>.
+        </p>
+
+        <h3>Method 2: Full Account Deletion Request</h3>
+        <p>
+          To permanently erase your entire account profile, login credentials, and personal identity from our servers:
+        </p>
+        <ol>
+          <li>Visit our dedicated <a href="/delete-account.html" style="font-weight: 600;">Account Deletion Request Page</a> or send an email from your registered email address to <strong>privacy@uniqnex360.com</strong> (or <strong>support@vybhz.com</strong>).</li>
+          <li>Use the subject line: <code>"Delete my VybHz account"</code>.</li>
+          <li>Provide your registered email address or phone number in the body of the message.</li>
+          <li>Our privacy team will verify your identity and confirm receipt within <strong>7 business days</strong>.</li>
+          <li>Your personal profile data, authentication credentials, addresses, and saved preferences will be permanently wiped within <strong>30 calendar days</strong>.</li>
+        </ol>
+        <p style="font-size: 0.85rem; color: #64748b;">
+          <em>Note:</em> Financial invoice data associated with completed past bookings will be retained in anonymized/archived form for 7 years strictly for mandatory GST/tax compliance as mandated by Indian law. Detailed information is provided on our <a href="/delete-account.html">Account Deletion Page</a>.
+        </p>
+      </section>
+
+      <!-- 10. Children's Privacy -->
+      <section id="section-10">
+        <h2>10. Children's Privacy (Under 18)</h2>
+        <p>
+          VybHz is intended for general audiences capable of entering into legally binding contracts under the Indian Contract Act, 1872. We do not knowingly solicit or collect personal information from individuals under 18 years of age without parental or legal guardian supervision.
+        </p>
+        <p>
+          Certain events or cinema exhibitions have statutory age classifications (such as Central Board of Film Certification 'A' / Adults Only). In accordance with cinema regulations, parents and guardians are responsible for ensuring minors do not book restricted tickets. If we learn that a minor under 18 has registered an unsupervised account, we will take immediate steps to terminate the account and erase the associated data.
+        </p>
+      </section>
+
+      <!-- 11. User Rights -->
+      <section id="section-11">
+        <h2>11. Your Rights as a Data Principal</h2>
+        <p>Under the <strong>Digital Personal Data Protection Act, 2023 (DPDP Act)</strong> and applicable privacy rules, you possess the following rights:</p>
+        <ul>
+          <li><strong>Right to Access Information:</strong> Request a summary of the personal data we hold about you and the processing activities undertaken.</li>
+          <li><strong>Right to Correction &amp; Erasure:</strong> Request the correction of misleading or outdated data, or the erasure of data no longer required for the purpose it was collected.</li>
+          <li><strong>Right of Grievance Redressal:</strong> Avail expeditious redressal of any grievance regarding our handling of your personal data.</li>
+          <li><strong>Right to Nominate:</strong> Nominate another individual to exercise your privacy rights in the event of death or incapacity.</li>
+          <li><strong>Right to Withdraw Consent:</strong> Withdraw your consent at any time where processing is based on consent (e.g. promotional emails or optional location permissions).</li>
+        </ul>
+      </section>
+
+      <!-- 12. Contact & Grievance -->
+      <section id="section-12">
+        <h2>12. Grievance Officer & Contact Information</h2>
+        <p>
+          In accordance with the Information Technology Act 2000 and the DPDP Act 2023, the details of our designated <strong>Data Protection &amp; Grievance Officer</strong> are provided below:
+        </p>
+
+        <div class="contact-card">
+          <h4>Uniqnex360 &mdash; Privacy &amp; Grievance Cell</h4>
+          <ul class="contact-details">
+            <li><strong>Company Name:</strong> Uniqnex360</li>
+            <li><strong>Application:</strong> VybHz (Vyhbz)</li>
+            <li><strong>Designated Officer:</strong> Grievance Officer</li>
+            <li><strong>Registered Location:</strong> Chennai, Tamil Nadu, India</li>
+            <li><strong>Privacy Email:</strong> <a href="mailto:privacy@uniqnex360.com">privacy@uniqnex360.com</a></li>
+            <li><strong>Customer Support Email:</strong> <a href="mailto:support@vybhz.com">support@vybhz.com</a></li>
+            <li><strong>Response Window:</strong> Acknowledgement within 48 hours; resolution within 30 days as prescribed by law.</li>
+          </ul>
+        </div>
+
+        <p style="margin-top: 1.5rem; font-size: 0.875rem; color: #64748b;">
+          We reserve the right to amend this Privacy Policy periodically to reflect technological changes, product updates, or amendments in statutory law. The latest revised version will always be accessible at this URL with the updated effective date.
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <div style="max-width: 960px; margin: 0 auto;">
+      <p>&copy; 2026 Uniqnex360. All rights reserved. &bull; VybHz Ticketing Platform &bull; Chennai, Tamil Nadu, India</p>
+      <p style="margin-top: 0.4rem; font-size: 0.75rem; color: #94a3b8;">
+        This document is accessible to all users without authentication.
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
+

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Delete your VybHz account | Uniqnex360</title>
+  <meta name="description" content="Request the deletion of your VybHz account and associated personal data. Uniqnex360, Chennai, India." />
+  <style>
+    :root {
+      --primary: #7B1E3D;
+      --primary-dark: #58142a;
+      --primary-light: #fdf2f4;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      --accent: #0f172a;
+      --danger: #dc2626;
+      --danger-light: #fef2f2;
+      --danger-border: #fecaca;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-stack);
+      line-height: 1.65;
+      color: var(--text-main);
+      background-color: var(--bg-page);
+      -webkit-font-smoothing: antialiased;
+      padding: 0;
+      margin: 0;
+    }
+
+    header {
+      background-color: #ffffff;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .header-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .logo-badge {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #7B1E3D 0%, #4a1023 100%);
+      color: #ffffff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.2px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+      margin-top: -2px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 2rem auto;
+      padding: 0 1.25rem 4rem 1.25rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+      padding: 2.5rem;
+      margin-bottom: 1.75rem;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 1.5rem 1.25rem;
+        border-radius: 10px;
+      }
+      .container {
+        margin: 1rem auto;
+      }
+    }
+
+    .page-header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-top: 1rem;
+      font-size: 0.813rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.25rem 0.65rem;
+      font-weight: 500;
+      color: #334155;
+    }
+
+    .badge-danger {
+      background: var(--danger-light);
+      border-color: var(--danger-border);
+      color: var(--danger);
+      font-weight: 600;
+    }
+
+    .steps-card {
+      background: #ffffff;
+      border: 2px solid #fecaca;
+      border-radius: 12px;
+      padding: 1.75rem;
+      margin-bottom: 2rem;
+    }
+
+    .steps-card h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--danger);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .step-list {
+      list-style: none;
+      counter-reset: step-counter;
+      margin: 0;
+      padding: 0;
+    }
+
+    .step-item {
+      counter-increment: step-counter;
+      position: relative;
+      padding-left: 2.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .step-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-item::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: 0;
+      top: 0.15rem;
+      width: 2rem;
+      height: 2rem;
+      background-color: var(--primary);
+      color: #ffffff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.875rem;
+    }
+
+    .step-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+
+    .step-desc {
+      font-size: 0.938rem;
+      color: #475569;
+      line-height: 1.6;
+    }
+
+    .email-template {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: #1e293b;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .btn-email {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: var(--primary);
+      color: #ffffff;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.938rem;
+      margin-top: 0.75rem;
+      transition: background-color 0.15s ease;
+    }
+
+    .btn-email:hover {
+      background-color: var(--primary-dark);
+      color: #ffffff;
+    }
+
+    .info-section {
+      margin-bottom: 2.25rem;
+    }
+
+    .info-section h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .data-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .data-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .data-box {
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.25rem;
+      background: #ffffff;
+    }
+
+    .data-box.deleted {
+      border-color: #fecaca;
+      background-color: #fef2f2;
+    }
+
+    .data-box.kept {
+      border-color: #fed7aa;
+      background-color: #fffbeb;
+    }
+
+    .data-box-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .data-box.deleted .data-box-title {
+      color: var(--danger);
+    }
+
+    .data-box.kept .data-box-title {
+      color: #c2410c;
+    }
+
+    .data-box ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.875rem;
+      color: #334155;
+    }
+
+    .data-box li {
+      margin-bottom: 0.35rem;
+    }
+
+    .timeline-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+    }
+
+    .timeline-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--success);
+      margin-bottom: 0.5rem;
+    }
+
+    .timeline-box ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.875rem;
+      color: #166534;
+    }
+
+    .contact-card {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .contact-card h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .contact-details {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 0.875rem;
+      color: #334155;
+    }
+
+    .contact-details li {
+      margin-bottom: 0.4rem;
+    }
+
+    a {
+      color: var(--primary);
+      text-decoration: underline;
+    }
+
+    a:hover {
+      color: var(--primary-dark);
+    }
+
+    footer {
+      background-color: #ffffff;
+      border-top: 1px solid var(--border-color);
+      padding: 2rem 1.25rem;
+      text-align: center;
+      font-size: 0.813rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <a href="/" class="brand-logo">
+        <div class="logo-badge">V</div>
+        <div>
+          <span class="brand-name">VybHz</span>
+          <span class="brand-subtitle">by Uniqnex360 &bull; Chennai, India</span>
+        </div>
+      </a>
+      <a href="/privacy.html" class="badge">View Privacy Policy</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="page-header">
+        <h1>Delete your VybHz account</h1>
+        <p>Follow the steps below to request permanent deletion of your account and personal data from VybHz.</p>
+        <div class="badge-bar">
+          <span class="badge"><strong>App:</strong> VybHz</span>
+          <span class="badge"><strong>Entity:</strong> Uniqnex360, Chennai, India</span>
+          <span class="badge badge-danger">Permanent Action</span>
+          <span class="badge">No Login Required</span>
+        </div>
+      </div>
+
+      <!-- Steps to Delete Account -->
+      <div class="steps-card">
+        <h2>How to Request Account Deletion</h2>
+        <ol class="step-list">
+          <li class="step-item">
+            <div class="step-title">Send an email from your registered email address</div>
+            <div class="step-desc">
+              Email our privacy team at <strong>privacy@uniqnex360.com</strong> (or <strong>support@vybhz.com</strong>) directly from the email address registered with your VybHz account.
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-title">Use the exact subject line</div>
+            <div class="step-desc">
+              Set your email subject to: <strong>"Delete my VybHz account"</strong>
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-title">Include your registered details</div>
+            <div class="step-desc">
+              In the body of your email, provide your <strong>registered email address</strong> or <strong>registered mobile phone number</strong> so our administrators can locate and verify your account.
+            </div>
+          </li>
+          <li class="step-item">
+            <div class="step-title">Confirmation &amp; Deletion Timelines</div>
+            <div class="step-desc">
+              We confirm your request within <strong>7 business days</strong> and permanently delete your account data within <strong>30 calendar days</strong>.
+            </div>
+          </li>
+        </ol>
+
+        <!-- Pre-filled email button & template -->
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px dashed #fca5a5;">
+          <p style="font-size: 0.875rem; color: #475569; margin-bottom: 0.5rem;">
+            Click below to open your email client with the pre-filled template:
+          </p>
+          <a
+            href="mailto:privacy@uniqnex360.com?subject=Delete%20my%20VybHz%20account&body=Hello%20VybHz%20Support%2C%0A%0APlease%20permanently%20delete%20my%20VybHz%20account%20and%20all%20associated%20personal%20data.%0A%0AMy%20registered%20details%20are%3A%0A-%20Registered%20Email%3A%20%0A-%20Registered%20Phone%20Number%3A%20%0A%0AThank%20you."
+            class="btn-email"
+          >
+            Send Deletion Request Email
+          </a>
+
+          <div style="margin-top: 1rem;">
+            <p style="font-size: 0.813rem; color: #64748b; margin-bottom: 0.35rem;">
+              Or copy this email template:
+            </p>
+            <div class="email-template">To: privacy@uniqnex360.com
+Subject: Delete my VybHz account
+
+Hello VybHz Support,
+
+Please permanently delete my VybHz account and all associated personal data.
+
+My registered details are:
+- Registered Email: [Enter your email here]
+- Registered Phone Number: [Enter your phone number here]
+
+Thank you.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- What Data is Deleted vs Kept -->
+      <div class="info-section">
+        <h3>What Happens to Your Data</h3>
+        <p style="font-size: 0.938rem; color: #475569;">
+          In accordance with Google Play Developer policies and the Indian Digital Personal Data Protection (DPDP) Act, 2023, the breakdown of personal data deleted versus legally retained is outlined below:
+        </p>
+
+        <div class="data-grid">
+          <!-- Data Deleted -->
+          <div class="data-box deleted">
+            <div class="data-box-title">
+              <span>&#10005;</span> Data That Will Be Permanently Deleted
+            </div>
+            <ul>
+              <li><strong>Account Identity:</strong> Full name, email address, phone number, and password hash.</li>
+              <li><strong>Profile Information:</strong> Date of birth, gender, user biography, preferred language, and avatar photo URL.</li>
+              <li><strong>Saved Addresses:</strong> All saved delivery/billing street addresses, postal pincodes, and saved GPS coordinates.</li>
+              <li><strong>Active Sessions &amp; Security:</strong> Active refresh tokens, JWT authentication sessions, IP address logs, OTP verification codes, and password reset records.</li>
+              <li><strong>User Preferences &amp; Activity:</strong> Saved bookmarks, movie reviews, ratings, search history, and wishlist items.</li>
+              <li><strong>Push Notification Tokens:</strong> Device push identifiers and mobile device tokens.</li>
+            </ul>
+          </div>
+
+          <!-- Data Kept -->
+          <div class="data-box kept">
+            <div class="data-box-title">
+              <span>&#9888;</span> Data Kept &amp; Legal Reason
+            </div>
+            <ul>
+              <li><strong>Payment &amp; Tax Invoice Records:</strong> Razorpay order IDs, payment IDs, refund transaction IDs, invoice reference codes, and transaction amounts.</li>
+              <li><strong>Legal &amp; Statutory Reason:</strong> Kept for <strong>7 years</strong> pursuant to statutory financial compliance under <em>Section 128 of the Companies Act, 2013</em> and <em>Section 36 of the Goods and Services Tax (GST) Act, 2017</em> of India.</li>
+              <li><strong>Handling:</strong> These financial records are retained strictly for mandatory accounting audits, tax reconciliation, and fraud prevention. They are permanently decoupled and anonymized from your active user profile.</li>
+              <li><em>Note: If you have never made a paid booking, no payment or invoice records are kept.</em></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Box -->
+      <div class="timeline-box">
+        <div class="timeline-title">&#10003; Verification &amp; Completion Timeline</div>
+        <ul>
+          <li><strong>Within 7 business days:</strong> Our privacy team verifies that the deletion request originated from the account owner and confirms receipt via email.</li>
+          <li><strong>Within 30 calendar days:</strong> Your account profile, authentication credentials, addresses, and associated personal records are permanently erased from our production databases.</li>
+        </ul>
+      </div>
+
+      <!-- Direct in-app option -->
+      <div style="margin-top: 1.75rem;">
+        <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--accent); margin-bottom: 0.4rem;">
+          In-App Self-Service Alternative
+        </h4>
+        <p style="font-size: 0.875rem; color: #475569;">
+          If you only wish to remove specific profile information or saved addresses, you do not need to delete your whole account. You can instantly delete any saved address or update your profile details in the app:
+          <br>
+          <strong>Account &rarr; Edit Profile &rarr; Addresses &rarr; Delete</strong>.
+        </p>
+      </div>
+
+      <!-- Contact Information -->
+      <div class="contact-card">
+        <h4>Contact Our Privacy Team</h4>
+        <ul class="contact-details">
+          <li><strong>Company:</strong> Uniqnex360</li>
+          <li><strong>Application:</strong> VybHz (Vyhbz)</li>
+          <li><strong>Registered Location:</strong> Chennai, Tamil Nadu, India</li>
+          <li><strong>Privacy &amp; Deletion Email:</strong> <a href="mailto:privacy@uniqnex360.com">privacy@uniqnex360.com</a></li>
+          <li><strong>Customer Support Email:</strong> <a href="mailto:support@vybhz.com">support@vybhz.com</a></li>
+          <li><strong>Privacy Policy URL:</strong> <a href="/privacy.html">https://booking-app-frontend-navy.vercel.app/privacy.html</a></li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div style="max-width: 860px; margin: 0 auto;">
+      <p>&copy; 2026 Uniqnex360. All rights reserved. &bull; VybHz Platform &bull; Chennai, Tamil Nadu, India</p>
+      <p style="margin-top: 0.4rem; font-size: 0.75rem; color: #94a3b8;">
+        This page complies with Google Play Store account deletion requirements and is publicly accessible without login.
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
