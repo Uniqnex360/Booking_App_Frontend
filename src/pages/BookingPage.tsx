@@ -574,28 +574,8 @@ export default function BookingPage() {
               )}
             </div>
 
-            {/* Interest Section matching BookMyShow */}
-            <div className="flex items-center justify-between py-1 border-b border-gray-100 pb-3">
-              <div className="flex items-center gap-2">
-                <ThumbsUp className="h-4 w-4 text-emerald-600" />
-                <span className="text-xs sm:text-sm text-gray-700 font-medium">
-                  <strong>{interestedCount}</strong> are interested
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                onClick={handleInterested}
-                className={`rounded-md border-[#7B1E3D] text-xs px-3 py-1.5 h-auto font-medium transition-all ${
-                  isInterested
-                    ? 'bg-[#7B1E3D] text-white hover:bg-[#5C0F2A]'
-                    : 'text-[#7B1E3D] hover:bg-[#7B1E3D]/10'
-                }`}
-              >
-                {isInterested ? 'Interested ✓' : "I'm Interested"}
-              </Button>
-            </div>
+           
 
-            {/* About The Event */}
             <div className="space-y-3">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 About The Event
