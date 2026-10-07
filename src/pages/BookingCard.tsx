@@ -18,11 +18,13 @@ export function BookingCard({
   const b = booking as any;
   const poster = b.image_url ?? b.poster_url ?? null;
   const totalRupees =
-    typeof b.total_price === "number"
-      ? b.total_price
-      : typeof b.total_paise === "number"
-        ? b.total_paise / 100
-        : 0;
+    typeof b.paid_paise === "number"
+      ? b.paid_paise / 100
+      : typeof b.total_price === "number"
+        ? b.total_price
+        : typeof b.total_paise === "number"
+          ? b.total_paise / 100
+          : 0;
   const qrValue = b.barcode || b.ref_code || b.id;
 
   const isMovie = (booking.type === "MOVIE" || booking.type === "EVENT" || !booking.type) && !!(booking.starts_at || booking.booking_date);
@@ -252,14 +254,36 @@ export function BookingCard({
         </div>
       </div>
 
+      {/* Discount / Coupon breakdown if present */}
+      {b.discount_paise && b.discount_paise > 0 && (
+        <div className="border-t border-gray-100 bg-emerald-50/70 px-4 py-2.5 text-xs flex items-center justify-between text-emerald-800">
+          <span className="flex items-center gap-1.5 font-medium">
+            <span>Coupon Discount</span>
+            {b.coupon_code && (
+              <span className="font-mono bg-emerald-100 text-emerald-900 px-1.5 py-0.5 rounded border border-emerald-300 font-bold text-[11px]">
+                {b.coupon_code}
+              </span>
+            )}
+          </span>
+          <span className="font-bold text-emerald-700">
+            -₹{Math.round(b.discount_paise / 100).toLocaleString("en-IN")}
+          </span>
+        </div>
+      )}
+
       {/* Footer: total */}
       <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm">
-        <span className="text-gray-600">Total Amount</span>
+        <span className="text-gray-600">Total Paid</span>
         <div className="flex items-center gap-2">
           {booking.status === "CANCELLED" && (
             <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px] font-bold uppercase">
               Cancelled
             </Badge>
+          )}
+          {b.discount_paise && b.discount_paise > 0 && b.subtotal_paise && (
+            <span className="text-xs text-gray-400 line-through">
+              {formatCurrency(b.subtotal_paise / 100)}
+            </span>
           )}
           <span className="font-semibold text-gray-900">
             {formatCurrency(totalRupees)}

@@ -46,6 +46,12 @@ export interface Booking {
   city?: string | null;
   tier_name?: string | null;
   tier_price_paise?: number | null;
+
+  // Coupon & Discount details
+  subtotal_paise?: number | null;
+  discount_paise?: number | null;
+  coupon_code?: string | null;
+  paid_paise?: number | null;
 }
 
 export interface BookingDetail extends Booking {

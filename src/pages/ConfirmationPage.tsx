@@ -42,9 +42,11 @@ export default function ConfirmationPage() {
         type: booking.type || (booking.tier_id || booking.event_id ? "EVENT" : "MOVIE"),
         image_url: booking.poster_url ?? booking.image_url ?? null,
         total_price:
-          typeof booking.total_paise === "number"
-            ? booking.total_paise / 100
-            : (booking.total_price ?? 0),
+          typeof booking.paid_paise === "number"
+            ? booking.paid_paise / 100
+            : typeof booking.total_paise === "number"
+              ? booking.total_paise / 100
+              : (booking.total_price ?? 0),
       }
     : null;
 
