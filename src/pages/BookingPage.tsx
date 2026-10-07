@@ -102,7 +102,7 @@ export default function BookingPage() {
   const [isConfirming, setIsConfirming] = useState(false);  
   const [showTerms, setShowTerms] = useState(false);
 
-  // Generate available booking dates (BookMyShow pattern)
+  // Generate available booking dates (BookMyShow pattern: 7 dates + 1 "See all dates >" slot = 8 grid slots)
   const availableBookingDates = useMemo(() => {
     if (!eventData?.starts_at) return [];
     try {
@@ -116,8 +116,8 @@ export default function BookingPage() {
         current = addDays(current, 7);
       }
 
-      // Generate 8 upcoming occurrences (weekly or scheduled)
-      for (let i = 0; i < 8; i++) {
+      // Generate 7 upcoming occurrences (weekly or scheduled)
+      for (let i = 0; i < 7; i++) {
         const d = i === 0 ? current : addDays(current, i * 7);
         dates.push({
           date: d,
@@ -128,6 +128,16 @@ export default function BookingPage() {
       return dates;
     } catch {
       return [];
+    }
+  }, [eventData]);
+
+  // Selected time slot (defaults from event starts_at)
+  const selectedTime = useMemo(() => {
+    if (!eventData?.starts_at) return '04:00 PM';
+    try {
+      return format(parseISO(eventData.starts_at), 'hh:mm a');
+    } catch {
+      return '04:00 PM';
     }
   }, [eventData]);
 
@@ -184,26 +194,21 @@ export default function BookingPage() {
       toast.error('No tickets are currently available for this event.');
       return;
     }
-    if (!user) {
-      toast.error('Please login to book tickets');
-      navigate('/login', { state: { from: `/events/${id}` } });
-      return;
-    }
     if (!selectedTierId && eventData.ticket_categories.length > 0) {
       setSelectedTierId(eventData.ticket_categories[0].id);
     }
-    setTicketQuantity(1);
+    setTicketQuantity(0);
 
     // Initialize Date & Time step
     setBookingStep(1);
     setCalendarView(false);
-    if (availableBookingDates.length > 0) {
-      setSelectedBookingDate(availableBookingDates[0].date);
-      setCalendarMonth(availableBookingDates[0].date);
-    } else if (eventData?.starts_at) {
-      const d = parseISO(eventData.starts_at);
-      setSelectedBookingDate(d);
-      setCalendarMonth(d);
+    setSelectedBookingDate(null);
+    if (eventData?.starts_at) {
+      try {
+        setCalendarMonth(parseISO(eventData.starts_at));
+      } catch {
+        setCalendarMonth(new Date());
+      }
     }
     setBookingModalOpen(true);
   };
@@ -834,396 +839,404 @@ export default function BookingPage() {
         </div>
       </main>
 
-      {/* Ticket Selection Dialog */}
-      {/* Date, Time & Ticket Selection Dialog (BookMyShow Flow) */}
-      <Dialog
-        open={bookingModalOpen}
-        onOpenChange={(open) => {
-          if (isBooking || isConfirming) return;
-          setBookingModalOpen(open);
-        }}
-      >
-        <DialogContent className="sm:max-w-xl bg-white border border-gray-200 p-0 rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
-          {/* Top Bar with Back Arrow and Title */}
-          <div className="px-5 pt-4 pb-3 border-b border-gray-100 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (bookingStep === 2) {
-                  setBookingStep(1);
-                } else {
-                  setBookingModalOpen(false);
-                }
-              }}
-              className="p-1 -ml-1 rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
-              aria-label="Back"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="text-base sm:text-lg font-bold text-gray-900 truncate">
-                {eventData.title}
-              </DialogTitle>
-            </div>
-          </div>
-
-          {/* Stepper Bar: 1 Date & Time > 2 Ticket > 3 Review & Proceed to Pay */}
-          <div className="bg-gray-50/80 px-5 py-2.5 border-b border-gray-100 flex items-center justify-between text-xs sm:text-sm">
-            <div className="flex items-center gap-2 overflow-x-auto">
-              <span
-                onClick={() => setBookingStep(1)}
-                className={`font-semibold cursor-pointer transition-colors ${
-                  bookingStep === 1 ? 'text-[#7B1E3D] underline underline-offset-4' : 'text-gray-700 hover:text-gray-900'
-                }`}
-              >
-                1 Date &amp; Time
-              </span>
-              <span className="text-gray-300 font-bold">&gt;</span>
-              <span
-                className={`font-semibold transition-colors ${
-                  bookingStep === 2 ? 'text-[#7B1E3D] underline underline-offset-4' : 'text-gray-400'
-                }`}
-              >
-                2 Ticket
-              </span>
-              <span className="text-gray-300 font-bold">&gt;</span>
-              <span className="text-gray-400">
-                3 Review &amp; Pay
-              </span>
-            </div>
-          </div>
-
-          {/* Sub Venue Bar */}
-          <div className="px-5 py-2 bg-gray-100/60 border-b border-gray-100 flex items-center justify-between text-xs text-gray-600">
-            <span className="truncate font-medium">
-              {eventData.venue_name}{eventData.city ? `: ${eventData.city}` : ''}
-            </span>
-            {selectedBookingDate && bookingStep === 2 && (
+      {/* Full Screen BookMyShow-style Booking Flow */}
+      {bookingModalOpen && (
+        <div className="fixed inset-0 z-[100] bg-[#F5F5F5] overflow-y-auto flex flex-col min-h-screen text-gray-900 font-sans">
+          {/* Top Header Bar */}
+          <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-8 sticky top-0 z-50 shrink-0">
+            <div className="flex items-center gap-6 sm:gap-10 w-full max-w-6xl mx-auto">
               <button
                 type="button"
-                onClick={() => setBookingStep(1)}
-                className="text-[#7B1E3D] hover:underline font-semibold ml-2 shrink-0 flex items-center gap-1"
+                onClick={() => setBookingModalOpen(false)}
+                className="shrink-0 flex items-center focus:outline-none"
               >
-                {format(selectedBookingDate, 'EEE, d MMM')} (Change)
+                <img
+                  src="/logo.png"
+                  alt="Vyhbz"
+                  className="h-10 sm:h-12 w-auto object-contain"
+                />
               </button>
-            )}
-          </div>
 
-          {/* Modal Body */}
-          <div className="flex-1 overflow-y-auto px-5 py-4">
-            {bookingStep === 1 ? (
-              /* STEP 1: Date & Time */
-              <div className="space-y-4">
-                <div className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
-                  {/* Legend */}
-                  <div className="flex items-center justify-end gap-3 text-[11px] text-gray-600 pb-3 border-b border-gray-100">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      Available
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-amber-500" />
-                      Fast Filling
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-gray-300" />
-                      Sold out
-                    </span>
-                  </div>
-
-                  <p className="text-sm font-bold text-gray-900 mt-3 mb-3">
-                    Select Date
-                  </p>
-
-                  {!calendarView ? (
-                    /* Quick Date Grid (4 columns) */
-                    <div>
-                      <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
-                        {availableBookingDates.map((item, idx) => {
-                          const isSelected = selectedBookingDate && isSameDay(selectedBookingDate, item.date);
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setSelectedBookingDate(item.date)}
-                              className={`rounded-xl border p-2.5 sm:p-3 text-center transition-all flex flex-col items-center justify-center gap-0.5 relative ${
-                                isSelected
-                                  ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-md ring-2 ring-[#7B1E3D]/20'
-                                  : 'bg-white text-gray-800 border-gray-200 hover:border-gray-400 hover:bg-gray-50'
-                              }`}
-                            >
-                              <span
-                                className={`text-[11px] uppercase font-medium ${
-                                  isSelected ? 'text-white/90' : 'text-gray-500'
-                                }`}
-                              >
-                                {format(item.date, 'EEE')}
-                              </span>
-                              <span className="text-xs sm:text-sm font-bold">
-                                {format(item.date, 'dd MMM')}
-                              </span>
-                              <span
-                                className={`h-1.5 w-1.5 rounded-full mt-1 ${
-                                  item.status === 'fast_filling'
-                                    ? 'bg-amber-500'
-                                    : item.status === 'sold_out'
-                                    ? 'bg-gray-300'
-                                    : isSelected
-                                    ? 'bg-white'
-                                    : 'bg-emerald-500'
-                                }`}
-                              />
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className="pt-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => setCalendarView(true)}
-                          className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#7B1E3D] hover:underline"
-                        >
-                          See all dates <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Month Calendar View */
-                    <div className="space-y-3">
-                      {/* Month Switcher */}
-                      <div className="flex items-center justify-between px-2 py-1">
-                        <button
-                          type="button"
-                          onClick={() => setCalendarMonth((prev) => subMonths(prev, 1))}
-                          className="p-1 rounded-full text-gray-600 hover:bg-gray-100"
-                        >
-                          <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        <span className="text-xs sm:text-sm font-bold text-gray-900 tracking-wider uppercase">
-                          {format(calendarMonth, 'MMMM yyyy')}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setCalendarMonth((prev) => addMonths(prev, 1))}
-                          className="p-1 rounded-full text-gray-600 hover:bg-gray-100"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                      </div>
-
-                      {/* Day Name Headers */}
-                      <div className="grid grid-cols-7 text-center text-xs font-bold text-gray-400 py-1 border-b border-gray-100">
-                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayChar, i) => (
-                          <div key={i}>{dayChar}</div>
-                        ))}
-                      </div>
-
-                      {/* Day Cells Grid */}
-                      <div className="grid grid-cols-7 gap-1 text-center">
-                        {calendarDays.map((day, i) => {
-                          const inCurrentMonth = isSameMonth(day, calendarMonth);
-                          const isSelected = selectedBookingDate && isSameDay(selectedBookingDate, day);
-                          const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
-                          const matchesScheduled = availableBookingDates.some((d) => isSameDay(d.date, day));
-
-                          if (!inCurrentMonth) {
-                            return <div key={i} className="h-9 w-9 mx-auto" />;
-                          }
-
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              disabled={isPast}
-                              onClick={() => setSelectedBookingDate(day)}
-                              className={`h-9 w-9 mx-auto rounded-full flex flex-col items-center justify-center text-xs transition-all relative ${
-                                isPast
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : isSelected
-                                  ? 'bg-[#7B1E3D] text-white font-bold shadow'
-                                  : matchesScheduled
-                                  ? 'font-bold text-gray-900 hover:bg-gray-100'
-                                  : 'text-gray-700 hover:bg-gray-100'
-                              }`}
-                            >
-                              <span>{format(day, 'd')}</span>
-                              {matchesScheduled && !isSelected && (
-                                <span className="h-1 w-1 rounded-full bg-emerald-500 absolute bottom-1" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <div className="pt-3 text-center border-t border-gray-100">
-                        <button
-                          type="button"
-                          onClick={() => setCalendarView(false)}
-                          className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-[#7B1E3D] hover:underline"
-                        >
-                          <ChevronLeft className="h-4 w-4" /> Show quick dates
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center gap-3 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (bookingStep === 2) {
+                      setBookingStep(1);
+                    } else {
+                      setBookingModalOpen(false);
+                    }
+                  }}
+                  className="p-1 rounded-full text-gray-700 hover:bg-gray-100 transition-colors shrink-0"
+                  aria-label="Back"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <h1 className="text-sm sm:text-base font-bold text-gray-900 truncate">
+                  {eventData.title}
+                </h1>
               </div>
-            ) : (
-              /* STEP 2: Ticket Selection */
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider block mb-2">
-                    Ticket Category
-                  </label>
-                  <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-                    {eventData.ticket_categories?.map((tier: any) => {
-                      const isSelected = selectedTier?.id === tier.id;
-                      const price = Math.round(tier.price_paise / 100);
-                      return (
-                        <div
-                          key={tier.id}
-                          onClick={() => {
-                            setSelectedTierId(tier.id);
-                            if (ticketQuantity > (tier.max_per_booking || 10)) {
-                              setTicketQuantity(tier.max_per_booking || 10);
-                            }
-                          }}
-                          className={`cursor-pointer rounded-xl border p-3.5 transition-all flex items-start justify-between ${
-                            isSelected
-                              ? 'border-[#7B1E3D] bg-[#7B1E3D]/5 shadow-sm ring-1 ring-[#7B1E3D]'
-                              : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`h-4 w-4 rounded-full border flex items-center justify-center ${
-                                  isSelected
-                                    ? 'border-[#7B1E3D] bg-[#7B1E3D]'
-                                    : 'border-gray-300'
-                                }`}
-                              >
-                                {isSelected && (
-                                  <div className="h-1.5 w-1.5 rounded-full bg-white" />
-                                )}
-                              </div>
-                              <span className="text-sm font-semibold text-gray-900">
-                                {tier.name}
-                              </span>
-                            </div>
-                            {tier.description && (
-                              <p className="text-xs text-gray-500 pl-6">
-                                {tier.description}
-                              </p>
-                            )}
-                            {tier.capacity && tier.capacity <= 20 && (
-                              <p className="text-[11px] text-amber-600 font-medium pl-6">
-                                Only {tier.capacity} spots remaining!
-                              </p>
-                            )}
-                          </div>
-                          <div className="text-right pl-2">
-                            <span className="text-base font-bold text-gray-900">
-                              ₹{price.toLocaleString('en-IN')}
-                            </span>
-                            <p className="text-[10px] text-gray-400">per ticket</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+            </div>
+          </header>
+
+          {/* Stepper Strip & Venue Subtitle */}
+          <div className="bg-[#EEEEEE] border-b border-gray-200 py-2.5 px-4 shrink-0">
+            <div className="max-w-4xl mx-auto flex flex-col items-center justify-center gap-1">
+              {/* Stepper items */}
+              <div className="flex items-center gap-2 sm:gap-4 text-xs font-medium">
+                <button
+                  type="button"
+                  onClick={() => setBookingStep(1)}
+                  className={`flex items-center gap-1.5 transition-colors ${
+                    bookingStep === 1
+                      ? 'text-gray-900 font-semibold'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                      bookingStep === 1
+                        ? 'bg-black text-white'
+                        : 'bg-gray-400 text-white'
+                    }`}
+                  >
+                    1
+                  </span>
+                  <span>Date &amp; Time</span>
+                </button>
+
+                <span className="text-gray-400 text-xs">&gt;</span>
+
+                <div
+                  className={`flex items-center gap-1.5 ${
+                    bookingStep === 2
+                      ? 'text-gray-900 font-semibold'
+                      : 'text-gray-400'
+                  }`}
+                >
+                  <span
+                    className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                      bookingStep === 2
+                        ? 'bg-black text-white'
+                        : 'bg-gray-300 text-white'
+                    }`}
+                  >
+                    2
+                  </span>
+                  <span>Ticket</span>
                 </div>
 
-                {/* Quantity Stepper */}
-                {selectedTier && (
-                  <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider block">
-                          Number of Tickets
-                        </label>
-                        <span className="text-xs text-gray-500">
-                          Max {maxAllowedTickets} tickets per booking
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          disabled={ticketQuantity <= 1}
-                          onClick={() => setTicketQuantity((q) => Math.max(1, q - 1))}
-                          className="h-8 w-8 rounded-lg border border-gray-300 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </button>
-                        <span className="w-8 text-center text-base font-bold text-gray-900">
-                          {ticketQuantity}
-                        </span>
-                        <button
-                          type="button"
-                          disabled={ticketQuantity >= maxAllowedTickets}
-                          onClick={() =>
-                            setTicketQuantity((q) => Math.min(maxAllowedTickets, q + 1))
-                          }
-                          className="h-8 w-8 rounded-lg border border-gray-300 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                        >
-                          <Plus className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
+                <span className="text-gray-400 text-xs">&gt;</span>
 
-                    {/* Price summary */}
-                    <div className="mt-3 pt-3 border-t border-gray-200/80 flex items-center justify-between text-xs text-gray-600">
-                      <span>
-                        ₹{Math.round(selectedTier.price_paise / 100).toLocaleString('en-IN')} × {ticketQuantity}
-                      </span>
-                      <span className="text-sm font-bold text-gray-900">
-                        ₹{Math.round((selectedTier.price_paise * ticketQuantity) / 100).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  </div>
-                )}
+                <div className="flex items-center gap-1.5 text-gray-400">
+                  <span className="w-4 h-4 rounded-full bg-gray-300 text-white flex items-center justify-center text-[10px] font-bold">
+                    3
+                  </span>
+                  <span>Review &amp; Proceed to Pay</span>
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Bottom Action Footer */}
-          <div className="p-4 border-t border-gray-100 bg-white">
-            {bookingStep === 1 ? (
-              <Button
-                onClick={() => setBookingStep(2)}
-                disabled={!selectedBookingDate}
-                className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] disabled:bg-gray-300 disabled:text-gray-500 text-white font-semibold py-3 rounded-xl text-base shadow-sm transition-colors"
-              >
-                Proceed
-              </Button>
-            ) : (
-              <Button
-                onClick={() => {
-                  setBookingModalOpen(false);
-                  setShowTerms(true);
-                }}
-                disabled={isBooking || !selectedTier}
-                className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold py-3 rounded-xl text-base shadow-sm transition-colors flex items-center justify-center gap-2"
-              >
-                {isBooking ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Processing Booking...</span>
-                  </>
-                ) : (
-                  <span>
-                    Proceed to Pay ₹
-                    {selectedTier
-                      ? Math.round((selectedTier.price_paise * ticketQuantity) / 100).toLocaleString('en-IN')
-                      : 0}
+              {/* Venue & Scheduled Info */}
+              <div className="text-[11px] sm:text-xs text-gray-600 font-medium text-center">
+                <span>{eventData.venue_name}{eventData.city ? `: ${eventData.city}` : ''}</span>
+                {bookingStep === 2 && selectedBookingDate && (
+                  <span className="block text-gray-800 font-semibold mt-0.5">
+                    {format(selectedBookingDate, 'EEE dd MMM')} | {selectedTime}
                   </span>
                 )}
-              </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <main className="flex-1 py-8 px-4 pb-32">
+            {bookingStep === 1 ? (
+              /* STEP 1: Date & Time Selection (matches Screenshots 3 & 4) */
+              <div className="max-w-xl mx-auto bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                {/* Status Legend */}
+                <div className="flex items-center justify-end gap-3 text-xs text-gray-600 pb-4 border-b border-gray-100">
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#16A34A]" />
+                    Available
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#EA580C]" />
+                    Fast Filling
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-[#9CA3AF]" />
+                    Sold out
+                  </span>
+                </div>
+
+                <p className="text-xs font-bold text-gray-800 uppercase tracking-wider mt-4 mb-3">
+                  Select Date
+                </p>
+
+                {!calendarView ? (
+                  <div>
+                    {/* 4 columns x 2 rows date grid */}
+                    <div className="grid grid-cols-4 gap-2.5">
+                      {availableBookingDates.map((item, idx) => {
+                        const isSelected =
+                          selectedBookingDate && isSameDay(selectedBookingDate, item.date);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setSelectedBookingDate(item.date)}
+                            className={`py-2.5 px-1.5 rounded-md text-center text-xs transition-colors border ${
+                              isSelected
+                                ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] font-semibold shadow-sm'
+                                : 'bg-white text-gray-800 border-gray-300 hover:border-gray-400 font-medium'
+                            }`}
+                          >
+                            {format(item.date, 'EEE dd MMM')}
+                          </button>
+                        );
+                      })}
+                      {/* Slot 8: See all dates > */}
+                      <button
+                        type="button"
+                        onClick={() => setCalendarView(true)}
+                        className="flex items-center justify-center text-xs font-semibold text-[#7B1E3D] hover:underline cursor-pointer py-2.5"
+                      >
+                        See all dates &gt;
+                      </button>
+                    </div>
+
+                    {/* Select Time (appears when date is selected, matches Screenshot 3) */}
+                    {selectedBookingDate && (
+                      <div className="mt-6 pt-4 border-t border-gray-100">
+                        <p className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-3">
+                          Select Time
+                        </p>
+                        <button
+                          type="button"
+                          className="bg-[#7B1E3D] text-white font-semibold text-xs px-5 py-2.5 rounded-md shadow-sm"
+                        >
+                          {selectedTime}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Month Calendar View (matches uploaded calendar screenshot) */
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between px-2 py-1">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth((prev) => subMonths(prev, 1))}
+                        className="p-1 rounded-full text-gray-600 hover:bg-gray-100"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      <span className="text-xs sm:text-sm font-bold text-gray-900 tracking-wider uppercase">
+                        {format(calendarMonth, 'MMMM yyyy')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCalendarMonth((prev) => addMonths(prev, 1))}
+                        className="p-1 rounded-full text-gray-600 hover:bg-gray-100"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-7 text-center text-xs font-bold text-gray-400 py-1 border-b border-gray-100">
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayChar, i) => (
+                        <div key={i}>{dayChar}</div>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1 text-center">
+                      {calendarDays.map((day, i) => {
+                        const inCurrentMonth = isSameMonth(day, calendarMonth);
+                        const isSelected =
+                          selectedBookingDate && isSameDay(selectedBookingDate, day);
+                        const isPast = day < new Date(new Date().setHours(0, 0, 0, 0));
+                        const matchesScheduled = availableBookingDates.some((d) =>
+                          isSameDay(d.date, day)
+                        );
+
+                        if (!inCurrentMonth) {
+                          return <div key={i} className="h-9 w-9 mx-auto" />;
+                        }
+
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            disabled={isPast}
+                            onClick={() => setSelectedBookingDate(day)}
+                            className={`h-9 w-9 mx-auto rounded-full flex flex-col items-center justify-center text-xs transition-all relative ${
+                              isPast
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : isSelected
+                                ? 'bg-[#7B1E3D] text-white font-bold shadow'
+                                : matchesScheduled
+                                ? 'font-bold text-gray-900 hover:bg-gray-100'
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            <span>{format(day, 'd')}</span>
+                            {matchesScheduled && !isSelected && (
+                              <span className="h-1 w-1 rounded-full bg-emerald-500 absolute bottom-1" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="pt-3 text-center border-t border-gray-100">
+                      <button
+                        type="button"
+                        onClick={() => setCalendarView(false)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#7B1E3D] hover:underline"
+                      >
+                        &lt; Show quick dates
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* STEP 2: Ticket Selection (matches Screenshots 1 & 2) */
+              <div className="max-w-xl mx-auto">
+                <h2 className="text-base font-bold text-gray-900">
+                  Select Tickets
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5 mb-4">
+                  You can add up to 10 tickets only
+                </p>
+
+                <div className="space-y-3">
+                  {eventData.ticket_categories?.map((tier: any) => {
+                    const isCurrentTier = selectedTier?.id === tier.id;
+                    const currentQty = isCurrentTier ? ticketQuantity : 0;
+                    const price = Math.round(tier.price_paise / 100);
+
+                    return (
+                      <div
+                        key={tier.id}
+                        className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm flex items-center justify-between"
+                      >
+                        <div>
+                          <p className="text-xs font-bold text-gray-800 tracking-wider uppercase">
+                            {tier.name}
+                          </p>
+                          <p className="text-sm font-bold text-gray-900 mt-1">
+                            ₹{price.toLocaleString('en-IN')}
+                          </p>
+                          {tier.description && (
+                            <p className="text-xs text-gray-500 mt-0.5">{tier.description}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          {currentQty === 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTierId(tier.id);
+                                setTicketQuantity(1);
+                              }}
+                              className="border border-[#7B1E3D] text-[#7B1E3D] bg-white hover:bg-[#7B1E3D]/5 text-xs font-bold px-6 py-1.5 rounded-md transition-colors"
+                            >
+                              Add
+                            </button>
+                          ) : (
+                            <div className="border border-[#7B1E3D] rounded-md flex items-center bg-white text-[#7B1E3D] overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => setTicketQuantity((q) => Math.max(0, q - 1))}
+                                className="px-3 py-1 text-sm font-bold hover:bg-[#7B1E3D]/10 text-[#7B1E3D] transition"
+                              >
+                                -
+                              </button>
+                              <span className="px-3 py-1 text-xs font-bold text-gray-900 min-w-[28px] text-center">
+                                {ticketQuantity}
+                              </span>
+                              <button
+                                type="button"
+                                disabled={ticketQuantity >= maxAllowedTickets}
+                                onClick={() =>
+                                  setTicketQuantity((q) => Math.min(maxAllowedTickets, q + 1))
+                                }
+                                className="px-3 py-1 text-sm font-bold hover:bg-[#7B1E3D]/10 text-[#7B1E3D] transition disabled:opacity-40"
+                              >
+                                +
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* Sticky Bottom Action Bar */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3.5 px-6 z-50">
+            {bookingStep === 1 ? (
+              /* Step 1 Bottom Bar (matches Screenshots 3 & 4) */
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  disabled={!selectedBookingDate}
+                  onClick={() => setBookingStep(2)}
+                  className={`font-medium text-sm px-24 py-2.5 rounded-md transition-colors ${
+                    selectedBookingDate
+                      ? 'bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-sm cursor-pointer'
+                      : 'bg-[#C4C4C4] text-white cursor-not-allowed'
+                  }`}
+                >
+                  Proceed
+                </button>
+              </div>
+            ) : (
+              /* Step 2 Bottom Bar (matches Screenshots 1 & 2) */
+              ticketQuantity === 0 ? (
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    disabled
+                    className="bg-[#C4C4C4] text-white font-medium text-sm px-24 py-2.5 rounded-md cursor-not-allowed"
+                  >
+                    {user ? 'Proceed to Pay' : 'Login To Book'}
+                  </button>
+                </div>
+              ) : (
+                <div className="max-w-xl mx-auto flex items-center justify-between w-full">
+                  <div>
+                    <span className="text-[11px] font-semibold text-blue-600 block">
+                      {ticketQuantity} {ticketQuantity === 1 ? 'Ticket' : 'Tickets'}
+                    </span>
+                    <span className="text-base sm:text-lg font-bold text-gray-900">
+                      ₹{Math.round(((selectedTier?.price_paise || 0) * ticketQuantity) / 100).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!user) {
+                        navigate('/login', { state: { from: `/events/${id}` } });
+                        return;
+                      }
+                      setShowTerms(true);
+                    }}
+                    className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-medium text-sm px-8 py-2.5 rounded-md shadow-sm transition-colors cursor-pointer"
+                  >
+                    {user ? 'Proceed to Pay' : 'Login To Book'}
+                  </button>
+                </div>
+              )
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Image Preview Lightbox */}
       <Dialog
