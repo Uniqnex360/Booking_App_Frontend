@@ -52,3 +52,16 @@ export interface CouponRedemption {
   redeemed_at: string;
 }
 
+export interface AvailableCoupon {
+  id: string;
+  code: string;
+  discount_type: 'PERCENT' | 'FLAT';
+  discount_value: number;
+  min_order_paise: number;
+  max_discount_paise?: number | null;
+  valid_until: string;
+  discount_label: string;
+  min_order_label: string;
+  terms: string;
+}
+

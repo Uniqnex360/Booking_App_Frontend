@@ -5,6 +5,7 @@ import type {
   CouponUpdatePayload,
   ApplyCouponResult,
   CouponRedemption,
+  AvailableCoupon,
 } from '@/types/coupon.types';
 
 export async function createCoupon(data: CouponCreatePayload): Promise<Coupon> {
@@ -44,5 +45,11 @@ export async function removeCoupon(data: {
   event_id?: string;
 }): Promise<{ status: string }> {
   return unwrap<{ status: string }>(api.post('/checkout/remove-coupon', data));
+}
+
+export async function getAvailableCoupons(eventId: string): Promise<AvailableCoupon[]> {
+  return unwrap<AvailableCoupon[]>(
+    api.get('/checkout/available-coupons', { params: { event_id: eventId } })
+  );
 }
 

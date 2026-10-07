@@ -63,8 +63,8 @@ import { toast } from 'sonner';
 import { LoadingPage } from './LoadingPage';
 import { loadScript } from '@/utils/loadScript';
 import { TermsModal } from './TermsModal';
-import { applyCoupon, removeCoupon } from '@/api/coupon.api';
-import type { ApplyCouponResult } from '@/types/coupon.types';
+import { applyCoupon, removeCoupon, getAvailableCoupons } from '@/api/coupon.api';
+import type { ApplyCouponResult, AvailableCoupon } from '@/types/coupon.types';
 
 const categoryLabels: Record<string, string> = {
   concert: 'Music Shows',
@@ -105,6 +105,7 @@ export default function BookingPage() {
   const [showTerms, setShowTerms] = useState(false);
 
   // Coupon state
+  const [availableCoupons, setAvailableCoupons] = useState<AvailableCoupon[]>([]);
   const [couponCodeInput, setCouponCodeInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<ApplyCouponResult | null>(null);
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -169,6 +170,15 @@ export default function BookingPage() {
           if (res?.ticket_categories?.length > 0) {
             setSelectedTierId(res.ticket_categories[0].id);
           }
+
+          if (id) {
+            try {
+              const coupons = await getAvailableCoupons(id);
+              setAvailableCoupons(coupons || []);
+            } catch {
+              // non-fatal
+            }
+          }
         }
       } catch {
         toast.error('Failed to load event details');
@@ -226,6 +236,31 @@ export default function BookingPage() {
     }
   };
 
+  const handleApplySpecificCoupon = async (code: string) => {
+    if (subtotalPaise <= 0) {
+      toast.error('Please select at least 1 ticket first');
+      return;
+    }
+    setCouponCodeInput(code);
+    try {
+      setIsApplyingCoupon(true);
+      setCouponError(null);
+      const res = await applyCoupon({
+        code: code.trim().toUpperCase(),
+        event_id: id!,
+        cart_paise: subtotalPaise,
+      });
+      setAppliedCoupon(res);
+      toast.success(res.message || 'Coupon applied successfully!');
+    } catch (err: any) {
+      const msg = err.message || 'Invalid or ineligible coupon code';
+      setCouponError(msg);
+      toast.error(msg);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
   const handleRemoveCoupon = async () => {
     if (appliedCoupon) {
       try {
@@ -254,7 +289,7 @@ export default function BookingPage() {
     setAppliedCoupon(null);
     setCouponCodeInput('');
     setCouponError(null);
-    setIsCouponSectionOpen(false);
+    setIsCouponSectionOpen(availableCoupons.length > 0);
 
     // Initialize Date & Time step
     setBookingStep(1);
@@ -841,6 +876,47 @@ export default function BookingPage() {
                 </div>
               </div>
 
+              {/* Special Offers Banner */}
+              {availableCoupons.length > 0 && (
+                <div className="border-t border-gray-100 pt-3 pb-1">
+                  <div className="rounded-xl border border-dashed border-[#7B1E3D]/40 bg-[#7B1E3D]/5 p-3.5 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-xs font-bold text-[#7B1E3D]">
+                        <Sparkles className="h-3.5 w-3.5 text-[#7B1E3D]" /> Offers Available
+                      </span>
+                      <span className="text-[10px] bg-[#7B1E3D] text-white font-bold px-2 py-0.5 rounded-full">
+                        {availableCoupons.length} {availableCoupons.length === 1 ? 'OFFER' : 'OFFERS'}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {availableCoupons.slice(0, 2).map((c) => (
+                        <div
+                          key={c.id}
+                          className="bg-white/90 rounded-lg p-2 border border-[#7B1E3D]/20 text-xs flex items-center justify-between gap-2"
+                        >
+                          <div className="min-w-0">
+                            <span className="font-mono font-bold text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded text-[11px] border border-gray-200">
+                              {c.code}
+                            </span>
+                            <span className="text-[#7B1E3D] font-semibold text-[11px] ml-1.5">
+                              {c.discount_label}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-gray-500 shrink-0">
+                            {c.min_order_label}
+                          </span>
+                        </div>
+                      ))}
+                      {availableCoupons.length > 2 && (
+                        <p className="text-[10px] text-gray-500 text-center pt-0.5 font-medium">
+                          +{availableCoupons.length - 2} more discount code(s) available at checkout
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Price & Book Button */}
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-4">
@@ -1241,9 +1317,14 @@ export default function BookingPage() {
                         >
                           <span className="flex items-center gap-1.5">
                             <Tag className="h-3.5 w-3.5" /> Have a coupon code?
+                            {availableCoupons.length > 0 && (
+                              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-300">
+                                {availableCoupons.length} offer{availableCoupons.length > 1 ? 's' : ''} available
+                              </span>
+                            )}
                           </span>
                           <span className="text-[11px] text-gray-500 font-normal">
-                            {isCouponSectionOpen ? 'Hide' : 'Apply'}
+                            {isCouponSectionOpen ? 'Hide' : 'View Offers / Apply'}
                           </span>
                         </button>
 
@@ -1273,6 +1354,66 @@ export default function BookingPage() {
                               <p className="text-xs text-rose-600 mt-1.5 font-medium">
                                 {couponError}
                               </p>
+                            )}
+
+                            {/* Available Coupons Quick-Apply List */}
+                            {availableCoupons.length > 0 && (
+                              <div className="mt-4 pt-3 border-t border-gray-200">
+                                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                  <Sparkles className="h-3.5 w-3.5 text-[#7B1E3D]" />
+                                  Available Offers ({availableCoupons.length})
+                                </p>
+                                <div className="space-y-2">
+                                  {availableCoupons.map((coupon) => {
+                                    const isEligible = subtotalPaise >= coupon.min_order_paise;
+                                    const deficitPaise = coupon.min_order_paise - subtotalPaise;
+
+                                    return (
+                                      <div
+                                        key={coupon.id}
+                                        className={`border rounded-lg p-2.5 transition flex items-start justify-between gap-3 ${
+                                          isEligible
+                                            ? 'bg-white border-gray-200 hover:border-[#7B1E3D]'
+                                            : 'bg-gray-50/80 border-gray-200'
+                                        }`}
+                                      >
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-mono text-xs font-bold text-gray-900 bg-gray-100 px-2 py-0.5 rounded border border-gray-200">
+                                              {coupon.code}
+                                            </span>
+                                            <span className="text-xs font-bold text-[#7B1E3D]">
+                                              {coupon.discount_label}
+                                            </span>
+                                          </div>
+                                          <p className="text-[11px] text-gray-600 mt-1">
+                                            {coupon.min_order_label}
+                                            {coupon.terms ? ` · ${coupon.terms}` : ''}
+                                          </p>
+                                          {!isEligible && deficitPaise > 0 && (
+                                            <p className="text-[10px] text-amber-700 font-medium mt-0.5">
+                                              Add ₹{Math.ceil(deficitPaise / 100).toLocaleString('en-IN')} more to unlock
+                                            </p>
+                                          )}
+                                        </div>
+
+                                        <button
+                                          type="button"
+                                          disabled={!isEligible || isApplyingCoupon}
+                                          onClick={() => handleApplySpecificCoupon(coupon.code)}
+                                          className={`text-xs font-bold px-3 py-1 rounded transition cursor-pointer shrink-0 ${
+                                            isEligible
+                                              ? 'bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-xs'
+                                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                          }`}
+                                        >
+                                          Apply
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             )}
                           </div>
                         )}
