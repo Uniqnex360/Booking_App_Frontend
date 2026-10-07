@@ -63,6 +63,8 @@ import { toast } from 'sonner';
 import { LoadingPage } from './LoadingPage';
 import { loadScript } from '@/utils/loadScript';
 import { TermsModal } from './TermsModal';
+import { applyCoupon, removeCoupon } from '@/api/coupon.api';
+import type { ApplyCouponResult } from '@/types/coupon.types';
 
 const categoryLabels: Record<string, string> = {
   concert: 'Music Shows',
@@ -101,6 +103,13 @@ export default function BookingPage() {
   const [isBooking, setIsBooking] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);  
   const [showTerms, setShowTerms] = useState(false);
+
+  // Coupon state
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<ApplyCouponResult | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isCouponSectionOpen, setIsCouponSectionOpen] = useState(false);
 
   // Generate available booking dates (BookMyShow pattern: 7 dates + 1 "See all dates >" slot = 8 grid slots)
   const availableBookingDates = useMemo(() => {
@@ -185,6 +194,50 @@ export default function BookingPage() {
     10
   );
 
+  const subtotalPaise = selectedTier ? selectedTier.price_paise * ticketQuantity : 0;
+  const discountPaise = appliedCoupon ? appliedCoupon.discount_paise : 0;
+  const finalPaise = Math.max(0, subtotalPaise - discountPaise);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCodeInput.trim()) {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+    if (subtotalPaise <= 0) {
+      setCouponError('Please select tickets first');
+      return;
+    }
+    try {
+      setIsApplyingCoupon(true);
+      setCouponError(null);
+      const res = await applyCoupon({
+        code: couponCodeInput.trim().toUpperCase(),
+        event_id: id!,
+        cart_paise: subtotalPaise,
+      });
+      setAppliedCoupon(res);
+      toast.success(res.message || 'Coupon applied successfully!');
+    } catch (err: any) {
+      const msg = err.message || 'Invalid or ineligible coupon code';
+      setCouponError(msg);
+      toast.error(msg);
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    if (appliedCoupon) {
+      try {
+        await removeCoupon({ code: appliedCoupon.code, event_id: id });
+      } catch {}
+    }
+    setAppliedCoupon(null);
+    setCouponCodeInput('');
+    setCouponError(null);
+    toast.info('Coupon removed');
+  };
+
   const handleBookNow = () => {
     if (isEventEnded) {
       toast.error('This event has already ended and cannot be booked.');
@@ -198,6 +251,10 @@ export default function BookingPage() {
       setSelectedTierId(eventData.ticket_categories[0].id);
     }
     setTicketQuantity(0);
+    setAppliedCoupon(null);
+    setCouponCodeInput('');
+    setCouponError(null);
+    setIsCouponSectionOpen(false);
 
     // Initialize Date & Time step
     setBookingStep(1);
@@ -221,65 +278,79 @@ export default function BookingPage() {
       return;
     }
 
-    const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-    if (!rzpKey) {
-      toast.error('Payment configuration missing. Please contact support.');
-      setIsBooking(false);
-      return;
-    }
+    try {
+      const order = await unwrap<any>(
+        api.post('/payments/order', {
+          booking_id: booking.id,
+          coupon_code: appliedCoupon?.code,
+        })
+      );
 
-    const amount =
-      booking.total_paise ??
-      (selectedTier ? selectedTier.price_paise * ticketQuantity : 0);
+      if (order?.status === 'NOT_REQUIRED') {
+        toast.success('Tickets reserved successfully!');
+        setBookingModalOpen(false);
+        navigate(
+          `/confirmation?id=${booking.id}&ref=${encodeURIComponent(booking.ref_code ?? booking.id)}`
+        );
+        setIsBooking(false);
+        return;
+      }
 
-    const options = {
-      key: rzpKey,
-      amount: amount,
-      currency: booking.currency || 'INR',
-      name: 'Vyhbz',
-      description: `${eventData?.title || 'Event'} - ${selectedTier?.name || 'Tickets'} x ${ticketQuantity}`,
-      handler: async (response: any) => {
-        setIsConfirming(true);
-        try {
-          const commitRes = await unwrap<any>(
-            api.post(`/bookings/${booking.id}/commit`, {
-              payment_ref: response.razorpay_payment_id,
-            })
-          );
-          toast.success('Tickets booked successfully!');
-          setBookingModalOpen(false);
-          navigate(
-            `/confirmation?id=${booking.id}&ref=${encodeURIComponent(commitRes.ref_code ?? booking.id)}`
-          );
-        } catch (err: any) {
-          toast.error(
-            `Confirmation failed after payment. Please contact support with Payment ID: ${response.razorpay_payment_id}`
-          );
-        } finally {
-          setIsBooking(false);
-          setIsConfirming(false);
-        }
-      },
-      prefill: {
-        name: user?.full_name || '',
-        email: user?.email || '',
-        contact: (user as any)?.phone || '',
-      },
-      theme: { color: '#7B1E3D' },
-      modal: {
-        ondismiss: () => {
-          toast.warning('Payment cancelled.');
-          setIsBooking(false);
+      const options = {
+        key: order.key_id,
+        amount: order.amount_paise,
+        currency: order.currency || 'INR',
+        name: 'Vyhbz',
+        description: `${eventData?.title || 'Event'} - ${selectedTier?.name || 'Tickets'} x ${ticketQuantity}`,
+        handler: async (response: any) => {
+          setIsConfirming(true);
+          try {
+            await unwrap<any>(
+              api.post('/payments/verify', {
+                booking_id: booking.id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              })
+            );
+            toast.success('Tickets booked successfully!');
+            setBookingModalOpen(false);
+            navigate(
+              `/confirmation?id=${booking.id}&ref=${encodeURIComponent(booking.ref_code ?? booking.id)}`
+            );
+          } catch (err: any) {
+            toast.error(
+              `Confirmation failed after payment. Please contact support with Payment ID: ${response.razorpay_payment_id}`
+            );
+          } finally {
+            setIsBooking(false);
+            setIsConfirming(false);
+          }
         },
-      },
-    };
+        prefill: {
+          name: user?.full_name || '',
+          email: user?.email || '',
+          contact: (user as any)?.phone || '',
+        },
+        theme: { color: '#7B1E3D' },
+        modal: {
+          ondismiss: () => {
+            toast.warning('Payment cancelled.');
+            setIsBooking(false);
+          },
+        },
+      };
 
-    const rzp = new (window as any).Razorpay(options);
-    rzp.on('payment.failed', (r: any) => {
-      toast.error(r?.error?.description || 'Payment failed.');
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', (r: any) => {
+        toast.error(r?.error?.description || 'Payment failed.');
+        setIsBooking(false);
+      });
+      rzp.open();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to initiate payment.');
       setIsBooking(false);
-    });
-    rzp.open();
+    }
   };
 
   const handleConfirmBooking = async () => {
@@ -1156,6 +1227,103 @@ export default function BookingPage() {
                     );
                   })}
                 </div>
+
+                {/* Coupon & Order Summary Breakdown */}
+                {ticketQuantity > 0 && (
+                  <div className="mt-6 border border-gray-200 rounded-xl p-4 bg-gray-50/60 mb-20">
+                    {/* Have a coupon code toggle */}
+                    {!appliedCoupon ? (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setIsCouponSectionOpen(!isCouponSectionOpen)}
+                          className="flex items-center justify-between w-full text-left text-xs font-bold text-[#7B1E3D] hover:underline"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Tag className="h-3.5 w-3.5" /> Have a coupon code?
+                          </span>
+                          <span className="text-[11px] text-gray-500 font-normal">
+                            {isCouponSectionOpen ? 'Hide' : 'Apply'}
+                          </span>
+                        </button>
+
+                        {isCouponSectionOpen && (
+                          <div className="mt-3">
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Enter coupon (e.g. SUNDAY20)"
+                                value={couponCodeInput}
+                                onChange={(e) => {
+                                  setCouponCodeInput(e.target.value.toUpperCase());
+                                  setCouponError(null);
+                                }}
+                                className="flex-1 bg-white border border-gray-300 rounded-lg px-3 py-1.5 text-xs font-mono uppercase font-semibold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#7B1E3D]"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleApplyCoupon}
+                                disabled={isApplyingCoupon || !couponCodeInput.trim()}
+                                className="bg-[#7B1E3D] hover:bg-[#5C0F2A] disabled:bg-gray-300 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition cursor-pointer"
+                              >
+                                {isApplyingCoupon ? 'Applying...' : 'Apply'}
+                              </button>
+                            </div>
+                            {couponError && (
+                              <p className="text-xs text-rose-600 mt-1.5 font-medium">
+                                {couponError}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg p-2.5">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          <div>
+                            <span className="text-xs font-mono font-bold text-emerald-800">
+                              {appliedCoupon.code}
+                            </span>
+                            <span className="text-xs text-emerald-700 ml-1.5">
+                              · {appliedCoupon.message}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="text-xs text-rose-600 hover:text-rose-800 font-semibold underline ml-2 cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Order Summary Line Items */}
+                    <div className="mt-4 pt-3 border-t border-gray-200 text-xs space-y-1.5 text-gray-600">
+                      <div className="flex justify-between">
+                        <span>
+                          Tickets ({ticketQuantity} × ₹
+                          {Math.round((selectedTier?.price_paise || 0) / 100).toLocaleString('en-IN')})
+                        </span>
+                        <span className="font-medium text-gray-900">
+                          ₹{Math.round(subtotalPaise / 100).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      {appliedCoupon && (
+                        <div className="flex justify-between text-emerald-700 font-medium">
+                          <span>Discount ({appliedCoupon.code})</span>
+                          <span>-₹{Math.round(discountPaise / 100).toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between pt-2 border-t border-gray-200 text-sm font-bold text-gray-900">
+                        <span>Amount payable</span>
+                        <span>₹{Math.round(finalPaise / 100).toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </main>
@@ -1195,10 +1363,22 @@ export default function BookingPage() {
                   <div>
                     <span className="text-[11px] font-semibold text-blue-600 block">
                       {ticketQuantity} {ticketQuantity === 1 ? 'Ticket' : 'Tickets'}
+                      {appliedCoupon && (
+                        <span className="ml-1 text-emerald-600 font-bold">
+                          · {appliedCoupon.code} applied
+                        </span>
+                      )}
                     </span>
-                    <span className="text-base sm:text-lg font-bold text-gray-900">
-                      ₹{Math.round(((selectedTier?.price_paise || 0) * ticketQuantity) / 100).toLocaleString('en-IN')}
-                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-base sm:text-lg font-bold text-gray-900">
+                        ₹{Math.round(finalPaise / 100).toLocaleString('en-IN')}
+                      </span>
+                      {appliedCoupon && (
+                        <span className="text-xs text-gray-400 line-through">
+                          ₹{Math.round(subtotalPaise / 100).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -1250,7 +1430,7 @@ export default function BookingPage() {
   terms={eventData.terms_and_conditions}
   amountLabel={
     selectedTier
-      ? `₹${Math.round((selectedTier.price_paise * ticketQuantity) / 100).toLocaleString('en-IN')}`
+      ? `₹${Math.round(finalPaise / 100).toLocaleString('en-IN')}`
       : undefined
   }
   onClose={() => {

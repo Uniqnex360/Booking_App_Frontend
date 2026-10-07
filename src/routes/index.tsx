@@ -18,6 +18,7 @@ import PartnerDashboard from '@/pages/PartnerDashboard';
 import AdminPartnersPage from '@/pages/AdminPartnersPage';
 import PartnerEventCreatePage from '@/pages/PartnerEventCreatePage';
 import PartnerDiningCreatePage from '@/pages/PartnerDiningCreatePage';
+import PartnerCouponsPage from '@/pages/PartnerCouponsPage';
 import AdminModerationPage from '@/pages/AdminModerationPage';
 import BookingDetailPage from "@/pages/BookingDetailPage";
 import VerifyOtpPage from "@/pages/VerifyOtpPage";
@@ -98,6 +99,14 @@ export function AppRoutes() {
         element={
           <PrivateRoute>
             <PartnerDashboard />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/partner/coupons"
+        element={
+          <PrivateRoute>
+            <PartnerCouponsPage />
           </PrivateRoute>
         }
       />

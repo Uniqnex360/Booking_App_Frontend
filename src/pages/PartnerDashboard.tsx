@@ -28,6 +28,7 @@ import {
   Calendar,
   Plus,
   Ticket,
+  Tag,
   ImageOff,
   Trash2,
   Edit3,
@@ -337,6 +338,13 @@ export default function PartnerDashboard() {
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/partner/coupons")}
+                className="border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-2xl flex items-center gap-2 shadow-xs"
+              >
+                <Tag className="h-4 w-4 text-[#7B1E3D]" /> Manage Coupons
+              </Button>
               <Button
                 onClick={() => navigate("/partner/dining/new")}
                 className="bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-2xl flex items-center gap-2 shadow-xs"
