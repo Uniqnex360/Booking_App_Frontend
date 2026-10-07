@@ -114,6 +114,16 @@ const diningFormSchema = z
   .refine(
     (data) => {
       const start = new Date(data.starts_at);
+      return start > new Date();
+    },
+    {
+      message: "Experience start time must be in the future",
+      path: ["starts_at"],
+    }
+  )
+  .refine(
+    (data) => {
+      const start = new Date(data.starts_at);
       const end = new Date(data.ends_at);
       return end > start;
     },
@@ -130,6 +140,18 @@ export default function PartnerDiningCreatePage() {
   const [partnerLoading, setPartnerLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "schedule" | "pricing" | "media">("details");
+  const [currentMin, setCurrentMin] = useState("");
+
+  useEffect(() => {
+    const updateMin = () => {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      setCurrentMin(now.toISOString().slice(0, 16));
+    };
+    updateMin();
+    const interval = setInterval(updateMin, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const {
     register,
@@ -259,7 +281,7 @@ export default function PartnerDiningCreatePage() {
       toast.success("Dining experience submitted for moderation! An admin will review it shortly.");
       navigate("/partner/dashboard");
     } catch (err: any) {
-      const msg = err?.response?.data?.detail || err?.message || "Failed to create dining experience";
+      const msg = err?.message || err?.response?.data?.detail || "Failed to create dining experience";
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -530,6 +552,7 @@ export default function PartnerDiningCreatePage() {
                   </Label>
                   <Input
                     type="datetime-local"
+                    min={currentMin}
                     {...register("starts_at")}
                     className="mt-1.5"
                   />
@@ -544,6 +567,7 @@ export default function PartnerDiningCreatePage() {
                   </Label>
                   <Input
                     type="datetime-local"
+                    min={watch("starts_at") || currentMin}
                     {...register("ends_at")}
                     className="mt-1.5"
                   />

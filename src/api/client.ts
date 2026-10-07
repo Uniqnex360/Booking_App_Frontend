@@ -161,13 +161,25 @@ export async function unwrap<T>(promise: Promise<any>): Promise<T> {
     }
     if (axios.isAxiosError(error) && error.response) {
       const body = error.response.data;
-      if (body && body.code) {
-        throw new ApiError(body.error?.type ?? String(body.code), body.error?.message ?? body.message ?? 'An error occurred', body.status || 'error', error.response.status);
-      }
+      const detailMessage =
+        (typeof body === 'string' ? body : null) ||
+        body?.detail ||
+        body?.message ||
+        body?.error?.message ||
+        (Array.isArray(body?.detail) ? body.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ') : null) ||
+        error.message;
+
+      const errorCode =
+        body?.code ||
+        body?.error?.type ||
+        (typeof body?.error === 'string' ? body.error : null) ||
+        error.response.statusText ||
+        'SERVER_ERROR';
+
       throw new ApiError(
-        error.response.statusText || 'SERVER_ERROR',
-        error.message,
-        'error',
+        String(errorCode),
+        detailMessage,
+        body?.status || 'error',
         error.response.status
       );
     }
