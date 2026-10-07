@@ -333,18 +333,26 @@ export default function BookingPage() {
     setInterestedCount((prev) => (isInterested ? prev - 1 : prev + 1));
   };
 
-  // Calculate duration dynamically
+  // Calculate duration dynamically (matches BookMyShow)
   const getDuration = () => {
-    if (!eventData?.starts_at || !eventData?.ends_at) return null;
+    if (eventData?.duration_min) {
+      const h = Math.floor(eventData.duration_min / 60);
+      const m = eventData.duration_min % 60;
+      if (h > 0 && m > 0) return `${h} Hours ${m} Mins`;
+      if (h > 0) return `${h} Hours`;
+      if (m > 0) return `${m} Mins`;
+    }
+    if (!eventData?.starts_at || !eventData?.ends_at) return '3 Hours';
     const start = parseISO(eventData.starts_at);
     const end = parseISO(eventData.ends_at);
     const hours = differenceInHours(end, start);
     const minutes = differenceInMinutes(end, start) % 60;
 
+    if (hours >= 24) return '3 Hours'; // Standard BookMyShow dining slot duration
     if (hours > 0 && minutes > 0) return `${hours} Hours ${minutes} Mins`;
     if (hours > 0) return `${hours} Hours`;
     if (minutes > 0) return `${minutes} Mins`;
-    return null;
+    return '3 Hours';
   };
 
   if (loading) {
@@ -421,38 +429,50 @@ export default function BookingPage() {
               </div>
             </div>
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              <Badge className="bg-[#333338] text-white text-xs font-medium px-3 py-1.5 rounded">
+            {/* Tags matching BookMyShow */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-[#333338] hover:bg-[#333338] text-white text-xs font-medium px-3 py-1 rounded">
                 {categoryLabel}
               </Badge>
-              <Badge className="bg-[#333338] text-white text-xs font-medium px-3 py-1.5 rounded">
-                {eventData.city}
-              </Badge>
+              {eventData.tags?.map((t: string, idx: number) => (
+                <Badge key={idx} className="bg-[#333338] hover:bg-[#333338] text-white text-xs font-medium px-3 py-1 rounded capitalize">
+                  {t.replace(/_/g, ' ')}
+                </Badge>
+              ))}
+              {eventData.cuisine?.map((c: string, idx: number) => (
+                <Badge key={idx} className="bg-[#333338] hover:bg-[#333338] text-white text-xs font-medium px-3 py-1 rounded">
+                  {c}
+                </Badge>
+              ))}
+              {eventData.city && (
+                <Badge className="bg-[#333338] hover:bg-[#333338] text-white text-xs font-medium px-3 py-1 rounded">
+                  {eventData.city}
+                </Badge>
+              )}
               {eventData.is_outdoor && (
-                <Badge variant="outline" className="border-gray-300 text-gray-700 text-xs px-3 py-1.5 rounded">
+                <Badge variant="outline" className="border-gray-300 text-gray-700 text-xs px-3 py-1 rounded">
                   Outdoor
                 </Badge>
               )}
               {eventData.is_fast_filling && (
-                <Badge className="bg-amber-500 text-white text-xs px-3 py-1.5 rounded">
+                <Badge className="bg-amber-500 text-white text-xs px-3 py-1 rounded">
                   Fast Filling
                 </Badge>
               )}
             </div>
 
-            {/* Interest Section */}
-            {/* <div className="flex items-center gap-4">
+            {/* Interest Section matching BookMyShow */}
+            <div className="flex items-center justify-between py-1 border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2">
-                <ThumbsUp className="h-5 w-5 text-green-600" />
-                <span className="text-sm text-gray-700">
+                <ThumbsUp className="h-4 w-4 text-emerald-600" />
+                <span className="text-xs sm:text-sm text-gray-700 font-medium">
                   <strong>{interestedCount}</strong> are interested
                 </span>
               </div>
               <Button
                 variant="outline"
                 onClick={handleInterested}
-                className={`rounded-full border-[#7B1E3D] text-sm px-4 py-2 transition-all ${
+                className={`rounded-md border-[#7B1E3D] text-xs px-3 py-1.5 h-auto font-medium transition-all ${
                   isInterested
                     ? 'bg-[#7B1E3D] text-white hover:bg-[#5C0F2A]'
                     : 'text-[#7B1E3D] hover:bg-[#7B1E3D]/10'
@@ -460,72 +480,35 @@ export default function BookingPage() {
               >
                 {isInterested ? 'Interested ✓' : "I'm Interested"}
               </Button>
-            </div> */}
+            </div>
 
-            {/* Dining Experience Specific Panel */}
-            {eventData.category === 'dining' && (
-              <div className="space-y-4 p-5 rounded-2xl bg-amber-50/40 border border-amber-200/60">
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-amber-200/50">
-                  <div className="flex items-center gap-2 text-amber-900 font-bold text-lg">
-                    <Utensils className="h-5 w-5 text-[#7B1E3D]" />
-                    Dining Experience Highlights
-                  </div>
-                  {eventData.price_range && (
-                    <Badge variant="outline" className="bg-white border-amber-300 text-amber-900 font-semibold px-3 py-1 text-sm shadow-xs">
-                      Cost: {'₹'.repeat(eventData.price_range)} ({
-                        eventData.price_range === 1 ? 'Budget Friendly' :
-                        eventData.price_range === 2 ? 'Pocket Friendly' :
-                        eventData.price_range === 3 ? 'Upscale Dining' : 'Fine Dining Luxury'
-                      })
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Cuisine Chips */}
-                {eventData.cuisine && eventData.cuisine.length > 0 && (
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold uppercase tracking-wider text-amber-900/70">
-                      Cuisines
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {eventData.cuisine.map((c: string, idx: number) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1 rounded-full text-xs font-semibold bg-white text-gray-800 border border-amber-200 shadow-xs"
-                        >
-                          {c}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* What's Included */}
-                {eventData.what_included && (
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-amber-900/70 flex items-center gap-1.5">
-                      <Sparkles className="h-3.5 w-3.5 text-[#7B1E3D]" />
-                      What's Included
-                    </span>
-                    <div className="bg-white p-3.5 rounded-xl border border-amber-200/80 text-sm text-gray-800 leading-relaxed whitespace-pre-line shadow-xs">
-                      {eventData.what_included}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* About Section */}
+            {/* About The Event */}
             <div className="space-y-3">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                 About The Event
               </h2>
-              <div className="text-gray-700 leading-relaxed">
+              <div className="text-gray-700 leading-relaxed text-sm sm:text-base">
                 {eventData.description ? (
                   <p className="whitespace-pre-line">{eventData.description}</p>
                 ) : (
                   <p className="text-gray-500">No description available.</p>
                 )}
+              </div>
+            </div>
+
+            {/* M-Ticket Banner matching BookMyShow */}
+            <div className="space-y-2 pt-1">
+              <h3 className="text-base font-bold text-gray-900">M-Ticket</h3>
+              <div className="rounded-xl bg-[#FFF6F3] border border-[#FFE2D9] p-3.5 sm:p-4 flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-white border border-[#FFE2D9] shadow-xs text-gray-700">
+                  <Ticket className="h-5 w-5 text-gray-800" />
+                </div>
+                <p className="text-xs sm:text-sm text-gray-700">
+                  Contactless Ticketing &amp; Fast-track Entry with M-ticket.{' '}
+                  <span className="text-[#7B1E3D] font-semibold cursor-pointer hover:underline">
+                    Learn How
+                  </span>
+                </p>
               </div>
             </div>
 
@@ -791,31 +774,30 @@ export default function BookingPage() {
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <p className="text-xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 leading-tight">
                       ₹{Math.round(minPrice / 100).toLocaleString('en-IN')}
-                      <span className="text-xs font-normal text-gray-500 ml-1">onwards</span>
                     </p>
                     {isEventEnded ? (
-                      <p className="text-xs text-rose-700 font-semibold">
+                      <p className="text-xs text-rose-700 font-semibold mt-0.5">
                         Event Concluded
                       </p>
                     ) : (
-                      <p className="text-xs text-green-600 font-medium">
-                        Tickets Available
+                      <p className="text-xs text-emerald-600 font-semibold mt-0.5">
+                        Available
                       </p>
                     )}
                   </div>
                   {isEventEnded ? (
                     <Button
                       disabled
-                      className="bg-slate-200 text-slate-500 cursor-not-allowed font-semibold px-6 py-3 rounded-lg text-sm"
+                      className="bg-slate-200 text-slate-500 cursor-not-allowed font-semibold px-6 py-2.5 rounded-lg text-sm"
                     >
                       Event Ended
                     </Button>
                   ) : (
                     <Button
                       onClick={handleBookNow}
-                      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold px-6 py-3 rounded-lg text-sm transition-colors shadow-sm"
+                      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold px-7 py-2.5 rounded-lg text-sm transition-colors shadow-sm"
                     >
                       Book Now
                     </Button>
