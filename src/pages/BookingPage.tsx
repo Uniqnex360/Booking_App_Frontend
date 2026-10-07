@@ -333,6 +333,7 @@ export default function BookingPage() {
 
       const options = {
         key: order.key_id,
+        order_id: order.order_id,
         amount: order.amount_paise,
         currency: order.currency || 'INR',
         name: 'Vyhbz',
@@ -340,10 +341,14 @@ export default function BookingPage() {
         handler: async (response: any) => {
           setIsConfirming(true);
           try {
+            const orderId = response.razorpay_order_id || order.order_id;
+            if (!orderId || !response.razorpay_payment_id || !response.razorpay_signature) {
+              throw new Error('Payment gateway response is incomplete. Please contact support.');
+            }
             await unwrap<any>(
               api.post('/payments/verify', {
                 booking_id: booking.id,
-                razorpay_order_id: response.razorpay_order_id,
+                razorpay_order_id: orderId,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
               })
@@ -355,7 +360,7 @@ export default function BookingPage() {
             );
           } catch (err: any) {
             toast.error(
-              `Confirmation failed after payment. Please contact support with Payment ID: ${response.razorpay_payment_id}`
+              err.message || `Confirmation failed after payment. Please contact support with Payment ID: ${response.razorpay_payment_id}`
             );
           } finally {
             setIsBooking(false);
