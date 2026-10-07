@@ -13,7 +13,7 @@
 //   reviews_count: number;
 //   tags: string[];
 
-import { EventStatus } from "./event.types";
+import { EventCategory, EventStatus } from "./event.types";
 
 // }
 export interface Event {
@@ -33,7 +33,7 @@ export interface Event {
   reviews_count?: number;
   tags?: string[];
 }
-export type EventCategory = 'concert' | 'comedy' | 'sports' | 'workshop' | 'theatre' | 'exhibition' | 'other';
+export type { EventCategory };
 
 export interface Restaurant {
   id: string;

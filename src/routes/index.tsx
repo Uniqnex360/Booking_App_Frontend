@@ -1,6 +1,6 @@
 import SupportPage from "@/pages/SupportPage";
 import SeatMapPage from "@/pages/SeatMapPage";
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { PrivateRoute } from '@/components/PrivateRoute';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
@@ -8,6 +8,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import MoviesPage from '@/pages/MoviesPage';
 import MovieDetailPage from '@/pages/MovieDetailPage';
 import EventsPage from '@/pages/EventsPage';
+import DiningListingPage from '@/pages/DiningListingPage';
 import RestaurantsPage from '@/pages/RestaurantsPage';
 import BookingPage from '@/pages/BookingPage';
 import ProfilePage from '@/pages/ProfilePage';
@@ -16,6 +17,7 @@ import BecomePartnerPage from '@/pages/BecomePartnerPage';
 import PartnerDashboard from '@/pages/PartnerDashboard';
 import AdminPartnersPage from '@/pages/AdminPartnersPage';
 import PartnerEventCreatePage from '@/pages/PartnerEventCreatePage';
+import PartnerDiningCreatePage from '@/pages/PartnerDiningCreatePage';
 import AdminModerationPage from '@/pages/AdminModerationPage';
 import BookingDetailPage from "@/pages/BookingDetailPage";
 import VerifyOtpPage from "@/pages/VerifyOtpPage";
@@ -52,7 +54,8 @@ export function AppRoutes() {
       <Route path="/showtimes/:id/seat-map" element={<SeatMapPage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:id" element={<BookingPage />} />
-      <Route path="/restaurants" element={<RestaurantsPage />} />
+      <Route path="/dining" element={<DiningListingPage />} />
+      <Route path="/restaurants" element={<Navigate to="/dining" replace />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
     <Route path="/venues" element={<VenuesPage />} />
@@ -111,6 +114,14 @@ export function AppRoutes() {
         element={
           <PrivateRoute>
             <PartnerEventCreatePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/partner/dining/new"
+        element={
+          <PrivateRoute>
+            <PartnerDiningCreatePage />
           </PrivateRoute>
         }
       />

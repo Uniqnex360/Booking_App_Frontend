@@ -13,6 +13,7 @@
   "dependencies": {
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
     "@hookform/resolvers": "^3.9.0",
     "@photo-sphere-viewer/core": "^5.15.1",
     "@photo-sphere-viewer/gyroscope-plugin": "^5.15.1",

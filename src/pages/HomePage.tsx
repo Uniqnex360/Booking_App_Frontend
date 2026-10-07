@@ -97,7 +97,7 @@ const DEFAULT_BANNERS = [
 const CATEGORIES = [
   { icon: Film, title: 'Movies', link: '/movies' },
   { icon: Music, title: 'Events', link: '/events' },
-  { icon: Utensils, title: 'Dining', link: '/restaurants' },
+  { icon: Utensils, title: 'Dining', link: '/dining' },
 ];
 
 const CITY_STORAGE_KEY = 'vyhbz_selected_city';

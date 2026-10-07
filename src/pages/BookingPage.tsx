@@ -37,6 +37,9 @@ import {
   ChevronUp,
   Maximize2,
   Image as ImageIcon,
+  Utensils,
+  CheckCircle2,
+  Sparkles,
 } from 'lucide-react';
 import { format, parseISO, differenceInHours, differenceInMinutes } from 'date-fns';
 import { toast } from 'sonner';
@@ -51,6 +54,7 @@ const categoryLabels: Record<string, string> = {
   workshop: 'Workshops',
   theatre: 'Performances',
   exhibition: 'Exhibitions',
+  dining: 'Dining Experience',
   other: 'Events',
 };
 
@@ -379,6 +383,59 @@ const [showTerms, setShowTerms] = useState(false);
                 {isInterested ? 'Interested ✓' : "I'm Interested"}
               </Button>
             </div> */}
+
+            {/* Dining Experience Specific Panel */}
+            {eventData.category === 'dining' && (
+              <div className="space-y-4 p-5 rounded-2xl bg-amber-50/40 border border-amber-200/60">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-amber-200/50">
+                  <div className="flex items-center gap-2 text-amber-900 font-bold text-lg">
+                    <Utensils className="h-5 w-5 text-[#7B1E3D]" />
+                    Dining Experience Highlights
+                  </div>
+                  {eventData.price_range && (
+                    <Badge variant="outline" className="bg-white border-amber-300 text-amber-900 font-semibold px-3 py-1 text-sm shadow-xs">
+                      Cost: {'₹'.repeat(eventData.price_range)} ({
+                        eventData.price_range === 1 ? 'Budget Friendly' :
+                        eventData.price_range === 2 ? 'Pocket Friendly' :
+                        eventData.price_range === 3 ? 'Upscale Dining' : 'Fine Dining Luxury'
+                      })
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Cuisine Chips */}
+                {eventData.cuisine && eventData.cuisine.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-900/70">
+                      Cuisines
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {eventData.cuisine.map((c: string, idx: number) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 rounded-full text-xs font-semibold bg-white text-gray-800 border border-amber-200 shadow-xs"
+                        >
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* What's Included */}
+                {eventData.what_included && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-900/70 flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-[#7B1E3D]" />
+                      What's Included
+                    </span>
+                    <div className="bg-white p-3.5 rounded-xl border border-amber-200/80 text-sm text-gray-800 leading-relaxed whitespace-pre-line shadow-xs">
+                      {eventData.what_included}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* About Section */}
             <div className="space-y-3">

@@ -44,6 +44,7 @@
     Sparkles,
     MapPin,
     Users,
+    Utensils,
   } from "lucide-react";
   import { fileToDataUrl } from "@/utils/fileToDataUrl";
 
@@ -57,6 +58,7 @@
     workshop: { label: "Workshop", icon: Wrench },
     theatre: { label: "Theatre", icon: Drama },
     exhibition: { label: "Exhibition", icon: Palette },
+    dining: { label: "Dining", icon: Utensils },
     other: { label: "Other", icon: Sparkles },
   };
 

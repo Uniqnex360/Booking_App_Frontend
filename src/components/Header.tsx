@@ -52,7 +52,7 @@ const CITY_STORAGE_KEY = "vyhbz_selected_city";
 const navLinks = [
   { href: "/movies", label: "Movies" },
   { href: "/events", label: "Events" },
-  { href: "/restaurants", label: "Dining" },
+  { href: "/dining", label: "Dining" },
 ];
 
 interface SearchResults {
@@ -229,7 +229,7 @@ export function Header() {
   };
 
   useEffect(() => {
-    const DISCOVERY_PATHS = ["/", "/movies", "/events", "/restaurants"];
+    const DISCOVERY_PATHS = ["/", "/movies", "/events", "/dining", "/restaurants"];
     const onDiscovery = DISCOVERY_PATHS.some((p) =>
       p === "/" ? location.pathname === "/" : location.pathname.startsWith(p),
     );

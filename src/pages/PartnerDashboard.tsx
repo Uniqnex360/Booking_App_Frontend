@@ -23,6 +23,7 @@ import {
   Phone,
   MapPin,
   Clock,
+  Utensils,
   CheckCircle2,
   Calendar,
   Plus,
@@ -334,20 +335,20 @@ export default function PartnerDashboard() {
               <Clock className="h-4 w-4" />
               Application under review · We'll notify you once approved
             </div>
-          ) : partner?.partner_type === "event_organiser" ? (
-            <Button
-              onClick={() => navigate("/partner/events/new")}
-              className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-2xl flex items-center gap-2 shadow-sm"
-            >
-              <Plus className="h-4 w-4" /> Host New Event
-            </Button>
           ) : (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 flex items-center gap-2 text-sm text-slate-600">
-              <Store className="h-4 w-4 text-[#7B1E3D]" />
-              {partner?.partner_type === "restaurant"
-                ? "Restaurant Partner"
-                : "Partner"}
-              <span className="text-xs text-slate-400">· Coming soon</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                onClick={() => navigate("/partner/dining/new")}
+                className="bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-2xl flex items-center gap-2 shadow-xs"
+              >
+                <Utensils className="h-4 w-4" /> Host Dining
+              </Button>
+              <Button
+                onClick={() => navigate("/partner/events/new")}
+                className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-2xl flex items-center gap-2 shadow-xs"
+              >
+                <Plus className="h-4 w-4" /> Host Event
+              </Button>
             </div>
           )}
         </div>
@@ -361,20 +362,6 @@ export default function PartnerDashboard() {
             <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
               We'll notify you once an admin approves your account. You'll then
               be able to start listing on Vyhbz.
-            </p>
-          </div>
-        ) : partner?.partner_type !== "event_organiser" ? (
-          <div className="bg-white border border-slate-200 rounded-3xl p-10 text-center shadow-sm">
-            <Store className="mx-auto h-10 w-10 text-[#7B1E3D] mb-3" />
-            <h3 className="font-bold text-lg text-slate-900">
-              {partner?.partner_type === "restaurant"
-                ? "Restaurant Partner"
-                : "Partner Account"}
-            </h3>
-            <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
-              {partner?.partner_type === "restaurant"
-                ? "Restaurant management tools are coming soon. Meanwhile, you can update your profile from account settings."
-                : "Partner tools are coming soon."}
             </p>
           </div>
         ) : (

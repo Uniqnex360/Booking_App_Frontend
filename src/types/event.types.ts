@@ -7,7 +7,22 @@ export type EventCategory =
   | 'workshop'
   | 'theatre'
   | 'exhibition'
+  | 'dining'
   | 'other';
+
+export const DINING_TAGS = [
+  'FINE_DINING',
+  'SUNDAY_BRUNCH',
+  'STREET_FOOD',
+  'BUFFET',
+  'POOLSIDE',
+  'ROOFTOP',
+  'OUTDOOR_SEATING',
+  'LIVE_MUSIC',
+  'KIDS_ALLOWED',
+] as const;
+
+export type DiningTag = typeof DINING_TAGS[number];
 
 export interface TicketCategory {
   name: string;
@@ -31,6 +46,10 @@ export interface EventItem {
   description?: string;
   language?: string;
   tags?: string[];
+  cuisine?: string[];
+  price_range?: number;
+  what_included?: string;
+  min_price_paise?: number;
   is_online?: boolean;
   is_outdoor?: boolean;
   is_fast_filling?: boolean;
@@ -64,6 +83,9 @@ export interface EventCreatePayload {
   description?: string;
   language?: string;
   tags?: string[];
+  cuisine?: string[];
+  price_range?: number;
+  what_included?: string;
   is_online?: boolean;
   is_outdoor?: boolean;
   is_fast_filling?: boolean;
@@ -95,6 +117,9 @@ export interface EventUpdatePayload {
   description?: string;
   language?: string;
   tags?: string[];
+  cuisine?: string[];
+  price_range?: number;
+  what_included?: string;
   is_online?: boolean;
   is_outdoor?: boolean;
   is_fast_filling?: boolean;
