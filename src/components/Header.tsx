@@ -383,12 +383,13 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 font-sans">
-      <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-16 sm:h-[72px]">
+      <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-[72px] sm:h-[88px]">
         <Link to={withCity("/", city)} className="flex items-center shrink-0 py-1">
           <img
             src="/logo.png"
             alt="Vyhbz"
-            className="h-12 sm:h-14 md:h-16 w-auto object-contain hover:scale-105 transition-transform"
+              className="h-14 sm:h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform"
+
           />
         </Link>
 
