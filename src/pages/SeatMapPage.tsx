@@ -479,8 +479,8 @@ export default function SeatMapPage() {
     0,
   );
   const rowOrder = Object.keys(rawRows).sort();
-  const FRONT_M = 4.5;
-  const PITCH_M = isCoupleScreen ? 1.4 : 1.1;
+  const FRONT_M = mapData?.first_row_distance_m != null ? Number(mapData.first_row_distance_m) : 4.0;
+  const PITCH_M = mapData?.row_pitch_m != null ? Number(mapData.row_pitch_m) : (isCoupleScreen ? 1.4 : 1.1);
   const rowDistances: Record<string, number> = {};
   rowOrder.forEach((r, i) => {
     rowDistances[r] = Number((FRONT_M + i * PITCH_M).toFixed(1));
@@ -867,7 +867,10 @@ export default function SeatMapPage() {
                               maxWidth: "1180px",
                             }}
                           >
-                            <div className="flex items-center justify-center">
+                            <div
+                              className="flex items-center justify-center cursor-default"
+                              title={rowDistances[rowLabel] !== undefined ? `Row ${rowLabel} (~${rowDistances[rowLabel]}m from screen)` : `Row ${rowLabel}`}
+                            >
                               <span className="text-gray-400 font-semibold text-[10px] sm:text-xs select-none">
                                 {rowLabel}
                               </span>
