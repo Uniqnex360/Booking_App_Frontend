@@ -488,15 +488,14 @@ export default function SeatMapPage() {
       (a, b) => a.number - b.number,
     );
   });
-  if (isCoupleScreen) {
-    tiers.sort((a, b) => {
-      const aFirst = Object.keys(a.rows).sort()[0];
-      const bFirst = Object.keys(b.rows).sort()[0];
-      return aFirst.localeCompare(bFirst);
-    });
-  } else {
-    tiers.sort((a, b) => b.price_paise - a.price_paise);
-  }
+  tiers.sort((a, b) => {
+    if (b.price_paise !== a.price_paise) {
+      return b.price_paise - a.price_paise;
+    }
+    const aLast = Object.keys(a.rows).sort().reverse()[0] || "";
+    const bLast = Object.keys(b.rows).sort().reverse()[0] || "";
+    return bLast.localeCompare(aLast, undefined, { numeric: true });
+  });
   const totalPricePaise = selectedSeats.reduce(
     (acc, s) => acc + (s.price_paise || 0),
     0,
@@ -875,7 +874,11 @@ export default function SeatMapPage() {
                       <div className="flex-grow h-px bg-gray-200" />
                     </div>
                     <div className="space-y-1.5 flex flex-col items-center w-full">
-                      {Object.entries(tier.rows).map(([rowLabel, seatList]) => {
+                      {Object.entries(tier.rows)
+                        .sort(([rowA], [rowB]) =>
+                          rowB.localeCompare(rowA, undefined, { numeric: true }),
+                        )
+                        .map(([rowLabel, seatList]) => {
                         const blocks = splitIntoBlocks(seatList);
                         const rowIsCouple =
                           seatList.some((s) => s.is_couple) || isCoupleScreen;
