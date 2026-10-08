@@ -228,15 +228,15 @@ const [showStickyBar, setShowStickyBar] = useState(false);
     );
   }, [movie]);
   useEffect(() => {
-  const el = heroRef.current;
-  if (!el) return;
-  const obs = new IntersectionObserver(
-    ([entry]) => setShowStickyBar(!entry.isIntersecting),
-    { threshold: 0, rootMargin: "-64px 0px 0px 0px" },
-  );
-  obs.observe(el);
-  return () => obs.disconnect();
-}, [movie]);
+    const el = heroRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0, rootMargin: "-100px 0px 0px 0px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [movie]);
   if (loading) {
     return <LoadingPage showFooter={false} />;
   }
@@ -330,28 +330,51 @@ const [showStickyBar, setShowStickyBar] = useState(false);
   const shouldTruncate = synopsisText.length > 250;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col pb-16 lg:pb-0">
       <Header />
-    <div
-  className={`fixed left-0 right-0 top-0 lg:top-[104px] z-30 bg-white border-b border-gray-200 shadow-sm transition-transform duration-200 ${
-    showStickyBar ? "translate-y-0" : "-translate-y-full pointer-events-none"
-  }`}
->
-  <div className="max-w-[1240px] mx-auto px-4 py-3 flex items-center justify-between gap-4">
-    <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
-      {movie.title}
-    </h2>
-    <button
-      onClick={handleBookTicketsClick}
-      className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-6 py-2 rounded-md transition shrink-0"
-    >
-      Book tickets
-    </button>
-  </div>
-</div>
+      {/* Sticky Book Bar - Docked at bottom on mobile/tablet, docked below 128px header on desktop */}
       <div
-      ref={heroRef}
-        className="relative pt-16 lg:pt-[104px] bg-[#1A1A2E] overflow-hidden"
+        className={`fixed left-0 right-0 z-40 bg-white transition-all duration-300
+          /* Mobile (< lg): Dock to bottom */
+          bottom-0 border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]
+          ${showStickyBar ? "translate-y-0" : "translate-y-full pointer-events-none"}
+          /* Desktop (lg+): Dock right below 128px Header */
+          lg:bottom-auto lg:top-[128px] lg:border-t-0 lg:border-b lg:shadow-sm lg:pb-0
+          ${showStickyBar ? "lg:translate-y-0" : "lg:-translate-y-full lg:pointer-events-none"}
+        `}
+      >
+        <div className="max-w-[1240px] mx-auto px-4 py-2.5 sm:py-3 flex items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 truncate">
+              {movie.title}
+            </h2>
+            <div className="flex items-center gap-2 text-xs text-gray-500 lg:hidden mt-0.5">
+              {movie.certificate && (
+                <span className="border border-gray-300 rounded px-1 text-[10px] font-semibold text-gray-600">
+                  {movie.certificate}
+                </span>
+              )}
+              {movie.language && <span>{movie.language}</span>}
+              {genres.length > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="truncate">{genres[0]}</span>
+                </>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={handleBookTicketsClick}
+            className="bg-[#7B1E3D] hover:bg-[#5C0F2A] active:scale-[0.98] text-white font-bold text-xs sm:text-sm px-6 sm:px-8 py-2.5 sm:py-2.5 rounded-lg transition shrink-0 shadow-md shadow-[#7B1E3D]/20 cursor-pointer"
+          >
+            Book tickets
+          </button>
+        </div>
+      </div>
+
+      <div
+        ref={heroRef}
+        className="relative pt-[72px] sm:pt-[88px] lg:pt-[128px] bg-[#1A1A2E] overflow-hidden"
         style={{
           backgroundImage: movie.banner_url
             ? `linear-gradient(90deg, #1A1A2E 0%, rgba(26,26,46,0.85) 45%, rgba(26,26,46,0.5) 100%), url(${movie.banner_url})`
