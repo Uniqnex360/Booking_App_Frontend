@@ -10,6 +10,7 @@ export async function payForBooking(opts: {
   bookingId: string;
   description: string;
   prefill: { name?: string; email?: string; contact?: string };
+  onConfirming?: () => void;
 }): Promise<PayResult> {
   // Always create the order fresh on Pay click, so the amount includes food.
   const order = await unwrap<any>(
@@ -32,6 +33,7 @@ export async function payForBooking(opts: {
       prefill: opts.prefill,
       theme: { color: "#7B1E3D" },
       handler: async (r: any) => {
+        opts.onConfirming?.();
         try {
           await unwrap<any>(
             api.post("/payments/verify", {

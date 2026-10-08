@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { payForBooking } from "@/lib/razorpayCheckout";
 import { FoodStep } from "./FoodStep";
 import type { FnbItem } from "./FoodStep";
+import { Loader2 } from "lucide-react";
 import { TermsModal } from "./TermsModal";
 import AuthModal from "./AuthModal";
 import { LoadingPage } from "./LoadingPage";
@@ -22,6 +23,7 @@ const [termsAccepted, setTermsAccepted] = useState(false);
   const [noMenu, setNoMenu] = useState(false);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showContact, setShowContact] = useState(false);
 
@@ -144,16 +146,18 @@ setMenu(m);
           email: contact.email,
           contact: contact.phone,
         },
+        onConfirming: () => setIsConfirming(true),
       });
 
       if (res.kind === "DISMISSED") {
+        setIsConfirming(false);
         toast.warning(
           "Payment cancelled. Seats are still on hold for a short time.",
         );
         return;
       }
 
-      
+      setIsConfirming(true);
       const done = await unwrap<any>(api.get(`/bookings/${bookingId}`));
       navigate(
         `/confirmation?id=${bookingId}&ref=${encodeURIComponent(
@@ -186,6 +190,7 @@ setMenu(m);
       }
     } finally {
       setSaving(false);
+      setIsConfirming(false);
     }
   };
 
@@ -241,6 +246,16 @@ setMenu(m);
           goPay(d);
         }}
       />
+
+      {isConfirming && (
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm text-white px-6 text-center">
+          <Loader2 className="h-10 w-10 animate-spin text-emerald-400" />
+          <p className="text-lg font-semibold">Confirming your payment...</p>
+          <p className="text-sm text-white/80">
+            Please do not close or refresh this page.
+          </p>
+        </div>
+      )}
     </>
   );
 }
