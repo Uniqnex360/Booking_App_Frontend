@@ -28,6 +28,7 @@ import {
   ZoomIn,
   ZoomOut,
   Info,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -363,6 +364,28 @@ export default function SeatMapPage() {
       }
     }
     setSelectedSeats([clickedSeat]);
+    idempotencyKeyRef.current = crypto.randomUUID();
+  };
+  const handleUnselectSeat = (seat: SeatItem) => {
+    if (isCoupleScreen || seat.is_couple) {
+      const sortedRow = (rawRows[seat.row_label]?.seats || []).sort(
+        (a, b) => a.number - b.number,
+      );
+      const partnerNum =
+        seat.number % 2 === 1 ? seat.number + 1 : seat.number - 1;
+      const partner = sortedRow.find((s) => s.number === partnerNum);
+      setSelectedSeats((prev) =>
+        prev.filter(
+          (s) =>
+            s.seat_ref !== seat.seat_ref &&
+            (!partner || s.seat_ref !== partner.seat_ref),
+        ),
+      );
+    } else {
+      setSelectedSeats((prev) =>
+        prev.filter((s) => s.seat_ref !== seat.seat_ref),
+      );
+    }
     idempotencyKeyRef.current = crypto.randomUUID();
   };
   const handlePayClick = () => {
@@ -1150,7 +1173,45 @@ export default function SeatMapPage() {
         </button>
       </div>
       {selectedSeats.length > 0 && (
-<div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 pt-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">          <div className="flex items-center gap-2 text-xs text-gray-600 mb-2 flex-wrap justify-center">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 pt-3 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] z-40 flex flex-col items-center justify-center shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+          {/* Selected seats list with unselect / remove buttons */}
+          <div className="flex items-center justify-between w-full max-w-sm sm:max-w-md mb-2 px-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 scrollbar-none flex-1 min-w-0">
+              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider shrink-0">
+                Seats ({selectedSeats.length}):
+              </span>
+              {selectedSeats.map((seat) => (
+                <span
+                  key={seat.seat_ref}
+                  className="inline-flex items-center gap-1 bg-[#1ea83c]/10 text-[#1ea83c] border border-[#1ea83c]/30 pl-2 pr-1 py-0.5 rounded-full text-xs font-bold shrink-0"
+                >
+                  <span>{seat.code || `${seat.row_label}${seat.number}`}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnselectSeat(seat);
+                    }}
+                    className="hover:bg-[#1ea83c]/20 rounded-full p-0.5 cursor-pointer text-[#1ea83c] transition"
+                    title={`Unselect seat ${seat.code || `${seat.row_label}${seat.number}`}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedSeats([]);
+                idempotencyKeyRef.current = crypto.randomUUID();
+              }}
+              className="text-[11px] text-red-600 hover:text-red-700 font-semibold hover:underline cursor-pointer shrink-0 ml-2"
+            >
+              Unselect all
+            </button>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-600 mb-2 flex-wrap justify-center">
             <span className="font-semibold text-gray-800 flex items-center gap-1">
               <Eye className="h-3.5 w-3.5 text-[#7B1E3D]" />
               <span>360° View from:</span>
