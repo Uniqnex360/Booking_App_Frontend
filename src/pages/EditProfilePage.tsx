@@ -559,6 +559,31 @@ export default function EditProfilePage() {
                     </span>
                   )}
                 </div>
+
+                {/* Account Deletion / Data Privacy (Google Play Compliance) */}
+                <div className="mt-8 pt-6 border-t border-red-100">
+                  <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 sm:p-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-red-900 flex items-center gap-1.5">
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                          Request Account Deletion
+                        </h4>
+                        <p className="text-xs text-red-700/80 mt-1 max-w-xl">
+                          Request the deletion of your VybHz account and associated personal data per Google Play and data privacy guidelines.
+                        </p>
+                      </div>
+                      <a
+                        href="https://booking-app-frontend-navy.vercel.app/delete-account.html"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-red-700 transition shrink-0"
+                      >
+                        Request account deletion
+                      </a>
+                    </div>
+                  </div>
+                </div>
               </form>
             </div>
           </TabsContent>

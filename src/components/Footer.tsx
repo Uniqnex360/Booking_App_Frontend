@@ -16,7 +16,8 @@ const footerSections = [
       { name: 'About Us', path: '#' },
       { name: 'Contact Us', path: '/support' },
       { name: 'Terms & Conditions', path: '/terms' },
-      { name: 'Privacy Policy', path: '/privacy.html' },
+      { name: 'Privacy Policy', path: '/privacy' },
+      { name: 'Request Account Deletion', path: 'https://booking-app-frontend-navy.vercel.app/delete-account.html' },
       { name: 'FAQs', path: '/support' }
     ],
   },

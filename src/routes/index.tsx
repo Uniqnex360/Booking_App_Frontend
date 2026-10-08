@@ -31,6 +31,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import VenuesPage from "@/pages/VenuesPage";
 import FoodPage from "@/pages/FoodPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 
 export function AppRoutes() {
   return (
@@ -52,6 +53,7 @@ export function AppRoutes() {
       <Route path="/support/home" element={<SupportPage />} />
       <Route path="/help" element={<SupportPage />} />
       <Route path="/terms" element={<TermsAndConditionsPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
       <Route path="/showtimes/:id/seat-map" element={<SeatMapPage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:id" element={<BookingPage />} />

@@ -382,7 +382,7 @@ export function Header() {
   });
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 font-sans">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 font-sans pt-[env(safe-area-inset-top,0px)]">
       <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-[72px] sm:h-[88px]">
         <Link to={withCity("/", city)} className="flex items-center shrink-0 py-1">
           <img
@@ -1140,13 +1140,23 @@ export function Header() {
                     <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
                   </Link>
                   <Link
-                    to="/terms"
+                    to="/privacy"
                     onClick={() => setDrawerOpen(false)}
-                    className="flex items-center justify-between py-2 text-xs font-medium text-gray-700 hover:text-[#7B1E3D] transition"
+                    className="flex items-center justify-between py-2 text-xs font-medium text-gray-700 hover:text-[#7B1E3D] transition border-b border-gray-50"
                   >
                     <span>Privacy Policy</span>
                     <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
                   </Link>
+                  <a
+                    href="https://booking-app-frontend-navy.vercel.app/delete-account.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setDrawerOpen(false)}
+                    className="flex items-center justify-between py-2 text-xs font-medium text-red-600 hover:text-red-700 transition"
+                  >
+                    <span>Request account deletion</span>
+                    <ExternalLink className="h-3.5 w-3.5 text-red-400" />
+                  </a>
                 </div>
 
                 <div className="text-center text-[11px] text-gray-400 pt-4">

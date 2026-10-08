@@ -1159,23 +1159,23 @@ export default function BuyTicketsPage() {
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-2.5">
+                      <div className="flex items-center gap-2">
                         <div
-                          className="group flex items-center gap-1.5 bg-[#FFF8E7] text-[#FF9800] border border-[#FFE8B3] rounded-md px-2 py-1.5 text-xs font-semibold cursor-pointer transition-all duration-200"
+                          className="flex items-center gap-1 bg-[#FFF8E7] text-[#FF9800] border border-[#FFE8B3] rounded-md px-2 py-1 text-xs font-semibold"
                           title="Food & Beverage Available"
                         >
                           <Coffee className="h-3.5 w-3.5 shrink-0" />
-                          <span className="max-w-0 overflow-hidden group-hover:max-w-[120px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[11px] font-bold">
-                            Food &amp; Beverage
+                          <span className="whitespace-nowrap text-[10px] font-bold">
+                            F&amp;B
                           </span>
                         </div>
 
                         <div
-                          className="group flex items-center gap-1.5 bg-[#E8F8EE] text-[#1EA83C] border border-[#C5F0D5] rounded-md px-2 py-1.5 text-xs font-semibold cursor-pointer transition-all duration-200"
+                          className="flex items-center gap-1 bg-[#E8F8EE] text-[#1EA83C] border border-[#C5F0D5] rounded-md px-2 py-1 text-xs font-semibold"
                           title="M-Ticket Available"
                         >
                           <Smartphone className="h-3.5 w-3.5 shrink-0" />
-                          <span className="max-w-0 overflow-hidden group-hover:max-w-[80px] opacity-0 group-hover:opacity-100 transition-all duration-300 ease-out whitespace-nowrap text-[11px] font-bold">
+                          <span className="whitespace-nowrap text-[10px] font-bold">
                             M-Ticket
                           </span>
                         </div>
@@ -1242,6 +1242,8 @@ export default function BuyTicketsPage() {
                               key={slot.id}
                               className="relative group"
                               onMouseEnter={() => fetchShowtimePricing(slot.id)}
+                              onTouchStart={() => fetchShowtimePricing(slot.id)}
+                              onFocus={() => fetchShowtimePricing(slot.id)}
                             >
                               {!isPast && (
                                 <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
