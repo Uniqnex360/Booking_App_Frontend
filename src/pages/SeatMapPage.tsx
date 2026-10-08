@@ -211,14 +211,20 @@ export default function SeatMapPage() {
         );
         return;
       }
-      // If clicked seat or partner is already selected, deselect
+      // If clicked seat or partner is already selected, deselect only this pair
       const isAlreadySelected = selectedSeats.some(
         (s) =>
           s.seat_ref === clickedSeat.seat_ref ||
           s.seat_ref === partnerSeat.seat_ref,
       );
       if (isAlreadySelected) {
-        setSelectedSeats([]);
+        setSelectedSeats((prev) =>
+          prev.filter(
+            (s) =>
+              s.seat_ref !== clickedSeat.seat_ref &&
+              s.seat_ref !== partnerSeat.seat_ref,
+          ),
+        );
         idempotencyKeyRef.current = crypto.randomUUID();
         return;
       }
@@ -236,6 +242,13 @@ export default function SeatMapPage() {
         toast.info(
           `Couple seats can only be booked in pairs of 2. Quantity updated to ${effectiveQty}.`,
         );
+      }
+      // If user has room to add this pair (< effectiveQty)
+      if (selectedSeats.length > 0 && selectedSeats.length < effectiveQty) {
+        const next = [...selectedSeats, clickedSeat, partnerSeat];
+        setSelectedSeats(next);
+        idempotencyKeyRef.current = crypto.randomUUID();
+        return;
       }
       const pairsNeeded = Math.floor(effectiveQty / 2);
       // Build sorted pairs in this row
@@ -275,11 +288,25 @@ export default function SeatMapPage() {
       idempotencyKeyRef.current = crypto.randomUUID();
       return;
     }
+    // Normal seat click
     const isAlreadySelected = selectedSeats.some(
       (s) => s.seat_ref === clickedSeat.seat_ref,
     );
     if (isAlreadySelected) {
-      setSelectedSeats([]);
+      setSelectedSeats((prev) =>
+        prev.filter((s) => s.seat_ref !== clickedSeat.seat_ref),
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      return;
+    }
+    // If user currently has fewer seats than requiredSeatCount, add this seat!
+    if (selectedSeats.length > 0 && selectedSeats.length < requiredSeatCount) {
+      const nextSeats = [...selectedSeats, clickedSeat];
+      nextSeats.sort((a, b) => {
+        if (a.row_label !== b.row_label) return a.row_label.localeCompare(b.row_label);
+        return a.number - b.number;
+      });
+      setSelectedSeats(nextSeats);
       idempotencyKeyRef.current = crypto.randomUUID();
       return;
     }
@@ -1158,8 +1185,15 @@ export default function SeatMapPage() {
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" /> Processing...
               </>
-            ) : (
+            ) : canProceed ? (
               <>Proceed • {formatRupees(totalPricePaise)}</>
+            ) : (
+              <>
+                Select {requiredSeatCount - selectedSeats.length} more{" "}
+                {requiredSeatCount - selectedSeats.length === 1
+                  ? "seat"
+                  : "seats"}
+              </>
             )}
           </button>
         </div>
