@@ -156,7 +156,15 @@ export default function BuyTicketsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [langFormatFilter, setLangFormatFilter] = useState<string>("all");
+  const [langFormatFilter, setLangFormatFilter] = useState<string>(
+    () => searchParams.get("filter") || "all",
+  );
+  useEffect(() => {
+    const filterFromUrl = searchParams.get("filter");
+    if (filterFromUrl) {
+      setLangFormatFilter(filterFromUrl);
+    }
+  }, [searchParams]);
   const [preferredTime, setPreferredTime] = useState<PreferredTime>("any");
   const [openDropdown, setOpenDropdown] = useState<
     "langFormat" | "time" | "price" | "special" | "other" | "sort" | null
@@ -241,7 +249,8 @@ export default function BuyTicketsPage() {
           .filter(
             (s) =>
               langFormatFilter === "all" ||
-              `${s.language} - ${s.format}` === langFormatFilter,
+              `${s.language} - ${s.format}`.toLowerCase() ===
+                langFormatFilter.toLowerCase(),
           )
           .filter((s) => {
             if (selectedSpecialFormats.length === 0) return true;
@@ -561,7 +570,11 @@ export default function BuyTicketsPage() {
   }
 
   const activeFormatDisplay =
-    langFormatFilter === "all" ? `${movie.language} - 2D` : langFormatFilter;
+    langFormatFilter === "all"
+      ? (langFormatOptions[0] || `${movie.language} - 2D`)
+      : (langFormatOptions.find(
+          (o) => o.toLowerCase() === langFormatFilter.toLowerCase(),
+        ) || langFormatFilter);
 
   return (
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">
@@ -713,7 +726,7 @@ export default function BuyTicketsPage() {
                             setOpenDropdown(null);
                           }}
                           className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
-                            langFormatFilter === opt
+                            langFormatFilter.toLowerCase() === opt.toLowerCase()
                               ? "text-[#7B1E3D] font-semibold"
                               : "text-gray-700"
                           }`}

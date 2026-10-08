@@ -203,24 +203,55 @@ const [showStickyBar, setShowStickyBar] = useState(false);
   const langFormatMap = useMemo(() => {
     const map: Record<string, Set<string>> = {};
 
+    const addLangFormat = (l: string, f: string) => {
+      const cleanLang = l.trim();
+      const cleanFmt = f.trim() || "2D";
+      if (!cleanLang) return;
+      const formattedLang =
+        cleanLang.charAt(0).toUpperCase() + cleanLang.slice(1).toLowerCase();
+      if (!map[formattedLang]) map[formattedLang] = new Set();
+      map[formattedLang].add(cleanFmt.toUpperCase());
+    };
+
+    if (movie?.language) {
+      const declaredLangs = movie.language
+        .split(/[,/&|]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      declaredLangs.forEach((dl) => {
+        addLangFormat(dl, "2D");
+      });
+    }
+
     if (movie?.venues) {
       movie.venues.forEach((v) => {
         v.showtimes?.forEach((s: any) => {
-          const lang = (
-            s.language ||
-            movie.language ||
-            "ENGLISH"
-          ).toUpperCase();
-          const fmt = (s.format || "2D").toUpperCase();
-          if (!map[lang]) map[lang] = new Set();
-          map[lang].add(fmt);
+          if (s.language) {
+            const langs = s.language
+              .split(/[,/&|]+/)
+              .map((str: string) => str.trim())
+              .filter(Boolean);
+            langs.forEach((l: string) => addLangFormat(l, s.format || "2D"));
+          }
         });
       });
     }
 
     if (Object.keys(map).length === 0 && movie) {
-      const defaultLang = (movie.language || "ENGLISH").toUpperCase();
-      map[defaultLang] = new Set(["2D", "IMAX 2D"]);
+      const defaultLang = movie.language || "English";
+      const parts = defaultLang
+        .split(/[,/&|]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (parts.length > 0) {
+        parts.forEach((p) => {
+          addLangFormat(p, "2D");
+          addLangFormat(p, "IMAX 2D");
+        });
+      } else {
+        addLangFormat("English", "2D");
+        addLangFormat("English", "IMAX 2D");
+      }
     }
 
     return Object.fromEntries(
