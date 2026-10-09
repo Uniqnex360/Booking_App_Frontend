@@ -10,6 +10,7 @@ import { BookingCard } from "./BookingCard";
 export default function ConfirmationPage() {
   const [params] = useSearchParams();
   const id = params.get("id") ?? "";
+  const ref = params.get("ref") ?? "";
 
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -21,7 +22,9 @@ export default function ConfirmationPage() {
     }
     (async () => {
       try {
-        const data = await unwrap<any>(api.get(`/bookings/${id}`));
+        const data = await unwrap<any>(
+          api.get(`/bookings/${id}`, { params: ref ? { ref } : undefined })
+        );
         setBooking(data);
       } catch {
         setBooking(null);
