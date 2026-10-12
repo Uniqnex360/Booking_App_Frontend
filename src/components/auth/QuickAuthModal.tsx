@@ -157,6 +157,10 @@ export function QuickAuthModal() {
 
   const openPhoneEmailLogin = () => {
     setError(null);
+    if ((window as any).Android && typeof (window as any).Android.openPhoneLogin === "function") {
+      (window as any).Android.openPhoneLogin(clientId);
+      return;
+    }
     if (Capacitor.isNativePlatform()) {
       setShowInAppPhoneAuth(true);
       return;
