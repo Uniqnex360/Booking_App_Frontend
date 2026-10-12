@@ -76,6 +76,8 @@ export default function SeatMapPage() {
   typeof window !== "undefined" && window.innerWidth < 640 ? 0.55 : 1.0,
 );
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  const [isRetrying, setIsRetrying] = useState(false);
+  const autoRetryCountRef = useRef(0);
   const venueShowtimes = useMemo<VenueShowtimeItem[]>(() => {
     try {
       const cached = sessionStorage.getItem("vyhbz_venue_showtimes");
@@ -113,21 +115,35 @@ export default function SeatMapPage() {
         new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime(),
     );
   }, [venueShowtimes, mapData, id]);
-  const fetchSeatMap = async () => {
-    setLoading(true);
+  const fetchSeatMap = async (isManual = false) => {
+    if (isManual) {
+      setIsRetrying(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const data = await unwrap<SeatMapDetail>(
         api.get(`/showtimes/${id}/seat-map`),
       );
       setMapData(data);
       setSelectedSeats([]);
+
+      // If source unavailable on initial load, auto-retry once after 3.5s for Render cold-starts
+      if (data?.code === "SOURCE_UNAVAILABLE" && autoRetryCountRef.current < 2) {
+        autoRetryCountRef.current += 1;
+        setTimeout(() => {
+          fetchSeatMap(true);
+        }, 3500);
+      }
     } catch (err) {
       console.error("Failed to load seat map", err);
     } finally {
       setLoading(false);
+      setIsRetrying(false);
     }
   };
   useEffect(() => {
+    autoRetryCountRef.current = 0;
     fetchSeatMap();
   }, [id]);
   useEffect(() => {
@@ -678,7 +694,7 @@ export default function SeatMapPage() {
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {isStale && !isSourceUnavailable && (
               <button
-                onClick={fetchSeatMap}
+                onClick={() => fetchSeatMap(true)}
                 className="text-[#7B1E3D] hover:bg-[#7B1E3D]/10 border border-[#7B1E3D]/30 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh
@@ -834,18 +850,24 @@ export default function SeatMapPage() {
       >
         {isSourceUnavailable ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white border border-gray-200 rounded-2xl max-w-lg mx-auto text-center px-6 mt-8 shadow-xs">
-            <AlertCircle className="h-12 w-12 text-[#7B1E3D] mb-3" />
+            <AlertCircle className={`h-12 w-12 text-[#7B1E3D] mb-3 ${isRetrying ? "animate-pulse" : ""}`} />
             <h2 className="text-xl font-bold mb-2 text-gray-900">
-              Availability temporarily unavailable
+              {isRetrying
+                ? "Connecting to cinema provider..."
+                : "Availability temporarily unavailable"}
             </h2>
             <p className="text-gray-500 text-sm">
-              The external ticketing system is unreachable. Please try again.
+              {isRetrying
+                ? "The cinema ticketing server is waking up. Please wait a moment..."
+                : "The external ticketing system is temporarily waking up or unreachable. Please try again."}
             </p>
             <button
-              onClick={fetchSeatMap}
-              className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-2.5 px-6 rounded-lg text-sm transition cursor-pointer"
+              onClick={() => fetchSeatMap(true)}
+              disabled={isRetrying}
+              className="mt-6 bg-[#7B1E3D] hover:bg-[#5C0F2A] disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-lg text-sm transition cursor-pointer flex items-center justify-center gap-2 mx-auto"
             >
-              Retry Connection
+              {isRetrying && <RefreshCw className="h-4 w-4 animate-spin" />}
+              {isRetrying ? "Retrying..." : "Retry Connection"}
             </button>
           </div>
         ) : (

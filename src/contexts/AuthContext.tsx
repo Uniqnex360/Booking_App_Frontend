@@ -23,8 +23,9 @@ import type {
   FirebaseLoginPayload,
 } from '@/types/user.types';
 import api, { clearTokens, getAccessToken, setAuthFailureHandler } from '@/api/client';
-import { GoogleAuthProvider, OAuthProvider, signInWithPopup } from 'firebase/auth';
+import { OAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { signInWithGoogleNative } from '@/lib/googleAuth';
 
 
 interface AuthContextValue {
@@ -152,17 +153,20 @@ const verifySignUp = async (userId: string, code: string) => {
 
   const continueWithGoogle = async () => {
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      const result = await signInWithPopup(auth, provider);
-      const token = await result.user.getIdToken();
+      const token = await signInWithGoogleNative();
       return await signInWithFirebase({ token });
     } catch (err: any) {
-      // If user closed popup intentionally, return cancelled without error
+      // If user closed popup/dialog intentionally, return cancelled without error
+      const msg = (err?.message || "").toLowerCase();
       if (
         err?.code === "auth/popup-closed-by-user" || 
         err?.code === "auth/cancelled-popup-request" ||
-        err?.message?.includes("closed-by-user")
+        err?.code === "12501" ||
+        msg.includes("closed-by-user") ||
+        msg.includes("canceled") ||
+        msg.includes("cancelled") ||
+        msg.includes("user cancelled") ||
+        msg.includes("popup closed")
       ) {
         return { error: null, cancelled: true };
       }
