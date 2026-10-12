@@ -417,7 +417,9 @@ export default function BuyTicketsPage() {
   }, [id]);
 
   useEffect(() => {
-    if (!venuesForDate || venuesForDate.length === 0) return;
+    // Only prefetch all showtimes if the user has actively selected a price filter;
+    // otherwise pricing is lazy-loaded on hover/focus to prevent request flooding.
+    if (selectedPriceRanges.length === 0 || !venuesForDate || venuesForDate.length === 0) return;
     venuesForDate.forEach((v) => {
       v.showtimes.forEach((slot) => {
         if (!showtimePricingMap[slot.id]) {
@@ -425,7 +427,7 @@ export default function BuyTicketsPage() {
         }
       });
     });
-  }, [venuesForDate, fetchShowtimePricing, showtimePricingMap]);
+  }, [venuesForDate, fetchShowtimePricing, showtimePricingMap, selectedPriceRanges]);
 
   const formatRuntime = (mins?: number) => {
     if (!mins) return "2h 17m";
