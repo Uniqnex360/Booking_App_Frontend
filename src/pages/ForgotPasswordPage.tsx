@@ -20,6 +20,7 @@ export default function ForgotPasswordPage() {
   } catch (err: any) {
   const detail = err?.response?.data?.detail;
   toast.error(detail ?? "Something went wrong. Try again.");
+  console.log(detail)
 } finally {
     setLoading(false);
   }

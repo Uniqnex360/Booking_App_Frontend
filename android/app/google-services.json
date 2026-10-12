@@ -1,0 +1,62 @@
+{
+  "project_info": {
+    "project_number": "835333652848",
+    "project_id": "booking-app-320a0",
+    "storage_bucket": "booking-app-320a0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:835333652848:android:2daf79573baa0e81ff8fb5",
+        "android_client_info": {
+          "package_name": "com.vyhbz.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "835333652848-9h6u901o8njffpmmoekfahceg3m0as81.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vyhbz.app",
+            "certificate_hash": "3aba71dcfc699896e6da058f552737d40cd706fe"
+          }
+        },
+        {
+          "client_id": "835333652848-nohcc5l4rim39isogjm31nt2cr29j4hi.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vyhbz.app",
+            "certificate_hash": "6626bf030e184fef2936a252661d8e72a989c5cb"
+          }
+        },
+        {
+          "client_id": "835333652848-ae8tfv2ucp9sl3l42iv8f1g3dunkhvaj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAtWhNDzXyKxJTac-PTqJDNm7t_9UqM6M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "835333652848-ae8tfv2ucp9sl3l42iv8f1g3dunkhvaj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "835333652848-q9nosshusfsfmidscimcibesu3mqo8au.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.vyhbz.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
