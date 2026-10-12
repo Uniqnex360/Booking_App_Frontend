@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VybHz</string>
+    <string name="title_activity_main">VybHz</string>
+    <string name="package_name">com.vyhbz.app</string>
+    <string name="custom_url_scheme">com.vyhbz.app</string>
+    <string name="server_client_id">835333652848-ae8tfv2ucp9sl3l42iv8f1g3dunkhvaj.apps.googleusercontent.com</string>
+</resources>

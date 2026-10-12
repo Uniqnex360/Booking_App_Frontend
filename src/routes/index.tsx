@@ -49,7 +49,6 @@ export function AppRoutes() {
       <Route path="/register" element={<PrivateRoute guest><RegisterPage /></PrivateRoute>} />
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movies/:id" element={<MovieDetailPage />} />
-            <Route path="/support" element={<SupportPage />} />
       <Route path="/support/home" element={<SupportPage />} />
       <Route path="/help" element={<SupportPage />} />
       <Route path="/terms" element={<TermsAndConditionsPage />} />
