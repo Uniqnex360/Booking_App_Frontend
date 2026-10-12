@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { checkEmailExists } from "@/api/auth.api";
 import { X, ChevronLeft, Mail, Loader2, EyeOff, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { Capacitor } from "@capacitor/core";
 
 export type AuthModalView =
   | "get-started"
@@ -27,6 +28,7 @@ export function QuickAuthModal() {
     import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID || "16879666373804430168";
 
   const [view, setView] = useState<AuthModalView>("get-started");
+  const [showInAppPhoneAuth, setShowInAppPhoneAuth] = useState(false);
   const [emailStep, setEmailStep] = useState<"enter-email" | "password">("enter-email");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +53,7 @@ export function QuickAuthModal() {
   useEffect(() => {
     if (isAuthModalOpen) {
       setView(authModalInitialView || "get-started");
+      setShowInAppPhoneAuth(false);
       setEmailStep("enter-email");
       setError(null);
       setLoading(false);
@@ -58,6 +61,8 @@ export function QuickAuthModal() {
       setPassword("");
       setShowPassword(false);
       setResendTimer(30);
+    } else {
+      setShowInAppPhoneAuth(false);
     }
   }, [isAuthModalOpen, authModalInitialView]);
 
@@ -112,6 +117,7 @@ export function QuickAuthModal() {
       ) {
         const userJsonUrl = event.data?.user_json_url;
         if (userJsonUrl) {
+          setShowInAppPhoneAuth(false);
           handlePhoneVerified(userJsonUrl);
         }
       }
@@ -124,36 +130,38 @@ export function QuickAuthModal() {
   }, []);
 
   useEffect(() => {
-    if (!isAuthModalOpen || view !== "get-started") return;
+    if (!isAuthModalOpen) return;
 
     (window as any).phoneEmailListener = (userObj: any) => {
       const userJsonUrl = userObj?.user_json_url;
       if (userJsonUrl) {
+        setShowInAppPhoneAuth(false);
         handlePhoneVerified(userJsonUrl);
       }
     };
 
-    const prevScript = document.getElementById("phone-email-script");
-    if (prevScript) {
-      prevScript.remove();
-    }
-
-    const script = document.createElement("script");
-    script.id = "phone-email-script";
-    script.src = "https://www.phone.email/sign_in_button_v1.js";
-    script.async = true;
-    document.body.appendChild(script);
+    const handleCustomToken = (e: any) => {
+      const userJsonUrl = e?.detail?.user_json_url;
+      if (userJsonUrl) {
+        setShowInAppPhoneAuth(false);
+        handlePhoneVerified(userJsonUrl);
+      }
+    };
+    window.addEventListener("phoneEmailToken", handleCustomToken);
 
     return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
+      window.removeEventListener("phoneEmailToken", handleCustomToken);
       delete (window as any).phoneEmailListener;
     };
-  }, [isAuthModalOpen, view]);
+  }, [isAuthModalOpen]);
 
   const openPhoneEmailLogin = () => {
     setError(null);
+    if (Capacitor.isNativePlatform()) {
+      setShowInAppPhoneAuth(true);
+      return;
+    }
+
     const currUrl = window.location.href;
     const w = 500;
     const h = 560;
@@ -399,22 +407,70 @@ export function QuickAuthModal() {
           filter: brightness(0.95) !important;
         }
       `}</style>
-      <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl p-6 sm:p-8 animate-in zoom-in-95 duration-200">
+      <div
+        className={`relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl ${
+          showInAppPhoneAuth ? "p-4 sm:p-5" : "p-6 sm:p-8"
+        } animate-in zoom-in-95 duration-200`}
+      >
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/70 cursor-wait">
             <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />
           </div>
         )}
 
-        {view === "get-started" && (
+        {showInAppPhoneAuth ? (
           <div>
-            <button
-              onClick={closeAuthModal}
-              className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
-              aria-label="Close"
-            >
-              <X size={20} />
-            </button>
+            <div className="flex items-center justify-between mb-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setShowInAppPhoneAuth(false);
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900 transition p-1.5 rounded-lg hover:bg-gray-100 cursor-pointer"
+              >
+                <ChevronLeft size={16} />
+                <span>Back</span>
+              </button>
+              <h3 className="text-sm font-bold text-gray-900">
+                Sign In with Phone
+              </h3>
+              <button
+                type="button"
+                onClick={closeAuthModal}
+                className="text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition cursor-pointer"
+                aria-label="Close"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {error && (
+              <div className="mb-3 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg text-center font-medium border border-red-100">
+                {error}
+              </div>
+            )}
+
+            <div className="w-full h-[520px] max-h-[75vh] rounded-xl overflow-hidden border border-gray-100 bg-white shadow-inner">
+              <iframe
+                src={`https://auth.phone.email/log-in?client_id=${clientId}&auth_type=1`}
+                title="Phone Verification"
+                className="w-full h-full border-0"
+                allow="clipboard-write"
+              />
+            </div>
+          </div>
+        ) : (
+          <>
+            {view === "get-started" && (
+              <div>
+                <button
+                  onClick={closeAuthModal}
+                  className="absolute top-5 right-5 text-gray-400 hover:text-gray-700 p-1.5 rounded-full hover:bg-gray-100 transition"
+                  aria-label="Close"
+                >
+                  <X size={20} />
+                </button>
 
             <h2 className="text-center text-lg sm:text-xl font-bold text-gray-900 mb-6">
               Get Started
@@ -801,7 +857,9 @@ export function QuickAuthModal() {
             </button>
           </div>
         )}
-      </div>
-    </div>
-  );
+      </>
+    )}
+  </div>
+</div>
+);
 }
