@@ -13,7 +13,7 @@ export async function signInWithGoogleNative(): Promise<string> {
     await GoogleAuth.initialize({
       clientId,
       scopes: ['profile', 'email'],
-      grantOfflineAccess: true,
+      grantOfflineAccess: false,
     });
     const googleUser = await GoogleAuth.signIn();
     const idToken = googleUser?.authentication?.idToken;
