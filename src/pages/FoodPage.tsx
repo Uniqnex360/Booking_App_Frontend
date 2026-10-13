@@ -200,7 +200,7 @@ setMenu(m);
 
   return (
     <>
-      {!noMenu && (
+      {!noMenu && !isConfirming && (
         <FoodStep
           isOpen
           title={booking.movie_title || booking.title}
@@ -248,7 +248,7 @@ setMenu(m);
       />
 
       {isConfirming && (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-black/70 backdrop-blur-sm text-white px-6 text-center">
+        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-3 bg-[#0f1117] text-white px-6 text-center">
           <Loader2 className="h-10 w-10 animate-spin text-emerald-400" />
           <p className="text-lg font-semibold">Confirming your payment...</p>
           <p className="text-sm text-white/80">
