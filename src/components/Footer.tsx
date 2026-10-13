@@ -32,7 +32,7 @@ const socials = [
 
 export function Footer() {
   return (
-    <footer className="bg-[#313035] text-[#cccccc] pt-8 pb-12 mt-auto">
+    <footer className="bg-[#313035] text-[#cccccc] pt-8 pb-24 md:pb-12 mt-auto">
       <div className="mx-auto max-w-[1280px] px-4 sm:px-6">
         
         <div className="flex flex-col md:flex-row items-center justify-around py-6 border-b border-[#444444] gap-6 mb-8 text-center">

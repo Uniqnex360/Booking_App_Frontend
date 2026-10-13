@@ -10,9 +10,9 @@ workflows:
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.vybhz.app
+        bundle_identifier: com.vyhbz.app
       vars:
-        BUNDLE_ID: "com.vybhz.app"
+        BUNDLE_ID: "com.vyhbz.app"
         XCODE_WORKSPACE: "App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 20
@@ -34,7 +34,7 @@ workflows:
 
       - name: Force Update Xcode Bundle Identifier
         script: |
-          perl -pi -e "s/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.vybhz.app;/g" ios/App/App.xcodeproj/project.pbxproj
+          perl -pi -e "s/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.vyhbz.app;/g" ios/App/App.xcodeproj/project.pbxproj
 
       - name: Install CocoaPods
         script: |

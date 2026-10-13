@@ -23,6 +23,7 @@ import {
   Car,
   Utensils,
   PartyPopper,
+  ArrowLeft,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { LoadingPage } from "./LoadingPage";
@@ -443,6 +444,14 @@ export default function BuyTicketsPage() {
     }));
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(withCity(`/movies/${id}`, city));
+    }
+  };
+
   const handleTicketChangeConfirm = () => {
     setShowTicketModal(false);
     const p = new URLSearchParams(searchParams);
@@ -582,8 +591,19 @@ export default function BuyTicketsPage() {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">
       {" "}
       <Header />
-      <div className="bg-white border-b border-gray-200 pt-[96px] lg:pt-[144px] pb-6">
+      <div className="bg-white border-b border-gray-200 pt-[84px] sm:pt-[96px] lg:pt-[144px] pb-5 sm:pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
+          <div className="mb-2 sm:mb-3">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="inline-flex items-center gap-2 px-2.5 py-1 -ml-2.5 rounded-lg text-xs sm:text-sm font-semibold text-gray-600 hover:text-[#7B1E3D] hover:bg-gray-100 active:scale-95 transition group cursor-pointer"
+              title="Back to Movie Details"
+            >
+              <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition text-gray-600 group-hover:text-[#7B1E3D]" />
+              <span>Back to Movie Details</span>
+            </button>
+          </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
             {movie.title} - ({movie.language})
           </h1>
@@ -638,10 +658,10 @@ export default function BuyTicketsPage() {
             <div className="text-center py-4 bg-white rounded-xl border border-gray-100 shadow-2xs max-w-md mx-auto">
               <button
                 type="button"
-                onClick={handleOpenCityModal}
-                className="text-xs text-gray-500 hover:text-[#7B1E3D] font-medium mb-3 transition cursor-pointer block mx-auto"
+                onClick={handleBack}
+                className="text-xs text-[#7B1E3D] hover:underline font-semibold mb-3 transition cursor-pointer block mx-auto"
               >
-                Unable to find what you are looking for?
+                ← Back to Movie Details
               </button>
               <button
                 type="button"
@@ -657,20 +677,30 @@ export default function BuyTicketsPage() {
         <>
           <div className="sticky top-[104px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs lg:h-[74px]">
             <div className="max-w-[1400px] mx-auto px-4 flex flex-col lg:flex-row lg:items-center lg:justify-between h-full">
-<div className="flex items-center gap-2 lg:h-full lg:border-r border-gray-200 lg:pr-10 lg:mr-8 min-w-0 w-full lg:flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1.5">                {" "}
-                {dateKeys.map((dk) => {
-                  const { weekday, day, month } = dateTabParts(dk);
-                  const isActive = activeDate === dk;
-                  return (
-                    <button
-                      key={dk}
-                      onClick={() => setSelectedDate(dk)}
-                      className={`w-[52px] sm:w-[58px] h-[52px] sm:h-[56px] py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
-                        isActive
-                          ? "bg-[#7B1E3D] text-white shadow-xs"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
-                    >
+              <div className="flex items-center lg:h-full lg:border-r border-gray-200 lg:pr-10 lg:mr-8 min-w-0 w-full lg:flex-1 py-1.5 gap-2">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="h-[48px] sm:h-[52px] px-2.5 flex items-center justify-center rounded-lg text-gray-700 hover:text-[#7B1E3D] hover:bg-gray-100 active:scale-95 transition cursor-pointer shrink-0 border border-gray-200 bg-white shadow-2xs"
+                  title="Back to Movie Details"
+                  aria-label="Back to Movie Details"
+                >
+                  <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+                </button>
+                <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                  {dateKeys.map((dk) => {
+                    const { weekday, day, month } = dateTabParts(dk);
+                    const isActive = activeDate === dk;
+                    return (
+                      <button
+                        key={dk}
+                        onClick={() => setSelectedDate(dk)}
+                        className={`w-[52px] sm:w-[58px] h-[52px] sm:h-[56px] py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
+                          isActive
+                            ? "bg-[#7B1E3D] text-white shadow-xs"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
+                      >
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wider ${
                           isActive ? "text-white" : "text-gray-500"
@@ -696,6 +726,7 @@ export default function BuyTicketsPage() {
                   );
                 })}
               </div>
+            </div>
 <div className="flex items-center h-[44px] lg:h-full w-full lg:w-auto lg:shrink-0 overflow-x-auto lg:overflow-visible border-t border-gray-100 lg:border-t-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">                <div className="relative h-full flex items-center border-r border-gray-200 px-5">
                   <button
                     onClick={() => toggleDropdown("langFormat")}

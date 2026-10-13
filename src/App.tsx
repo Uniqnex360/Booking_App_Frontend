@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AppRoutes } from './routes';
 import { QuickAuthModal } from '@/components/auth/QuickAuthModal';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
@@ -42,6 +43,7 @@ export default function App() {
     <>
       <Toaster richColors position="top-right" duration={3000} />
       <AppRoutes />
+      <MobileBottomNav />
       <QuickAuthModal />
     </>
   );

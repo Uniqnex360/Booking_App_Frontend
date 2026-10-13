@@ -45,6 +45,17 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>upi</string>
+		<string>phonepe</string>
+		<string>paytmmp</string>
+		<string>gpay</string>
+	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

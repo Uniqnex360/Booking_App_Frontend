@@ -39,29 +39,34 @@ import { LoadingPage } from "./LoadingPage";
 import { isInWishlist, toggleWishlist } from "@/utils/wishlist";
 
 function CastCrewCard({ member }: { member: CastCrewMember }) {
+  const optimizedPhotoUrl = member.photo_url
+    ? member.photo_url.replace(/\/t\/p\/(w500|w300|original)\//, "/t/p/w185/")
+    : undefined;
+
   return (
-    <div className="flex flex-col items-start shrink-0 w-[112px] sm:w-[124px]">
-      <div className="w-[104px] h-[104px] sm:w-[116px] sm:h-[116px] rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 mb-2 shrink-0 shadow-2xs">
-        {member.photo_url ? (
+    <div className="flex flex-col items-start shrink-0 w-[92px] sm:w-[124px]">
+      <div className="w-[84px] h-[84px] sm:w-[116px] sm:h-[116px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 mb-1.5 sm:mb-2 shrink-0 shadow-2xs">
+        {optimizedPhotoUrl ? (
           <img
-            src={member.photo_url}
+            src={optimizedPhotoUrl}
             alt={member.name}
+            loading="lazy"
             className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-200"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
-                `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f3f4f6&color=6b7280&size=120`;
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f3f4f6&color=6b7280&size=96`;
             }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 font-bold text-xl">
+          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 font-bold text-lg sm:text-xl">
             {member.name.charAt(0).toUpperCase()}
           </div>
         )}
       </div>
-      <p className="text-xs sm:text-sm font-semibold text-gray-900 leading-tight line-clamp-2">
+      <p className="text-[11px] sm:text-sm font-semibold text-gray-900 leading-tight line-clamp-2">
         {member.name}
       </p>
-      <p className="text-[11px] sm:text-xs text-gray-500 mt-0.5 leading-tight line-clamp-1">
+      <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 leading-tight line-clamp-1">
         {member.role}
       </p>
     </div>
@@ -423,8 +428,8 @@ const [showStickyBar, setShowStickyBar] = useState(false);
           />
         )}
 
-        <div className="relative max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-          <div className="flex items-center justify-between mb-5">
+        <div className="relative max-w-[1240px] mx-auto px-4 py-5 sm:py-8 lg:py-10">
+          <div className="flex items-center justify-between mb-4 sm:mb-5">
             <button
               type="button"
               onClick={() => navigate(withCity("/movies", city))}
@@ -481,11 +486,11 @@ const [showStickyBar, setShowStickyBar] = useState(false);
             </div>
 
             <div className="flex-1 min-w-0 text-white">
-              <h1 className="text-[32px] lg:text-[40px] font-bold leading-tight drop-shadow-md">
+              <h1 className="text-[26px] sm:text-[32px] lg:text-[40px] font-bold leading-tight drop-shadow-md">
                 {movie.title}
               </h1>
 
-              <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-4 py-3 mb-4 max-w-md gap-6">
+              <div className="flex items-center justify-between bg-[#333338]/80 backdrop-blur-md rounded-lg px-3.5 sm:px-4 py-2.5 sm:py-3 mb-3.5 sm:mb-4 max-w-md gap-4 sm:gap-6 mt-3">
                 <div className="flex items-center gap-5">
                   {movie.external_rating != null && (
                     <div className="flex items-center gap-2">
@@ -543,7 +548,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                   Rate Now
                 </button>
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-white/90 mt-5">
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-white/90 mt-3 sm:mt-5">
                 <span>{formatDuration(movie.duration_min)}</span>
                 <span className="text-white/40">•</span>
                 <span>{genres.join(", ")}</span>
@@ -560,7 +565,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                 <span className="text-white/40">•</span>
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
-              <div className="flex flex-wrap gap-2 mt-5">
+              <div className="flex flex-wrap gap-2 mt-3 sm:mt-5">
                 {Object.values(langFormatMap)
                   .flat()
                   .map((fmt, idx) => (
@@ -576,12 +581,10 @@ const [showStickyBar, setShowStickyBar] = useState(false);
                 </span>
               </div>
 
-              
-
-              <div className="flex items-center gap-3 mt-8">
+              <div className="flex items-center gap-3 mt-5 sm:mt-8">
                 <button
                   onClick={handleBookTicketsClick}
-                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-12 py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/30"
+                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm px-8 sm:px-12 py-3 sm:py-3.5 rounded-lg transition shadow-lg shadow-[#7B1E3D]/30"
                 >
                   Book tickets
                 </button>
@@ -592,8 +595,8 @@ const [showStickyBar, setShowStickyBar] = useState(false);
       </div>
 
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-          <h2 className="text-xl font-bold text-gray-900 mb-3">
+        <div className="max-w-[1240px] mx-auto px-4 py-4 sm:py-8 lg:py-10">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">
             About the movie
           </h2>
           <p className="text-gray-700 text-sm leading-relaxed max-w-4xl whitespace-pre-line">
@@ -615,11 +618,11 @@ const [showStickyBar, setShowStickyBar] = useState(false);
       {/* ─── Cast Section (BookMyShow Exact) ─── */}
       {movie.cast && movie.cast.length > 0 && (
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
+          <div className="max-w-[1240px] mx-auto px-4 py-4 sm:py-8 lg:py-10">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-6">
               Cast
             </h2>
-            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
+            <div className="flex gap-2.5 sm:gap-6 overflow-x-auto pb-2 sm:pb-4 no-scrollbar">
               {movie.cast.map((member, idx) => (
                 <CastCrewCard key={`${member.name}-${idx}`} member={member} />
               ))}
@@ -631,11 +634,11 @@ const [showStickyBar, setShowStickyBar] = useState(false);
       {/* ─── Crew Section (BookMyShow Exact) ─── */}
       {movie.crew && movie.crew.length > 0 && (
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6">
+          <div className="max-w-[1240px] mx-auto px-4 py-4 sm:py-8 lg:py-10">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-6">
               Crew
             </h2>
-            <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar">
+            <div className="flex gap-2.5 sm:gap-6 overflow-x-auto pb-2 sm:pb-4 no-scrollbar">
               {movie.crew.map((member, idx) => (
                 <CastCrewCard key={`${member.name}-${idx}`} member={member} />
               ))}
@@ -646,9 +649,9 @@ const [showStickyBar, setShowStickyBar] = useState(false);
 
       {/* ─── Top Reviews Section (BookMyShow Exact) ─── */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+        <div className="max-w-[1240px] mx-auto px-4 py-4 sm:py-8 lg:py-10">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900">
               Top reviews
             </h2>
             <button
@@ -661,16 +664,16 @@ const [showStickyBar, setShowStickyBar] = useState(false);
             </button>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-500 mb-4">
+          <p className="text-xs sm:text-sm text-gray-500 mb-2.5 sm:mb-4">
             Summary of {reviews.length > 0 ? reviews.length : 672} reviews.
           </p>
 
           {/* Hashtag Summary Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2.5 sm:pb-4 no-scrollbar">
             {topHashtags.map(([tag, count]) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-gray-200 text-[#7B1E3D] text-xs font-semibold bg-white whitespace-nowrap shadow-2xs hover:bg-gray-50 transition cursor-default"
+                className="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-gray-200 text-[#7B1E3D] text-[11px] sm:text-xs font-semibold bg-white whitespace-nowrap shadow-2xs hover:bg-gray-50 transition cursor-default"
               >
                 #{tag}
                 <span className="text-gray-400 font-normal">{count}</span>
@@ -679,7 +682,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
           </div>
 
           {/* Review Cards Carousel */}
-          <div className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 pt-2 no-scrollbar">
+          <div className="flex gap-3 sm:gap-6 overflow-x-auto pb-2 sm:pb-4 pt-1 sm:pt-2 no-scrollbar">
             {reviews.length > 0
               ? reviews.map((r, idx) => {
                   const rId = r.id || `review-${idx}`;
@@ -827,13 +830,13 @@ const [showStickyBar, setShowStickyBar] = useState(false);
         </div>
       </div>
 
-      {/* ─── You Might Also Like Section (BookMyShow Exact) ─── */}
+      {/* ─── Just for You Section (BookMyShow Exact) ─── */}
       {similarMovies.length > 0 && (
         <div className="bg-white border-b border-gray-200">
-          <div className="max-w-[1240px] mx-auto px-4 py-8 lg:py-10">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                You might also like
+          <div className="max-w-[1240px] mx-auto px-4 py-4 sm:py-8 lg:py-10">
+            <div className="flex items-center justify-between mb-3 sm:mb-6">
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-900">
+                Just for You
               </h2>
               <button
                 type="button"
@@ -858,7 +861,7 @@ const [showStickyBar, setShowStickyBar] = useState(false);
               <div
                 ref={similarMoviesRef}
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth [&::-webkit-scrollbar]:hidden"
+                className="flex gap-3 sm:gap-6 overflow-x-auto pb-2 sm:pb-4 no-scrollbar scroll-smooth [&::-webkit-scrollbar]:hidden"
               >
                 {similarMovies.map((m) => {
                   const ratingVal = m.rating || m.external_rating || 8.8;
@@ -921,46 +924,49 @@ const [showStickyBar, setShowStickyBar] = useState(false);
           </div>
         </div>
       )}
-      <div className="w-full max-w-[1240px] mx-auto px-4 py-4">
-  <div className="flex flex-wrap items-center justify-start gap-1.5 text-[11px] text-gray-500 font-normal">
-    <Link to="/" className="hover:text-gray-900 transition">Home</Link>
-    <span className="text-gray-400">→</span>
-    <span className="hover:text-gray-900 cursor-pointer">Movies in {city}</span>
-    <span className="text-gray-400">→</span>
-    <span className="hover:text-gray-900 cursor-pointer">{movie.language} Movies</span>
-    <span className="text-gray-400">→</span>
-    <span className="text-gray-800 font-medium">{movie.title}</span>
-  </div>
-</div>
+      {/* ─── Breadcrumb, Partner Banner & Footer (Restricted on mobile, Desktop only) ─── */}
+      <div className="hidden md:block">
+        <div className="w-full max-w-[1240px] mx-auto px-4 py-4">
+          <div className="flex flex-wrap items-center justify-start gap-1.5 text-[11px] text-gray-500 font-normal">
+            <Link to="/" className="hover:text-gray-900 transition">Home</Link>
+            <span className="text-gray-400">→</span>
+            <span className="hover:text-gray-900 cursor-pointer">Movies in {city}</span>
+            <span className="text-gray-400">→</span>
+            <span className="hover:text-gray-900 cursor-pointer">{movie.language} Movies</span>
+            <span className="text-gray-400">→</span>
+            <span className="text-gray-800 font-medium">{movie.title}</span>
+          </div>
+        </div>
 
-      {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
-      <div className="bg-[#404046] text-white py-4 mt-4">
-  <div className="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
-              <PartyPopperIcon className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
-                  List your Show
-                </span>
-                <span className="text-xs text-gray-300">
-                  Got a show, event, activity or a great experience? Partner
-                  with us &amp; get listed on Vyhbhz
-                </span>
+        {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
+        <div className="bg-[#404046] text-white py-4 mt-4">
+          <div className="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                <PartyPopperIcon className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
+                    List your Show
+                  </span>
+                  <span className="text-xs text-gray-300">
+                    Got a show, event, activity or a great experience? Partner
+                    with us &amp; get listed on Vyhbhz
+                  </span>
+                </div>
               </div>
             </div>
+            <Link
+              to="/partner/register"
+              className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
+            >
+              Contact today!
+            </Link>
           </div>
-          <Link
-            to="/partner/register"
-            className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
-          >
-            Contact today!
-          </Link>
         </div>
+        <Footer />
       </div>
-      <Footer />
 
       {showTrailerModal && movie.trailer_url && (
         <div

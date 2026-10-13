@@ -27,15 +27,43 @@ interface MovieItem {
   certificate: string;
   poster_url: string | null;
   genre?: string;
+  release_date?: string | null;
   rating?: number;
   external_rating?: number;
   votes_count?: number;
 }
+
+const ALL_GENRES = [
+  "Action",
+  "Adventure",
+  "Animation",
+  "Biography",
+  "Comedy",
+  "Crime",
+  "Drama",
+  "Family",
+  "Fantasy",
+  "Historical",
+  "Horror",
+  "Music",
+  "Musical",
+  "Mystery",
+  "Period",
+  "Psychological",
+  "Romance",
+  "Sci-Fi",
+  "Sports",
+  "Suspense",
+  "Thriller",
+  "War",
+];
+
 const splitLangs = (s?: string) =>
   (s || "")
     .split(/[,/&]/)
     .map((l) => l.trim())
     .filter(Boolean);
+
 export default function MoviesPage() {
   const navigate = useNavigate();
   const [movies, setMovies] = useState<MovieItem[]>([]);
@@ -46,6 +74,7 @@ export default function MoviesPage() {
   const search = searchParams.get("search") || "";
 
   // Filter states
+  const [selectedTag, setSelectedTag] = useState<"all" | "new" | "re-release">("all");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
@@ -53,11 +82,12 @@ export default function MoviesPage() {
 
   // Accordion collapse state
   const [openSections, setOpenSections] = useState({
+    tags: true,
     languages: true,
     genres: true,
   });
 
-  const toggleSection = (section: "languages" | "genres") => {
+  const toggleSection = (section: "tags" | "languages" | "genres") => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
@@ -98,7 +128,7 @@ export default function MoviesPage() {
     fetchMovies();
   }, [city]);
 
-  // Derive unique languages and genres for filter lists
+  // Derive unique languages and comprehensive genres for filter lists
   const availableLanguages = useMemo(() => {
     const set = new Set<string>();
     movies.forEach((m) => splitLangs(m.language).forEach((l) => set.add(l)));
@@ -106,7 +136,7 @@ export default function MoviesPage() {
   }, [movies]);
 
   const availableGenres = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(ALL_GENRES);
     movies.forEach((m) => {
       if (m.genre) {
         m.genre.split(",").forEach((g) => set.add(g.trim()));
@@ -115,6 +145,20 @@ export default function MoviesPage() {
     return Array.from(set).sort();
   }, [movies]);
 
+  // Check if a movie is considered a re-release
+  const isReRelease = (movie: MovieItem): boolean => {
+    const lowerTitle = movie.title.toLowerCase();
+    if (lowerTitle.includes("re-release") || lowerTitle.includes("rerelease")) {
+      return true;
+    }
+    if (movie.release_date) {
+      const releaseYear = new Date(movie.release_date).getFullYear();
+      const currentYear = new Date().getFullYear();
+      if (currentYear - releaseYear >= 1) return true;
+    }
+    return false;
+  };
+
   // Filter logic
   const filteredMovies = useMemo(() => {
     return movies.filter((m) => {
@@ -122,26 +166,36 @@ export default function MoviesPage() {
       if (search && !m.title.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
+
+      // Tag filter (New Releases vs Re-release)
+      if (selectedTag === "new") {
+        if (isReRelease(m)) return false;
+      } else if (selectedTag === "re-release") {
+        if (!isReRelease(m)) return false;
+      }
+
       // Languages
-            if (
+      if (
         selectedLanguages.length > 0 &&
         !splitLangs(m.language).some((l) => selectedLanguages.includes(l))
       ) {
         return false;
       }
+
       // Genres
       if (selectedGenres.length > 0) {
-        const movieGenres = m.genre?.split(",").map((g) => g.trim()) || [];
+        const movieGenres = m.genre?.split(",").map((g) => g.trim().toLowerCase()) || [];
         const hasMatchingGenre = selectedGenres.some((g) =>
-          movieGenres.includes(g),
+          movieGenres.includes(g.toLowerCase()),
         );
         if (!hasMatchingGenre) return false;
       }
+
       return true;
     });
-  }, [movies, search, selectedLanguages, selectedGenres]);
+  }, [movies, search, selectedTag, selectedLanguages, selectedGenres]);
 
-   const toggleLanguageFilter = (lang: string) => {
+  const toggleLanguageFilter = (lang: string) => {
     setSelectedLanguages((prev) => (prev.includes(lang) ? [] : [lang]));
   };
 
@@ -152,13 +206,17 @@ export default function MoviesPage() {
   };
 
   const clearAllFilters = () => {
+    setSelectedTag("all");
     setSelectedLanguages([]);
     setSelectedGenres([]);
     setSearch("");
   };
 
   const hasActiveFilters =
-    selectedLanguages.length > 0 || selectedGenres.length > 0 || search !== "";
+    selectedTag !== "all" ||
+    selectedLanguages.length > 0 ||
+    selectedGenres.length > 0 ||
+    search !== "";
 
   return (
     <div className="min-h-screen bg-[#F5F5F7] text-[#333333] flex flex-col font-sans">
@@ -235,6 +293,65 @@ export default function MoviesPage() {
                   <RotateCcw className="h-3 w-3" />
                   Clear All
                 </button>
+              )}
+            </div>
+
+            {/* Release Tags Accordion (New Releases, Re-release) */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+              <button
+                onClick={() => toggleSection("tags")}
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
+              >
+                <span className="flex items-center gap-2">
+                  <ChevronDown
+                    className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
+                      openSections.tags ? "rotate-0" : "-rotate-90"
+                    }`}
+                  />
+                  Release Type
+                </span>
+                {selectedTag !== "all" && (
+                  <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
+                    1
+                  </span>
+                )}
+              </button>
+
+              {openSections.tags && (
+                <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedTag("all")}
+                    className={`text-xs px-3 py-1.5 rounded-md border transition ${
+                      selectedTag === "all"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                    }`}
+                  >
+                    All Movies
+                  </button>
+                  <button
+                    onClick={() => setSelectedTag(selectedTag === "new" ? "all" : "new")}
+                    className={`text-xs px-3 py-1.5 rounded-md border transition ${
+                      selectedTag === "new"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                    }`}
+                  >
+                    New Releases
+                  </button>
+                  <button
+                    onClick={() =>
+                      setSelectedTag(selectedTag === "re-release" ? "all" : "re-release")
+                    }
+                    className={`text-xs px-3 py-1.5 rounded-md border transition ${
+                      selectedTag === "re-release"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                    }`}
+                  >
+                    Re-Release
+                  </button>
+                </div>
               )}
             </div>
 
@@ -329,34 +446,112 @@ export default function MoviesPage() {
 
           {/* ─── Right Movie Grid Section ─── */}
           <div className="flex-1 min-w-0">
-            {/* Quick Horizontal Language Filter Bar */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none">
-              <button
-                onClick={() => setSelectedLanguages([])}
-                className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
-                  selectedLanguages.length === 0
-                    ? "bg-[#7B1E3D] text-white"
-                    : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                }`}
-              >
-                All
-              </button>
-              {availableLanguages.map((lang) => {
-                const isSelected = selectedLanguages.includes(lang);
-                return (
-                  <button
-                    key={lang}
-                    onClick={() => toggleLanguageFilter(lang)}
-                    className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
-                      isSelected
-                        ? "bg-[#7B1E3D] text-white shadow-sm"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    {lang}
-                  </button>
-                );
-              })}
+            {/* ─── Direct Filter Strip (Release Tags + Languages + Genres) ─── */}
+            <div className="space-y-2.5 mb-5">
+              {/* Release Type Tags (New Releases, Re-Release) */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
+                  Type:
+                </span>
+                <button
+                  onClick={() => setSelectedTag("all")}
+                  className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
+                    selectedTag === "all"
+                      ? "bg-[#7B1E3D] text-white shadow-sm"
+                      : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setSelectedTag(selectedTag === "new" ? "all" : "new")}
+                  className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
+                    selectedTag === "new"
+                      ? "bg-[#7B1E3D] text-white shadow-sm font-bold"
+                      : "bg-white text-gray-700 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                  }`}
+                >
+                  ✨ New Releases
+                </button>
+                <button
+                  onClick={() =>
+                    setSelectedTag(selectedTag === "re-release" ? "all" : "re-release")
+                  }
+                  className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
+                    selectedTag === "re-release"
+                      ? "bg-[#7B1E3D] text-white shadow-sm font-bold"
+                      : "bg-white text-gray-700 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                  }`}
+                >
+                  🔁 Re-Release
+                </button>
+              </div>
+
+              {/* Languages Bar */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
+                  Languages:
+                </span>
+                <button
+                  onClick={() => setSelectedLanguages([])}
+                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
+                    selectedLanguages.length === 0
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  All
+                </button>
+                {availableLanguages.map((lang) => {
+                  const isSelected = selectedLanguages.includes(lang);
+                  return (
+                    <button
+                      key={lang}
+                      onClick={() => toggleLanguageFilter(lang)}
+                      className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
+                        isSelected
+                          ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                          : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Comprehensive Genres Bar */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
+                  Genres:
+                </span>
+                <button
+                  onClick={() => setSelectedGenres([])}
+                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
+                    selectedGenres.length === 0
+                      ? "bg-gray-900 text-white"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  All Genres
+                </button>
+                {availableGenres.map((g) => {
+                  const isSelected = selectedGenres.includes(g);
+                  return (
+                    <button
+                      key={g}
+                      onClick={() => toggleGenreFilter(g)}
+                      className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
+                        isSelected
+                          ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                          : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Movies List */}
@@ -477,6 +672,47 @@ export default function MoviesPage() {
             </div>
 
             <div className="py-4 space-y-5">
+              {/* Release Type (New Releases, Re-Release) */}
+              <div>
+                <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
+                  Release Type
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSelectedTag("all")}
+                    className={`text-xs px-3 py-1.5 rounded-md border ${
+                      selectedTag === "all"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                  >
+                    All Movies
+                  </button>
+                  <button
+                    onClick={() => setSelectedTag(selectedTag === "new" ? "all" : "new")}
+                    className={`text-xs px-3 py-1.5 rounded-md border ${
+                      selectedTag === "new"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                  >
+                    ✨ New Releases
+                  </button>
+                  <button
+                    onClick={() =>
+                      setSelectedTag(selectedTag === "re-release" ? "all" : "re-release")
+                    }
+                    className={`text-xs px-3 py-1.5 rounded-md border ${
+                      selectedTag === "re-release"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                  >
+                    🔁 Re-Release
+                  </button>
+                </div>
+              </div>
+
               {/* Languages */}
               <div>
                 <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
