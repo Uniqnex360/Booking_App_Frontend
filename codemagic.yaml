@@ -1,15 +1,15 @@
 workflows:
-  ios-release:
-    name: iOS App Store Release
+  ios-capacitor:
+    name: iOS App Store Release - Vybhz
     max_build_duration: 60
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: Codemagic # Must match the exact name in Codemagic UI -> Settings -> Integrations
+      app_store_connect: Codemagic # Must match the exact name under Codemagic UI -> Settings -> Integrations
 
     environment:
       vars:
-        BUNDLE_ID: "com.vybhz.app" # Change to "com.marketlynxe.marketplace" if building Marketlynxe
+        BUNDLE_ID: "com.vybhz.app"
         XCODE_WORKSPACE: "App.xcworkspace"
         XCODE_SCHEME: "App"
       node: 20
@@ -31,7 +31,7 @@ workflows:
 
       - name: Force Update Xcode Bundle Identifier
         script: |
-          perl -pi -e "s/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" ios/App/App.xcodeproj/project.pbxproj
+          perl -pi -e "s/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.vybhz.app;/g" ios/App/App.xcodeproj/project.pbxproj
 
       - name: Install CocoaPods
         script: |
@@ -41,7 +41,7 @@ workflows:
       - name: Fetch signing files from Apple
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "com.vybhz.app" --type IOS_APP_STORE
           keychain add-certificates
 
       - name: Apply Provisioning Profiles
