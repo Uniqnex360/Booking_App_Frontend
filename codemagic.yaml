@@ -8,6 +8,8 @@ workflows:
       app_store_connect: Codemagic # Must match the exact name under Codemagic UI -> Settings -> Integrations
 
     environment:
+      groups:
+        - Vybhz # <--- THIS TELLS CODEMAGIC TO DOWNLOAD YOUR UPLOADED .P12 CERTIFICATE & PROFILE
       vars:
         BUNDLE_ID: "com.vybhz.app"
         XCODE_WORKSPACE: "App.xcworkspace"
@@ -65,4 +67,4 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true  
+        submit_to_testflight: true
