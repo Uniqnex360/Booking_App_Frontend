@@ -1,4 +1,4 @@
-zimport { Capacitor } from "@capacitor/core";
+import { Capacitor } from "@capacitor/core";
 import { getApp } from "firebase/app";
 import { getMessaging, getToken, isSupported, onMessage } from "firebase/messaging";
 import { api } from "@/api/client";
