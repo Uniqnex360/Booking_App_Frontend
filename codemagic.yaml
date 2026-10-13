@@ -41,7 +41,7 @@ workflows:
       - name: Fetch signing files from Apple
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "com.vybhz.app" --type IOS_APP_STORE
+          app-store-connect fetch-signing-files "com.vybhz.app" --type IOS_APP_STORE --create
           keychain add-certificates
 
       - name: Apply Provisioning Profiles
