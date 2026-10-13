@@ -5,8 +5,6 @@ workflows:
     instance_type: mac_mini_m2
 
     environment:
-      groups:
-        - vybhz_signing
       vars:
         BUNDLE_ID: "com.vybhz.app"
         XCODE_WORKSPACE: "App.xcworkspace"
