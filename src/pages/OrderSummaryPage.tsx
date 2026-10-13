@@ -123,9 +123,10 @@ export default function OrderSummaryPage() {
               <ChevronLeft className="h-6 w-6" />
             </button>
             <div className="min-w-0">
-              <p className="text-sm font-bold truncate">{b.movie_title}</p>
+              <p className="text-sm font-bold truncate">{b.movie_title || b.title}</p>
               <p className="text-[11px] text-gray-500 truncate">
-                {b.venue_name} | {new Date(b.starts_at).toLocaleString("en-IN")}
+                {b.cinema_name || b.venue_name || b.screen_name || "Cinema"} |{" "}
+                {new Date(b.starts_at).toLocaleString("en-IN")}
               </p>
             </div>
           </div>

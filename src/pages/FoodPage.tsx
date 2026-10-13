@@ -203,10 +203,10 @@ setMenu(m);
       {!noMenu && (
         <FoodStep
           isOpen
-          title={booking.movie_title}
-          subtitle={`${booking.venue_name} | ${new Date(
-            booking.starts_at,
-          ).toLocaleString("en-IN")}`}
+          title={booking.movie_title || booking.title}
+          subtitle={`${
+            booking.cinema_name || booking.venue_name || booking.screen_name || "Cinema"
+          } | ${new Date(booking.starts_at).toLocaleString("en-IN")}`}
           ticketPaise={booking.ticket_paise}
           menu={menu}
           cart={cart}

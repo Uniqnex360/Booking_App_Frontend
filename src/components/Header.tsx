@@ -10,7 +10,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
-import { api, unwrap } from "@/api/client";
+import { api, getAccessToken, unwrap } from "@/api/client";
+import {
+  registerDevicePushNotifications,
+  showSystemNotification,
+} from "@/lib/pushNotifications";
 import {
   Menu,
   User,
@@ -125,15 +129,6 @@ interface DrawerNotification {
 
 const DEFAULT_NOTIFICATIONS: DrawerNotification[] = [
   {
-    id: "notif-1",
-    title: "Booking Confirmed! 🎉",
-    description: "Your reservation is confirmed. Download tickets or view details in Your Orders.",
-    time: "2 hours ago",
-    read: false,
-    type: "booking",
-    link: "/profile?tab=orders",
-  },
-  {
     id: "notif-2",
     title: "Weekend Movie Carnival 🍿",
     description: "Get 25% instant off on IMAX & 4DX experiences. Use promo code WEEKEND25 at checkout.",
@@ -176,26 +171,141 @@ export function Header() {
   };
   const [drawerTab, setDrawerTab] = useState<"main" | "notifications" | "help" | "settings" | "rewards" | "playCard" | "bookAChange">("main");
 
+  const [bookingNotifEnabled, setBookingNotifEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("vyhbz_booking_notifications_enabled");
+      return saved !== null ? JSON.parse(saved) : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleBookingNotif = (enabled: boolean) => {
+    setBookingNotifEnabled(enabled);
+    try {
+      localStorage.setItem("vyhbz_booking_notifications_enabled", JSON.stringify(enabled));
+    } catch {}
+    if (enabled && user) {
+      registerDevicePushNotifications().catch(() => {});
+    }
+    toast.success(
+      enabled
+        ? "Booking notifications enabled"
+        : "Booking notifications muted"
+    );
+  };
+
   const [notifications, setNotifications] = useState<DrawerNotification[]>(() => {
     try {
       const saved = localStorage.getItem("vyhbz_notifications");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: DrawerNotification[] = JSON.parse(saved);
+        return parsed.filter((n) => n.id !== "notif-1");
+      }
     } catch {}
     return DEFAULT_NOTIFICATIONS;
   });
+
+  useEffect(() => {
+    if (!user || !bookingNotifEnabled) return;
+    registerDevicePushNotifications().catch(() => {});
+  }, [user, bookingNotifEnabled]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await unwrap<{
+          items?: DrawerNotification[];
+          notifications?: DrawerNotification[];
+          unread_count: number;
+        }>(api.get("/notifications"));
+        const remoteList = data?.items || data?.notifications;
+        if (cancelled || !remoteList) return;
+        setNotifications((prev) => {
+          const localPromos = prev.filter((n) => n.id.startsWith("notif-"));
+          const merged = [...remoteList, ...localPromos];
+          try {
+            localStorage.setItem("vyhbz_notifications", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      } catch {
+        // Silently fall back to cached notifications if offline or unauthenticated
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, drawerOpen, location.pathname]);
+
+  useEffect(() => {
+    if (!user) return;
+    const token = getAccessToken();
+    if (!token || typeof EventSource === "undefined") return;
+
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:9001/v1").replace(
+      /\/$/,
+      ""
+    );
+    const streamUrl = `${baseUrl}/notifications/stream?token=${encodeURIComponent(token)}`;
+    const es = new EventSource(streamUrl);
+
+    es.onmessage = (event) => {
+      try {
+        const incoming: DrawerNotification = JSON.parse(event.data);
+        if (!incoming?.id) return;
+
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === incoming.id)) return prev;
+          const updated = [incoming, ...prev];
+          try {
+            localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+          } catch {}
+          return updated;
+        });
+
+        if (bookingNotifEnabled) {
+          toast.success(incoming.title, {
+            description: incoming.description,
+          });
+          showSystemNotification(
+            incoming.title,
+            incoming.description,
+            incoming.link
+          ).catch(() => {});
+        }
+      } catch {}
+    };
+
+    return () => {
+      es.close();
+    };
+  }, [user, bookingNotifEnabled]);
 
   const unreadNotifCount = notifications.filter((n) => !n.read).length;
 
   const handleMarkAllRead = () => {
     const updated = notifications.map((n) => ({ ...n, read: true }));
     setNotifications(updated);
-    localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+    try {
+      localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+    } catch {}
+    if (user) {
+      api.post("/notifications/read-all").catch(() => {});
+    }
     toast.success("All notifications marked as read");
   };
 
   const handleClearNotifications = () => {
     setNotifications([]);
-    localStorage.setItem("vyhbz_notifications", JSON.stringify([]));
+    try {
+      localStorage.setItem("vyhbz_notifications", JSON.stringify([]));
+    } catch {}
+    if (user) {
+      api.delete("/notifications").catch(() => {});
+    }
     toast.info("Cleared all notifications");
   };
 
@@ -204,7 +314,13 @@ export function Header() {
       n.id === notif.id ? { ...n, read: true } : n
     );
     setNotifications(updated);
-    localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+    try {
+      localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+    } catch {}
+
+    if (user && !notif.id.startsWith("notif-")) {
+      api.patch(`/notifications/${notif.id}/read`).catch(() => {});
+    }
 
     if (notif.link) {
       setDrawerOpen(false);
@@ -1118,7 +1234,8 @@ export function Header() {
                     </div>
                     <input
                       type="checkbox"
-                      defaultChecked
+                      checked={bookingNotifEnabled}
+                      onChange={(e) => handleToggleBookingNotif(e.target.checked)}
                       className="h-4 w-4 accent-[#7B1E3D] rounded cursor-pointer"
                     />
                   </div>
