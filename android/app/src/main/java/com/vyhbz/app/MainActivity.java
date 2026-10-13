@@ -63,6 +63,10 @@ public class MainActivity extends BridgeActivity {
                     popupSettings.setDomStorageEnabled(true);
                     popupSettings.setSupportMultipleWindows(true);
                     popupSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+                    popupSettings.setDatabaseEnabled(true);
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        popupSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+                    }
 
                     CookieManager.getInstance().setAcceptCookie(true);
                     CookieManager.getInstance().setAcceptThirdPartyCookies(popupWebView, true);
@@ -90,12 +94,25 @@ public class MainActivity extends BridgeActivity {
                         public void onPageFinished(WebView v, String url) {
                             super.onPageFinished(v, url);
                             popupProgress.setVisibility(View.GONE);
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                                CookieManager.getInstance().flush();
+                            }
                         }
 
                         @Override
                         public boolean shouldOverrideUrlLoading(WebView v, String url) {
-                            v.loadUrl(url);
-                            return true;
+                            if (url != null && (url.startsWith("upi://") || url.startsWith("intent://") || (!url.startsWith("http://") && !url.startsWith("https://")))) {
+                                try {
+                                    android.content.Intent intent = android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME);
+                                    if (intent != null && intent.resolveActivity(getPackageManager()) != null) {
+                                        startActivity(intent);
+                                        return true;
+                                    }
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            return false;
                         }
                     });
 

@@ -8,6 +8,9 @@ workflows:
       app_store_connect: Codemagic # Must match the exact name under Codemagic UI -> Settings -> Integrations
 
     environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.vybhz.app
       vars:
         BUNDLE_ID: "com.vybhz.app"
         XCODE_WORKSPACE: "App.xcworkspace"
@@ -38,15 +41,9 @@ workflows:
           cd ios/App
           pod install
 
-      - name: Fetch signing files from Apple
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "com.vybhz.app" --type IOS_APP_STORE --create
-          keychain add-certificates
-
       - name: Apply Provisioning Profiles
         script: |
-          xcode-project use-profiles --warn-only
+          xcode-project use-profiles
 
       - name: Set build number
         script: |
