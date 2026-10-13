@@ -1,39 +1,68 @@
 workflows:
-  ios-capacitor:
-    name: iOS Capacitor App Store Build
+  ios-release:
+    name: iOS App Store Release
     max_build_duration: 60
-    instance_type: mac_mini_m1
+    instance_type: mac_mini_m2
+
     integrations:
-      app_store_connect: Codemagic   # Must match the "API key name" you entered in Codemagic UI
+      app_store_connect: Codemagic # Must match the exact name in Codemagic UI -> Settings -> Integrations
+
     environment:
+      vars:
+        BUNDLE_ID: "com.vybhz.app" # Change to "com.marketlynxe.marketplace" if building Marketlynxe
+        XCODE_WORKSPACE: "App.xcworkspace"
+        XCODE_SCHEME: "App"
       node: 20
       xcode: latest
       cocoapods: default
+
     scripts:
-      - name: Install npm dependencies
+      - name: Install dependencies
         script: |
           npm install --legacy-peer-deps
-      - name: Build React production bundle
+
+      - name: Build web app
         script: |
           npm run build
-      - name: Sync Capacitor iOS platform
+
+      - name: Sync Capacitor iOS
         script: |
           npx cap sync ios
-      - name: Install CocoaPods dependencies
+
+      - name: Force Update Xcode Bundle Identifier
+        script: |
+          perl -pi -e "s/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = $BUNDLE_ID;/g" ios/App/App.xcodeproj/project.pbxproj
+
+      - name: Install CocoaPods
         script: |
           cd ios/App
           pod install
-      - name: Set up iOS Code Signing
+
+      - name: Fetch signing files from Apple
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "com.vybhz.app" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --type IOS_APP_STORE --create
           keychain add-certificates
-          xcode-project use-profiles
+
+      - name: Apply Provisioning Profiles
+        script: |
+          xcode-project use-profiles --warn-only
+
+      - name: Set build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+
       - name: Build IPA binary
         script: |
-          xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
+          xcode-project build-ipa \
+            --workspace "ios/App/$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+
     artifacts:
       - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+
     publishing:
       app_store_connect:
         auth: integration
