@@ -446,8 +446,8 @@ export default function MoviesPage() {
 
           {/* ─── Right Movie Grid Section ─── */}
           <div className="flex-1 min-w-0">
-            {/* ─── Direct Filter Strip (Release Tags + Languages + Genres) ─── */}
-            <div className="space-y-2.5 mb-5">
+            {/* ─── Direct Filter Strip for Mobile (Release Tags + Languages + Genres) ─── */}
+            <div className="lg:hidden space-y-2.5 mb-5">
               {/* Release Type Tags (New Releases, Re-Release) */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
