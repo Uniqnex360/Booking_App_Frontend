@@ -469,7 +469,9 @@ export function Header() {
     results.events.length > 0 ||
     results.restaurants.length > 0;
 
-  const initials = (user?.full_name || user?.email || "U")
+  const displayName = !user?.full_name || user.full_name === "Phone User" ? "User" : user.full_name;
+
+  const initials = (displayName || user?.email || "U")
     .split(" ")
     .map((w: string) => w[0])
     .slice(0, 2)
@@ -557,7 +559,7 @@ export function Header() {
                 </AvatarFallback>
               </Avatar>
               <span className="hidden sm:block text-sm font-medium text-gray-800 max-w-[85px] truncate">
-                {user.full_name?.split(" ")[0] || "Profile"}
+                {displayName.split(" ")[0]}
               </span>
             </button>
           ) : (
@@ -673,7 +675,7 @@ export function Header() {
                 >
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 leading-tight">
-                      {user.full_name ? `Hi, ${user.full_name}` : "Hi, Guest"}
+                      {`Hi, ${displayName}`}
                     </h2>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1 hover:text-[#7B1E3D] transition">
                       Edit Profile <ChevronRight size={14} />

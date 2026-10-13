@@ -111,7 +111,9 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    const parts = (user.full_name || "").trim().split(/\s+/);
+    const isDefaultPhoneUser = user.full_name === "Phone User";
+    const rawName = isDefaultPhoneUser ? "" : (user.full_name || "");
+    const parts = rawName.trim().split(/\s+/).filter(Boolean);
     setFirstName(parts[0] || "");
     setLastName(parts.slice(1).join(" ") || "");
     setPhone(user.phone || "");
@@ -372,7 +374,7 @@ export default function ProfilePage() {
                       )}
                     </div>
                     <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center sm:text-left">
-                      {newFullName || user.full_name || "Member"}
+                      {newFullName || (user.full_name && user.full_name !== "Phone User" ? user.full_name : "User")}
                     </h1>
                   </div>
 
