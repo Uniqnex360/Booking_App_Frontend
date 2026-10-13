@@ -49,7 +49,12 @@ export async function payForBooking(opts: {
           reject({ ...e, paymentId: r.razorpay_payment_id, afterPayment: true });
         }
       },
-      modal: { ondismiss: () => resolve({ kind: "DISMISSED" }) },
+      modal: {
+        backdropclose: false,
+        escape: false,
+        handleback: true,
+        ondismiss: () => resolve({ kind: "DISMISSED" }),
+      },
     });
     rzp.on("payment.failed", (r: any) =>
       reject({ code: "PAYMENT_FAILED", message: r?.error?.description || "Payment failed." }),

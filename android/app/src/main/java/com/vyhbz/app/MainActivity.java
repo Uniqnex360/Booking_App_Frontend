@@ -6,8 +6,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.os.Message;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -17,17 +19,100 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
     private Dialog phoneLoginDialog;
+    private Dialog paymentPopupDialog;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         if (getBridge() != null && getBridge().getWebView() != null) {
+            WebView mainWebView = getBridge().getWebView();
+            WebSettings settings = mainWebView.getSettings();
+            settings.setSupportMultipleWindows(true);
+            settings.setJavaScriptCanOpenWindowsAutomatically(true);
+
             CookieManager cookieManager = CookieManager.getInstance();
             cookieManager.setAcceptCookie(true);
-            cookieManager.setAcceptThirdPartyCookies(getBridge().getWebView(), true);
+            cookieManager.setAcceptThirdPartyCookies(mainWebView, true);
 
-            getBridge().getWebView().addJavascriptInterface(new Object() {
+            mainWebView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                    if (paymentPopupDialog != null && paymentPopupDialog.isShowing()) {
+                        paymentPopupDialog.dismiss();
+                    }
+
+                    paymentPopupDialog = new Dialog(MainActivity.this, android.R.style.Theme_DeviceDefault_Light_NoActionBar);
+                    paymentPopupDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+                    FrameLayout container = new FrameLayout(MainActivity.this);
+                    container.setLayoutParams(new ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ));
+                    container.setBackgroundColor(Color.WHITE);
+
+                    WebView popupWebView = new WebView(MainActivity.this);
+                    popupWebView.setLayoutParams(new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        FrameLayout.LayoutParams.MATCH_PARENT
+                    ));
+
+                    WebSettings popupSettings = popupWebView.getSettings();
+                    popupSettings.setJavaScriptEnabled(true);
+                    popupSettings.setDomStorageEnabled(true);
+                    popupSettings.setSupportMultipleWindows(true);
+                    popupSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+                    CookieManager.getInstance().setAcceptCookie(true);
+                    CookieManager.getInstance().setAcceptThirdPartyCookies(popupWebView, true);
+
+                    ProgressBar popupProgress = new ProgressBar(MainActivity.this, null, android.R.attr.progressBarStyleHorizontal);
+                    popupProgress.setLayoutParams(new FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT,
+                        12
+                    ));
+                    popupProgress.setIndeterminate(true);
+
+                    popupWebView.setWebChromeClient(new WebChromeClient() {
+                        @Override
+                        public void onCloseWindow(WebView window) {
+                            runOnUiThread(() -> {
+                                if (paymentPopupDialog != null && paymentPopupDialog.isShowing()) {
+                                    paymentPopupDialog.dismiss();
+                                }
+                            });
+                        }
+                    });
+
+                    popupWebView.setWebViewClient(new WebViewClient() {
+                        @Override
+                        public void onPageFinished(WebView v, String url) {
+                            super.onPageFinished(v, url);
+                            popupProgress.setVisibility(View.GONE);
+                        }
+
+                        @Override
+                        public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                            v.loadUrl(url);
+                            return true;
+                        }
+                    });
+
+                    container.addView(popupWebView);
+                    container.addView(popupProgress);
+                    paymentPopupDialog.setContentView(container);
+                    paymentPopupDialog.setCancelable(true);
+                    paymentPopupDialog.show();
+
+                    WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                    transport.setWebView(popupWebView);
+                    resultMsg.sendToTarget();
+                    return true;
+                }
+            });
+
+            mainWebView.addJavascriptInterface(new Object() {
                 @JavascriptInterface
                 public void openPhoneLogin(String clientId) {
                     runOnUiThread(() -> showPhoneLoginDialog(clientId));

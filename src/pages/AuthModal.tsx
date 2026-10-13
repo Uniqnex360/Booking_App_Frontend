@@ -1,40 +1,56 @@
 // src/components/AuthModal.tsx
-import React, { useState } from 'react';
-import { X, Mail, Smartphone, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Mail, Smartphone, ShieldCheck, Check } from 'lucide-react';
 
 interface ContactDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (details: { email: string; phone: string }) => void;
+  initialEmail?: string;
+  initialPhone?: string;
 }
 
 export const AuthModal: React.FC<ContactDetailsModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  initialEmail = '',
+  initialPhone = '',
 }) => {
-  // Pre-fill if previously stored in localStorage
-  const savedContact = JSON.parse(localStorage.getItem('vyhbz_contact_details') || '{}');
-  const [email, setEmail] = useState(savedContact.email || '');
-  const [phone, setPhone] = useState(savedContact.phone || '');
+  const sanitizePhone = (raw: string) =>
+    raw.replace(/^\+?91/, '').replace(/\D/g, '').slice(-10);
+
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const savedContact = JSON.parse(
+      localStorage.getItem('vyhbz_contact_details') || '{}'
+    );
+    setEmail(initialEmail || savedContact.email || '');
+    setPhone(sanitizePhone(initialPhone || savedContact.phone || ''));
+  }, [isOpen, initialEmail, initialPhone]);
 
   if (!isOpen) return null;
+
+  const isPhoneVerified = Boolean(initialPhone && sanitizePhone(initialPhone).length === 10);
+  const isEmailVerified = Boolean(initialEmail && initialEmail.includes('@'));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !phone) return;
 
-    // Save contact details for ticket delivery
-    const contactData = { email, phone };
+    const formattedPhone = phone.startsWith('+91') ? phone : `+91${phone}`;
+    const contactData = { email: email.trim(), phone: formattedPhone };
     localStorage.setItem('vyhbz_contact_details', JSON.stringify(contactData));
-    
-   
 
     onSubmit(contactData);
-    };
+  };
 
   return (
-<div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">      <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden zoom-in-95 animate-in duration-200">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl overflow-hidden zoom-in-95 animate-in duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-[#F8F8FA]">
@@ -54,9 +70,16 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Email Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
-              Email Address
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Email Address
+              </label>
+              {isEmailVerified && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <Check className="h-3 w-3" /> Verified
+                </span>
+              )}
+            </div>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
               <input
@@ -66,7 +89,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
                 placeholder="you@example.com"
                 className="w-full pl-10 pr-4 py-3 text-sm text-slate-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#7B1E3D] focus:border-[#7B1E3D]"
                 required
-                autoFocus
+                autoFocus={!email}
               />
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
@@ -76,9 +99,16 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
 
           {/* Mobile Number Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wider">
-              Mobile Number
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                Mobile Number
+              </label>
+              {isPhoneVerified && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <Check className="h-3 w-3" /> Logged In
+                </span>
+              )}
+            </div>
             <div className="relative flex items-center">
               <span className="absolute left-3 text-xs font-bold text-slate-500 border-r border-slate-200 pr-2">
                 +91
@@ -92,6 +122,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
                 placeholder="9876543210"
                 className="w-full pl-20 pr-4 py-3 text-sm text-slate-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#7B1E3D] focus:border-[#7B1E3D]"
                 required
+                autoFocus={Boolean(email && !phone)}
               />
             </div>
             <p className="text-[10px] text-slate-400 mt-1">
@@ -108,7 +139,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
           {/* Action Button */}
           <button
             type="submit"
-            className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3.5 rounded-lg transition shadow-md text-sm mt-2"
+            className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold py-3.5 rounded-lg transition shadow-md text-sm mt-2 cursor-pointer"
           >
             Continue to Payment
           </button>

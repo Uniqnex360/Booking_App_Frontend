@@ -100,8 +100,7 @@ setMenu(m);
   
   const startPay = () => {
     const c = knownContact();
-     console.log("startPay", c);
-    if (!c.email) {
+    if (!c.email || !c.phone) {
       setShowContact(true);
       return;
     }
@@ -242,6 +241,8 @@ setMenu(m);
 
       <AuthModal
         isOpen={showContact}
+        initialEmail={knownContact().email}
+        initialPhone={knownContact().phone}
         onClose={() => {
           setShowContact(false);
           if (noMenu) goBack();
