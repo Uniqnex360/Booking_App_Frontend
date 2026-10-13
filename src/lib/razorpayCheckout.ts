@@ -2,7 +2,7 @@ import { api, unwrap } from "@/api/client";
 import { loadScript } from "@/utils/loadScript";
 
 export type PayResult =
-  | { kind: "PAID"; bookingId: string }
+  | { kind: "PAID"; bookingId: string; refCode?: string }
   | { kind: "NOT_REQUIRED" }
   | { kind: "DISMISSED" };
 
@@ -35,7 +35,7 @@ export async function payForBooking(opts: {
       handler: async (r: any) => {
         opts.onConfirming?.();
         try {
-          await unwrap<any>(
+          const verified = await unwrap<any>(
             api.post("/payments/verify", {
               booking_id: opts.bookingId,
               razorpay_order_id: r.razorpay_order_id,
@@ -43,7 +43,7 @@ export async function payForBooking(opts: {
               razorpay_signature: r.razorpay_signature,
             }),
           );
-          resolve({ kind: "PAID", bookingId: opts.bookingId });
+          resolve({ kind: "PAID", bookingId: opts.bookingId, refCode: verified?.ref_code });
         } catch (e: any) {
           // money may be taken, so keep the payment id for support
           reject({ ...e, paymentId: r.razorpay_payment_id, afterPayment: true });

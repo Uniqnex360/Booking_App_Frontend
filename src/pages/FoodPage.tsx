@@ -158,11 +158,17 @@ setMenu(m);
       }
 
       setIsConfirming(true);
-      const done = await unwrap<any>(api.get(`/bookings/${bookingId}`));
+      let refCode = (res as any).refCode || "";
+      if (!refCode) {
+        try {
+          const done = await unwrap<any>(api.get(`/bookings/${bookingId}`));
+          refCode = done?.ref_code ?? "";
+        } catch {
+          // Proceed to confirmation page even if post-commit fetch returns 404
+        }
+      }
       navigate(
-        `/confirmation?id=${bookingId}&ref=${encodeURIComponent(
-          done.ref_code ?? "",
-        )}`,
+        `/confirmation?id=${bookingId}&ref=${encodeURIComponent(refCode)}`,
         { replace: true },
       );
     } catch (e: any) {
