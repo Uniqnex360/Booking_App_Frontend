@@ -97,6 +97,115 @@ function getCityState(city: string): string {
   return "India";
 }
 
+function CinemaLogoBadge({ venueName }: { venueName: string }) {
+  const name = (venueName || "").toLowerCase();
+
+  // PVR Cinemas Logo
+  if (name.includes("pvr")) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center bg-black px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border border-[#F5A623]/40 shadow-xs shrink-0 mt-0.5 min-w-[46px] sm:min-w-[54px]"
+        title="PVR Cinemas"
+      >
+        <span className="text-[10px] sm:text-[12px] font-black tracking-widest text-[#F5A623] font-serif leading-none">
+          PVR
+        </span>
+        <span className="text-[5.5px] sm:text-[6px] tracking-widest text-amber-200/90 uppercase font-sans font-semibold leading-none mt-0.5">
+          CINEMAS
+        </span>
+      </div>
+    );
+  }
+
+  // AGS Cinemas Logo
+  if (name.includes("ags")) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center bg-[#D32F2F] text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md shadow-xs shrink-0 mt-0.5 min-w-[46px] sm:min-w-[54px] border border-red-700"
+        title="AGS Cinemas"
+      >
+        <span className="text-[10px] sm:text-[12px] font-black tracking-wider leading-none font-sans text-white">
+          AGS
+        </span>
+        <span className="text-[5.5px] sm:text-[6px] tracking-widest text-white/90 uppercase font-sans font-semibold leading-none mt-0.5">
+          CINEMAS
+        </span>
+      </div>
+    );
+  }
+
+  // INOX Logo
+  if (name.includes("inox")) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center bg-[#003366] text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border border-blue-900 shadow-xs shrink-0 mt-0.5 min-w-[46px] sm:min-w-[54px]"
+        title="INOX"
+      >
+        <span className="text-[10px] sm:text-[12px] font-black tracking-wider text-white leading-none font-sans">
+          IN<span className="text-[#FFCC00]">O</span>X
+        </span>
+        <span className="text-[5.5px] sm:text-[6px] tracking-widest text-blue-200 uppercase font-sans font-semibold leading-none mt-0.5">
+          CINEMAS
+        </span>
+      </div>
+    );
+  }
+
+  // Cinépolis Logo
+  if (name.includes("cinepolis") || name.includes("cinépolis")) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center bg-[#0B1E36] text-white px-1.5 py-0.5 sm:py-1 rounded-md border border-blue-950 shadow-xs shrink-0 mt-0.5 min-w-[46px] sm:min-w-[54px]"
+        title="Cinépolis"
+      >
+        <div className="flex items-center gap-0.5 leading-none">
+          <span className="text-[9px] sm:text-[11px] font-extrabold tracking-tight text-white font-sans lowercase">
+            cinépolis
+          </span>
+          <span className="text-[#FFD100] text-[6px] sm:text-[7px] font-bold">★</span>
+        </div>
+        <span className="text-[5px] sm:text-[5.5px] tracking-wider text-blue-300 uppercase font-sans font-semibold leading-none mt-0.5">
+          THEATRES
+        </span>
+      </div>
+    );
+  }
+
+  // Sathyam Cinemas Logo
+  if (name.includes("sathyam") || name.includes("spi")) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center bg-[#4A0E17] text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md border border-[#6B1422] shadow-xs shrink-0 mt-0.5 min-w-[46px] sm:min-w-[54px]"
+        title="Sathyam Cinemas"
+      >
+        <span className="text-[8.5px] sm:text-[10px] font-black tracking-widest text-[#FFD700] uppercase font-sans leading-none">
+          SATHYAM
+        </span>
+        <span className="text-[5px] sm:text-[5.5px] tracking-widest text-amber-100 uppercase font-sans font-semibold leading-none mt-0.5">
+          CINEMAS
+        </span>
+      </div>
+    );
+  }
+
+  // Independent / Other Cinemas: stylized brand initial badge
+  const words = venueName.trim().split(" ");
+  const shortName = (words[0] || "CINEMA").slice(0, 7).toUpperCase();
+  return (
+    <div
+      className="flex flex-col items-center justify-center bg-gray-900 text-white px-1.5 py-0.5 sm:py-1 rounded-md shadow-xs shrink-0 mt-0.5 min-w-[46px] sm:min-w-[54px] border border-gray-800"
+      title={venueName}
+    >
+      <span className="text-[9px] sm:text-[10px] font-black tracking-wide text-white uppercase font-sans leading-none truncate max-w-[50px] sm:max-w-[58px]">
+        {shortName}
+      </span>
+      <span className="text-[5px] sm:text-[5.5px] tracking-widest text-gray-300 uppercase font-sans font-semibold leading-none mt-0.5">
+        CINEMA
+      </span>
+    </div>
+  );
+}
+
 type PreferredTime = "any" | "morning" | "afternoon" | "evening" | "night";
 
 function istHour(iso: string): number {
@@ -591,9 +700,9 @@ export default function BuyTicketsPage() {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">
       {" "}
       <Header />
-      <div className="bg-white border-b border-gray-200 pt-[84px] sm:pt-[96px] lg:pt-[144px] pb-5 sm:pb-6">
+      <div className="bg-white border-b border-gray-200 pt-[74px] sm:pt-[96px] lg:pt-[144px] pb-2.5 sm:pb-5 lg:pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
-          <div className="mb-2 sm:mb-3">
+          <div className="hidden sm:block mb-2 sm:mb-3">
             <button
               type="button"
               onClick={handleBack}
@@ -604,18 +713,30 @@ export default function BuyTicketsPage() {
               <span>Back to Movie Details</span>
             </button>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
-            {movie.title} - ({movie.language})
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 mt-3">
-            <span className="border border-gray-300 rounded-full px-3 py-0.5 text-xs text-gray-600 font-medium">
-              Movie runtime: {formatRuntime(movie.duration_min)}
-            </span>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="sm:hidden p-1 -ml-1 text-gray-700 hover:text-[#7B1E3D] hover:bg-gray-100 active:scale-95 rounded-lg transition shrink-0"
+              title="Back to Movie Details"
+              aria-label="Back to Movie Details"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight truncate sm:whitespace-normal">
+                {movie.title} <span className="font-normal text-gray-500 text-xs sm:text-lg">({movie.language})</span>
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1 sm:mt-2.5 text-[10px] sm:text-xs text-gray-500 font-medium">
             {movie.certificate && (
               <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium border ${
+                className={`rounded px-1.5 py-0.5 text-[10px] sm:text-xs font-bold border ${
                   movie.certificate?.toUpperCase() === "A"
-                    ? "border-red-500 bg-red-50 text-red-600 font-bold"
+                    ? "border-red-500 bg-red-50 text-red-600"
                     : "border-gray-300 text-gray-600"
                 }`}
               >
@@ -624,22 +745,20 @@ export default function BuyTicketsPage() {
                   : movie.certificate}
               </span>
             )}
-            {genres.map((g) => (
-              <span
-                key={g}
-                className="border border-gray-300 rounded-full px-2.5 py-0.5 text-xs text-gray-600 font-medium"
-              >
-                {g}
-              </span>
-            ))}
+            <span>•</span>
+            <span>{formatRuntime(movie.duration_min)}</span>
+            {genres.length > 0 && (
+              <>
+                <span>•</span>
+                <span className="truncate max-w-[180px] sm:max-w-none">{genres.join(", ")}</span>
+              </>
+            )}
           </div>
+
           {movie.certificate?.toUpperCase() === "A" && (
-            <div className="mt-3 inline-flex items-center gap-2 bg-red-50 border border-red-200 text-red-800 text-xs px-3 py-1.5 rounded-md font-medium">
-              <span className="font-bold">Age Restriction:</span>
-              <span>
-                This movie is rated 'A' (Adults Only) and strictly for viewers
-                aged 18 and above. Please carry valid government ID.
-              </span>
+            <div className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+              <span className="font-bold">18+ Only:</span>
+              <span className="truncate sm:whitespace-normal">Valid government ID required at entry</span>
             </div>
           )}
         </div>
@@ -675,19 +794,19 @@ export default function BuyTicketsPage() {
         </div>
       ) : (
         <>
-          <div className="sticky top-[104px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs lg:h-[74px]">
-            <div className="max-w-[1400px] mx-auto px-4 flex flex-col lg:flex-row lg:items-center lg:justify-between h-full">
-              <div className="flex items-center lg:h-full lg:border-r border-gray-200 lg:pr-10 lg:mr-8 min-w-0 w-full lg:flex-1 py-1.5 gap-2">
+          <div className="sticky top-[72px] sm:top-[88px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs lg:h-[74px]">
+            <div className="max-w-[1400px] mx-auto px-3 sm:px-4 flex flex-col lg:flex-row lg:items-center lg:justify-between h-full">
+              <div className="flex items-center lg:h-full lg:border-r border-gray-200 lg:pr-10 lg:mr-8 min-w-0 w-full lg:flex-1 py-1 sm:py-1.5 gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="h-[48px] sm:h-[52px] px-2.5 flex items-center justify-center rounded-lg text-gray-700 hover:text-[#7B1E3D] hover:bg-gray-100 active:scale-95 transition cursor-pointer shrink-0 border border-gray-200 bg-white shadow-2xs"
+                  className="h-[44px] sm:h-[52px] px-2 sm:px-2.5 flex items-center justify-center rounded-lg text-gray-700 hover:text-[#7B1E3D] hover:bg-gray-100 active:scale-95 transition cursor-pointer shrink-0 border border-gray-200 bg-white shadow-2xs"
                   title="Back to Movie Details"
                   aria-label="Back to Movie Details"
                 >
                   <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
-                <div className="flex items-center gap-2 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                   {dateKeys.map((dk) => {
                     const { weekday, day, month } = dateTabParts(dk);
                     const isActive = activeDate === dk;
@@ -695,39 +814,39 @@ export default function BuyTicketsPage() {
                       <button
                         key={dk}
                         onClick={() => setSelectedDate(dk)}
-                        className={`w-[52px] sm:w-[58px] h-[52px] sm:h-[56px] py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
+                        className={`w-[44px] sm:w-[58px] h-[44px] sm:h-[56px] py-0.5 sm:py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
                           isActive
                             ? "bg-[#7B1E3D] text-white shadow-xs"
                             : "text-gray-700 hover:bg-gray-100"
                         }`}
                       >
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wider ${
-                          isActive ? "text-white" : "text-gray-500"
-                        }`}
-                      >
-                        {weekday}
-                      </span>
-                      <span
-                        className={`text-base font-bold leading-tight my-0.5 ${
-                          isActive ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        {day}
-                      </span>
-                      <span
-                        className={`text-[9px] font-bold uppercase tracking-wider ${
-                          isActive ? "text-white" : "text-gray-500"
-                        }`}
-                      >
-                        {month}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <span
+                          className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${
+                            isActive ? "text-white" : "text-gray-500"
+                          }`}
+                        >
+                          {weekday}
+                        </span>
+                        <span
+                          className={`text-xs sm:text-base font-bold leading-none my-0.5 ${
+                            isActive ? "text-white" : "text-gray-900"
+                          }`}
+                        >
+                          {day}
+                        </span>
+                        <span
+                          className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${
+                            isActive ? "text-white" : "text-gray-500"
+                          }`}
+                        >
+                          {month}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-<div className="flex items-center h-[44px] lg:h-full w-full lg:w-auto lg:shrink-0 overflow-x-auto lg:overflow-visible border-t border-gray-100 lg:border-t-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">                <div className="relative h-full flex items-center border-r border-gray-200 px-5">
+<div className="flex items-center h-[36px] sm:h-[44px] lg:h-full w-full lg:w-auto lg:shrink-0 overflow-x-auto lg:overflow-visible border-t border-gray-100 lg:border-t-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px] sm:text-xs">                <div className="relative h-full flex items-center border-r border-gray-200 px-5">
                   <button
                     onClick={() => toggleDropdown("langFormat")}
                     className="flex items-center gap-1 text-xs font-semibold text-gray-900 h-full whitespace-nowrap cursor-pointer"
@@ -1098,45 +1217,43 @@ export default function BuyTicketsPage() {
           </div>
 
           <div className="bg-[#F5F5FA] border-b border-gray-200">
-            <div className="max-w-[1240px] mx-auto px-4 py-2 flex items-center justify-between gap-4 text-xs text-gray-500">
+            <div className="max-w-[1240px] mx-auto px-3 sm:px-4 py-1.5 sm:py-2 flex items-center justify-end sm:justify-between gap-3 text-[10px] sm:text-xs text-gray-500">
               {showSubtitleNotice ? (
-                <div className="flex items-center gap-1.5">
-                  <span className="border border-gray-300 rounded px-1 text-[10px] font-bold text-gray-500 bg-white">
+                <div className="hidden sm:flex items-center gap-1.5">
+                  <span className="border border-gray-300 rounded px-1 text-[9px] sm:text-[10px] font-bold text-gray-500 bg-white">
                     SUB
                   </span>
-                  <span className="text-[11px] sm:text-xs text-gray-500">
-                    indicates subtitle language, if available
+                  <span className="text-[10px] sm:text-xs text-gray-500 truncate">
+                    indicates subtitle language
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowSubtitleNotice(false)}
-                    className="text-gray-400 hover:text-gray-600 ml-1 cursor-pointer"
+                    className="text-gray-400 hover:text-gray-600 ml-0.5 cursor-pointer"
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                   </button>
                 </div>
-              ) : (
-                <div />
-              )}
+              ) : null}
 
-              <div className="flex items-center gap-4 text-[11px] font-semibold ml-auto">
-                <span className="flex items-center gap-1.5 text-gray-600">
-                  <span className="w-2 h-2 rounded-full bg-[#1EA83C]" />
+              <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-[11px] font-semibold shrink-0">
+                <span className="flex items-center gap-1 sm:gap-1.5 text-gray-600">
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#1EA83C]" />
                   AVAILABLE
                 </span>
-                <span className="flex items-center gap-1.5 text-gray-600">
-                  <span className="w-2 h-2 rounded-full bg-[#FFB000]" />
+                <span className="flex items-center gap-1 sm:gap-1.5 text-gray-600">
+                  <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#FFB000]" />
                   FAST FILLING
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="max-w-[1240px] mx-auto px-4 py-4 w-full">
+          <div className="max-w-[1240px] mx-auto px-3 sm:px-4 py-2 sm:py-4 w-full">
             <div className="flex flex-col bg-white rounded-lg border border-gray-200 divide-y divide-gray-100 shadow-xs">
               {venuesForDate.length === 0 ? (
-                <div className="text-center py-16 text-gray-500">
-                  <p className="font-semibold text-base">
+                <div className="text-center py-12 sm:py-16 text-gray-500">
+                  <p className="font-semibold text-sm sm:text-base">
                     No shows available for selected filters
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
@@ -1145,47 +1262,31 @@ export default function BuyTicketsPage() {
                 </div>
               ) : (
                 venuesForDate.map((venue) => {
-                  const isPVR = venue.venue_name.toLowerCase().includes("pvr");
-                  const isCinepolis = venue.venue_name
-                    .toLowerCase()
-                    .includes("cinepolis");
                   const isFav = Boolean(favorites[venue.venue_id]);
 
                   return (
                     <div
                       key={venue.venue_id}
-                      className="p-5 flex flex-col gap-3 hover:bg-gray-50/50 transition"
+                      className="p-3 sm:p-5 flex flex-col gap-2 sm:gap-3 hover:bg-gray-50/50 transition"
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-2.5 min-w-0">
-                          {isPVR ? (
-                            <div className="text-[11px] font-black text-amber-500 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded font-serif shrink-0 mt-0.5">
-                              PVR
-                            </div>
-                          ) : isCinepolis ? (
-                            <div className="text-[10px] font-black text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-                              cinépolis
-                            </div>
-                          ) : (
-                            <div className="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
-                              CINEMA
-                            </div>
-                          )}
+                      <div className="flex items-start justify-between gap-3 sm:gap-4">
+                        <div className="flex items-start gap-2 sm:gap-2.5 min-w-0">
+                          <CinemaLogoBadge venueName={venue.venue_name} />
 
-                          <div>
+                          <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <h3
                                 onClick={() => setSelectedCinemaInfo(venue)}
-                                className="text-sm sm:text-base font-bold text-gray-900 hover:text-[#7B1E3D] transition leading-snug cursor-pointer"
+                                className="text-xs sm:text-base font-bold text-gray-900 hover:text-[#7B1E3D] transition leading-snug cursor-pointer truncate sm:whitespace-normal"
                               >
                                 {venue.venue_name}
                               </h3>
                               <Info
                                 onClick={() => setSelectedCinemaInfo(venue)}
-                                className="h-4 w-4 text-gray-400 shrink-0 cursor-pointer hover:text-gray-600"
+                                className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-gray-400 shrink-0 cursor-pointer hover:text-gray-600"
                               />
                             </div>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
                               Cancellation available
                             </p>
                           </div>
@@ -1198,36 +1299,36 @@ export default function BuyTicketsPage() {
                           title="Bookmark Cinema"
                         >
                           <Heart
-                            className={`h-5 w-5 ${
+                            className={`h-4 w-4 sm:h-5 sm:w-5 ${
                               isFav ? "fill-[#7B1E3D] text-[#7B1E3D]" : ""
                             }`}
                           />
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         <div
-                          className="flex items-center gap-1 bg-[#FFF8E7] text-[#FF9800] border border-[#FFE8B3] rounded-md px-2 py-1 text-xs font-semibold"
+                          className="flex items-center gap-1 bg-[#FFF8E7] text-[#FF9800] border border-[#FFE8B3] rounded px-1.5 py-0.5 sm:px-2 sm:py-1 text-[9px] sm:text-xs font-semibold"
                           title="Food & Beverage Available"
                         >
-                          <Coffee className="h-3.5 w-3.5 shrink-0" />
-                          <span className="whitespace-nowrap text-[10px] font-bold">
+                          <Coffee className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                          <span className="whitespace-nowrap text-[9px] sm:text-[10px] font-bold">
                             F&amp;B
                           </span>
                         </div>
 
                         <div
-                          className="flex items-center gap-1 bg-[#E8F8EE] text-[#1EA83C] border border-[#C5F0D5] rounded-md px-2 py-1 text-xs font-semibold"
+                          className="flex items-center gap-1 bg-[#E8F8EE] text-[#1EA83C] border border-[#C5F0D5] rounded px-1.5 py-0.5 sm:px-2 sm:py-1 text-[9px] sm:text-xs font-semibold"
                           title="M-Ticket Available"
                         >
-                          <Smartphone className="h-3.5 w-3.5 shrink-0" />
-                          <span className="whitespace-nowrap text-[10px] font-bold">
+                          <Smartphone className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                          <span className="whitespace-nowrap text-[9px] sm:text-[10px] font-bold">
                             M-Ticket
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 pt-0.5 sm:pt-1">
                         {venue.showtimes.map((slot) => {
                           const isPast =
                             new Date(slot.starts_at).getTime() < now;
@@ -1328,17 +1429,17 @@ export default function BuyTicketsPage() {
                                   if (!isPast) handleShowtimeClick(slot.id);
                                 }}
                                 disabled={isPast}
-                                className={`relative rounded px-3 py-1 min-w-[102px] h-[38px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
+                                className={`relative rounded px-2.5 sm:px-3 py-1 min-w-[78px] sm:min-w-[102px] h-[34px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
                                   isPast
                                     ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
                                     : isCouple
-                                      ? "border border-[#f472b6] border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs"
-                                      : "border border-[#34A853] border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
+                                      ? "border border-[#f472b6] border-l-[3px] sm:border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs"
+                                      : "border border-[#34A853] border-l-[3px] sm:border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
                                 }`}
                               >
                                 <div className="flex items-center justify-center gap-1 leading-none">
                                   <span
-                                    className={`text-xs sm:text-[13px] font-bold leading-none ${
+                                    className={`text-[11px] sm:text-[13px] font-bold leading-none ${
                                       isPast
                                         ? "text-gray-300"
                                         : isCouple
@@ -1349,7 +1450,7 @@ export default function BuyTicketsPage() {
                                     {istTimeLabel(slot.starts_at)}
                                   </span>
                                   <span
-                                    className={`text-[8px] font-semibold border px-1 rounded-xs leading-none font-sans ${
+                                    className={`text-[7px] sm:text-[8px] font-semibold border px-0.5 sm:px-1 rounded-xs leading-none font-sans ${
                                       isCouple
                                         ? "border-[#f472b6] text-[#be185d]"
                                         : "border-gray-400 text-gray-600"
@@ -1363,7 +1464,7 @@ export default function BuyTicketsPage() {
                                   </span>
                                 </div>
                                 <div
-                                  className={`text-[8px] font-bold uppercase tracking-wider leading-none mt-1 flex items-center justify-center gap-0.5 ${
+                                  className={`text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider leading-none mt-0.5 sm:mt-1 flex items-center justify-center gap-0.5 ${
                                     isCouple
                                       ? "text-[#be185d]"
                                       : "text-gray-400"

@@ -65,74 +65,88 @@ export async function showSystemNotification(
   }
 }
 
+let isNativeListenerAttached = false;
+let lastRegisteredToken: string | null = null;
+let isRegistering = false;
+
 export async function registerDevicePushNotifications(): Promise<void> {
-  if (typeof window === "undefined") return;
-
-  // 1. Native Android / iOS via Capacitor PushNotifications plugin (if present)
-  if (Capacitor.isNativePlatform()) {
-    try {
-      const plugins = (window as any).Capacitor?.Plugins;
-      const PushNotifications = plugins?.PushNotifications;
-      if (PushNotifications) {
-        const perm = await PushNotifications.requestPermissions();
-        if (perm?.receive === "granted") {
-          await PushNotifications.register();
-          PushNotifications.addListener("registration", (token: { value: string }) => {
-            if (token?.value) {
-              api
-                .post("/notifications/devices", {
-                  fcm_token: token.value,
-                  platform: Capacitor.getPlatform(),
-                })
-                .catch(() => {});
-            }
-          });
-        }
-      }
-    } catch {}
-    return;
-  }
-
-  // 2. React Web App (Browser Notifications + Optional Firebase Web Push FCM)
-  if (!("Notification" in window)) return;
+  if (typeof window === "undefined" || isRegistering) return;
+  isRegistering = true;
 
   try {
-    if (Notification.permission === "default") {
-      await Notification.requestPermission();
+    // 1. Native Android / iOS via Capacitor PushNotifications plugin (if present)
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const plugins = (window as any).Capacitor?.Plugins;
+        const PushNotifications = plugins?.PushNotifications;
+        if (PushNotifications) {
+          const perm = await PushNotifications.requestPermissions();
+          if (perm?.receive === "granted") {
+            if (!isNativeListenerAttached) {
+              isNativeListenerAttached = true;
+              PushNotifications.addListener("registration", (token: { value: string }) => {
+                if (token?.value && token.value !== lastRegisteredToken) {
+                  lastRegisteredToken = token.value;
+                  api
+                    .post("/notifications/devices", {
+                      fcm_token: token.value,
+                      platform: Capacitor.getPlatform(),
+                    })
+                    .catch(() => {});
+                }
+              });
+            }
+            await PushNotifications.register();
+          }
+        }
+      } catch {}
+      return;
     }
-    if (Notification.permission !== "granted") return;
 
-    const reg = await getSwRegistration();
-    const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-    if (!vapidKey) return;
+    // 2. React Web App (Browser Notifications + Optional Firebase Web Push FCM)
+    if (!("Notification" in window)) return;
 
-    const supported = await isSupported().catch(() => false);
-    if (!supported) return;
-
-    const messaging = getMessaging(getApp());
-    const fcmToken = await getToken(messaging, {
-      vapidKey,
-      serviceWorkerRegistration: reg || undefined,
-    });
-    if (fcmToken) {
-      await api
-        .post("/notifications/devices", {
-          fcm_token: fcmToken,
-          platform: "web",
-        })
-        .catch(() => {});
-    }
-
-    onMessage(messaging, (payload) => {
-      const title = payload.notification?.title || payload.data?.title;
-      const body = payload.notification?.body || payload.data?.body;
-      const link = payload.data?.link;
-      if (title) {
-        showSystemNotification(title, body || "", link);
+    try {
+      if (Notification.permission === "default") {
+        await Notification.requestPermission();
       }
-    });
-  } catch {
-    // Gracefully fall back to SSE stream if VAPID or browser FCM is unavailable
+      if (Notification.permission !== "granted") return;
+
+      const reg = await getSwRegistration();
+      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+      if (!vapidKey) return;
+
+      const supported = await isSupported().catch(() => false);
+      if (!supported) return;
+
+      const messaging = getMessaging(getApp());
+      const fcmToken = await getToken(messaging, {
+        vapidKey,
+        serviceWorkerRegistration: reg || undefined,
+      });
+      if (fcmToken && fcmToken !== lastRegisteredToken) {
+        lastRegisteredToken = fcmToken;
+        await api
+          .post("/notifications/devices", {
+            fcm_token: fcmToken,
+            platform: "web",
+          })
+          .catch(() => {});
+      }
+
+      onMessage(messaging, (payload) => {
+        const title = payload.notification?.title || payload.data?.title;
+        const body = payload.notification?.body || payload.data?.body;
+        const link = payload.data?.link;
+        if (title) {
+          showSystemNotification(title, body || "", link);
+        }
+      });
+    } catch {
+      // Gracefully fall back to SSE stream if VAPID or browser FCM is unavailable
+    }
+  } finally {
+    isRegistering = false;
   }
 }
 
