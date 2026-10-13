@@ -5,11 +5,12 @@ workflows:
     instance_type: mac_mini_m2
 
     integrations:
-      app_store_connect: Codemagic # Must match the exact name under Codemagic UI -> Settings -> Integrations
+      app_store_connect: Codemagic
 
     environment:
-      groups:
-        - Vybhz # <--- THIS TELLS CODEMAGIC TO DOWNLOAD YOUR UPLOADED .P12 CERTIFICATE & PROFILE
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.vybhz.app
       vars:
         BUNDLE_ID: "com.vybhz.app"
         XCODE_WORKSPACE: "App.xcworkspace"
@@ -39,11 +40,6 @@ workflows:
         script: |
           cd ios/App
           pod install
-
-      - name: Initialize keychain and add certificates
-        script: |
-          keychain initialize
-          keychain add-certificates
 
       - name: Apply Provisioning Profiles
         script: |
