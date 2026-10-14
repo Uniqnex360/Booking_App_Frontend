@@ -3,10 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { format, parseISO, isToday, isTomorrow } from 'date-fns';
-import { ChevronDown, ChevronUp, ImageOff, X, SlidersHorizontal, RotateCcw } from 'lucide-react';
+import { ChevronDown, ImageOff, X, SlidersHorizontal, RotateCcw, Search, MapPin } from 'lucide-react';
 
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { CitySelectionModal } from '@/components/common/CitySelectionModal';
 import { getEvents } from '@/api/event.api';
 import type { EventItem } from '@/types/event.types';
 
@@ -89,50 +90,51 @@ function FilterAccordion({
   onToggle,
   onClear,
   showClear,
+  activeCount,
   children,
-  isWineTitle,
 }: {
   title: string;
   isOpen: boolean;
   onToggle: () => void;
   onClear?: () => void;
   showClear?: boolean;
+  activeCount?: number;
   children?: React.ReactNode;
-  isWineTitle?: boolean;
 }) {
   return (
-    <div className="mb-3 bg-white rounded-md border border-gray-200 shadow-2xs overflow-hidden">
-      <div className="flex w-full items-center justify-between px-3.5 py-3 transition-colors hover:bg-gray-50/80 select-none">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex items-center gap-2 flex-grow text-left cursor-pointer"
-        >
-          {isOpen ? (
-            <ChevronUp className="h-4 w-4 text-gray-500" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-gray-500" />
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition select-none cursor-pointer"
+      >
+        <span className="flex items-center gap-2">
+          <ChevronDown
+            className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
+              isOpen ? "rotate-0" : "-rotate-90"
+            }`}
+          />
+          {title}
+        </span>
+        <div className="flex items-center gap-2">
+          {activeCount !== undefined && activeCount > 0 && (
+            <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
+              {activeCount}
+            </span>
           )}
-          <span
-            className="text-sm font-medium tracking-tight text-gray-800"
-            style={{ color: isWineTitle ? WINE_COLOR : undefined }}
-          >
-            {title}
-          </span>
-        </button>
-        {showClear && onClear && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClear();
-            }}
-            className="text-xs text-gray-400 hover:text-[#7B1E3D] transition-colors font-normal cursor-pointer"
-          >
-            Clear
-          </button>
-        )}
-      </div>
+          {showClear && onClear && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear();
+              }}
+              className="text-xs text-gray-400 hover:text-[#7B1E3D] transition-colors font-normal cursor-pointer"
+            >
+              Clear
+            </span>
+          )}
+        </div>
+      </button>
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -141,7 +143,7 @@ function FilterAccordion({
             exit={{ height: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-3.5 pb-3.5 pt-1 border-t border-gray-50">{children}</div>
+            <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2 border-t border-gray-50">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -183,6 +185,7 @@ export default function EventsPage() {
   const activeCity = searchParams.get('city') || 'Kochi';
   const activeDate = searchParams.get('date') || '';
   const activePrice = searchParams.get('price') || '';
+  const search = searchParams.get('search') || '';
   const activeLangs = useMemo(() => searchParams.getAll('lang'), [searchParams]);
   const activeTags = useMemo(() => searchParams.getAll('tag'), [searchParams]);
   const activeFlags = useMemo(() => searchParams.getAll('flag'), [searchParams]);
@@ -195,6 +198,20 @@ export default function EventsPage() {
     price: false,
   });
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isCityModalOpen, setIsCityModalOpen] = useState(false);
+
+  const setCity = (nextCity: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set('city', nextCity);
+    setSearchParams(next);
+  };
+
+  const setSearch = (nextSearch: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (nextSearch) next.set('search', nextSearch);
+    else next.delete('search');
+    setSearchParams(next);
+  };
 
   const clearAllFilters = () => {
     const next = new URLSearchParams();
@@ -207,11 +224,12 @@ export default function EventsPage() {
     if (activeCategory && activeCategory !== 'all') count++;
     if (activeDate) count++;
     if (activePrice) count++;
+    if (search) count++;
     count += activeLangs.length;
     count += activeTags.length;
     count += activeFlags.length;
     return count;
-  }, [activeCategory, activeDate, activePrice, activeLangs, activeTags, activeFlags]);
+  }, [activeCategory, activeDate, activePrice, activeLangs, activeTags, activeFlags, search]);
 
   useEffect(() => {
     (async () => {
@@ -293,6 +311,15 @@ export default function EventsPage() {
   // Client-side filtering logic
   const filteredEvents = useMemo(() => {
     return upcomingOrLiveEvents.filter((e) => {
+      // Search filter
+      if (search) {
+        const s = search.toLowerCase();
+        const matchesTitle = e.title?.toLowerCase().includes(s);
+        const matchesCat = e.category?.toLowerCase().includes(s);
+        const matchesVenue = e.venue_name?.toLowerCase().includes(s);
+        if (!matchesTitle && !matchesCat && !matchesVenue) return false;
+      }
+
       // Category filter
       const matchesCategory = activeCategory === 'all' || e.category === activeCategory;
       // City filter
@@ -348,7 +375,7 @@ export default function EventsPage() {
         matchesPrice
       );
     });
-  }, [events, activeCategory, activeCity, activeLangs, activeTags, activeFlags, activeDate, activePrice]);
+  }, [upcomingOrLiveEvents, search, activeCategory, activeCity, activeLangs, activeTags, activeFlags, activeDate, activePrice]);
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] text-[#333333] flex flex-col font-sans">
