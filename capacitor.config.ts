@@ -25,7 +25,7 @@ const serverClientId = loadEnvValue('VITE_WEBSDK_CLIENT_ID');
 
 const config: CapacitorConfig = {
   appId: 'com.vyhbz.app',
-  appName: 'VybHz',
+  appName: 'vybhz',
   webDir: 'dist',
   plugins: {
     GoogleAuth: {

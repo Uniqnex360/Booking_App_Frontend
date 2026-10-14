@@ -19,6 +19,7 @@ const DISPLAY_LABELS: Record<string, string> = {
   concert: 'Music Shows',
   comedy: 'Comedy Shows',
   theatre: 'Performances',
+  dining: 'Dining & Food',
   kids: 'Kids',
   spirituality: 'Spirituality',
   meetups: 'Meetups',
@@ -70,11 +71,24 @@ const PRICE_OPTIONS = [
   { value: 'above-2000', label: 'Above ₹2000' },
 ];
 
+const EVENT_CATEGORY_OPTIONS = [
+  { key: 'workshop', label: 'Workshops' },
+  { key: 'comedy', label: 'Comedy Shows' },
+  { key: 'concert', label: 'Music Shows' },
+  { key: 'theatre', label: 'Performances' },
+  { key: 'dining', label: 'Dining & Food' },
+  { key: 'meetups', label: 'Meetups' },
+  { key: 'exhibition', label: 'Exhibitions' },
+  { key: 'kids', label: 'Kids' },
+  { key: 'spirituality', label: 'Spirituality' },
+];
+
 function FilterAccordion({
   title,
   isOpen,
   onToggle,
   onClear,
+  showClear,
   children,
   isWineTitle,
 }: {
@@ -82,37 +96,38 @@ function FilterAccordion({
   isOpen: boolean;
   onToggle: () => void;
   onClear?: () => void;
+  showClear?: boolean;
   children?: React.ReactNode;
   isWineTitle?: boolean;
 }) {
   return (
-    <div className="mb-4 bg-white rounded-xl border border-gray-200/80 shadow-2xs overflow-hidden">
-      <div className="flex w-full items-center justify-between p-3.5 transition-colors hover:bg-gray-50/80">
+    <div className="mb-3 bg-white rounded-md border border-gray-200 shadow-2xs overflow-hidden">
+      <div className="flex w-full items-center justify-between px-3.5 py-3 transition-colors hover:bg-gray-50/80 select-none">
         <button
           type="button"
           onClick={onToggle}
           className="flex items-center gap-2 flex-grow text-left cursor-pointer"
         >
           {isOpen ? (
-            <ChevronUp className="h-3.5 w-3.5 text-[#7B1E3D]" />
+            <ChevronUp className="h-4 w-4 text-gray-500" />
           ) : (
-            <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+            <ChevronDown className="h-4 w-4 text-gray-500" />
           )}
           <span
-            className="text-xs sm:text-[13px] font-bold tracking-tight"
-            style={{ color: isWineTitle ? WINE_COLOR : '#1e293b' }}
+            className="text-sm font-medium tracking-tight text-gray-800"
+            style={{ color: isWineTitle ? WINE_COLOR : undefined }}
           >
             {title}
           </span>
         </button>
-        {onClear && (
+        {showClear && onClear && (
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onClear();
             }}
-            className="text-[10px] text-gray-400 hover:text-[#7B1E3D] uppercase font-bold tracking-wider cursor-pointer"
+            className="text-xs text-gray-400 hover:text-[#7B1E3D] transition-colors font-normal cursor-pointer"
           >
             Clear
           </button>
@@ -126,7 +141,7 @@ function FilterAccordion({
             exit={{ height: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-3.5 pb-4 pt-1">{children}</div>
+            <div className="px-3.5 pb-3.5 pt-1 border-t border-gray-50">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -147,10 +162,10 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-1.5 text-xs rounded-full border transition-all cursor-pointer ${
+      className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border cursor-pointer ${
         isActive
-          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
-          : 'bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]'
+          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs'
+          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50 hover:bg-[#7B1E3D]/5'
       }`}
     >
       {label}
@@ -256,17 +271,24 @@ export default function EventsPage() {
     return events.filter((e) => !e.ends_at || new Date(e.ends_at) >= now);
   }, [events]);
 
-  // Dynamic categories found in upcoming/live events
-  const dynamicCategories = useMemo(() => {
-    const cats = new Set<string>();
-    upcomingOrLiveEvents.forEach((e) => {
-      if (e.category) cats.add(e.category);
+  // Full list of categories: all standard event categories plus any custom categories from events
+  const availableCategories = useMemo(() => {
+    const map = new Map<string, string>();
+    EVENT_CATEGORY_OPTIONS.forEach((c) => map.set(c.key, c.label));
+
+    // Also include any dynamic categories from events
+    events.forEach((e) => {
+      if (e.category && !map.has(e.category)) {
+        map.set(
+          e.category,
+          DISPLAY_LABELS[e.category] ||
+            e.category.charAt(0).toUpperCase() + e.category.slice(1)
+        );
+      }
     });
-    return Array.from(cats).map((c) => ({
-      key: c,
-      label: DISPLAY_LABELS[c] || c.charAt(0).toUpperCase() + c.slice(1),
-    }));
-  }, [upcomingOrLiveEvents]);
+
+    return Array.from(map.entries()).map(([key, label]) => ({ key, label }));
+  }, [events]);
 
   // Client-side filtering logic
   const filteredEvents = useMemo(() => {
@@ -359,10 +381,11 @@ export default function EventsPage() {
                 isOpen={openFilters.categories}
                 onToggle={() => setOpenFilters((p) => ({ ...p, categories: !p.categories }))}
                 onClear={() => updateCategory('all')}
+                showClear={activeCategory !== 'all'}
                 isWineTitle={true}
               >
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {dynamicCategories.map((cat) => (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {availableCategories.map((cat) => (
                     <FilterButton
                       key={cat.key}
                       label={cat.label}
@@ -379,8 +402,9 @@ export default function EventsPage() {
                 isOpen={openFilters.date}
                 onToggle={() => setOpenFilters((p) => ({ ...p, date: !p.date }))}
                 onClear={() => setFilter('date', '')}
+                showClear={Boolean(activeDate)}
               >
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {DATE_OPTIONS.map((opt) => (
                     <FilterButton
                       key={opt.value}
@@ -398,8 +422,9 @@ export default function EventsPage() {
                 isOpen={openFilters.languages}
                 onToggle={() => setOpenFilters((p) => ({ ...p, languages: !p.languages }))}
                 onClear={() => clearFilterGroup(['lang'])}
+                showClear={activeLangs.length > 0}
               >
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {LANGUAGE_OPTIONS.map((opt) => (
                     <FilterButton
                       key={opt.value}
@@ -417,8 +442,9 @@ export default function EventsPage() {
                 isOpen={openFilters.more}
                 onToggle={() => setOpenFilters((p) => ({ ...p, more: !p.more }))}
                 onClear={() => clearFilterGroup(['tag', 'flag'])}
+                showClear={activeTags.length > 0 || activeFlags.length > 0}
               >
-                <div className="space-y-3 pt-2">
+                <div className="space-y-3 pt-1">
                   <div>
                     <p className="text-[11px] text-[#999999] uppercase font-semibold mb-2">Tags</p>
                     <div className="flex flex-wrap gap-2">
@@ -454,8 +480,9 @@ export default function EventsPage() {
                 isOpen={openFilters.price}
                 onToggle={() => setOpenFilters((p) => ({ ...p, price: !p.price }))}
                 onClear={() => setFilter('price', '')}
+                showClear={Boolean(activePrice)}
               >
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {PRICE_OPTIONS.map((opt) => (
                     <FilterButton
                       key={opt.value}
@@ -520,7 +547,7 @@ export default function EventsPage() {
                   >
                     All Events
                   </button>
-                  {dynamicCategories.map((cat) => (
+                  {availableCategories.map((cat) => (
                     <button
                       key={cat.key}
                       type="button"
@@ -528,7 +555,7 @@ export default function EventsPage() {
                       className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
                         activeCategory === cat.key
                           ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-[#7B1E3D]/50 hover:text-[#7B1E3D]'
                       }`}
                     >
                       {cat.label}
@@ -818,7 +845,7 @@ export default function EventsPage() {
                     >
                       All Events
                     </button>
-                    {dynamicCategories.map((cat) => (
+                    {availableCategories.map((cat) => (
                       <button
                         key={cat.key}
                         type="button"

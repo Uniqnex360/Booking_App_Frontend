@@ -696,19 +696,6 @@ export function Header() {
               )}
 
               <div className="flex-1 overflow-y-auto py-2 divide-y divide-gray-50">
-                <div className="lg:hidden py-1 border-b border-gray-100">
-                  {navLinks.map((link) => (
-                    <button
-                      key={link.href}
-                      onClick={() => handleProfileNavigation(withCity(link.href, city))}
-                      className="w-full flex items-center justify-between px-6 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 hover:text-[#7B1E3D] transition"
-                    >
-                      <span>{link.label}</span>
-                      <ChevronRight className="h-4 w-4 text-gray-400" />
-                    </button>
-                  ))}
-                </div>
-
                 <div className="py-1">
                   <DrawerMenuItem
                     icon={Bell}
