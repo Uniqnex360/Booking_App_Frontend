@@ -32,9 +32,9 @@ workflows:
         script: |
           npx cap sync ios
 
-      - name: Force Update Xcode Bundle Identifier
+      - name: Force Update iOS Deployment Target
         script: |
-          perl -pi -e "s/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.vyhbz.app;/g" ios/App/App.xcodeproj/project.pbxproj
+          sed -i '' 's/IPHONEOS_DEPLOYMENT_TARGET = 14.0;/IPHONEOS_DEPLOYMENT_TARGET = 15.0;/g' ios/App/App.xcodeproj/project.pbxproj
 
       - name: Install CocoaPods
         script: |
