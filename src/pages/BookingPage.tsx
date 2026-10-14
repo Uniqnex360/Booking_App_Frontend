@@ -22,6 +22,7 @@ import {
   Tag,
   MapPin,
   Share2,
+  Heart,
   ThumbsUp,
   ExternalLink,
   Minus,
@@ -67,6 +68,7 @@ import { applyCoupon, removeCoupon, getAvailableCoupons } from '@/api/coupon.api
 import type { ApplyCouponResult, AvailableCoupon } from '@/types/coupon.types';
 import { Capacitor } from '@capacitor/core';
 import { Checkout } from 'capacitor-razorpay';
+import { isInWishlist, toggleWishlist } from '@/utils/wishlist';
 
 const categoryLabels: Record<string, string> = {
   concert: 'Music Shows',
@@ -88,6 +90,32 @@ export default function BookingPage() {
   const [loading, setLoading] = useState(true);
   const [interestedCount, setInterestedCount] = useState(16);
   const [isInterested, setIsInterested] = useState(false);
+  const [inWishlist, setInWishlist] = useState(false);
+
+  useEffect(() => {
+    if (eventData?.id) {
+      setInWishlist(isInWishlist(eventData.id));
+    }
+  }, [eventData]);
+
+  const handleToggleWishlist = () => {
+    if (!eventData) return;
+    const added = toggleWishlist({
+      id: eventData.id,
+      type: "EVENT",
+      title: eventData.title,
+      image_url: eventData.poster_image_url || eventData.banner_image_url || undefined,
+      subtitle: `${eventData.category || "Event"} • ${eventData.venue_name || eventData.city || ""}`,
+      link: `/events/${eventData.id}`,
+      addedAt: new Date().toISOString(),
+    });
+    setInWishlist(added);
+    if (added) {
+      toast.success(`"${eventData.title}" added to your Wishlist`);
+    } else {
+      toast.info(`"${eventData.title}" removed from your Wishlist`);
+    }
+  };
 
   // Preview & Accordion States
   const [activeImagePreview, setActiveImagePreview] = useState<string | null>(null);
@@ -568,23 +596,36 @@ export default function BookingPage() {
           <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
             {eventData.title.toUpperCase()}
           </h1>
-          <button
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({
-                  title: eventData.title,
-                  url: window.location.href,
-                }).catch(() => {});
-              } else {
-                navigator.clipboard.writeText(window.location.href);
-                toast.success('Link copied to clipboard');
-              }
-            }}
-            className="p-2 hover:bg-gray-100 rounded-full transition"
-            title="Share"
-          >
-            <Share2 className="h-5 w-5 text-gray-600" />
-          </button>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={handleToggleWishlist}
+              className={`p-2 rounded-full transition cursor-pointer ${
+                inWishlist
+                  ? "bg-red-50 text-red-500 hover:bg-red-100"
+                  : "hover:bg-gray-100 text-gray-600"
+              }`}
+              title={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            >
+              <Heart className={`h-5 w-5 ${inWishlist ? "fill-red-500 text-red-500" : ""}`} />
+            </button>
+            <button
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: eventData.title,
+                    url: window.location.href,
+                  }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast.success('Link copied to clipboard');
+                }
+              }}
+              className="p-2 hover:bg-gray-100 rounded-full transition cursor-pointer"
+              title="Share"
+            >
+              <Share2 className="h-5 w-5 text-gray-600" />
+            </button>
+          </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">

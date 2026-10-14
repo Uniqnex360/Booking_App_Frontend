@@ -387,13 +387,10 @@ export function Header() {
     events: [],
     restaurants: [],
   });
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setShowDropdown(false);
-    setMobileSearchOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -538,18 +535,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
-          <button
-            type="button"
-            className="md:hidden text-gray-600 hover:text-gray-900 transition p-1"
-            onClick={() => setIsSearchModalOpen(true)}
-          >
-            {mobileSearchOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Search className="h-5 w-5" />
-            )}
-          </button>
-
+          {/* Desktop City Selector */}
           <button
             type="button"
             onClick={() => setIsCityModalOpen(true)}
@@ -560,41 +546,69 @@ export function Header() {
             <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
           </button>
 
-          {user ? (
-            <button
-              onClick={() => {
-                setDrawerTab("main");
-                setDrawerOpen(true);
-              }}
-              className="flex items-center gap-2 rounded-full hover:bg-gray-100 p-1 pr-2.5 transition"
-            >
-              <Avatar className="h-7 w-7 border border-gray-200">
-                <AvatarFallback className="bg-[#7B1E3D]/10 text-xs font-bold text-[#7B1E3D]">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden sm:block text-sm font-medium text-gray-800 max-w-[85px] truncate">
-                {displayName.split(" ")[0]}
-              </span>
-            </button>
-          ) : (
-            <Button
-              onClick={() => openAuthModal("get-started")}
-              className="rounded text-xs font-semibold h-8 px-4 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-none transition"
-            >
-              Sign in
-            </Button>
-          )}
+          {/* Desktop User / Sign In */}
+          <div className="hidden md:flex items-center">
+            {user ? (
+              <button
+                onClick={() => {
+                  setDrawerTab("main");
+                  setDrawerOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-full hover:bg-gray-100 p-1 pr-2.5 transition cursor-pointer"
+              >
+                <Avatar className="h-7 w-7 border border-gray-200">
+                  <AvatarFallback className="bg-[#7B1E3D]/10 text-xs font-bold text-[#7B1E3D]">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium text-gray-800 max-w-[85px] truncate">
+                  {displayName.split(" ")[0]}
+                </span>
+              </button>
+            ) : (
+              <Button
+                onClick={() => openAuthModal("get-started")}
+                className="rounded text-xs font-semibold h-8 px-4 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white shadow-none transition cursor-pointer"
+              >
+                Sign in
+              </Button>
+            )}
+          </div>
 
+          {/* Desktop Menu (Hamburger) */}
           <button
             onClick={() => {
               setDrawerTab("main");
               setDrawerOpen(true);
             }}
-            className="text-gray-700 hover:text-[#7B1E3D] p-1.5 rounded-lg hover:bg-gray-100 transition"
+            className="hidden md:flex text-gray-700 hover:text-[#7B1E3D] p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer"
             title="Menu"
           >
             <Menu className="h-6 w-6" />
+          </button>
+
+          {/* Mobile Only: Single Profile Icon Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setDrawerTab("main");
+              setDrawerOpen(true);
+            }}
+            className="md:hidden flex items-center justify-center p-1 rounded-full hover:bg-gray-100 active:scale-95 transition cursor-pointer text-gray-700"
+            title="Profile & Menu"
+            aria-label="Profile and Menu"
+          >
+            {user ? (
+              <Avatar className="h-8 w-8 border border-gray-200 shadow-2xs">
+                <AvatarFallback className="bg-[#7B1E3D]/10 text-xs font-bold text-[#7B1E3D]">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div className="h-8 w-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-600">
+                <User className="h-4.5 w-4.5" />
+              </div>
+            )}
           </button>
         </div>
       </div>
@@ -625,51 +639,7 @@ export function Header() {
         </div>
       </div>
 
-      {mobileSearchOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white p-3 shadow-md">
-          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-md px-3 py-2">
-            <Search className="h-4 w-4 text-gray-400 mr-2" />
-            <input
-              autoFocus
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Movies, Events..."
-              className="w-full bg-transparent text-sm focus:outline-none text-gray-900"
-            />
-          </div>
-          {hasResults && (
-            <div className="mt-2 divide-y divide-gray-100 max-h-60 overflow-y-auto border border-gray-100 rounded-md shadow-sm">
-              {results.movies.map((m) => (
-                <Link
-                  key={m.id}
-                  to={withCity(`/movies/${m.id}`, city)}
-                  onClick={() => setMobileSearchOpen(false)}
-                  className="flex items-center gap-3 p-2.5 hover:bg-gray-50"
-                >
-                  <Film className="h-4 w-4 text-[#7B1E3D] shrink-0" />
-                  <span className="text-sm font-medium text-gray-800 truncate">
-                    {m.title}
-                  </span>
-                </Link>
-              ))}
-              {results.events.map((e) => (
-                <Link
-                  key={e.id}
-                  to={withCity(`/booking/event/${e.id}`, city)}
-                  onClick={() => setMobileSearchOpen(false)}
-                  className="flex items-center gap-3 p-2.5 hover:bg-gray-50"
-                >
-                  <Music className="h-4 w-4 text-[#7B1E3D] shrink-0" />
-                  <span className="text-sm font-medium text-gray-800 truncate">
-                    {e.title}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+
 
       <Sheet open={drawerOpen} onOpenChange={(open) => {
         setDrawerOpen(open);
