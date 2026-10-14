@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { format, parseISO, isToday, isTomorrow } from 'date-fns';
-import { ChevronDown, ChevronUp, ImageOff, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, ImageOff, X, SlidersHorizontal, RotateCcw } from 'lucide-react';
 
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -86,21 +86,21 @@ function FilterAccordion({
   isWineTitle?: boolean;
 }) {
   return (
-    <div className="mb-4 bg-white rounded-[4px] border border-[#f2f2f2] shadow-sm overflow-hidden">
-      <div className="flex w-full items-center justify-between p-3 transition-colors hover:bg-gray-50">
+    <div className="mb-4 bg-white rounded-xl border border-gray-200/80 shadow-2xs overflow-hidden">
+      <div className="flex w-full items-center justify-between p-3.5 transition-colors hover:bg-gray-50/80">
         <button
           type="button"
           onClick={onToggle}
-          className="flex items-center gap-2 flex-grow text-left"
+          className="flex items-center gap-2 flex-grow text-left cursor-pointer"
         >
           {isOpen ? (
-            <ChevronUp className="h-3 w-3 text-[#999999]" />
+            <ChevronUp className="h-3.5 w-3.5 text-[#7B1E3D]" />
           ) : (
-            <ChevronDown className="h-3 w-3 text-[#999999]" />
+            <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
           )}
           <span
-            className="text-[13px] font-normal tracking-tight"
-            style={{ color: isWineTitle ? WINE_COLOR : '#333333' }}
+            className="text-xs sm:text-[13px] font-bold tracking-tight"
+            style={{ color: isWineTitle ? WINE_COLOR : '#1e293b' }}
           >
             {title}
           </span>
@@ -112,7 +112,7 @@ function FilterAccordion({
               e.stopPropagation();
               onClear();
             }}
-            className="text-[10px] text-[#999999] hover:text-[#7B1E3D] uppercase font-semibold"
+            className="text-[10px] text-gray-400 hover:text-[#7B1E3D] uppercase font-bold tracking-wider cursor-pointer"
           >
             Clear
           </button>
@@ -126,7 +126,7 @@ function FilterAccordion({
             exit={{ height: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-3 pb-4 pt-1">{children}</div>
+            <div className="px-3.5 pb-4 pt-1">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -147,16 +147,11 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={`px-2 py-1.5 text-[12px] rounded-[4px] border transition-colors ${
+      className={`px-3 py-1.5 text-xs rounded-full border transition-all cursor-pointer ${
         isActive
-          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
-          : 'bg-white border-[#eeeeee] text-[#7B1E3D] hover:border-[#7B1E3D]'
+          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
+          : 'bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]'
       }`}
-      style={{
-        color: isActive ? '#fff' : WINE_COLOR,
-        borderColor: isActive ? WINE_COLOR : '#eeeeee',
-        backgroundColor: isActive ? WINE_COLOR : '#fff',
-      }}
     >
       {label}
     </button>
@@ -184,6 +179,24 @@ export default function EventsPage() {
     more: false,
     price: false,
   });
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const clearAllFilters = () => {
+    const next = new URLSearchParams();
+    if (activeCity) next.set('city', activeCity);
+    setSearchParams(next);
+  };
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (activeCategory && activeCategory !== 'all') count++;
+    if (activeDate) count++;
+    if (activePrice) count++;
+    count += activeLangs.length;
+    count += activeTags.length;
+    count += activeFlags.length;
+    return count;
+  }, [activeCategory, activeDate, activePrice, activeLangs, activeTags, activeFlags]);
 
   useEffect(() => {
     (async () => {
@@ -324,8 +337,21 @@ export default function EventsPage() {
           <div className="flex flex-col md:flex-row gap-8 items-start">
             
             {/* Filter Sidebar */}
-            <aside className="w-full md:w-[260px] flex-shrink-0">
-              <h2 className="text-[18px] font-bold text-[#333333] mb-4">Filters</h2>
+            {/* Desktop Filter Sidebar */}
+            <aside className="hidden md:block w-[260px] flex-shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-[18px] font-bold text-[#333333]">Filters</h2>
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-xs text-[#7B1E3D] font-semibold flex items-center gap-1 hover:underline cursor-pointer"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Clear All
+                  </button>
+                )}
+              </div>
 
               {/* Categories Filter */}
               <FilterAccordion
@@ -444,7 +470,7 @@ export default function EventsPage() {
               <button
                 type="button"
                 onClick={() => navigate(`/venues?city=${activeCity}`)}
-                className="w-full mt-2 py-2 border rounded-[4px] text-[13px] font-medium transition-colors"
+                className="w-full mt-2 py-2.5 border rounded-xl text-[13px] font-semibold transition-colors cursor-pointer hover:bg-[#7B1E3D]/5"
                 style={{ color: WINE_COLOR, borderColor: WINE_COLOR }}
               >
                 Browse by Venues
@@ -453,23 +479,44 @@ export default function EventsPage() {
 
             {/* Main Content Section */}
             <section className="flex-grow w-full">
-              <div className="mb-6">
-                <h1 className="text-[24px] font-bold text-[#333333] mb-[20px] flex items-center tracking-tight">
-                  Events In {activeCity}
-                  <span className="ml-1 inline-block w-[2px] h-[24px] bg-[#7B1E3D]" />
-                </h1>
+              <div className="mb-4 sm:mb-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-5">
+                  <h1 className="text-xl sm:text-[24px] font-bold text-[#333333] flex items-center tracking-tight">
+                    Events In {activeCity}
+                    <span className="ml-1.5 inline-block w-[3px] h-[20px] sm:h-[24px] bg-[#7B1E3D] rounded-full" />
+                  </h1>
 
-                {/* Horizontal Category Filter Pills */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {/* Mobile Filters trigger button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFilterOpen(true)}
+                    className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition cursor-pointer shadow-2xs ${
+                      activeFilterCount > 0
+                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
+                        : 'bg-white text-gray-800 border-gray-300 hover:border-[#7B1E3D]'
+                    }`}
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && (
+                      <span className="w-4 h-4 rounded-full bg-white text-[#7B1E3D] text-[10px] font-black flex items-center justify-center">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Horizontal Category & Quick Filter Pills */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                  {/* Category Pills */}
                   <button
                     type="button"
                     onClick={() => updateCategory('all')}
-                    className="px-4 py-1.5 text-[12px] border rounded-full whitespace-nowrap transition-colors"
-                    style={{
-                      color: activeCategory === 'all' ? '#fff' : WINE_COLOR,
-                      borderColor: activeCategory === 'all' ? WINE_COLOR : '#eeeeee',
-                      backgroundColor: activeCategory === 'all' ? WINE_COLOR : '#fff',
-                    }}
+                    className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
+                      activeCategory === 'all'
+                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                    }`}
                   >
                     All Events
                   </button>
@@ -478,43 +525,78 @@ export default function EventsPage() {
                       key={cat.key}
                       type="button"
                       onClick={() => updateCategory(cat.key)}
-                      className="px-4 py-1.5 text-[12px] border rounded-full whitespace-nowrap transition-colors"
-                      style={{
-                        color: activeCategory === cat.key ? '#fff' : WINE_COLOR,
-                        borderColor: activeCategory === cat.key ? WINE_COLOR : '#eeeeee',
-                        backgroundColor: activeCategory === cat.key ? WINE_COLOR : '#fff',
-                      }}
+                      className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
+                        activeCategory === cat.key
+                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                      }`}
                     >
                       {cat.label}
                     </button>
                   ))}
+
+                  {/* Quick Date Pills (Mobile) */}
+                  <div className="h-4 w-px bg-gray-200 shrink-0 mx-1 md:hidden" />
+                  {DATE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFilter('date', opt.value)}
+                      className={`md:hidden px-3 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
+                        activeDate === opt.value
+                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+
+                  {/* Quick Free Pill (Mobile) */}
+                  <button
+                    type="button"
+                    onClick={() => setFilter('price', activePrice === 'free' ? '' : 'free')}
+                    className={`md:hidden px-3 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
+                      activePrice === 'free'
+                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    Free
+                  </button>
                 </div>
               </div>
 
               {/* Active Filter Chips */}
-              {(activeLangs.length > 0 || activeTags.length > 0 || activeFlags.length > 0 || activeDate || activePrice) && (
+              {activeFilterCount > 0 && (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                  <span className="text-xs text-slate-500 font-medium">Active Filters:</span>
+                  <span className="text-xs text-gray-500 font-medium">Active:</span>
+                  {activeCategory !== 'all' && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20 font-medium">
+                      {DISPLAY_LABELS[activeCategory] || activeCategory}
+                      <X className="h-3 w-3 cursor-pointer hover:text-black" onClick={() => updateCategory('all')} />
+                    </span>
+                  )}
                   {activeDate && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20">
-                      Date: {activeDate}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => setFilter('date', '')} />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20 font-medium">
+                      Date: {activeDate === 'today' ? 'Today' : activeDate === 'tomorrow' ? 'Tomorrow' : 'This Weekend'}
+                      <X className="h-3 w-3 cursor-pointer hover:text-black" onClick={() => setFilter('date', '')} />
                     </span>
                   )}
                   {activePrice && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20">
-                      Price: {activePrice}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => setFilter('price', '')} />
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20 font-medium">
+                      Price: {PRICE_OPTIONS.find((p) => p.value === activePrice)?.label || activePrice}
+                      <X className="h-3 w-3 cursor-pointer hover:text-black" onClick={() => setFilter('price', '')} />
                     </span>
                   )}
                   {activeLangs.map((lang) => (
                     <span
                       key={lang}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20 font-medium capitalize"
                     >
                       {lang}
                       <X
-                        className="h-3 w-3 cursor-pointer"
+                        className="h-3 w-3 cursor-pointer hover:text-black"
                         onClick={() => toggleMulti('lang', lang, activeLangs)}
                       />
                     </span>
@@ -522,11 +604,11 @@ export default function EventsPage() {
                   {activeTags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20 font-medium"
                     >
                       #{tag}
                       <X
-                        className="h-3 w-3 cursor-pointer"
+                        className="h-3 w-3 cursor-pointer hover:text-black"
                         onClick={() => toggleMulti('tag', tag, activeTags)}
                       />
                     </span>
@@ -534,15 +616,23 @@ export default function EventsPage() {
                   {activeFlags.map((flag) => (
                     <span
                       key={flag}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full bg-[#FDF2F4] text-[#7B1E3D] border border-[#7B1E3D]/20 font-medium"
                     >
                       {flag.replace('is_', '')}
                       <X
-                        className="h-3 w-3 cursor-pointer"
+                        className="h-3 w-3 cursor-pointer hover:text-black"
                         onClick={() => toggleMulti('flag', flag, activeFlags)}
                       />
                     </span>
                   ))}
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-xs text-[#7B1E3D] font-bold hover:underline ml-1 cursor-pointer flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Clear All
+                  </button>
                 </div>
               )}
 
@@ -643,6 +733,287 @@ export default function EventsPage() {
           </div>
         </div>
       </main>
+
+      {/* Mobile Filter Bottom Sheet / Modal */}
+      <AnimatePresence>
+        {isMobileFilterOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileFilterOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            />
+
+            {/* Bottom Sheet Modal */}
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="relative w-full max-h-[85vh] bg-white rounded-t-2xl shadow-2xl flex flex-col z-10 overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 shrink-0">
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4 text-[#7B1E3D]" />
+                  <h3 className="font-bold text-base text-gray-900">Filters</h3>
+                  {activeFilterCount > 0 && (
+                    <span className="bg-[#7B1E3D] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="text-xs font-semibold text-[#7B1E3D] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Reset
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Filter Options */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+                {/* Categories */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Categories
+                    </span>
+                    {activeCategory !== 'all' && (
+                      <button
+                        type="button"
+                        onClick={() => updateCategory('all')}
+                        className="text-[11px] text-[#7B1E3D] font-medium cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => updateCategory('all')}
+                      className={`px-3 py-1.5 text-xs rounded-full font-medium transition cursor-pointer ${
+                        activeCategory === 'all'
+                          ? 'bg-[#7B1E3D] text-white shadow-xs font-semibold'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      All Events
+                    </button>
+                    {dynamicCategories.map((cat) => (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => updateCategory(cat.key)}
+                        className={`px-3 py-1.5 text-xs rounded-full font-medium transition cursor-pointer ${
+                          activeCategory === cat.key
+                            ? 'bg-[#7B1E3D] text-white shadow-xs font-semibold'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Date
+                    </span>
+                    {activeDate && (
+                      <button
+                        type="button"
+                        onClick={() => setFilter('date', '')}
+                        className="text-[11px] text-[#7B1E3D] font-medium cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {DATE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setFilter('date', opt.value)}
+                        className={`px-3 py-1.5 text-xs rounded-full font-medium transition cursor-pointer ${
+                          activeDate === opt.value
+                            ? 'bg-[#7B1E3D] text-white shadow-xs font-semibold'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Price
+                    </span>
+                    {activePrice && (
+                      <button
+                        type="button"
+                        onClick={() => setFilter('price', '')}
+                        className="text-[11px] text-[#7B1E3D] font-medium cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {PRICE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setFilter('price', opt.value)}
+                        className={`px-3 py-1.5 text-xs rounded-full font-medium transition cursor-pointer ${
+                          activePrice === opt.value
+                            ? 'bg-[#7B1E3D] text-white shadow-xs font-semibold'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Languages */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Languages
+                    </span>
+                    {activeLangs.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => clearFilterGroup(['lang'])}
+                        className="text-[11px] text-[#7B1E3D] font-medium cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {LANGUAGE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => toggleMulti('lang', opt.value, activeLangs)}
+                        className={`px-3 py-1.5 text-xs rounded-full font-medium transition cursor-pointer ${
+                          activeLangs.includes(opt.value)
+                            ? 'bg-[#7B1E3D] text-white shadow-xs font-semibold'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tags & Attributes */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Tags & Attributes
+                    </span>
+                    {(activeTags.length > 0 || activeFlags.length > 0) && (
+                      <button
+                        type="button"
+                        onClick={() => clearFilterGroup(['tag', 'flag'])}
+                        className="text-[11px] text-[#7B1E3D] font-medium cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {TAG_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => toggleMulti('tag', opt.value, activeTags)}
+                        className={`px-3 py-1.5 text-xs rounded-full font-medium transition cursor-pointer ${
+                          activeTags.includes(opt.value)
+                            ? 'bg-[#7B1E3D] text-white shadow-xs font-semibold'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        #{opt.label}
+                      </button>
+                    ))}
+                    {FLAG_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => toggleMulti('flag', opt.value, activeFlags)}
+                        className={`px-3 py-1.5 text-xs rounded-full font-medium transition cursor-pointer ${
+                          activeFlags.includes(opt.value)
+                            ? 'bg-[#7B1E3D] text-white shadow-xs font-semibold'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Venues quick link */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileFilterOpen(false);
+                      navigate(`/venues?city=${activeCity}`);
+                    }}
+                    className="w-full py-2.5 border border-[#7B1E3D] text-[#7B1E3D] rounded-xl text-xs font-bold hover:bg-[#7B1E3D]/5 transition cursor-pointer"
+                  >
+                    Browse by Venues in {activeCity}
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Sticky Action Bar */}
+              <div className="p-4 border-t border-gray-100 bg-white shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(false)}
+                  className="w-full py-3 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Show {filteredEvents.length} Events</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </div>
