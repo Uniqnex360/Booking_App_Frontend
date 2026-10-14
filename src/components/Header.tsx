@@ -16,6 +16,7 @@ import {
   showSystemNotification,
 } from "@/lib/pushNotifications";
 import {
+  MapPin,
   Menu,
   User,
   LayoutDashboard,
@@ -501,15 +502,28 @@ export function Header() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 font-sans pt-[env(safe-area-inset-top,0px)]">
-      <div className="mx-auto flex max-w-[1240px] items-center gap-4 sm:gap-6 px-4 h-[72px] sm:h-[88px]">
-        <Link to={withCity("/", city)} className="flex items-center shrink-0 py-1">
-          <img
-            src="/logo.png"
-            alt="Vyhbz"
-              className="h-14 sm:h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform"
+      <div className="mx-auto flex max-w-[1240px] items-center gap-2 sm:gap-6 px-3 sm:px-4 h-[72px] sm:h-[88px]">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <Link to={withCity("/", city)} className="flex items-center shrink-0 py-1">
+            <img
+              src="/logo.png"
+              alt="Vyhbz"
+              className="h-12 sm:h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform"
+            />
+          </Link>
 
-          />
-        </Link>
+          {/* Mobile Location Selector */}
+          <button
+            type="button"
+            onClick={() => setIsCityModalOpen(true)}
+            className="md:hidden flex items-center gap-1 text-xs font-semibold text-gray-800 bg-gray-100 hover:bg-gray-200 active:scale-95 px-2.5 py-1.5 rounded-full transition cursor-pointer select-none shrink-0 border border-gray-200/80 shadow-2xs"
+            title="Select City"
+          >
+            <MapPin className="h-3.5 w-3.5 text-[#7B1E3D] shrink-0" />
+            <span className="max-w-[85px] sm:max-w-[120px] truncate">{displayCityName(city)}</span>
+            <ChevronDown className="h-3 w-3 text-gray-500 shrink-0" />
+          </button>
+        </div>
 
         <div
           onClick={() => setIsSearchModalOpen(true)}
@@ -541,6 +555,7 @@ export function Header() {
             onClick={() => setIsCityModalOpen(true)}
             className="hidden md:flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-[#7B1E3D] transition-colors cursor-pointer select-none py-1 px-1.5 rounded-md hover:bg-gray-50"
           >
+            <MapPin className="h-4 w-4 text-[#7B1E3D] shrink-0" />
             <span>{displayCityName(city)}</span>
             <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
           </button>
@@ -709,24 +724,6 @@ export function Header() {
                   </Button>
                 </div>
               )}
-
-              <div
-                onClick={() => {
-                  setDrawerOpen(false);
-                  setIsCityModalOpen(true);
-                }}
-                className="md:hidden px-6 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
-              >
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Selected City
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold text-[#7B1E3D]">
-                    {displayCityName(city)}
-                  </span>
-                  <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
-                </div>
-              </div>
 
               <div className="flex-1 overflow-y-auto py-2 divide-y divide-gray-50">
                 <div className="lg:hidden py-1 border-b border-gray-100">
