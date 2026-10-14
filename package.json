@@ -55,6 +55,7 @@
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
+    "expo": "^57.0.28",
     "firebase": "^12.18.0",
     "framer-motion": "^13.1.1",
     "input-otp": "^1.2.4",
@@ -77,6 +78,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^7.6.9",
     "@types/leaflet": "^1.9.22",
     "@types/node": "^20.14.0",
