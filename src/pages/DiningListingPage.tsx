@@ -1,21 +1,23 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, parseISO, isValid } from 'date-fns';
 import {
   ChevronDown,
-  ChevronUp,
   ImageOff,
-  Filter,
+  SlidersHorizontal,
+  RotateCcw,
+  Search,
+  MapPin,
+  X,
 } from 'lucide-react';
 
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { CitySelectionModal } from '@/components/common/CitySelectionModal';
 import { getEvents } from '@/api/event.api';
 import type { EventItem } from '@/types/event.types';
-
-// Vyhbz Wine Signature Colors
-const WINE_COLOR = '#7B1E3D';
-const WINE_HOVER = '#5C0F2A';
+import { WINE_COLOR, WINE_HOVER } from '@/constants/theme';
 
 interface CategoryPill {
   value: string;
@@ -50,12 +52,13 @@ const PRICE_OPTIONS = [
   { value: '2000+', label: 'Above 2000' },
 ];
 
-function FilterBox({
+function FilterAccordion({
   title,
   isOpen,
   onToggle,
   onClear,
   showClear,
+  activeCount,
   children,
 }: {
   title: string;
@@ -63,39 +66,82 @@ function FilterBox({
   onToggle: () => void;
   onClear?: () => void;
   showClear?: boolean;
+  activeCount?: number;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-md border border-gray-200 shadow-2xs mb-3 overflow-hidden">
-      <div className="flex items-center justify-between px-3.5 py-3 select-none">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex items-center gap-2 text-left font-medium text-gray-800 text-sm hover:text-gray-900 transition-colors"
-        >
-          {isOpen ? (
-            <ChevronUp className="h-4 w-4 text-gray-500" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-gray-500" />
+    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition select-none cursor-pointer"
+      >
+        <span className="flex items-center gap-2">
+          <ChevronDown
+            className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
+              isOpen ? 'rotate-0' : '-rotate-90'
+            }`}
+          />
+          {title}
+        </span>
+        <div className="flex items-center gap-2">
+          {activeCount !== undefined && activeCount > 0 && (
+            <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
+              {activeCount}
+            </span>
           )}
-          <span>{title}</span>
-        </button>
-        {showClear && onClear && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="text-xs text-gray-400 hover:text-[#7B1E3D] transition-colors font-normal"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-      {isOpen && (
-        <div className="px-3.5 pb-3.5 pt-1 border-t border-gray-50">
-          {children}
+          {showClear && onClear && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear();
+              }}
+              className="text-xs text-gray-400 hover:text-[#7B1E3D] transition-colors font-normal cursor-pointer"
+            >
+              Clear
+            </span>
+          )}
         </div>
-      )}
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0 }}
+            animate={{ height: 'auto' }}
+            exit={{ height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2 border-t border-gray-50">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function FilterButton({
+  label,
+  isActive,
+  onClick,
+}: {
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-xs px-3 py-1.5 rounded-md border transition cursor-pointer ${
+        isActive
+          ? 'bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium'
+          : 'bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]'
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -105,6 +151,8 @@ export default function DiningListingPage() {
 
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCityModalOpen, setIsCityModalOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Accordion toggle states
   const [openSections, setOpenSections] = useState({
@@ -115,7 +163,7 @@ export default function DiningListingPage() {
   });
 
   const toggleSection = (key: keyof typeof openSections) => {
-    setOpenSections((prev) => ({ ...prev, [key]: !prev [key] }));
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   // URL Query state parsing
@@ -124,9 +172,11 @@ export default function DiningListingPage() {
     localStorage.getItem('vyhbz_city') ||
     'Hyderabad';
 
+  const search = searchParams.get('search') || '';
+
   const tagsParam = searchParams.get('tags');
   const selectedTags = useMemo(() => {
-    if (!tagsParam) return ['FINE_DINING']; // Default to Fine Dining per BMS
+    if (!tagsParam) return ['FINE_DINING'];
     return tagsParam.split(',').filter(Boolean);
   }, [tagsParam]);
 
@@ -144,18 +194,43 @@ export default function DiningListingPage() {
     setSearchParams(next, { replace: true });
   };
 
+  const setSearch = (val: string) => {
+    updateQuery('search', val || null);
+  };
+
+  const setCity = (c: string) => {
+    updateQuery('city', c);
+  };
+
   const toggleTag = (val: string) => {
     let nextTags: string[];
     if (selectedTags.includes(val)) {
       nextTags = selectedTags.filter((t) => t !== val);
       if (nextTags.length === 0) {
-        nextTags = ['FINE_DINING']; // Keep at least Fine Dining or allow empty
+        nextTags = ['FINE_DINING'];
       }
     } else {
       nextTags = [...selectedTags, val];
     }
     updateQuery('tags', nextTags.join(','));
   };
+
+  const clearAllFilters = () => {
+    const next = new URLSearchParams();
+    if (cityParam) next.set('city', cityParam);
+    setSearchParams(next, { replace: true });
+  };
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedTags.length > 1 || !selectedTags.includes('FINE_DINING')) {
+      count += selectedTags.length;
+    }
+    if (dateFilter) count++;
+    if (priceFilter) count++;
+    if (search) count++;
+    return count;
+  }, [selectedTags, dateFilter, priceFilter, search]);
 
   // Fetch events
   useEffect(() => {
@@ -182,7 +257,19 @@ export default function DiningListingPage() {
     fetchDiningEvents();
   }, [cityParam, tagsParam, dateFilter, priceFilter]);
 
-  // Format date overlay on poster: e.g. "Sat, 10 Oct onwards" or "Sun, 11 Oct"
+  const filteredEvents = useMemo(() => {
+    return events.filter((e) => {
+      if (search) {
+        const s = search.toLowerCase();
+        const matchesTitle = e.title?.toLowerCase().includes(s);
+        const matchesVenue = e.venue_name?.toLowerCase().includes(s);
+        const matchesDesc = e.description?.toLowerCase().includes(s);
+        if (!matchesTitle && !matchesVenue && !matchesDesc) return false;
+      }
+      return true;
+    });
+  }, [events, search]);
+
   const formatDateBadge = (startsAt: string) => {
     try {
       const d = parseISO(startsAt);
@@ -195,7 +282,6 @@ export default function DiningListingPage() {
     return 'Upcoming';
   };
 
-  // Page title capitalization
   const primaryCategoryLabel = useMemo(() => {
     if (selectedTags.includes('FINE_DINING')) return 'Fine Dining';
     if (selectedTags.includes('STREET_FOOD')) return 'Street Food';
@@ -205,79 +291,127 @@ export default function DiningListingPage() {
   }, [selectedTags]);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-gray-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#333333] flex flex-col font-sans">
       <Header />
 
       {/* Main Container */}
-      <main className="max-w-[1240px] w-full mx-auto px-4 sm:px-6 pt-36 sm:pt-40 pb-16 flex-1">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
-          {/* ==================== LEFT SIDEBAR: FILTERS ==================== */}
-          <aside className="w-full lg:w-[260px] shrink-0">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4 tracking-tight">
-              Filters
+      <main className="max-w-[1240px] w-full mx-auto px-4 pt-28 lg:pt-[120px] pb-16 flex-1">
+        {/* ─── Top Filter / Subheader Strip ─── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1A1A2E] tracking-tight">
+              Dining in {cityParam}
             </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Explore curated dining experiences, brunches & culinary events in your city
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search for Dining..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#7B1E3D] focus:ring-1 focus:ring-[#7B1E3D]/30"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* City Selector */}
+            <button
+              type="button"
+              onClick={() => setIsCityModalOpen(true)}
+              className="bg-white border border-gray-200 text-gray-700 font-medium rounded-lg py-2 px-3 text-xs sm:text-sm hover:border-[#7B1E3D] flex items-center gap-2 cursor-pointer shadow-sm"
+            >
+              <span>{cityParam?.toLowerCase() === 'bangalore' || cityParam?.toLowerCase() === 'bengaluru' ? 'Bengaluru' : cityParam}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+            </button>
+
+            {/* Mobile Filter Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsMobileFilterOpen(true)}
+              className="lg:hidden flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 shadow-sm cursor-pointer"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[#7B1E3D]" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-[#7B1E3D]" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* ─── Main Content Container (Sidebar + Grid) ─── */}
+        <div className="flex gap-8 items-start">
+          {/* ==================== LEFT SIDEBAR: FILTERS ==================== */}
+          <aside className="hidden lg:block w-[240px] shrink-0 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-base font-bold text-[#1A1A2E]">Filters</h2>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="text-xs text-[#7B1E3D] font-medium flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Clear All
+                </button>
+              )}
+            </div>
 
             {/* Accordion 1: Categories */}
-            <FilterBox
+            <FilterAccordion
               title="Categories"
               isOpen={openSections.categories}
               onToggle={() => toggleSection('categories')}
               onClear={() => updateQuery('tags', 'FINE_DINING')}
               showClear={selectedTags.length > 1 || !selectedTags.includes('FINE_DINING')}
+              activeCount={selectedTags.length}
             >
-              <div className="flex flex-wrap gap-2 pt-1">
-                {CATEGORY_PILLS.map((pill) => {
-                  const isSelected = selectedTags.includes(pill.value);
-                  return (
-                    <button
-                      key={pill.value}
-                      type="button"
-                      onClick={() => toggleTag(pill.value)}
-                      className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
-                        isSelected
-                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
-                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
-                      }`}
-                    >
-                      {pill.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </FilterBox>
+              {CATEGORY_PILLS.map((pill) => (
+                <FilterButton
+                  key={pill.value}
+                  label={pill.label}
+                  isActive={selectedTags.includes(pill.value)}
+                  onClick={() => toggleTag(pill.value)}
+                />
+              ))}
+            </FilterAccordion>
 
             {/* Accordion 2: Date */}
-            <FilterBox
+            <FilterAccordion
               title="Date"
               isOpen={openSections.date}
               onToggle={() => toggleSection('date')}
               onClear={() => updateQuery('date', null)}
               showClear={Boolean(dateFilter)}
+              activeCount={dateFilter ? 1 : 0}
             >
-              <div className="flex flex-wrap gap-2 pt-1">
-                {DATE_OPTIONS.map((opt) => {
-                  const isSelected = dateFilter === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => updateQuery('date', isSelected ? null : opt.value)}
-                      className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
-                        isSelected
-                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
-                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </FilterBox>
+              {DATE_OPTIONS.map((opt) => (
+                <FilterButton
+                  key={opt.value}
+                  label={opt.label}
+                  isActive={dateFilter === opt.value}
+                  onClick={() => updateQuery('date', dateFilter === opt.value ? null : opt.value)}
+                />
+              ))}
+            </FilterAccordion>
 
             {/* Accordion 3: More Filters (Amenities) */}
-            <FilterBox
+            <FilterAccordion
               title="More Filters"
               isOpen={openSections.moreFilters}
               onToggle={() => toggleSection('moreFilters')}
@@ -288,99 +422,88 @@ export default function DiningListingPage() {
                 updateQuery('tags', next.length > 0 ? next.join(',') : null);
               }}
               showClear={MORE_FILTER_OPTIONS.some((m) => selectedTags.includes(m.value))}
+              activeCount={MORE_FILTER_OPTIONS.filter((m) => selectedTags.includes(m.value)).length}
             >
-              <div className="flex flex-wrap gap-2 pt-1">
-                {MORE_FILTER_OPTIONS.map((opt) => {
-                  const isSelected = selectedTags.includes(opt.value);
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => toggleTag(opt.value)}
-                      className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
-                        isSelected
-                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
-                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </FilterBox>
+              {MORE_FILTER_OPTIONS.map((opt) => (
+                <FilterButton
+                  key={opt.value}
+                  label={opt.label}
+                  isActive={selectedTags.includes(opt.value)}
+                  onClick={() => toggleTag(opt.value)}
+                />
+              ))}
+            </FilterAccordion>
 
             {/* Accordion 4: Price */}
-            <FilterBox
+            <FilterAccordion
               title="Price"
               isOpen={openSections.price}
               onToggle={() => toggleSection('price')}
               onClear={() => updateQuery('price', null)}
               showClear={Boolean(priceFilter)}
+              activeCount={priceFilter ? 1 : 0}
             >
-              <div className="flex flex-wrap gap-2 pt-1">
-                {PRICE_OPTIONS.map((opt) => {
-                  const isSelected = priceFilter === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => updateQuery('price', isSelected ? null : opt.value)}
-                      className={`px-3 py-1.5 rounded-sm text-xs font-normal transition-colors border ${
-                        isSelected
-                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
-                          : 'bg-white text-[#7B1E3D] border-gray-200 hover:border-[#7B1E3D]/50'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </FilterBox>
+              {PRICE_OPTIONS.map((opt) => (
+                <FilterButton
+                  key={opt.value}
+                  label={opt.label}
+                  isActive={priceFilter === opt.value}
+                  onClick={() => updateQuery('price', priceFilter === opt.value ? null : opt.value)}
+                />
+              ))}
+            </FilterAccordion>
 
             {/* Browse by Venues button */}
             <button
               type="button"
-              onClick={() => navigate('/venues')}
-              className="w-full mt-2 py-2.5 px-4 rounded-md border border-[#7B1E3D] text-[#7B1E3D] text-xs font-semibold hover:bg-[#7B1E3D]/5 transition-colors text-center"
+              onClick={() => navigate(`/venues?city=${cityParam}`)}
+              className="w-full mt-2 py-2.5 border rounded-lg text-xs font-semibold transition-colors cursor-pointer hover:bg-[#7B1E3D]/5"
+              style={{ color: WINE_COLOR, borderColor: WINE_COLOR }}
             >
               Browse by Venues
             </button>
           </aside>
 
           {/* ==================== RIGHT MAIN COLUMN: GRID ==================== */}
-          <section className="flex-1 min-w-0 w-full">
-            {/* Header: Fine Dining In Hyderabad */}
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight capitalize">
-              {primaryCategoryLabel} In {cityParam}
-            </h2>
-
+          <section className="flex-1 min-w-0">
             {/* Category Pills Row above Cards */}
-            <div className="flex flex-wrap items-center gap-2 mt-4 mb-6">
-              {CATEGORY_PILLS.map((pill) => {
-                const isSelected = selectedTags.includes(pill.value);
-                return (
-                  <button
-                    key={pill.value}
-                    type="button"
-                    onClick={() => toggleTag(pill.value)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors border ${
-                      isSelected
-                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    {pill.label}
-                  </button>
-                );
-              })}
+            <div className="mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                <button
+                  type="button"
+                  onClick={() => updateQuery('tags', null)}
+                  className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
+                    !tagsParam
+                      ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-sm font-semibold'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  All Dining
+                </button>
+                {CATEGORY_PILLS.map((pill) => {
+                  const isSelected = selectedTags.includes(pill.value);
+                  return (
+                    <button
+                      key={pill.value}
+                      type="button"
+                      onClick={() => toggleTag(pill.value)}
+                      className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
+                        isSelected
+                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-sm font-semibold'
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-[#7B1E3D]/50 hover:text-[#7B1E3D]'
+                      }`}
+                    >
+                      {pill.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Cards Grid */}
+            {/* Cards Grid: 4 columns matching Movies and Events */}
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                   <div key={i} className="animate-pulse space-y-2">
                     <div className="aspect-[3/4] bg-gray-200 rounded-lg w-full" />
                     <div className="h-4 bg-gray-200 rounded-sm w-4/5" />
@@ -389,29 +512,28 @@ export default function DiningListingPage() {
                   </div>
                 ))}
               </div>
-            ) : events.length === 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center my-6">
-                <p className="text-base font-semibold text-gray-800">
+            ) : filteredEvents.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <MapPin className="h-10 w-10 mx-auto text-gray-300 mb-3" />
+                <p className="text-base font-bold text-gray-800">
                   No {primaryCategoryLabel.toLowerCase()} experiences found in {cityParam}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
                   Try clearing your filters or exploring another category.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    updateQuery('tags', 'FINE_DINING');
-                    updateQuery('date', null);
-                    updateQuery('price', null);
-                  }}
-                  className="mt-4 px-4 py-2 bg-[#7B1E3D] text-white text-xs font-semibold rounded-md hover:bg-[#5C0F2A] transition-colors"
-                >
-                  Reset Filters
-                </button>
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="mt-4 px-4 py-2 bg-[#7B1E3D] text-white text-xs font-semibold rounded-lg hover:bg-[#5C0F2A] transition-colors"
+                  >
+                    Reset All Filters
+                  </button>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {events.map((ev) => {
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                {filteredEvents.map((ev) => {
                   const minTicketPrice =
                     ev.min_price_paise !== undefined && ev.min_price_paise !== null
                       ? ev.min_price_paise / 100
@@ -426,12 +548,12 @@ export default function DiningListingPage() {
                       className="group cursor-pointer flex flex-col"
                     >
                       {/* Vertical Poster Card */}
-                      <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-gray-100 shadow-2xs">
+                      <div className="relative aspect-[3/4] w-full rounded-lg overflow-hidden bg-gray-100 shadow-sm group-hover:shadow-md transition duration-200">
                         {ev.poster_image_url ? (
                           <img
                             src={ev.poster_image_url}
                             alt={ev.title}
-                            className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300"
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300 ease-out"
                           />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center text-gray-300">
@@ -446,7 +568,7 @@ export default function DiningListingPage() {
                         </div>
                       </div>
 
-                      {/* Card Details directly under the poster (BookMyShow standard) */}
+                      {/* Card Details directly under the poster */}
                       <div className="pt-2.5 flex flex-col">
                         <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#7B1E3D] transition-colors">
                           {ev.title}
@@ -520,9 +642,157 @@ export default function DiningListingPage() {
               </div>
             </div>
           </section>
-
         </div>
       </main>
+
+      {/* Mobile Filters Slide-over Sheet */}
+      <AnimatePresence>
+        {isMobileFilterOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden flex">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileFilterOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            />
+
+            {/* Slide-over panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="relative ml-auto w-full max-w-sm h-full bg-white shadow-2xl flex flex-col z-10"
+            >
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <span className="text-base font-bold text-gray-900">Filters</span>
+                <div className="flex items-center gap-3">
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="text-xs font-semibold text-[#7B1E3D] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                      Reset
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileFilterOpen(false)}
+                    className="p-1.5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Scrollable Filter Options */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+                {/* Categories */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Categories
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {CATEGORY_PILLS.map((pill) => (
+                      <FilterButton
+                        key={pill.value}
+                        label={pill.label}
+                        isActive={selectedTags.includes(pill.value)}
+                        onClick={() => toggleTag(pill.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Date */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Date
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {DATE_OPTIONS.map((opt) => (
+                      <FilterButton
+                        key={opt.value}
+                        label={opt.label}
+                        isActive={dateFilter === opt.value}
+                        onClick={() => updateQuery('date', dateFilter === opt.value ? null : opt.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* More Filters */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Amenities
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {MORE_FILTER_OPTIONS.map((opt) => (
+                      <FilterButton
+                        key={opt.value}
+                        label={opt.label}
+                        isActive={selectedTags.includes(opt.value)}
+                        onClick={() => toggleTag(opt.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Price */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Price
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {PRICE_OPTIONS.map((opt) => (
+                      <FilterButton
+                        key={opt.value}
+                        label={opt.label}
+                        isActive={priceFilter === opt.value}
+                        onClick={() => updateQuery('price', priceFilter === opt.value ? null : opt.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Action */}
+              <div className="p-4 border-t border-gray-100 bg-white shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsMobileFilterOpen(false)}
+                  className="w-full py-3 bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold text-sm rounded-xl transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>Show {filteredEvents.length} Experiences</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <CitySelectionModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+        currentCity={cityParam}
+        onSelectCity={(newCity) => {
+          setCity(newCity);
+          setIsCityModalOpen(false);
+        }}
+      />
 
       <Footer />
     </div>

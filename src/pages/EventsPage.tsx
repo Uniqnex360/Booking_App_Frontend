@@ -10,10 +10,7 @@ import { Footer } from '@/components/Footer';
 import { CitySelectionModal } from '@/components/common/CitySelectionModal';
 import { getEvents } from '@/api/event.api';
 import type { EventItem } from '@/types/event.types';
-
-// The centralized Wine branding color
-const WINE_COLOR = '#7B1E3D';
-const WINE_HOVER = '#5C0F2A';
+import { WINE_COLOR, WINE_HOVER } from '@/constants/theme';
 
 const DISPLAY_LABELS: Record<string, string> = {
   workshop: 'Workshops',
@@ -378,216 +375,250 @@ export default function EventsPage() {
   }, [upcomingOrLiveEvents, search, activeCategory, activeCity, activeLangs, activeTags, activeFlags, activeDate, activePrice]);
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] text-[#333333] flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#333333] flex flex-col font-sans">
       <Header />
 
-      <main className="flex-grow pt-[80px] pb-16">
-        <div className="max-w-[1240px] mx-auto px-4">
-          <div className="flex flex-col md:flex-row gap-8 items-start">
-            
-            {/* Filter Sidebar */}
-            {/* Desktop Filter Sidebar */}
-            <aside className="hidden md:block w-[260px] flex-shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-[18px] font-bold text-[#333333]">Filters</h2>
-                {activeFilterCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={clearAllFilters}
-                    className="text-xs text-[#7B1E3D] font-semibold flex items-center gap-1 hover:underline cursor-pointer"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    Clear All
-                  </button>
-                )}
+      <main className="flex-grow max-w-[1240px] w-full mx-auto px-4 pt-28 lg:pt-[120px] pb-16">
+        {/* ─── Top Filter / Subheader Strip ─── */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200">
+          <div>
+            <h1 className="text-2xl font-bold text-[#1A1A2E] tracking-tight">
+              Events in {activeCity}
+            </h1>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Explore upcoming & currently running events in your city
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search for Events..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#7B1E3D] focus:ring-1 focus:ring-[#7B1E3D]/30"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* City Selector */}
+            <button
+              type="button"
+              onClick={() => setIsCityModalOpen(true)}
+              className="bg-white border border-gray-200 text-gray-700 font-medium rounded-lg py-2 px-3 text-xs sm:text-sm hover:border-[#7B1E3D] flex items-center gap-2 cursor-pointer shadow-sm"
+            >
+              <span>{activeCity?.toLowerCase() === "bangalore" || activeCity?.toLowerCase() === "bengaluru" ? "Bengaluru" : activeCity}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+            </button>
+
+            {/* Mobile Filter Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsMobileFilterOpen(true)}
+              className="lg:hidden flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 shadow-sm cursor-pointer"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[#7B1E3D]" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-[#7B1E3D]" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* ─── Main Content Container (Sidebar + Grid) ─── */}
+        <div className="flex gap-8 items-start">
+          {/* ─── Left Filters Sidebar (Desktop) ─── */}
+          <aside className="hidden lg:block w-[240px] shrink-0 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-base font-bold text-[#1A1A2E]">Filters</h2>
+              {activeFilterCount > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="text-xs text-[#7B1E3D] font-medium flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Clear All
+                </button>
+              )}
+            </div>
+
+            {/* Categories Filter */}
+            <FilterAccordion
+              title="Categories"
+              isOpen={openFilters.categories}
+              onToggle={() => setOpenFilters((p) => ({ ...p, categories: !p.categories }))}
+              onClear={() => updateCategory('all')}
+              showClear={activeCategory !== 'all'}
+              activeCount={activeCategory !== 'all' ? 1 : 0}
+            >
+              <div className="flex flex-wrap gap-2 pt-1">
+                {availableCategories.map((cat) => (
+                  <FilterButton
+                    key={cat.key}
+                    label={cat.label}
+                    isActive={activeCategory === cat.key}
+                    onClick={() => updateCategory(cat.key)}
+                  />
+                ))}
               </div>
+            </FilterAccordion>
 
-              {/* Categories Filter */}
-              <FilterAccordion
-                title="Categories"
-                isOpen={openFilters.categories}
-                onToggle={() => setOpenFilters((p) => ({ ...p, categories: !p.categories }))}
-                onClear={() => updateCategory('all')}
-                showClear={activeCategory !== 'all'}
-                isWineTitle={true}
-              >
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {availableCategories.map((cat) => (
-                    <FilterButton
-                      key={cat.key}
-                      label={cat.label}
-                      isActive={activeCategory === cat.key}
-                      onClick={() => updateCategory(cat.key)}
-                    />
-                  ))}
-                </div>
-              </FilterAccordion>
+            {/* Date Filter */}
+            <FilterAccordion
+              title="Date"
+              isOpen={openFilters.date}
+              onToggle={() => setOpenFilters((p) => ({ ...p, date: !p.date }))}
+              onClear={() => setFilter('date', '')}
+              showClear={Boolean(activeDate)}
+              activeCount={activeDate ? 1 : 0}
+            >
+              <div className="flex flex-wrap gap-2 pt-1">
+                {DATE_OPTIONS.map((opt) => (
+                  <FilterButton
+                    key={opt.value}
+                    label={opt.label}
+                    isActive={activeDate === opt.value}
+                    onClick={() => setFilter('date', opt.value)}
+                  />
+                ))}
+              </div>
+            </FilterAccordion>
 
-              {/* Date Filter */}
-              <FilterAccordion
-                title="Date"
-                isOpen={openFilters.date}
-                onToggle={() => setOpenFilters((p) => ({ ...p, date: !p.date }))}
-                onClear={() => setFilter('date', '')}
-                showClear={Boolean(activeDate)}
-              >
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {DATE_OPTIONS.map((opt) => (
-                    <FilterButton
-                      key={opt.value}
-                      label={opt.label}
-                      isActive={activeDate === opt.value}
-                      onClick={() => setFilter('date', opt.value)}
-                    />
-                  ))}
-                </div>
-              </FilterAccordion>
+            {/* Languages Filter */}
+            <FilterAccordion
+              title="Languages"
+              isOpen={openFilters.languages}
+              onToggle={() => setOpenFilters((p) => ({ ...p, languages: !p.languages }))}
+              onClear={() => clearFilterGroup(['lang'])}
+              showClear={activeLangs.length > 0}
+              activeCount={activeLangs.length}
+            >
+              <div className="flex flex-wrap gap-2 pt-1">
+                {LANGUAGE_OPTIONS.map((opt) => (
+                  <FilterButton
+                    key={opt.value}
+                    label={opt.label}
+                    isActive={activeLangs.includes(opt.value)}
+                    onClick={() => toggleMulti('lang', opt.value, activeLangs)}
+                  />
+                ))}
+              </div>
+            </FilterAccordion>
 
-              {/* Languages Filter */}
-              <FilterAccordion
-                title="Languages"
-                isOpen={openFilters.languages}
-                onToggle={() => setOpenFilters((p) => ({ ...p, languages: !p.languages }))}
-                onClear={() => clearFilterGroup(['lang'])}
-                showClear={activeLangs.length > 0}
-              >
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {LANGUAGE_OPTIONS.map((opt) => (
-                    <FilterButton
-                      key={opt.value}
-                      label={opt.label}
-                      isActive={activeLangs.includes(opt.value)}
-                      onClick={() => toggleMulti('lang', opt.value, activeLangs)}
-                    />
-                  ))}
-                </div>
-              </FilterAccordion>
-
-              {/* More Filters (Tags + Flags) */}
-              <FilterAccordion
-                title="More Filters"
-                isOpen={openFilters.more}
-                onToggle={() => setOpenFilters((p) => ({ ...p, more: !p.more }))}
-                onClear={() => clearFilterGroup(['tag', 'flag'])}
-                showClear={activeTags.length > 0 || activeFlags.length > 0}
-              >
-                <div className="space-y-3 pt-1">
-                  <div>
-                    <p className="text-[11px] text-[#999999] uppercase font-semibold mb-2">Tags</p>
-                    <div className="flex flex-wrap gap-2">
-                      {TAG_OPTIONS.map((opt) => (
-                        <FilterButton
-                          key={opt.value}
-                          label={opt.label}
-                          isActive={activeTags.includes(opt.value)}
-                          onClick={() => toggleMulti('tag', opt.value, activeTags)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-[#999999] uppercase font-semibold mb-2">Event Attributes</p>
-                    <div className="flex flex-wrap gap-2">
-                      {FLAG_OPTIONS.map((opt) => (
-                        <FilterButton
-                          key={opt.value}
-                          label={opt.label}
-                          isActive={activeFlags.includes(opt.value)}
-                          onClick={() => toggleMulti('flag', opt.value, activeFlags)}
-                        />
-                      ))}
-                    </div>
+            {/* More Filters (Tags + Flags) */}
+            <FilterAccordion
+              title="More Filters"
+              isOpen={openFilters.more}
+              onToggle={() => setOpenFilters((p) => ({ ...p, more: !p.more }))}
+              onClear={() => clearFilterGroup(['tag', 'flag'])}
+              showClear={activeTags.length > 0 || activeFlags.length > 0}
+              activeCount={activeTags.length + activeFlags.length}
+            >
+              <div className="space-y-3 pt-1 w-full">
+                <div>
+                  <p className="text-[11px] text-[#999999] uppercase font-semibold mb-2">Tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    {TAG_OPTIONS.map((opt) => (
+                      <FilterButton
+                        key={opt.value}
+                        label={opt.label}
+                        isActive={activeTags.includes(opt.value)}
+                        onClick={() => toggleMulti('tag', opt.value, activeTags)}
+                      />
+                    ))}
                   </div>
                 </div>
-              </FilterAccordion>
-
-              {/* Price Filter */}
-              <FilterAccordion
-                title="Price"
-                isOpen={openFilters.price}
-                onToggle={() => setOpenFilters((p) => ({ ...p, price: !p.price }))}
-                onClear={() => setFilter('price', '')}
-                showClear={Boolean(activePrice)}
-              >
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {PRICE_OPTIONS.map((opt) => (
-                    <FilterButton
-                      key={opt.value}
-                      label={opt.label}
-                      isActive={activePrice === opt.value}
-                      onClick={() => setFilter('price', opt.value)}
-                    />
-                  ))}
+                <div>
+                  <p className="text-[11px] text-[#999999] uppercase font-semibold mb-2">Event Attributes</p>
+                  <div className="flex flex-wrap gap-2">
+                    {FLAG_OPTIONS.map((opt) => (
+                      <FilterButton
+                        key={opt.value}
+                        label={opt.label}
+                        isActive={activeFlags.includes(opt.value)}
+                        onClick={() => toggleMulti('flag', opt.value, activeFlags)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </FilterAccordion>
+              </div>
+            </FilterAccordion>
 
-              <button
-                type="button"
-                onClick={() => navigate(`/venues?city=${activeCity}`)}
-                className="w-full mt-2 py-2.5 border rounded-xl text-[13px] font-semibold transition-colors cursor-pointer hover:bg-[#7B1E3D]/5"
-                style={{ color: WINE_COLOR, borderColor: WINE_COLOR }}
-              >
-                Browse by Venues
-              </button>
-            </aside>
+            {/* Price Filter */}
+            <FilterAccordion
+              title="Price"
+              isOpen={openFilters.price}
+              onToggle={() => setOpenFilters((p) => ({ ...p, price: !p.price }))}
+              onClear={() => setFilter('price', '')}
+              showClear={Boolean(activePrice)}
+              activeCount={activePrice ? 1 : 0}
+            >
+              <div className="flex flex-wrap gap-2 pt-1">
+                {PRICE_OPTIONS.map((opt) => (
+                  <FilterButton
+                    key={opt.value}
+                    label={opt.label}
+                    isActive={activePrice === opt.value}
+                    onClick={() => setFilter('price', opt.value)}
+                  />
+                ))}
+              </div>
+            </FilterAccordion>
 
-            {/* Main Content Section */}
-            <section className="flex-grow w-full">
-              <div className="mb-4 sm:mb-6">
-                <div className="flex items-center justify-between mb-3 sm:mb-5">
-                  <h1 className="text-xl sm:text-[24px] font-bold text-[#333333] flex items-center tracking-tight">
-                    Events In {activeCity}
-                    <span className="ml-1.5 inline-block w-[3px] h-[20px] sm:h-[24px] bg-[#7B1E3D] rounded-full" />
-                  </h1>
+            <button
+              type="button"
+              onClick={() => navigate(`/venues?city=${activeCity}`)}
+              className="w-full mt-2 py-2.5 border rounded-lg text-xs font-semibold transition-colors cursor-pointer hover:bg-[#7B1E3D]/5"
+              style={{ color: WINE_COLOR, borderColor: WINE_COLOR }}
+            >
+              Browse by Venues
+            </button>
+          </aside>
 
-                  {/* Mobile Filters trigger button */}
+          {/* ─── Main Content Section (Pills & Grid) ─── */}
+          <section className="flex-1 min-w-0">
+            {/* Horizontal Category & Quick Filter Pills */}
+            <div className="mb-4 sm:mb-6">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {/* Category Pills */}
+                <button
+                  type="button"
+                  onClick={() => updateCategory('all')}
+                  className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
+                    activeCategory === 'all'
+                      ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-sm font-semibold'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  All Events
+                </button>
+                {availableCategories.map((cat) => (
                   <button
+                    key={cat.key}
                     type="button"
-                    onClick={() => setIsMobileFilterOpen(true)}
-                    className={`md:hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-full border transition cursor-pointer shadow-2xs ${
-                      activeFilterCount > 0
-                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D]'
-                        : 'bg-white text-gray-800 border-gray-300 hover:border-[#7B1E3D]'
-                    }`}
-                  >
-                    <SlidersHorizontal className="h-3.5 w-3.5" />
-                    <span>Filters</span>
-                    {activeFilterCount > 0 && (
-                      <span className="w-4 h-4 rounded-full bg-white text-[#7B1E3D] text-[10px] font-black flex items-center justify-center">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {/* Horizontal Category & Quick Filter Pills */}
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                  {/* Category Pills */}
-                  <button
-                    type="button"
-                    onClick={() => updateCategory('all')}
+                    onClick={() => updateCategory(cat.key)}
                     className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
-                      activeCategory === 'all'
-                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                      activeCategory === cat.key
+                        ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-sm font-semibold'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-[#7B1E3D]/50 hover:text-[#7B1E3D]'
                     }`}
                   >
-                    All Events
+                    {cat.label}
                   </button>
-                  {availableCategories.map((cat) => (
-                    <button
-                      key={cat.key}
-                      type="button"
-                      onClick={() => updateCategory(cat.key)}
-                      className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
-                        activeCategory === cat.key
-                          ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-2xs font-semibold'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-[#7B1E3D]/50 hover:text-[#7B1E3D]'
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
+                ))}
 
                   {/* Quick Date Pills (Mobile) */}
                   <div className="h-4 w-px bg-gray-200 shrink-0 mx-1 md:hidden" />
@@ -785,7 +816,6 @@ export default function EventsPage() {
               )}
             </section>
           </div>
-        </div>
       </main>
 
       {/* Mobile Filter Bottom Sheet / Modal */}
@@ -1068,6 +1098,16 @@ export default function EventsPage() {
           </div>
         )}
       </AnimatePresence>
+
+      <CitySelectionModal
+        isOpen={isCityModalOpen}
+        onClose={() => setIsCityModalOpen(false)}
+        currentCity={activeCity}
+        onSelectCity={(newCity) => {
+          setCity(newCity);
+          setIsCityModalOpen(false);
+        }}
+      />
 
       <Footer />
     </div>

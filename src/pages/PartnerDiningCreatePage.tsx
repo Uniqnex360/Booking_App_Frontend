@@ -44,9 +44,7 @@ import {
   DollarSign,
   Flame,
 } from "lucide-react";
-
-const WINE_COLOR = "#7B1E3D";
-const WINE_HOVER = "#5C0F2A";
+import { WINE_COLOR, WINE_HOVER } from "@/constants/theme";
 
 const CUISINE_OPTIONS = [
   "Kerala",
