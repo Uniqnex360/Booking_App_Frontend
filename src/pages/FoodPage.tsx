@@ -178,7 +178,8 @@ setMenu(m);
         );
       } else if (
         e?.code === "HOLD_EXPIRED" ||
-        e?.code === "BOOKING_NOT_PAYABLE"
+        e?.code === "BOOKING_NOT_PAYABLE" ||
+        e?.code === "BOOKING_NOT_FOUND"
       ) {
         toast.error("Hold expired. Please select seats again.");
         navigate(seatMapUrl, { replace: true });

@@ -16,6 +16,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import com.getcapacitor.BridgeActivity;
+import com.vyhbz.app.RazorpayCheckoutPlugin;
 
 public class MainActivity extends BridgeActivity {
     private Dialog phoneLoginDialog;
@@ -23,6 +24,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(RazorpayCheckoutPlugin.class);
         super.onCreate(savedInstanceState);
 
         if (getBridge() != null && getBridge().getWebView() != null) {
@@ -99,8 +101,7 @@ public class MainActivity extends BridgeActivity {
                             }
                         }
 
-                        @Override
-                        public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                        private boolean handleOverride(WebView v, String url) {
                             if (url != null && (url.startsWith("upi://") || url.startsWith("intent://") || (!url.startsWith("http://") && !url.startsWith("https://")))) {
                                 try {
                                     android.content.Intent intent = android.content.Intent.parseUri(url, android.content.Intent.URI_INTENT_SCHEME);
@@ -111,6 +112,20 @@ public class MainActivity extends BridgeActivity {
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                 }
+                                return true;
+                            }
+                            return false;
+                        }
+
+                        @Override
+                        public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                            return handleOverride(v, url);
+                        }
+
+                        @Override
+                        public boolean shouldOverrideUrlLoading(WebView v, android.webkit.WebResourceRequest request) {
+                            if (request != null && request.getUrl() != null) {
+                                return handleOverride(v, request.getUrl().toString());
                             }
                             return false;
                         }
@@ -121,6 +136,12 @@ public class MainActivity extends BridgeActivity {
                     paymentPopupDialog.setContentView(container);
                     paymentPopupDialog.setCancelable(true);
                     paymentPopupDialog.show();
+
+                    Window dialogWindow = paymentPopupDialog.getWindow();
+                    if (dialogWindow != null) {
+                        dialogWindow.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                        dialogWindow.setBackgroundDrawableResource(android.R.color.white);
+                    }
 
                     WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
                     transport.setWebView(popupWebView);

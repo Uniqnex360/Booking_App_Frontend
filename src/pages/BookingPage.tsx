@@ -65,6 +65,8 @@ import { loadScript } from '@/utils/loadScript';
 import { TermsModal } from './TermsModal';
 import { applyCoupon, removeCoupon, getAvailableCoupons } from '@/api/coupon.api';
 import type { ApplyCouponResult, AvailableCoupon } from '@/types/coupon.types';
+import { Capacitor } from '@capacitor/core';
+import { Checkout } from 'capacitor-razorpay';
 
 const categoryLabels: Record<string, string> = {
   concert: 'Music Shows',
@@ -306,13 +308,6 @@ export default function BookingPage() {
   };
 
   const startRazorpayPayment = async (booking: any) => {
-    const isLoaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
-    if (!isLoaded) {
-      toast.error('Failed to load payment gateway.');
-      setIsBooking(false);
-      return;
-    }
-
     try {
       const order = await unwrap<any>(
         api.post('/payments/order', {
@@ -327,6 +322,68 @@ export default function BookingPage() {
         navigate(
           `/confirmation?id=${booking.id}&ref=${encodeURIComponent(booking.ref_code ?? booking.id)}`
         );
+        setIsBooking(false);
+        return;
+      }
+
+      // ── Native app: use Razorpay Android/iOS SDK (avoids WebView Netbanking block) ──
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const result: any = await Checkout.open({
+            key: order.key_id,
+            amount: String(order.amount_paise),
+            ...({
+              order_id: order.order_id,
+              currency: order.currency || 'INR',
+              name: 'Vyhbz',
+              description: `${eventData?.title || 'Event'} - ${selectedTier?.name || 'Tickets'} x ${ticketQuantity}`,
+              prefill: {
+                name: user?.full_name || '',
+                email: user?.email || '',
+                contact: (user as any)?.phone || '',
+              },
+              theme: { color: '#7B1E3D' },
+            } as any),
+          });
+          // result.response has { razorpay_payment_id, razorpay_order_id, razorpay_signature }
+          const response = result?.response ?? result;
+          setIsConfirming(true);
+          const orderId = response.razorpay_order_id || order.order_id;
+          if (!orderId || !response.razorpay_payment_id || !response.razorpay_signature) {
+            throw new Error('Payment gateway response is incomplete. Please contact support.');
+          }
+          await unwrap<any>(
+            api.post('/payments/verify', {
+              booking_id: booking.id,
+              razorpay_order_id: orderId,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            })
+          );
+          toast.success('Tickets booked successfully!');
+          setBookingModalOpen(false);
+          navigate(
+            `/confirmation?id=${booking.id}&ref=${encodeURIComponent(booking.ref_code ?? booking.id)}`
+          );
+        } catch (nativeErr: any) {
+          console.error('[Razorpay] native error', JSON.stringify(nativeErr));
+          // Checkout.open() throws on cancel or failure
+          if (nativeErr?.code === 'PAYMENT_CANCELLED' || nativeErr?.message?.toLowerCase().includes('cancel')) {
+            toast.warning('Payment cancelled.');
+          } else {
+            toast.error(nativeErr?.message || 'Payment failed.');
+          }
+        } finally {
+          setIsBooking(false);
+          setIsConfirming(false);
+        }
+        return;
+      }
+
+      // ── Web: existing checkout.js path, unchanged ──
+      const isLoaded = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      if (!isLoaded) {
+        toast.error('Failed to load payment gateway.');
         setIsBooking(false);
         return;
       }
@@ -383,6 +440,13 @@ export default function BookingPage() {
 
       const rzp = new (window as any).Razorpay(options);
       rzp.on('payment.failed', (r: any) => {
+        console.error('[Razorpay] payment.failed', JSON.stringify({
+          code: r?.error?.code,
+          reason: r?.error?.reason,
+          step: r?.error?.step,
+          description: r?.error?.description,
+          metadata: r?.error?.metadata,
+        }));
         toast.error(r?.error?.description || 'Payment failed.');
         setIsBooking(false);
       });
@@ -394,6 +458,7 @@ export default function BookingPage() {
       setIsBooking(false);
     }
   };
+
 
   const handleConfirmBooking = async () => {
     if (!selectedTier) {
