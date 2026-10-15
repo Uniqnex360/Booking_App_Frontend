@@ -342,6 +342,13 @@ export default function ProfilePage() {
               onClick={() => handleTabChange("saved")}
             />
             <div className="my-2 border-t border-gray-100 mx-4" />
+            <Link
+              to="/profile/edit"
+              className="flex items-center gap-4 px-6 py-3 text-red-600 hover:bg-red-50 transition text-sm font-medium w-full text-left"
+            >
+              <Trash2 size={18} />
+              Delete Account
+            </Link>
             <button
               onClick={handleSignOut}
               className="flex items-center gap-4 px-6 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition text-sm font-medium w-full text-left"
@@ -596,6 +603,19 @@ export default function ProfilePage() {
                         "Save Changes"
                       )}
                     </Button>
+                  </div>
+
+                  <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-xs text-gray-500 text-center sm:text-left">
+                      Looking to manage saved addresses or delete your account?
+                    </p>
+                    <Link
+                      to="/profile/edit"
+                      className="text-xs font-semibold text-red-600 hover:text-red-700 hover:underline flex items-center gap-1.5"
+                    >
+                      <Trash2 size={14} />
+                      Manage Account & Deletion
+                    </Link>
                   </div>
                 </>
               )}

@@ -200,17 +200,27 @@ export default function EditProfilePage() {
       ]);
 
       if (profileData.status === "fulfilled") {
-        setProfile(profileData.value);
+        const val = profileData.value as any;
+        const prof = (val?.data || val) as ExtendedProfile;
+        setProfile(prof);
         resetProfile({
-          bio: profileData.value.bio || "",
-          gender: profileData.value.gender || undefined,
-          date_of_birth: profileData.value.date_of_birth || "",
-          preferred_language: profileData.value.preferred_language || "en",
+          bio: prof?.bio || "",
+          gender: prof?.gender || undefined,
+          date_of_birth: prof?.date_of_birth || "",
+          preferred_language: prof?.preferred_language || "en",
         });
       }
 
       if (addressData.status === "fulfilled") {
-        setAddresses(addressData.value);
+        const val = addressData.value as any;
+        const addrs = Array.isArray(val)
+          ? val
+          : Array.isArray(val?.addresses)
+          ? val.addresses
+          : Array.isArray(val?.data?.addresses)
+          ? val.data.addresses
+          : [];
+        setAddresses(addrs);
       }
     } catch {
       setError("Failed to load profile data. Please try again.");
@@ -646,7 +656,7 @@ export default function EditProfilePage() {
 
               {/* Address list */}
               <div className="mt-6 space-y-4">
-                {addresses.length === 0 ? (
+                {!Array.isArray(addresses) || addresses.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 py-12 text-center">
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#7B1E3D]/5">
                       <MapPin className="h-7 w-7 text-[#7B1E3D]" />
@@ -659,7 +669,7 @@ export default function EditProfilePage() {
                     </p>
                   </div>
                 ) : (
-                  addresses.map((addr) => (
+                  (Array.isArray(addresses) ? addresses : []).map((addr) => (
                     <div
                       key={addr.id}
                       className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all hover:border-[#7B1E3D]/30 hover:shadow-soft sm:flex-row sm:items-start sm:justify-between"

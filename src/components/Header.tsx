@@ -657,7 +657,7 @@ export function Header() {
               {user ? (
                 <div
                   className="p-6 flex items-center justify-between border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition mt-6"
-                  onClick={() => handleProfileNavigation(withCity("/profile", city))}
+                  onClick={() => handleProfileNavigation(withCity("/profile/edit", city))}
                 >
                   <div>
                     <h2 className="text-xl font-bold text-gray-900 leading-tight">
