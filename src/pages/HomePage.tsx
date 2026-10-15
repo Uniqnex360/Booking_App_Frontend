@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { Capacitor } from '@capacitor/core';
 import { Loader } from '@/components/common/Loader';
 import { api, unwrap } from '@/api/client';
 import { formatRupees } from '@/utils/currencyFormatter';
@@ -231,7 +232,7 @@ export default function HomePage() {
   }, [city]);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] text-slate-900 pb-12 font-sans">
+    <div className="min-h-screen bg-[#F5F5F5] text-slate-900 pb-20 md:pb-0 font-sans">
       <Header />
 
       <div className="pt-16 lg:pt-[104px]">
@@ -459,7 +460,11 @@ export default function HomePage() {
         </section>
       </div>
 
-      <Footer />
+      {!Capacitor.isNativePlatform() && (
+        <div className="hidden md:block">
+          <Footer />
+        </div>
+      )}
     </div>
   );
 }

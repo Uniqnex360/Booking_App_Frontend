@@ -359,24 +359,51 @@ export default function BuyTicketsPage() {
         showtimes: v.showtimes
           .filter((s) => new Date(s.starts_at).getTime() > now)
           .filter((s) => istDateKey(s.starts_at) === activeDate)
-          .filter(
-            (s) =>
-              langFormatFilter === "all" ||
-              `${s.language} - ${s.format}`.toLowerCase() ===
-                langFormatFilter.toLowerCase(),
-          )
+          .filter((s) => {
+            if (!langFormatFilter || langFormatFilter === "all") return true;
+            const filterLower = langFormatFilter.toLowerCase().trim();
+            const slotLangFmt = `${s.language} - ${s.format}`.toLowerCase().trim();
+            if (slotLangFmt === filterLower) return true;
+            if (s.language && s.language.toLowerCase().trim() === filterLower) return true;
+            const parts = filterLower.split("-").map((p) => p.trim());
+            if (parts.length === 2) {
+              const [reqLang, reqFmt] = parts;
+              const matchesLang = (s.language || "").toLowerCase().trim() === reqLang;
+              const sFmt = (s.format || "").toLowerCase().trim();
+              const matchesFmt = sFmt.includes(reqFmt) || reqFmt.includes(sFmt);
+              return matchesLang && matchesFmt;
+            }
+            return false;
+          })
           .filter((s) => {
             if (selectedSpecialFormats.length === 0) return true;
             return selectedSpecialFormats.some((fmt) => {
-              if (fmt.toLowerCase().includes("couple")) {
+              const fmtLower = fmt.toLowerCase().trim();
+              const sFormatLower = (s.format || "").toLowerCase().trim();
+              const sScreenLower = (s.screen_name || "").toLowerCase().trim();
+              if (fmtLower.includes("couple")) {
                 return (
-                  s.screen_name.toLowerCase().includes("couple") ||
-                  s.format.toLowerCase().includes("couple")
+                  sScreenLower.includes("couple") ||
+                  sFormatLower.includes("couple")
+                );
+              }
+              if (fmtLower === "4k") {
+                return sFormatLower.includes("4k") || sScreenLower.includes("4k");
+              }
+              if (fmtLower === "imax") {
+                return sFormatLower.includes("imax") || sScreenLower.includes("imax");
+              }
+              if (fmtLower.includes("dolby") || fmtLower.includes("atmos")) {
+                return (
+                  sFormatLower.includes("dolby") ||
+                  sFormatLower.includes("atmos") ||
+                  sScreenLower.includes("dolby") ||
+                  sScreenLower.includes("atmos")
                 );
               }
               return (
-                s.format.toLowerCase().includes(fmt.toLowerCase()) ||
-                s.screen_name.toLowerCase().includes(fmt.toLowerCase())
+                sFormatLower.includes(fmtLower) ||
+                sScreenLower.includes(fmtLower)
               );
             });
           })
@@ -976,7 +1003,7 @@ export default function BuyTicketsPage() {
                       onClick={(e) => e.stopPropagation()}
                       className="fixed left-2 right-2 top-[216px] lg:absolute lg:left-0 lg:right-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-2 min-w-[180px]"
                     >
-                      {["Dolby", "Luxe", "Couple Recliners"].map((fmt) => {
+                      {["4K", "IMAX", "Dolby Atmos", "Couple Recliners"].map((fmt) => {
                         const isChecked = selectedSpecialFormats.includes(fmt);
                         return (
                           <div

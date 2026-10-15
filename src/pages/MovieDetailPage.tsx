@@ -209,17 +209,7 @@ export default function MovieDetailPage() {
       map[formattedLang].add(cleanFmt.toUpperCase());
     };
 
-    if (movie?.language) {
-      const declaredLangs = movie.language
-        .split(/[,/&|]+/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      declaredLangs.forEach((dl) => {
-        addLangFormat(dl, "2D");
-      });
-    }
-
-    if (movie?.venues) {
+    if (movie?.venues && movie.venues.some((v) => v.showtimes && v.showtimes.length > 0)) {
       movie.venues.forEach((v) => {
         v.showtimes?.forEach((s: any) => {
           if (s.language) {
@@ -230,6 +220,14 @@ export default function MovieDetailPage() {
             langs.forEach((l: string) => addLangFormat(l, s.format || "2D"));
           }
         });
+      });
+    } else if (movie?.language) {
+      const declaredLangs = movie.language
+        .split(/[,/&|]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      declaredLangs.forEach((dl) => {
+        addLangFormat(dl, "2D");
       });
     }
 

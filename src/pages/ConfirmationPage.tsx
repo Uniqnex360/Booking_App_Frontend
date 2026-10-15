@@ -4,7 +4,8 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CheckCircle2 } from "lucide-react";
 import { api, unwrap } from "@/api/client";
-import { LoadingPage } from "./LoadingPage";
+import { Capacitor } from "@capacitor/core";
+import { PageLoader } from "./PageLoader";
 import { BookingCard } from "./BookingCard";
 
 export default function ConfirmationPage() {
@@ -68,8 +69,8 @@ export default function ConfirmationPage() {
           </div>
 
           {loading ? (
-            <div className="bg-white rounded-2xl shadow-lg p-8 flex justify-center">
-              <LoadingPage showFooter={false} />
+            <div className="bg-white rounded-2xl shadow-lg p-8 py-14 flex items-center justify-center">
+              <PageLoader />
             </div>
           ) : !adapted ? (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -100,7 +101,11 @@ export default function ConfirmationPage() {
         </div>
       </main>
 
-      <Footer />
+      {!Capacitor.isNativePlatform() && (
+        <div className="hidden md:block">
+          <Footer />
+        </div>
+      )}
     </div>
   );
 }

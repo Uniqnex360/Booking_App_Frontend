@@ -52,8 +52,8 @@ export default function OrderSummaryPage() {
     return () => clearInterval(t);
   }, [b]);
 
-  const release = async () => {
-    try { await api.delete(`/bookings/hold/${bookingId}`); } catch {}
+  const release = () => {
+    api.delete(`/bookings/hold/${bookingId}`).catch(() => {});
     navigate(seatMapUrl, { replace: true });
   };
 

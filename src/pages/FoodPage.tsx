@@ -76,12 +76,8 @@ setMenu(m);
   }, [booking]);
 
   
-  const goBack = async () => {
-    try {
-      await api.delete(`/bookings/hold/${bookingId}`);
-    } catch {
-     
-    }
+  const goBack = () => {
+    api.delete(`/bookings/hold/${bookingId}`).catch(() => {});
     navigate(seatMapUrl, { replace: true });
   };
 
