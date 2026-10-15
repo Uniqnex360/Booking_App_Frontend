@@ -43,6 +43,8 @@ import {
   Utensils,
   CheckCircle2,
   Sparkles,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   format,
@@ -91,6 +93,8 @@ export default function BookingPage() {
   const [interestedCount, setInterestedCount] = useState(16);
   const [isInterested, setIsInterested] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (eventData?.id) {
@@ -538,7 +542,17 @@ export default function BookingPage() {
     setIsInterested(!isInterested);
     setInterestedCount((prev) => (isInterested ? prev - 1 : prev + 1));
   };
-
+  const handleCopy = async (code: string) => {
+  try {
+    await navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    toast.success(`Code ${code} copied`);
+    setTimeout(() => setCopiedCode(null), 2000);
+  } catch (err) {
+    console.error('Copy failed', err);
+    toast.error('Copy failed');
+  }
+};
   // Calculate duration dynamically (matches BookMyShow)
   const getDuration = () => {
     if (eventData?.duration_min) {
@@ -975,7 +989,7 @@ export default function BookingPage() {
                   <div className="rounded-xl border border-dashed border-[#7B1E3D]/40 bg-[#7B1E3D]/5 p-3.5 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5 text-xs font-bold text-[#7B1E3D]">
-                        <Sparkles className="h-3.5 w-3.5 text-[#7B1E3D]" /> Offers Available
+                        <Sparkles className="h-3.5 w-3.5 text-[#7B1E3D]"  /> Offers Available
                       </span>
                       <span className="text-[10px] bg-[#7B1E3D] text-white font-bold px-2 py-0.5 rounded-full">
                         {availableCoupons.length} {availableCoupons.length === 1 ? 'OFFER' : 'OFFERS'}
@@ -985,19 +999,43 @@ export default function BookingPage() {
                       {availableCoupons.slice(0, 2).map((c) => (
                         <div
                           key={c.id}
-                          className="bg-white/90 rounded-lg p-2 border border-[#7B1E3D]/20 text-xs flex items-center justify-between gap-2"
+                          onClick={() => handleCopy(c.code)}
+                          className="cursor-pointer bg-white/95 hover:bg-white rounded-lg p-2 border border-[#7B1E3D]/20 text-xs flex items-center justify-between gap-2 transition shadow-2xs group"
+                          title="Click to copy coupon code"
                         >
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex items-center gap-1.5">
                             <span className="font-mono font-bold text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded text-[11px] border border-gray-200">
                               {c.code}
                             </span>
-                            <span className="text-[#7B1E3D] font-semibold text-[11px] ml-1.5">
+                            <span className="text-[#7B1E3D] font-semibold text-[11px] truncate">
                               {c.discount_label}
                             </span>
                           </div>
-                          <span className="text-[10px] text-gray-500 shrink-0">
-                            {c.min_order_label}
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] text-gray-500 hidden sm:inline">
+                              {c.min_order_label}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopy(c.code);
+                              }}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 hover:bg-[#7B1E3D]/10 text-gray-700 hover:text-[#7B1E3D] font-medium text-[10px] transition cursor-pointer"
+                            >
+                              {copiedCode === c.code ? (
+                                <>
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                  <span className="text-emerald-600 font-bold">Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3 w-3 text-gray-500 group-hover:text-[#7B1E3D]" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       ))}
                       {availableCoupons.length > 2 && (

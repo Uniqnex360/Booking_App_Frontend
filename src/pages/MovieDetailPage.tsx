@@ -49,7 +49,7 @@ function CastCrewCard({ member }: { member: CastCrewMember }) {
             src={optimizedPhotoUrl}
             alt={member.name}
             loading="lazy"
-            className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-200"
+            className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-200"
             onError={(e) => {
               (e.target as HTMLImageElement).src =
                 `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=f3f4f6&color=6b7280&size=96`;
@@ -307,6 +307,7 @@ export default function MovieDetailPage() {
           `/buytickets/${movie.id}?filter=${encodeURIComponent(filterQuery)}`,
           city,
         ),
+        { state: { movie } },
       );
     }
   };
@@ -321,6 +322,7 @@ export default function MovieDetailPage() {
         `/buytickets/${movie.id}?filter=${encodeURIComponent(filterQuery)}`,
         city,
       ),
+      { state: { movie } },
     );
   };
 
@@ -359,13 +361,13 @@ export default function MovieDetailPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col pb-16 lg:pb-0">
       <Header />
-      {/* Sticky Book Bar - Docked at bottom on mobile/tablet, docked below 128px header on desktop */}
+      {/* Sticky Book Bar - Docked at bottom always on mobile, docked below 128px header on desktop on scroll */}
       <div
         className={`fixed left-0 right-0 z-40 bg-white transition-all duration-300
-          /* Mobile (< lg): Dock to bottom */
+          /* Mobile (< lg): Always docked to bottom */
           bottom-0 border-t border-gray-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] pb-[max(0.75rem,env(safe-area-inset-bottom))]
-          ${showStickyBar ? "translate-y-0" : "translate-y-full pointer-events-none"}
-          /* Desktop (lg+): Dock right below 128px Header */
+          translate-y-0
+          /* Desktop (lg+): Dock right below 128px Header only when scrolled past hero */
           lg:bottom-auto lg:top-[128px] lg:border-t-0 lg:border-b lg:shadow-sm lg:pb-0
           ${showStickyBar ? "lg:translate-y-0" : "lg:-translate-y-full lg:pointer-events-none"}
         `}
@@ -598,11 +600,38 @@ export default function MovieDetailPage() {
           {shouldTruncate && (
             <button
               onClick={() => setIsSynopsisExpanded(!isSynopsisExpanded)}
-              className="text-[#7B1E3D] text-xs font-bold hover:underline mt-2 inline-block"
+              className="text-[#7B1E3D] text-xs font-bold hover:underline mt-2 inline-block cursor-pointer"
             >
               {isSynopsisExpanded ? "Show Less" : "Read More"}
             </button>
           )}
+
+          {/* Key Details Tags */}
+          <div className="mt-5 flex flex-wrap items-center gap-2 pt-4 border-t border-gray-100">
+            {movie.certificate && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-200">
+                {movie.certificate?.toUpperCase() === "A" ? "A • Adults Only (18+)" : movie.certificate}
+              </span>
+            )}
+            {movie.duration_min && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-200">
+                {formatDuration(movie.duration_min)}
+              </span>
+            )}
+            {movie.language && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-200">
+                {movie.language}
+              </span>
+            )}
+            {genres.map((g, idx) => (
+              <span
+                key={idx}
+                className="text-xs font-medium px-2.5 py-1 rounded-md bg-[#7B1E3D]/5 text-[#7B1E3D] border border-[#7B1E3D]/20"
+              >
+                {g}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -19,11 +19,15 @@ export function MobileBottomNav() {
 
   const pathname = location.pathname;
 
-  // Don't render on dedicated immersive booking flows (SeatMap, FoodStep, etc.)
+  // Don't render on dedicated immersive booking flows (Movie Details, SeatMap, FoodStep, etc.)
   if (
     pathname.includes("/seat-map") ||
     pathname.startsWith("/food/") ||
-    pathname.startsWith("/admin")
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/buytickets") ||
+    pathname.startsWith("/confirmation") ||
+    /^\/movies\/[^/]+/.test(pathname) ||
+    /^\/events\/[^/]+/.test(pathname)
   ) {
     return null;
   }

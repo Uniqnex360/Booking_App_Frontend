@@ -3,6 +3,7 @@ import {
   useNavigate,
   useParams,
   useSearchParams,
+  useLocation,
   Link,
 } from "react-router-dom";
 
@@ -248,6 +249,7 @@ function matchesPreferredTime(iso: string, pref: PreferredTime): boolean {
 export default function BuyTicketsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const city = searchParams.get("city") || "Kochi";
 
@@ -256,8 +258,9 @@ export default function BuyTicketsPage() {
     Math.max(1, parseInt(searchParams.get("qty") || "2", 10)),
   );
 
-  const [movie, setMovie] = useState<MovieDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialMovie = (location.state as any)?.movie as MovieDetail | null;
+  const [movie, setMovie] = useState<MovieDetail | null>(initialMovie);
+  const [loading, setLoading] = useState(!initialMovie);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -514,7 +517,9 @@ export default function BuyTicketsPage() {
   useEffect(() => {
     const fetchMovie = async () => {
       try {
-        setLoading(true);
+        if (!initialMovie) {
+          setLoading(true);
+        }
         const data = await unwrap<MovieDetail>(api.get(`/movies/${id}`));
         setMovie(data);
       } catch (err) {
@@ -524,7 +529,7 @@ export default function BuyTicketsPage() {
       }
     };
     fetchMovie();
-  }, [id]);
+  }, [id, initialMovie]);
 
   useEffect(() => {
     // Only prefetch all showtimes if the user has actively selected a price filter;

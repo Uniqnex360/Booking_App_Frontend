@@ -137,8 +137,8 @@ export function BookingCard({
       }`}
     >
       {/* Top: poster + info */}
-      <div className="flex gap-4 p-4 pb-5">
-        <div className="w-[76px] h-[110px] shrink-0 rounded-md overflow-hidden bg-gray-100">
+      <div className="flex gap-3 sm:gap-4 p-3.5 sm:p-4 pb-4 sm:pb-5">
+        <div className="w-[70px] h-[102px] sm:w-[76px] sm:h-[110px] shrink-0 rounded-md overflow-hidden bg-gray-100 shadow-2xs">
           {poster ? (
             <img
               src={poster}
@@ -152,20 +152,20 @@ export function BookingCard({
           )}
         </div>
 
-        <div className="min-w-0 flex-1 pr-5">
-          <h4 className="text-[17px] font-bold text-gray-900 leading-tight">
+        <div className="min-w-0 flex-1 pr-4 sm:pr-5">
+          <h4 className="text-base sm:text-[17px] font-bold text-gray-900 leading-tight">
             {title}
           </h4>
           {(booking.language || booking.format) && (
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-xs sm:text-sm text-gray-500">
               {[booking.language, booking.format].filter(Boolean).join(", ")}
             </p>
           )}
-          <p className="mt-2 text-sm text-gray-700">
+          <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-gray-700">
             {dateStr} | {timeStr}
           </p>
           {venueDisplay && (
-            <p className="mt-1 text-sm text-gray-700 line-clamp-2">
+            <p className="mt-1 text-xs sm:text-sm text-gray-700 line-clamp-2">
               {venueDisplay}
             </p>
           )}
@@ -188,20 +188,20 @@ export function BookingCard({
       </div>
 
       {/* Inner grey box: QR + details */}
-      <div className="px-4 pt-3">
-        <div className="rounded-xl bg-gray-50 border border-gray-100 p-4 flex items-center gap-4">
-          <div className="bg-white p-1.5 rounded shrink-0">
-            <QRCodeSVG value={qrValue} size={96} level="M" />
+      <div className="px-3 sm:px-4 pt-2.5 sm:pt-3">
+        <div className="rounded-xl bg-gray-50 border border-gray-100 p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+          <div className="bg-white p-1.5 rounded shrink-0 shadow-2xs">
+            <QRCodeSVG value={qrValue} size={88} className="w-[80px] h-[80px] sm:w-[96px] sm:h-[96px]" level="M" />
           </div>
           <div className="flex-1 text-center min-w-0">
-            <p className="text-xs text-gray-500">
+            <p className="text-[11px] sm:text-xs text-gray-500">
               {seatCount} Ticket{seatCount === 1 ? "" : "s"}
             </p>
-            <p className="mt-1 text-xl font-bold text-gray-900 truncate">
+            <p className="mt-0.5 sm:mt-1 text-lg sm:text-xl font-bold text-gray-900 truncate">
               {screenOrTier}
             </p>
             {booking.seat_codes?.length ? (
-              <p className="text-xs text-gray-500 mt-0.5 break-words">
+              <p className="text-xs text-gray-600 font-medium mt-0.5 break-words line-clamp-2">
                 {booking.seat_codes.join(", ")}
               </p>
             ) : booking.tier_name && venueDisplay ? (
@@ -210,7 +210,7 @@ export function BookingCard({
               </p>
             ) : null}
             {booking.ref_code && (
-              <p className="mt-2 text-[11px] font-bold text-gray-900">
+              <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-[11px] font-bold text-gray-900 truncate">
                 BOOKING ID: {booking.ref_code}
               </p>
             )}

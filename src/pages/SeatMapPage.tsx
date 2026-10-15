@@ -73,8 +73,8 @@ export default function SeatMapPage() {
   const [tempTicketCount, setTempTicketCount] =
     useState<number>(requiredSeatCount);
   const [zoom, setZoom] = useState<number>(
-  typeof window !== "undefined" && window.innerWidth < 640 ? 0.55 : 1.0,
-);
+    typeof window !== "undefined" && window.innerWidth < 640 ? 0.92 : 1.0,
+  );
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const [isRetrying, setIsRetrying] = useState(false);
   const autoRetryCountRef = useRef(0);
@@ -872,7 +872,7 @@ export default function SeatMapPage() {
           </div>
         ) : (
           <div
-            className="w-max min-w-full mx-auto px-4 sm:px-6 flex flex-col items-center transition-transform duration-150 origin-top-left lg:origin-top"
+            className="w-max min-w-full mx-auto px-4 sm:px-6 flex flex-col items-center transition-transform duration-150 origin-top"
             style={{ transform: `scale(${zoom})` }}
           >
             <div className="flex items-start">
@@ -1177,21 +1177,30 @@ export default function SeatMapPage() {
           </button>
         )}
       </main>
-      <div className="fixed bottom-40 right-4 sm:right-6 flex flex-col gap-2 z-20">
+      <div className={`fixed right-4 sm:right-6 flex flex-col items-center gap-1.5 z-20 transition-all ${selectedSeats.length > 0 ? "bottom-44" : "bottom-20"}`}>
         <button
           onClick={() =>
-            setZoom((z) => Math.min(1.4, Number((z + 0.1).toFixed(1))))
+            setZoom((z) => Math.min(1.5, Number((z + 0.1).toFixed(1))))
           }
-          className="w-8 h-8 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
+          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
           title="Zoom In"
         >
           <ZoomIn className="h-4 w-4" />
         </button>
         <button
           onClick={() =>
+            setZoom(typeof window !== "undefined" && window.innerWidth < 640 ? 0.92 : 1.0)
+          }
+          className="px-1.5 py-0.5 rounded-full bg-white/95 backdrop-blur shadow-md border border-gray-200 text-[10px] font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
+          title="Reset Zoom"
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <button
+          onClick={() =>
             setZoom((z) => Math.max(0.4, Number((z - 0.1).toFixed(1))))
           }
-          className="w-8 h-8 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
+          className="w-8 h-8 rounded-full bg-white/95 backdrop-blur shadow-md border border-gray-200 flex items-center justify-center text-gray-700 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
           title="Zoom Out"
         >
           <ZoomOut className="h-4 w-4" />

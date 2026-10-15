@@ -57,8 +57,8 @@ export default function ConfirmationPage() {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
       <Header />
 
-      <main className="flex-grow flex items-start justify-center p-6 pt-[128px] lg:pt-[144px]">
-        <div className="max-w-md w-full">
+      <main className="flex-grow flex items-start justify-center px-3 sm:px-6 py-4 sm:py-6 pt-[88px] sm:pt-[110px] lg:pt-[144px]">
+        <div className="max-w-[420px] w-full">
           <div className="text-center mb-6">
             <CheckCircle2 className="w-16 h-16 text-[#1EA83C] mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-2">Booking confirmed</h1>
