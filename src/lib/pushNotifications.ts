@@ -150,3 +150,7 @@ export async function registerDevicePushNotifications(): Promise<void> {
   }
 }
 
+export function resetPushNotificationState(): void {
+  lastRegisteredToken = null;
+}
+

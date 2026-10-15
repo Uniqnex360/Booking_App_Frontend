@@ -46,6 +46,7 @@ import {
   Tv,
   CreditCard,
   HeartHandshake,
+  Trash2,
 } from "lucide-react";
 import { detectCity, SUPPORTED_CITIES } from "@/utils/geolocation";
 import { CitySelectionModal } from "@/components/common/CitySelectionModal";
@@ -1220,16 +1221,14 @@ export function Header() {
                     <span>Privacy Policy</span>
                     <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
                   </Link>
-                  <a
-                    href="https://booking-app-frontend-navy.vercel.app/delete-account.html"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    to="/profile/edit"
                     onClick={() => setDrawerOpen(false)}
                     className="flex items-center justify-between py-2 text-xs font-medium text-red-600 hover:text-red-700 transition"
                   >
-                    <span>Request account deletion</span>
-                    <ExternalLink className="h-3.5 w-3.5 text-red-400" />
-                  </a>
+                    <span>Delete account</span>
+                    <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                  </Link>
                 </div>
 
                 <div className="text-center text-[11px] text-gray-400 pt-4">

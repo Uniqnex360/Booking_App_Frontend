@@ -36,3 +36,7 @@ export const updateAddress = async (id: string, data: Partial<AddressCreatePaylo
 export const deleteAddress = async (id: string): Promise<void> => {
   await api.delete(`/users/me/addresses/${id}`);
 };
+
+export const deleteAccount = async (): Promise<void> => {
+  await api.delete('/users/me');
+};

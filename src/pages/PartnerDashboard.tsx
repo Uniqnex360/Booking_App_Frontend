@@ -279,18 +279,11 @@ export default function PartnerDashboard() {
           ? pastEvents
           : [];
 
-  const tabClass = (tab: string) =>
-    `px-4 py-2 text-xs font-bold rounded-xl transition flex items-center gap-1.5 ${
-      activeTab === tab
-        ? "bg-[#7B1E3D] text-white shadow-sm"
-        : "text-slate-600 hover:bg-slate-100"
-    }`;
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Header />
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-8 pt-24">
-        <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 pt-20 sm:pt-24">
+        <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-sm">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900">
@@ -337,23 +330,23 @@ export default function PartnerDashboard() {
               Application under review · We'll notify you once approved
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
               <Button
                 variant="outline"
                 onClick={() => navigate("/partner/coupons")}
-                className="border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-2xl flex items-center gap-2 shadow-xs"
+                className="border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
               >
                 <Tag className="h-4 w-4 text-[#7B1E3D]" /> Manage Coupons
               </Button>
               <Button
                 onClick={() => navigate("/partner/dining/new")}
-                className="bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-2xl flex items-center gap-2 shadow-xs"
+                className="bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
               >
                 <Utensils className="h-4 w-4" /> Host Dining
               </Button>
               <Button
                 onClick={() => navigate("/partner/events/new")}
-                className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-2xl flex items-center gap-2 shadow-xs"
+                className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
               >
                 <Plus className="h-4 w-4" /> Host Event
               </Button>
@@ -374,33 +367,88 @@ export default function PartnerDashboard() {
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 border-b border-slate-200 mb-8 pb-3 overflow-x-auto">
-              <button
-                onClick={() => setActiveTab("ACTIVE")}
-                className={tabClass("ACTIVE")}
-              >
-                <CalendarCheck className="h-4 w-4" /> Active (
-                {activeEvents.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("PENDING")}
-                className={tabClass("PENDING")}
-              >
-                <Clock className="h-4 w-4" /> Under Review (
-                {pendingEvents.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("PAST")}
-                className={tabClass("PAST")}
-              >
-                <CalendarX className="h-4 w-4" /> Past ({pastEvents.length})
-              </button>
-              <button
-                onClick={() => setActiveTab("REVENUE")}
-                className={tabClass("REVENUE")}
-              >
-                <TrendingUp className="h-4 w-4" /> Revenue
-              </button>
+            {/* Tabs Navigation */}
+            <div className="mb-6 sm:mb-8">
+              <div className="flex items-center gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 overflow-x-auto no-scrollbar scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("ACTIVE")}
+                  className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                    activeTab === "ACTIVE"
+                      ? "bg-[#7B1E3D] text-white shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                >
+                  <CalendarCheck className="h-4 w-4 shrink-0" />
+                  <span>Active</span>
+                  <span
+                    className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+                      activeTab === "ACTIVE"
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {activeEvents.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("PENDING")}
+                  className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                    activeTab === "PENDING"
+                      ? "bg-[#7B1E3D] text-white shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                >
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span>Under Review</span>
+                  <span
+                    className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+                      activeTab === "PENDING"
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {pendingEvents.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("PAST")}
+                  className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                    activeTab === "PAST"
+                      ? "bg-[#7B1E3D] text-white shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                >
+                  <CalendarX className="h-4 w-4 shrink-0" />
+                  <span>Past</span>
+                  <span
+                    className={`px-1.5 py-0.5 text-[10px] font-bold rounded-full ${
+                      activeTab === "PAST"
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {pastEvents.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("REVENUE")}
+                  className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                    activeTab === "REVENUE"
+                      ? "bg-[#7B1E3D] text-white shadow-xs font-bold"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                >
+                  <TrendingUp className="h-4 w-4 shrink-0" />
+                  <span>Revenue</span>
+                </button>
+              </div>
             </div>
 
             {activeTab === "REVENUE" && partner && (

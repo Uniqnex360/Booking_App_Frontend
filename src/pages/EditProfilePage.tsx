@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,7 +36,9 @@ import {
   createAddress,
   updateAddress,
   deleteAddress,
+  deleteAccount,
 } from "@/api/profile.api";
+import { resetPushNotificationState } from "@/lib/pushNotifications";
 import type { ExtendedProfile, Address, Gender } from "@/types/profile.types";
 
 import {
@@ -85,13 +87,41 @@ const addressSchema = z.object({
 type AddressFormData = z.infer<typeof addressSchema>;
 
 export default function EditProfilePage() {
-  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
   const [profile, setProfile] = useState<ExtendedProfile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmationText !== "DELETE") return;
+    setDeletingAccount(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+      resetPushNotificationState();
+      await signOut();
+      toast.success("Your account has been deleted successfully.");
+      navigate("/login");
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Failed to delete account. Please try again.";
+      setDeleteError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
 
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
@@ -560,27 +590,32 @@ export default function EditProfilePage() {
                   )}
                 </div>
 
-                {/* Account Deletion / Data Privacy (Google Play Compliance) */}
+                {/* Account Deletion (Apple App Store Guideline 5.1.1(v) & Data Privacy Compliance) */}
                 <div className="mt-8 pt-6 border-t border-red-100">
                   <div className="rounded-xl border border-red-200 bg-red-50/50 p-4 sm:p-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <h4 className="text-sm font-bold text-red-900 flex items-center gap-1.5">
                           <Trash2 className="h-4 w-4 text-red-600" />
-                          Request Account Deletion
+                          Delete Account
                         </h4>
                         <p className="text-xs text-red-700/80 mt-1 max-w-xl">
-                          Request the deletion of your VybHz account and associated personal data per Google Play and data privacy guidelines.
+                          Permanently delete your VybHz account and personal data. This action is immediate and cannot be undone.
                         </p>
                       </div>
-                      <a
-                        href="https://booking-app-frontend-navy.vercel.app/delete-account.html"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => {
+                          setDeleteConfirmationText("");
+                          setDeleteError(null);
+                          setDeleteDialogOpen(true);
+                        }}
                         className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-red-700 transition shrink-0"
                       >
-                        Request account deletion
-                      </a>
+                        <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                        Delete Account
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -891,6 +926,112 @@ export default function EditProfilePage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Account Deletion Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!deletingAccount) {
+            setDeleteDialogOpen(open);
+            if (!open) {
+              setDeleteConfirmationText("");
+              setDeleteError(null);
+            }
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="h-5 w-5" />
+              Delete Account Permanently
+            </DialogTitle>
+            <DialogDescription className="text-slate-600 text-sm mt-1">
+              This action is permanent and cannot be undone. Please review what will be deleted and retained.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs sm:text-sm text-slate-600">
+            <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 text-red-900 space-y-1.5">
+              <p className="font-semibold text-red-800 flex items-center gap-1.5">
+                What will be deleted:
+              </p>
+              <ul className="list-disc pl-4 space-y-1 text-xs text-red-700/90">
+                <li>Your profile details, saved addresses, and preferences</li>
+                <li>Push notification tokens associated with your devices</li>
+                <li>Your movie reviews, ratings, and coupon redemptions</li>
+                <li>Your active sessions, credentials, and authentication links</li>
+              </ul>
+            </div>
+
+            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3.5 text-slate-700 space-y-1.5">
+              <p className="font-semibold text-slate-800">What will be retained:</p>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Financial transaction and booking records are preserved for statutory legal compliance and tax audit requirements. All personal identifiers (name, email address, phone number) are permanently stripped and anonymized from these records.
+              </p>
+            </div>
+
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-amber-900 text-xs">
+              <span className="font-semibold">Partner & Admin Accounts: </span>
+              Organiser, Partner, and Admin accounts cannot be deleted in-app. Please contact{" "}
+              <a href="mailto:support@vyhbz.com" className="font-semibold underline text-amber-950">
+                support@vyhbz.com
+              </a>{" "}
+              for assistance.
+            </div>
+
+            {deleteError && (
+              <div className="rounded-xl bg-red-100 border border-red-300 p-3 text-xs text-red-800 font-medium">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="delete-confirm-input" className="text-xs font-semibold text-slate-800">
+                Type <span className="font-mono text-red-600 font-bold">DELETE</span> to confirm:
+              </Label>
+              <Input
+                id="delete-confirm-input"
+                type="text"
+                value={deleteConfirmationText}
+                onChange={(e) => setDeleteConfirmationText(e.target.value)}
+                placeholder="DELETE"
+                className="font-mono tracking-wider"
+                disabled={deletingAccount}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deletingAccount}
+              className="rounded-xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmationText !== "DELETE" || deletingAccount}
+              className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold"
+            >
+              {deletingAccount ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Account"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

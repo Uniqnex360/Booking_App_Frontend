@@ -74,18 +74,25 @@ export default function PrivacyPolicyPage() {
                 <Trash2 className="h-4 w-4 text-red-600" />
                 5. Account & Data Deletion
               </h2>
-              <p className="text-red-800/90 mb-3">
-                In compliance with Google Play Developer policies, you have the right to request deletion of your account and personal data at any time:
+              <p className="text-red-800/90 mb-3 text-xs sm:text-sm">
+                In compliance with Apple App Store Guideline 5.1.1(v) and Google Play Developer policies, you have the right to permanently delete your account and personal data at any time directly inside the app:
               </p>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <a
-                  href="https://booking-app-frontend-navy.vercel.app/delete-account.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Link
+                  to="/profile/edit"
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition shadow-xs"
                 >
-                  <span>Request account deletion</span>
-                  <ExternalLink className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Delete account in app</span>
+                </Link>
+                <a
+                  href="/delete-account.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-red-300 bg-white text-red-700 font-semibold text-xs hover:bg-red-50 transition shadow-xs"
+                >
+                  <span>Web deletion page</span>
+                  <ExternalLink className="h-3.5 w-3.5 text-red-400" />
                 </a>
                 <span className="text-xs text-red-700">or email us at <strong>privacy@vyhbz.com</strong></span>
               </div>
