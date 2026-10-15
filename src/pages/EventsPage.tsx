@@ -231,7 +231,7 @@ export default function EventsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await getEvents();
+        const res = await getEvents({ limit: 100 });
         setEvents(res);
       } catch {
         toast.error('Failed to load events');
@@ -320,7 +320,15 @@ export default function EventsPage() {
       // Category filter
       const matchesCategory = activeCategory === 'all' || e.category === activeCategory;
       // City filter
-      const matchesCity = e.city.toLowerCase() === activeCity.toLowerCase();
+      const matchesCity = (() => {
+        const c1 = (e.city || '').toLowerCase().trim();
+        const c2 = (activeCity || '').toLowerCase().trim();
+        if (c1 === c2) return true;
+        if ((c1 === 'bangalore' || c1 === 'bengaluru') && (c2 === 'bangalore' || c2 === 'bengaluru')) return true;
+        if ((c1 === 'kochi' || c1 === 'cochin' || c1 === 'ernakulam') && (c2 === 'kochi' || c2 === 'cochin' || c2 === 'ernakulam')) return true;
+        if ((c1 === 'chennai' || c1 === 'madras') && (c2 === 'chennai' || c2 === 'madras')) return true;
+        return false;
+      })();
 
       // Language filter
       const matchesLang =

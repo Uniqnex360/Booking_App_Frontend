@@ -15,6 +15,7 @@ import {
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CitySelectionModal } from '@/components/common/CitySelectionModal';
+import { getStoredCity } from '@/utils/geolocation';
 import { getEvents } from '@/api/event.api';
 import type { EventItem } from '@/types/event.types';
 import { WINE_COLOR, WINE_HOVER } from '@/constants/theme';
@@ -169,14 +170,14 @@ export default function DiningListingPage() {
   // URL Query state parsing
   const cityParam =
     searchParams.get('city') ||
-    localStorage.getItem('vyhbz_city') ||
-    'Hyderabad';
+    getStoredCity() ||
+    'Kochi';
 
   const search = searchParams.get('search') || '';
 
   const tagsParam = searchParams.get('tags');
   const selectedTags = useMemo(() => {
-    if (!tagsParam) return ['FINE_DINING'];
+    if (!tagsParam) return [];
     return tagsParam.split(',').filter(Boolean);
   }, [tagsParam]);
 
@@ -206,13 +207,10 @@ export default function DiningListingPage() {
     let nextTags: string[];
     if (selectedTags.includes(val)) {
       nextTags = selectedTags.filter((t) => t !== val);
-      if (nextTags.length === 0) {
-        nextTags = ['FINE_DINING'];
-      }
     } else {
       nextTags = [...selectedTags, val];
     }
-    updateQuery('tags', nextTags.join(','));
+    updateQuery('tags', nextTags.length > 0 ? nextTags.join(',') : null);
   };
 
   const clearAllFilters = () => {
@@ -223,9 +221,7 @@ export default function DiningListingPage() {
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (selectedTags.length > 1 || !selectedTags.includes('FINE_DINING')) {
-      count += selectedTags.length;
-    }
+    count += selectedTags.length;
     if (dateFilter) count++;
     if (priceFilter) count++;
     if (search) count++;
@@ -239,6 +235,7 @@ export default function DiningListingPage() {
       try {
         const params: Record<string, string> = {
           category: 'dining',
+          limit: '100',
         };
         if (cityParam) params.city = cityParam;
         if (selectedTags.length > 0) params.tags = selectedTags.join(',');

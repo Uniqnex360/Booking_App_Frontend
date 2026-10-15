@@ -196,7 +196,7 @@ export default function HomePage() {
           unwrap<MovieCard[]>(
             api.get(`/movies`, { params: { city } })
           ).catch(() => []),
-          unwrap<any>(api.get(`/events`)).catch(() => ({ items: [] })),
+          unwrap<any>(api.get(`/events`, { params: { limit: 100 } })).catch(() => ({ items: [] })),
         ]);
         if (cancelled) return;
         setMovies(moviesData.slice(0, 10));
@@ -204,7 +204,19 @@ export default function HomePage() {
           ? eventsData
           : eventsData.items || [];
         const now = new Date();
-        const upcomingOrLive = items.filter((e: any) => !e.ends_at || new Date(e.ends_at) >= now);
+        const cityLower = (city || '').toLowerCase().trim();
+        const upcomingOrLive = items.filter((e: any) => {
+          if (e.ends_at && new Date(e.ends_at) < now) return false;
+          if (cityLower) {
+            const eCity = (e.city || '').toLowerCase().trim();
+            if (eCity === cityLower) return true;
+            if ((eCity === 'bangalore' || eCity === 'bengaluru') && (cityLower === 'bangalore' || cityLower === 'bengaluru')) return true;
+            if ((eCity === 'kochi' || eCity === 'cochin' || eCity === 'ernakulam') && (cityLower === 'kochi' || cityLower === 'cochin' || cityLower === 'ernakulam')) return true;
+            if ((eCity === 'chennai' || eCity === 'madras') && (cityLower === 'chennai' || cityLower === 'madras')) return true;
+            return false;
+          }
+          return true;
+        });
         setEvents(upcomingOrLive.slice(0, 8));
       } catch (err) {
         console.error('Failed to load homepage data', err);
