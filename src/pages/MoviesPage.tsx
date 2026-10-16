@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { Header } from "@/components/Header";
@@ -136,125 +136,142 @@ export default function MoviesPage() {
     fetchMoviesAndFilters();
   }, [city]);
 
-  // Derive dynamic facets strictly from Database facets (with active catalog fallback)
-  const dynamicLanguages = useMemo(() => {
-    if (dbFacets?.languages && dbFacets.languages.length > 0) {
-      return dbFacets.languages.map((l) => ({ lang: l.name, count: l.count }));
-    }
-    const counts = new Map<string, number>();
-    movies.forEach((m) => {
-      splitLangs(m.language).forEach((l) => {
-        counts.set(l, (counts.get(l) || 0) + 1);
-      });
-    });
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([lang, count]) => ({ lang, count }));
-  }, [dbFacets, movies]);
+  // Matcher helpers for each filter dimension
+  const matchesSearch = useCallback((m: MovieItem) => {
+    if (!search) return true;
+    const query = search.toLowerCase().trim();
+    const matchesTitle = m.title.toLowerCase().includes(query);
+    const matchesOrig = m.original_title ? m.original_title.toLowerCase().includes(query) : false;
+    const matchesGenre = m.genre ? m.genre.toLowerCase().includes(query) : false;
+    return matchesTitle || matchesOrig || matchesGenre;
+  }, [search]);
 
-  const dynamicGenres = useMemo(() => {
-    if (dbFacets?.genres && dbFacets.genres.length > 0) {
-      return dbFacets.genres.map((g) => ({ genre: g.name, count: g.count }));
-    }
+  const matchesTag = useCallback((m: MovieItem) => {
+    if (selectedTag === "all") return true;
+    if (selectedTag === "new") return !isReRelease(m);
+    if (selectedTag === "re-release") return isReRelease(m);
+    return true;
+  }, [selectedTag]);
+
+  const matchesLanguage = useCallback((m: MovieItem) => {
+    if (selectedLanguages.length === 0) return true;
+    const langs = splitLangs(m.language);
+    return langs.some((l) => selectedLanguages.includes(l));
+  }, [selectedLanguages]);
+
+  const matchesGenre = useCallback((m: MovieItem) => {
+    if (selectedGenres.length === 0) return true;
+    if (!m.genre) return false;
+    const movieGenres = m.genre.split(/[,/&]/).map((g) => g.trim().toLowerCase());
+    return selectedGenres.some((g) => movieGenres.includes(g.toLowerCase()));
+  }, [selectedGenres]);
+
+  const matchesCertificate = useCallback((m: MovieItem) => {
+    if (selectedCertificates.length === 0) return true;
+    const movieCert = m.certificate?.trim().toUpperCase();
+    return Boolean(movieCert && selectedCertificates.includes(movieCert));
+  }, [selectedCertificates]);
+
+  // Dynamic Languages: candidate movies match Search, Tag, Genre, Certificate
+  const dynamicLanguages = useMemo(() => {
     const counts = new Map<string, number>();
     movies.forEach((m) => {
-      if (m.genre) {
-        m.genre.split(/[,/&]/).forEach((g) => {
-          const clean = g.trim();
-          if (clean) {
-            const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
-            counts.set(formatted, (counts.get(formatted) || 0) + 1);
-          }
+      if (matchesSearch(m) && matchesTag(m) && matchesGenre(m) && matchesCertificate(m)) {
+        splitLangs(m.language).forEach((l) => {
+          counts.set(l, (counts.get(l) || 0) + 1);
         });
       }
     });
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([genre, count]) => ({ genre, count }));
-  }, [dbFacets, movies]);
+      .map(([lang, count]) => ({ lang, count }));
+  }, [movies, matchesSearch, matchesTag, matchesGenre, matchesCertificate]);
 
-  const dynamicCertificates = useMemo(() => {
-    if (dbFacets?.certificates && dbFacets.certificates.length > 0) {
-      return dbFacets.certificates.map((c) => ({ cert: c.name, count: c.count }));
-    }
+  // Dynamic Genres: candidate movies match Search, Tag, Language, Certificate
+  // e.g. selecting Malayalam narrows genres strictly to Malayalam movies!
+  const dynamicGenres = useMemo(() => {
     const counts = new Map<string, number>();
     movies.forEach((m) => {
-      if (m.certificate) {
-        const c = m.certificate.trim().toUpperCase();
-        counts.set(c, (counts.get(c) || 0) + 1);
+      if (matchesSearch(m) && matchesTag(m) && matchesLanguage(m) && matchesCertificate(m)) {
+        if (m.genre) {
+          m.genre.split(/[,/&]/).forEach((g) => {
+            const clean = g.trim();
+            if (clean) {
+              const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
+              counts.set(formatted, (counts.get(formatted) || 0) + 1);
+            }
+          });
+        }
+      }
+    });
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([genre, count]) => ({ genre, count }));
+  }, [movies, matchesSearch, matchesTag, matchesLanguage, matchesCertificate]);
+
+  // Dynamic Certificates: candidate movies match Search, Tag, Language, Genre
+  const dynamicCertificates = useMemo(() => {
+    const counts = new Map<string, number>();
+    movies.forEach((m) => {
+      if (matchesSearch(m) && matchesTag(m) && matchesLanguage(m) && matchesGenre(m)) {
+        if (m.certificate) {
+          const c = m.certificate.trim().toUpperCase();
+          counts.set(c, (counts.get(c) || 0) + 1);
+        }
       }
     });
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([cert, count]) => ({ cert, count }));
-  }, [dbFacets, movies]);
+  }, [movies, matchesSearch, matchesTag, matchesLanguage, matchesGenre]);
 
+  // Dynamic Release Counts: candidate movies match Search, Language, Genre, Certificate
   const releaseCounts = useMemo(() => {
-    if (dbFacets?.release_types) {
-      return {
-        all: dbFacets.release_types.all,
-        new: dbFacets.release_types.new,
-        reRelease: dbFacets.release_types.re_release,
-      };
-    }
+    let totalCount = 0;
     let newCount = 0;
     let reReleaseCount = 0;
     movies.forEach((m) => {
-      if (isReRelease(m)) reReleaseCount++;
-      else newCount++;
+      if (matchesSearch(m) && matchesLanguage(m) && matchesGenre(m) && matchesCertificate(m)) {
+        totalCount++;
+        if (isReRelease(m)) reReleaseCount++;
+        else newCount++;
+      }
     });
-    return { all: movies.length, new: newCount, reRelease: reReleaseCount };
-  }, [dbFacets, movies]);
+    return { all: totalCount, new: newCount, reRelease: reReleaseCount };
+  }, [movies, matchesSearch, matchesLanguage, matchesGenre, matchesCertificate]);
 
-  // Filter logic
+  // Auto-prune active genre filters that are no longer valid for the selected language
+  useEffect(() => {
+    if (selectedGenres.length > 0 && dynamicGenres.length > 0) {
+      const validGenreNames = new Set(dynamicGenres.map((dg) => dg.genre.toLowerCase()));
+      const validSelected = selectedGenres.filter((sg) => validGenreNames.has(sg.toLowerCase()));
+      if (validSelected.length !== selectedGenres.length) {
+        setSelectedGenres(validSelected);
+      }
+    }
+  }, [dynamicGenres, selectedGenres]);
+
+  // Auto-prune active certificate filters that are no longer valid
+  useEffect(() => {
+    if (selectedCertificates.length > 0 && dynamicCertificates.length > 0) {
+      const validCertNames = new Set(dynamicCertificates.map((dc) => dc.cert));
+      const validSelected = selectedCertificates.filter((sc) => validCertNames.has(sc));
+      if (validSelected.length !== selectedCertificates.length) {
+        setSelectedCertificates(validSelected);
+      }
+    }
+  }, [dynamicCertificates, selectedCertificates]);
+
+  // Filter logic (applies all dimensions to the final grid)
   const filteredMovies = useMemo(() => {
-    return movies.filter((m) => {
-      // Search
-      if (search) {
-        const query = search.toLowerCase().trim();
-        const matchesTitle = m.title.toLowerCase().includes(query);
-        const matchesOrig = m.original_title ? m.original_title.toLowerCase().includes(query) : false;
-        const matchesGenre = m.genre ? m.genre.toLowerCase().includes(query) : false;
-        if (!matchesTitle && !matchesOrig && !matchesGenre) {
-          return false;
-        }
-      }
-
-      // Tag filter (New Releases vs Re-release)
-      if (selectedTag === "new") {
-        if (isReRelease(m)) return false;
-      } else if (selectedTag === "re-release") {
-        if (!isReRelease(m)) return false;
-      }
-
-      // Languages
-      if (
-        selectedLanguages.length > 0 &&
-        !splitLangs(m.language).some((l) => selectedLanguages.includes(l))
-      ) {
-        return false;
-      }
-
-      // Genres
-      if (selectedGenres.length > 0) {
-        const movieGenres = m.genre?.split(/[,/&]/).map((g) => g.trim().toLowerCase()) || [];
-        const hasMatchingGenre = selectedGenres.some((g) =>
-          movieGenres.includes(g.toLowerCase()),
-        );
-        if (!hasMatchingGenre) return false;
-      }
-
-      // Certificates
-      if (selectedCertificates.length > 0) {
-        const movieCert = m.certificate?.trim().toUpperCase();
-        if (!movieCert || !selectedCertificates.includes(movieCert)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [movies, search, selectedTag, selectedLanguages, selectedGenres, selectedCertificates]);
+    return movies.filter((m) =>
+      matchesSearch(m) &&
+      matchesTag(m) &&
+      matchesLanguage(m) &&
+      matchesGenre(m) &&
+      matchesCertificate(m)
+    );
+  }, [movies, matchesSearch, matchesTag, matchesLanguage, matchesGenre, matchesCertificate]);
 
   const toggleLanguageFilter = (lang: string) => {
     setSelectedLanguages((prev) =>
