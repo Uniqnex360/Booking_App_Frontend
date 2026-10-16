@@ -22,6 +22,7 @@ import { withCity } from "@/lib/cityLink";
 interface MovieItem {
   id: string;
   title: string;
+  original_title?: string | null;
   language: string;
   duration_min: number;
   certificate: string;
@@ -163,8 +164,14 @@ export default function MoviesPage() {
   const filteredMovies = useMemo(() => {
     return movies.filter((m) => {
       // Search
-      if (search && !m.title.toLowerCase().includes(search.toLowerCase())) {
-        return false;
+      if (search) {
+        const query = search.toLowerCase().trim();
+        const matchesTitle = m.title.toLowerCase().includes(query);
+        const matchesOrig = m.original_title ? m.original_title.toLowerCase().includes(query) : false;
+        const matchesGenre = m.genre ? m.genre.toLowerCase().includes(query) : false;
+        if (!matchesTitle && !matchesOrig && !matchesGenre) {
+          return false;
+        }
       }
 
       // Tag filter (New Releases vs Re-release)

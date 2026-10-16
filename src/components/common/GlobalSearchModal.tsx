@@ -155,12 +155,13 @@ export function GlobalSearchModal({
         (moviesRes || []).forEach((m: any) => {
           const lang = m.languages?.join(", ") || m.language || "English";
           const genres = Array.isArray(m.genre) ? m.genre.join(", ") : m.genre || "";
+          const orig = m.original_title ? ` | ${m.original_title}` : "";
           unified.push({
             id: m.id,
             type: "movie",
             tabCategory: "Movies",
             title: m.title,
-            subtitle: `In Movies | ${lang}${genres ? " | " + genres : ""}`,
+            subtitle: `In Movies | ${lang}${genres ? " | " + genres : ""}${orig}`,
             image: m.poster_url || m.backdrop_url,
             link: withCity(`/movies/${m.id}`, city),
           });
