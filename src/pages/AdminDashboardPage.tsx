@@ -471,8 +471,9 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* NAVIGATION TABS */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-4 scrollbar-none border-b border-[#1E2028]">
+        {/* NAVIGATION TABS (Sticky under header on scroll) */}
+        <div className="sticky top-[72px] sm:top-[88px] lg:top-[128px] z-30 bg-[#0D0E12]/95 backdrop-blur-md py-2.5 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[#1E2028] shadow-md shadow-black/20">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-1 scrollbar-none">
           {[
             { id: "overview", label: "Overview", icon: LayoutDashboard },
             {
@@ -547,6 +548,7 @@ export default function AdminDashboardPage() {
               </button>
             );
           })}
+          </div>
         </div>
 
         {/* ================================================================= */}
