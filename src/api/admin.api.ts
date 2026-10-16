@@ -54,6 +54,8 @@ export async function getAdminStats(): Promise<AdminStats> {
 export async function getAdminMovies(params?: {
   status?: string;
   search?: string;
+  language?: string;
+  genre?: string;
   page?: number;
   limit?: number;
 }): Promise<{ movies: AdminMovieItem[]; pagination: any }> {
@@ -376,6 +378,9 @@ export async function createAdminChain(data: {
 
 export async function getAdminTheatres(params?: {
   city?: string;
+  chain_code?: string;
+  payment_model?: string;
+  commission_model?: string;
   search?: string;
   limit?: number;
   offset?: number;

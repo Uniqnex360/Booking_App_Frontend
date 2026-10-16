@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import {
   getAdminTheatres,
@@ -11,6 +11,8 @@ import { TheatreConfigModal } from "./TheatreConfigModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +24,13 @@ import {
 import { Label } from "@/components/ui/label";
 import {
   Building2,
-  Search,
   Settings,
   Plus,
   RefreshCw,
   Loader2,
-  CheckCircle2,
   SlidersHorizontal,
+  X,
+  Filter,
 } from "lucide-react";
 
 export function TheatresManagementTab() {
@@ -36,7 +38,12 @@ export function TheatresManagementTab() {
   const [chains, setChains] = useState<TheatreChain[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
+
   const [selectedCity, setSelectedCity] = useState("ALL");
+  const [selectedChain, setSelectedChain] = useState("ALL");
+  const [selectedPaymentModel, setSelectedPaymentModel] = useState("ALL");
+  const [selectedCommissionModel, setSelectedCommissionModel] = useState("ALL");
 
   // Chain dialog
   const [isChainModalOpen, setIsChainModalOpen] = useState(false);
@@ -48,13 +55,17 @@ export function TheatresManagementTab() {
   // Config modal
   const [configModalVenue, setConfigModalVenue] = useState<{ id: string; name: string } | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [tRes, cRes] = await Promise.all([
         getAdminTheatres({
-          search: search.trim() || undefined,
+          search: debouncedSearch.trim() || undefined,
           city: selectedCity !== "ALL" ? selectedCity : undefined,
+          chain_code: selectedChain !== "ALL" ? selectedChain : undefined,
+          payment_model: selectedPaymentModel !== "ALL" ? selectedPaymentModel : undefined,
+          commission_model: selectedCommissionModel !== "ALL" ? selectedCommissionModel : undefined,
+          limit: 100,
         }),
         getAdminChains(),
       ]);
@@ -65,11 +76,26 @@ export function TheatresManagementTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, selectedCity, selectedChain, selectedPaymentModel, selectedCommissionModel]);
 
   useEffect(() => {
     fetchData();
-  }, [search, selectedCity]);
+  }, [fetchData]);
+
+  const hasActiveFilters =
+    search.trim() !== "" ||
+    selectedCity !== "ALL" ||
+    selectedChain !== "ALL" ||
+    selectedPaymentModel !== "ALL" ||
+    selectedCommissionModel !== "ALL";
+
+  const handleResetFilters = () => {
+    setSearch("");
+    setSelectedCity("ALL");
+    setSelectedChain("ALL");
+    setSelectedPaymentModel("ALL");
+    setSelectedCommissionModel("ALL");
+  };
 
   const handleCreateChain = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,31 +163,105 @@ export function TheatresManagementTab() {
       </div>
 
       {/* Filter toolbar */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-          <Input
-            placeholder="Search theatres by name or location..."
-            className="pl-9 h-9 text-xs"
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Debounced Search */}
+          <AdminSearchBar
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
+            placeholder="Search theatres by name, city, address..."
+            isSearching={loading && search !== debouncedSearch}
+            className="flex-1"
           />
+
+          {/* Filter Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Chain Filter */}
+            <select
+              className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+              value={selectedChain}
+              onChange={(e) => setSelectedChain(e.target.value)}
+            >
+              <option value="ALL">All Chains</option>
+              {chains.map((c) => (
+                <option key={c.id} value={c.code}>
+                  {c.name} ({c.code})
+                </option>
+              ))}
+            </select>
+
+            {/* City Filter */}
+            <select
+              className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+            >
+              <option value="ALL">All Cities</option>
+              <option value="Kochi">Kochi</option>
+              <option value="Bangalore">Bangalore</option>
+              <option value="Chennai">Chennai</option>
+              <option value="Hyderabad">Hyderabad</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Delhi">Delhi-NCR</option>
+            </select>
+
+            {/* Payment Model Filter */}
+            <select
+              className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+              value={selectedPaymentModel}
+              onChange={(e) => setSelectedPaymentModel(e.target.value)}
+            >
+              <option value="ALL">All Payment Models</option>
+              <option value="THEATRE_DIRECT">Model A (Theatre Direct)</option>
+              <option value="PLATFORM_ESCROW">Model B (Vybhz Collects)</option>
+            </select>
+
+            {/* Commission Model Filter */}
+            <select
+              className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+              value={selectedCommissionModel}
+              onChange={(e) => setSelectedCommissionModel(e.target.value)}
+            >
+              <option value="ALL">All Commission Models</option>
+              <option value="INVOICE_POST_PAY">Post-Pay Invoicing</option>
+              <option value="INSTANT_SPLIT">Instant Escrow Split</option>
+              <option value="DAILY_SETTLEMENT">Daily Settlement</option>
+            </select>
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+              >
+                <X className="w-3.5 h-3.5" />
+                Reset
+              </Button>
+            )}
+          </div>
         </div>
-        <select
-          className="h-9 rounded-md border border-gray-300 px-3 bg-white text-xs font-medium"
-          value={selectedCity}
-          onChange={(e) => setSelectedCity(e.target.value)}
-        >
-          <option value="ALL">All Cities</option>
-          <option value="Chennai">Chennai</option>
-          <option value="Bangalore">Bangalore</option>
-          <option value="Kochi">Kochi</option>
-        </select>
+
+        {/* Filter Summary Pill Bar */}
+        <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-gray-400" />
+            <span>
+              Showing <strong className="text-gray-900">{theatres.length}</strong> theatre venues
+            </span>
+          </div>
+          {loading && (
+            <span className="inline-flex items-center gap-1.5 text-orange-600 font-medium">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Updating results...
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Theatres Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
-        {loading ? (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden relative">
+        {loading && theatres.length === 0 ? (
           <div className="py-20 flex justify-center items-center">
             <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
           </div>

@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isAfter, subDays, startOfDay } from "date-fns";
 import {
   searchDetailedBookings,
+  getAdminTheatres,
   AdminDetailedBooking,
+  TheatreListItem,
 } from "@/api/admin.api";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
-  Search,
   RefreshCw,
   Loader2,
   Ticket,
@@ -18,22 +20,37 @@ import {
   Building,
   CheckCircle2,
   AlertCircle,
+  X,
+  Filter,
 } from "lucide-react";
 
 export function BookingsReconciliationTab() {
   const [bookings, setBookings] = useState<AdminDetailedBooking[]>([]);
+  const [theatres, setTheatres] = useState<TheatreListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 300);
+
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [selectedVenue, setSelectedVenue] = useState("ALL");
+  const [dateRange, setDateRange] = useState("ALL");
   const [selectedBooking, setSelectedBooking] = useState<AdminDetailedBooking | null>(null);
 
-  const fetchBookings = async () => {
+  // Fetch theatres for venue dropdown
+  useEffect(() => {
+    getAdminTheatres({ limit: 100 })
+      .then((res) => setTheatres(res.theatres || []))
+      .catch(() => {});
+  }, []);
+
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
       const res = await searchDetailedBookings({
-        query: query.trim() || undefined,
+        query: debouncedQuery.trim() || undefined,
+        venue_id: selectedVenue !== "ALL" ? selectedVenue : undefined,
         status: statusFilter !== "ALL" ? statusFilter : undefined,
-        limit: 50,
+        limit: 100,
       });
       setBookings(res.bookings || []);
     } catch {
@@ -41,15 +58,44 @@ export function BookingsReconciliationTab() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedQuery, statusFilter, selectedVenue]);
 
   useEffect(() => {
     fetchBookings();
-  }, [statusFilter]);
+  }, [fetchBookings]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchBookings();
+  // Client-side date range filter
+  const filteredBookings = bookings.filter((b) => {
+    if (dateRange === "ALL") return true;
+    try {
+      const bookingDate = parseISO(b.created_at);
+      const now = new Date();
+      if (dateRange === "TODAY") {
+        return isAfter(bookingDate, startOfDay(now));
+      }
+      if (dateRange === "7D") {
+        return isAfter(bookingDate, subDays(now, 7));
+      }
+      if (dateRange === "30D") {
+        return isAfter(bookingDate, subDays(now, 30));
+      }
+    } catch {
+      return true;
+    }
+    return true;
+  });
+
+  const hasActiveFilters =
+    query.trim() !== "" ||
+    statusFilter !== "ALL" ||
+    selectedVenue !== "ALL" ||
+    dateRange !== "ALL";
+
+  const handleResetFilters = () => {
+    setQuery("");
+    setStatusFilter("ALL");
+    setSelectedVenue("ALL");
+    setDateRange("ALL");
   };
 
   return (
@@ -80,39 +126,106 @@ export function BookingsReconciliationTab() {
         </Button>
       </div>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
-          <Input
-            placeholder="Search by Booking Ref (e.g. AGS-7591A7D4), email, phone, or partner ID..."
-            className="pl-9 h-9 text-xs"
+      {/* Filter Toolbar */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Debounced Search */}
+          <AdminSearchBar
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={setQuery}
+            placeholder="Search by ref code (e.g. AGS-), customer email, phone, or title..."
+            isSearching={loading && query !== debouncedQuery}
+            className="flex-1"
           />
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Date Preset Filter */}
+            <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
+              {[
+                { id: "ALL", label: "All Time" },
+                { id: "TODAY", label: "Today" },
+                { id: "7D", label: "7 Days" },
+                { id: "30D", label: "30 Days" },
+              ].map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => setDateRange(d.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    dateRange === d.id
+                      ? "bg-blue-600 text-white shadow-2xs"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Status Dropdown */}
+            <select
+              className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="HELD">HELD</option>
+            </select>
+
+            {/* Theatre / Venue Filter */}
+            <select
+              className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs max-w-[200px] truncate"
+              value={selectedVenue}
+              onChange={(e) => setSelectedVenue(e.target.value)}
+            >
+              <option value="ALL">All Theatres / Venues</option>
+              {theatres.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.city})
+                </option>
+              ))}
+            </select>
+
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetFilters}
+                className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+              >
+                <X className="w-3.5 h-3.5" />
+                Reset
+              </Button>
+            )}
+          </div>
         </div>
-        <select
-          className="h-9 rounded-md border border-gray-300 px-3 bg-white text-xs font-medium"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="ALL">All Statuses</option>
-          <option value="CONFIRMED">CONFIRMED</option>
-          <option value="CANCELLED">CANCELLED</option>
-          <option value="HELD">HELD</option>
-        </select>
-        <Button type="submit" className="h-9 px-4 text-xs bg-blue-600 hover:bg-blue-700 text-white">
-          Search
-        </Button>
-      </form>
+
+        {/* Filter Summary */}
+        <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-gray-400" />
+            <span>
+              Showing <strong className="text-gray-900">{filteredBookings.length}</strong> bookings
+            </span>
+          </div>
+          {loading && (
+            <span className="inline-flex items-center gap-1.5 text-blue-600 font-medium">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Searching transactions...
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* Bookings Table */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
-        {loading ? (
+        {loading && bookings.length === 0 ? (
           <div className="py-20 flex justify-center items-center">
             <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
           </div>
-        ) : bookings.length === 0 ? (
+        ) : filteredBookings.length === 0 ? (
           <div className="py-16 text-center text-sm text-gray-500">
             No booking records found matching your query.
           </div>

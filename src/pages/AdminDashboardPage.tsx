@@ -48,6 +48,8 @@ import { TheatresManagementTab } from "./admin/TheatresManagementTab";
 import { BookingsReconciliationTab } from "./admin/BookingsReconciliationTab";
 import { CommissionInvoicesTab } from "./admin/CommissionInvoicesTab";
 import { ReconciliationExceptionsTab } from "./admin/ReconciliationExceptionsTab";
+import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
+import { useDebounce } from "@/hooks/useDebounce";
 import type { EventItem } from "@/types/event.types";
 import type { Partner, PartnerStatus } from "@/types/partner.types";
 import {
@@ -145,7 +147,10 @@ export default function AdminDashboardPage() {
   const [movies, setMovies] = useState<AdminMovieItem[]>([]);
   const [moviesLoading, setMoviesLoading] = useState(false);
   const [movieSearch, setMovieSearch] = useState("");
+  const debouncedMovieSearch = useDebounce(movieSearch, 300);
   const [movieStatusFilter, setMovieStatusFilter] = useState("ALL");
+  const [movieLanguageFilter, setMovieLanguageFilter] = useState("ALL");
+  const [movieGenreFilter, setMovieGenreFilter] = useState("ALL");
   const [moviePage, setMoviePage] = useState(1);
   const [moviePagination, setMoviePagination] = useState<any>(null);
   const [updatingMovieId, setUpdatingMovieId] = useState<string | null>(null);
@@ -154,8 +159,10 @@ export default function AdminDashboardPage() {
     setMoviesLoading(true);
     try {
       const res = await getAdminMovies({
-        search: movieSearch.trim() || undefined,
+        search: debouncedMovieSearch.trim() || undefined,
         status: movieStatusFilter !== "ALL" ? movieStatusFilter : undefined,
+        language: movieLanguageFilter !== "ALL" ? movieLanguageFilter : undefined,
+        genre: movieGenreFilter !== "ALL" ? movieGenreFilter : undefined,
         page: moviePage,
         limit: 15,
       });
@@ -166,7 +173,7 @@ export default function AdminDashboardPage() {
     } finally {
       setMoviesLoading(false);
     }
-  }, [movieSearch, movieStatusFilter, moviePage]);
+  }, [debouncedMovieSearch, movieStatusFilter, movieLanguageFilter, movieGenreFilter, moviePage]);
 
   useEffect(() => {
     if (activeTab === "movies" || activeTab === "overview") {
@@ -202,7 +209,9 @@ export default function AdminDashboardPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventSearch, setEventSearch] = useState("");
+  const debouncedEventSearch = useDebounce(eventSearch, 300);
   const [eventStatusFilter, setEventStatusFilter] = useState("ALL");
+  const [eventCategoryFilter, setEventCategoryFilter] = useState("ALL");
   const [eventPage, setEventPage] = useState(1);
   const [eventPagination, setEventPagination] = useState<any>(null);
   const [rejectingEvent, setRejectingEvent] = useState<EventItem | null>(null);
@@ -213,19 +222,25 @@ export default function AdminDashboardPage() {
     setEventsLoading(true);
     try {
       const res = await getAdminEvents({
-        search: eventSearch.trim() || undefined,
+        search: debouncedEventSearch.trim() || undefined,
         status: eventStatusFilter !== "ALL" ? eventStatusFilter : undefined,
         page: eventPage,
         limit: 15,
       });
-      setEvents(res.events || []);
+      let items = res.events || [];
+      if (eventCategoryFilter !== "ALL") {
+        items = items.filter((ev: any) =>
+          ev.category?.toLowerCase() === eventCategoryFilter.toLowerCase()
+        );
+      }
+      setEvents(items);
       setEventPagination(res.pagination || null);
     } catch {
       toast.error("Failed to load events");
     } finally {
       setEventsLoading(false);
     }
-  }, [eventSearch, eventStatusFilter, eventPage]);
+  }, [debouncedEventSearch, eventStatusFilter, eventCategoryFilter, eventPage]);
 
   useEffect(() => {
     if (activeTab === "events" || activeTab === "overview") {
@@ -297,6 +312,7 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState<AdminUserItem[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userSearch, setUserSearch] = useState("");
+  const debouncedUserSearch = useDebounce(userSearch, 300);
   const [userRoleFilter, setUserRoleFilter] = useState("ALL");
   const [userStatusFilter, setUserStatusFilter] = useState("ALL");
   const [userPage, setUserPage] = useState(1);
@@ -317,7 +333,7 @@ export default function AdminDashboardPage() {
           : undefined;
 
       const res = await getAdminUsers({
-        search: userSearch.trim() || undefined,
+        search: debouncedUserSearch.trim() || undefined,
         role: userRoleFilter !== "ALL" ? userRoleFilter : undefined,
         is_active: activeFilter,
         page: userPage,
@@ -330,7 +346,7 @@ export default function AdminDashboardPage() {
     } finally {
       setUsersLoading(false);
     }
-  }, [userSearch, userRoleFilter, userStatusFilter, userPage]);
+  }, [debouncedUserSearch, userRoleFilter, userStatusFilter, userPage]);
 
   useEffect(() => {
     if (activeTab === "users" || activeTab === "overview") {
@@ -854,50 +870,134 @@ export default function AdminDashboardPage() {
         {activeTab === "movies" && (
           <div className="py-6 space-y-4">
             {/* Filter & Search Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <AdminSearchBar
                   value={movieSearch}
-                  onChange={(e) => {
-                    setMovieSearch(e.target.value);
+                  onChange={(val) => {
+                    setMovieSearch(val);
                     setMoviePage(1);
                   }}
-                  placeholder="Search movie title, language, genre..."
-                  className="pl-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl text-xs sm:text-sm h-10"
+                  onClear={() => {
+                    setMovieSearch("");
+                    setMoviePage(1);
+                  }}
+                  placeholder="Search movie title, original title, genre..."
+                  isSearching={moviesLoading && movieSearch !== debouncedMovieSearch}
+                  className="flex-1"
                 />
-              </div>
 
-              {/* Status Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto">
-                {["ALL", "PUBLISHED", "DRAFT", "PENDING_REVIEW"].map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => {
-                      setMovieStatusFilter(st);
+                {/* Filter Dropdowns & Pills */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Language Filter */}
+                  <select
+                    value={movieLanguageFilter}
+                    onChange={(e) => {
+                      setMovieLanguageFilter(e.target.value);
                       setMoviePage(1);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                      movieStatusFilter === st
-                        ? "bg-orange-600 text-white shadow-xs"
-                        : "bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
-                    }`}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
-                    {st === "ALL"
-                      ? "All Movies"
-                      : st === "PUBLISHED"
-                      ? "Showing (Live)"
-                      : st === "DRAFT"
-                      ? "Hidden (Draft)"
-                      : "Pending"}
-                  </button>
-                ))}
+                    <option value="ALL">All Languages</option>
+                    <option value="Malayalam">Malayalam</option>
+                    <option value="Tamil">Tamil</option>
+                    <option value="Telugu">Telugu</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="English">English</option>
+                    <option value="Kannada">Kannada</option>
+                  </select>
+
+                  {/* Genre Filter */}
+                  <select
+                    value={movieGenreFilter}
+                    onChange={(e) => {
+                      setMovieGenreFilter(e.target.value);
+                      setMoviePage(1);
+                    }}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                  >
+                    <option value="ALL">All Genres</option>
+                    <option value="Action">Action</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Drama">Drama</option>
+                    <option value="Thriller">Thriller</option>
+                    <option value="Crime">Crime</option>
+                    <option value="Sci-Fi">Sci-Fi</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Horror">Horror</option>
+                    <option value="Animation">Animation</option>
+                    <option value="Adventure">Adventure</option>
+                  </select>
+
+                  {/* Status Filter Pills */}
+                  <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
+                    {["ALL", "PUBLISHED", "DRAFT", "PENDING_REVIEW"].map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => {
+                          setMovieStatusFilter(st);
+                          setMoviePage(1);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                          movieStatusFilter === st
+                            ? "bg-orange-600 text-white shadow-2xs"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        {st === "ALL"
+                          ? "All Status"
+                          : st === "PUBLISHED"
+                          ? "Showing"
+                          : st === "DRAFT"
+                          ? "Hidden"
+                          : "Pending"}
+                      </button>
+                    ))}
+                  </div>
+
+                  {(movieSearch.trim() !== "" ||
+                    movieStatusFilter !== "ALL" ||
+                    movieLanguageFilter !== "ALL" ||
+                    movieGenreFilter !== "ALL") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setMovieSearch("");
+                        setMovieStatusFilter("ALL");
+                        setMovieLanguageFilter("ALL");
+                        setMovieGenreFilter("ALL");
+                        setMoviePage(1);
+                      }}
+                      className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Reset
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter Summary */}
+              <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Showing <strong className="text-gray-900">{movies.length}</strong> movies
+                    {moviePagination?.total ? ` (Total: ${moviePagination.total})` : ""}
+                  </span>
+                </div>
+                {moviesLoading && (
+                  <span className="inline-flex items-center gap-1.5 text-orange-600 font-medium">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Updating catalog...
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Movies Table / List */}
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
-              {moviesLoading ? (
+              {moviesLoading && movies.length === 0 ? (
                 <div className="p-16 flex flex-col items-center justify-center gap-3 text-gray-400">
                   <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
                   <p className="text-sm">Loading movies catalog...</p>
@@ -1059,50 +1159,109 @@ export default function AdminDashboardPage() {
         {activeTab === "events" && (
           <div className="py-6 space-y-4">
             {/* Filter & Search Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <AdminSearchBar
                   value={eventSearch}
-                  onChange={(e) => {
-                    setEventSearch(e.target.value);
+                  onChange={(val) => {
+                    setEventSearch(val);
                     setEventPage(1);
                   }}
-                  placeholder="Search live event, city, venue..."
-                  className="pl-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl text-xs sm:text-sm h-10"
+                  onClear={() => {
+                    setEventSearch("");
+                    setEventPage(1);
+                  }}
+                  placeholder="Search live events by title, venue, city..."
+                  isSearching={eventsLoading && eventSearch !== debouncedEventSearch}
+                  className="flex-1"
                 />
-              </div>
 
-              {/* Status Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto">
-                {[
-                  { id: "ALL", label: "All Events" },
-                  { id: "PENDING_APPROVAL", label: "Pending Approval" },
-                  { id: "PUBLISHED", label: "Published (Live)" },
-                  { id: "REJECTED", label: "Rejected" },
-                  { id: "DRAFT", label: "Draft" },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      setEventStatusFilter(tab.id);
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Category Filter */}
+                  <select
+                    value={eventCategoryFilter}
+                    onChange={(e) => {
+                      setEventCategoryFilter(e.target.value);
                       setEventPage(1);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                      eventStatusFilter === tab.id
-                        ? "bg-orange-600 text-white shadow-xs"
-                        : "bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
-                    }`}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
-                    {tab.label}
-                  </button>
-                ))}
+                    <option value="ALL">All Categories</option>
+                    <option value="Music">Music</option>
+                    <option value="Comedy">Comedy</option>
+                    <option value="Workshop">Workshop</option>
+                    <option value="Conference">Conference</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Theater">Theater</option>
+                  </select>
+
+                  {/* Status Filter Pills */}
+                  <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
+                    {[
+                      { id: "ALL", label: "All" },
+                      { id: "PENDING_APPROVAL", label: "Pending" },
+                      { id: "PUBLISHED", label: "Published" },
+                      { id: "REJECTED", label: "Rejected" },
+                      { id: "DRAFT", label: "Draft" },
+                    ].map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setEventStatusFilter(tab.id);
+                          setEventPage(1);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                          eventStatusFilter === tab.id
+                            ? "bg-orange-600 text-white shadow-2xs"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {(eventSearch.trim() !== "" ||
+                    eventStatusFilter !== "ALL" ||
+                    eventCategoryFilter !== "ALL") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEventSearch("");
+                        setEventStatusFilter("ALL");
+                        setEventCategoryFilter("ALL");
+                        setEventPage(1);
+                      }}
+                      className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Reset
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter Summary */}
+              <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Showing <strong className="text-gray-900">{events.length}</strong> events
+                    {eventPagination?.total ? ` (Total: ${eventPagination.total})` : ""}
+                  </span>
+                </div>
+                {eventsLoading && (
+                  <span className="inline-flex items-center gap-1.5 text-orange-600 font-medium">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Updating events...
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Events Cards / Table */}
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
-              {eventsLoading ? (
+              {eventsLoading && events.length === 0 ? (
                 <div className="p-16 flex flex-col items-center justify-center gap-3 text-gray-400">
                   <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
                   <p className="text-sm">Loading events...</p>
@@ -1267,67 +1426,106 @@ export default function AdminDashboardPage() {
         {activeTab === "users" && (
           <div className="py-6 space-y-4">
             {/* Filter & Search Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <AdminSearchBar
                   value={userSearch}
-                  onChange={(e) => {
-                    setUserSearch(e.target.value);
+                  onChange={(val) => {
+                    setUserSearch(val);
+                    setUserPage(1);
+                  }}
+                  onClear={() => {
+                    setUserSearch("");
                     setUserPage(1);
                   }}
                   placeholder="Search user by name, email, or phone..."
-                  className="pl-10 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl text-xs sm:text-sm h-10"
+                  isSearching={usersLoading && userSearch !== debouncedUserSearch}
+                  className="flex-1"
                 />
+
+                {/* Role & Status Filter Pills */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
+                    {["ALL", "USER", "PARTNER", "ADMIN"].map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => {
+                          setUserRoleFilter(r);
+                          setUserPage(1);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                          userRoleFilter === r
+                            ? "bg-orange-600 text-white shadow-2xs"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        {r === "ALL" ? "All Roles" : r}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="h-4 w-px bg-gray-200 mx-1 hidden sm:block" />
+
+                  <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
+                    {["ALL", "ACTIVE", "BLOCKED"].map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => {
+                          setUserStatusFilter(st);
+                          setUserPage(1);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                          userStatusFilter === st
+                            ? "bg-emerald-600 text-white shadow-2xs"
+                            : "text-gray-600 hover:text-gray-900"
+                        }`}
+                      >
+                        {st === "ALL" ? "All Status" : st}
+                      </button>
+                    ))}
+                  </div>
+
+                  {(userSearch.trim() !== "" ||
+                    userRoleFilter !== "ALL" ||
+                    userStatusFilter !== "ALL") && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setUserSearch("");
+                        setUserRoleFilter("ALL");
+                        setUserStatusFilter("ALL");
+                        setUserPage(1);
+                      }}
+                      className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      Reset
+                    </Button>
+                  )}
+                </div>
               </div>
 
-              {/* Role & Status Filter Pills */}
-              <div className="flex items-center gap-2 overflow-x-auto">
-                <div className="flex items-center gap-1">
-                  {["ALL", "USER", "PARTNER", "ADMIN"].map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => {
-                        setUserRoleFilter(r);
-                        setUserPage(1);
-                      }}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                        userRoleFilter === r
-                          ? "bg-orange-600 text-white shadow-xs"
-                          : "bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
-                      }`}
-                    >
-                      {r === "ALL" ? "All Roles" : r}
-                    </button>
-                  ))}
+              {/* Filter Summary */}
+              <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Showing <strong className="text-gray-900">{users.length}</strong> users
+                    {userPagination?.total ? ` (Total: ${userPagination.total})` : ""}
+                  </span>
                 </div>
-
-                <div className="h-4 w-px bg-gray-200 mx-1" />
-
-                <div className="flex items-center gap-1">
-                  {["ALL", "ACTIVE", "BLOCKED"].map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => {
-                        setUserStatusFilter(st);
-                        setUserPage(1);
-                      }}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                        userStatusFilter === st
-                          ? "bg-emerald-600 text-white shadow-xs"
-                          : "bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
-                      }`}
-                    >
-                      {st === "ALL" ? "All Status" : st}
-                    </button>
-                  ))}
-                </div>
+                {usersLoading && (
+                  <span className="inline-flex items-center gap-1.5 text-orange-600 font-medium">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Updating users...
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Users Table */}
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
-              {usersLoading ? (
+              {usersLoading && users.length === 0 ? (
                 <div className="p-16 flex flex-col items-center justify-center gap-3 text-gray-400">
                   <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
                   <p className="text-sm">Loading users...</p>
