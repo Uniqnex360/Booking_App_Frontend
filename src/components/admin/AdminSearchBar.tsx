@@ -61,3 +61,4 @@ export function AdminSearchBar({
     </div>
   );
 }
+

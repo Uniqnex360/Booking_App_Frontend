@@ -154,6 +154,11 @@ export default function AdminDashboardPage() {
   const [moviePage, setMoviePage] = useState(1);
   const [moviePagination, setMoviePagination] = useState<any>(null);
   const [updatingMovieId, setUpdatingMovieId] = useState<string | null>(null);
+  const [movieFacets, setMovieFacets] = useState<{
+    languages: { name: string; count: number }[];
+    genres: { name: string; count: number }[];
+    statuses: Record<string, number>;
+  } | null>(null);
 
   const fetchMovies = useCallback(async () => {
     setMoviesLoading(true);
@@ -168,6 +173,9 @@ export default function AdminDashboardPage() {
       });
       setMovies(res.movies || []);
       setMoviePagination(res.pagination || null);
+      if (res.facets) {
+        setMovieFacets(res.facets);
+      }
     } catch {
       toast.error("Failed to load movies");
     } finally {
@@ -898,13 +906,14 @@ export default function AdminDashboardPage() {
                     }}
                     className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
-                    <option value="ALL">All Languages</option>
-                    <option value="Malayalam">Malayalam</option>
-                    <option value="Tamil">Tamil</option>
-                    <option value="Telugu">Telugu</option>
-                    <option value="Hindi">Hindi</option>
-                    <option value="English">English</option>
-                    <option value="Kannada">Kannada</option>
+                    <option value="ALL">
+                      All Languages {movieFacets ? `(${movieFacets.statuses.ALL || 0})` : ""}
+                    </option>
+                    {movieFacets?.languages.map((l) => (
+                      <option key={l.name} value={l.name}>
+                        {l.name} ({l.count})
+                      </option>
+                    ))}
                   </select>
 
                   {/* Genre Filter */}
@@ -916,43 +925,56 @@ export default function AdminDashboardPage() {
                     }}
                     className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
-                    <option value="ALL">All Genres</option>
-                    <option value="Action">Action</option>
-                    <option value="Comedy">Comedy</option>
-                    <option value="Drama">Drama</option>
-                    <option value="Thriller">Thriller</option>
-                    <option value="Crime">Crime</option>
-                    <option value="Sci-Fi">Sci-Fi</option>
-                    <option value="Romance">Romance</option>
-                    <option value="Horror">Horror</option>
-                    <option value="Animation">Animation</option>
-                    <option value="Adventure">Adventure</option>
+                    <option value="ALL">
+                      All Genres {movieFacets ? `(${movieFacets.statuses.ALL || 0})` : ""}
+                    </option>
+                    {movieFacets?.genres.map((g) => (
+                      <option key={g.name} value={g.name}>
+                        {g.name} ({g.count})
+                      </option>
+                    ))}
                   </select>
 
                   {/* Status Filter Pills */}
                   <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
-                    {["ALL", "PUBLISHED", "DRAFT", "PENDING_REVIEW"].map((st) => (
-                      <button
-                        key={st}
-                        onClick={() => {
-                          setMovieStatusFilter(st);
-                          setMoviePage(1);
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                          movieStatusFilter === st
-                            ? "bg-orange-600 text-white shadow-2xs"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        {st === "ALL"
+                    {["ALL", "PUBLISHED", "DRAFT", "PENDING_REVIEW"].map((st) => {
+                      const count = movieFacets?.statuses?.[st];
+                      const label =
+                        st === "ALL"
                           ? "All Status"
                           : st === "PUBLISHED"
                           ? "Showing"
                           : st === "DRAFT"
                           ? "Hidden"
-                          : "Pending"}
-                      </button>
-                    ))}
+                          : "Pending";
+                      return (
+                        <button
+                          key={st}
+                          onClick={() => {
+                            setMovieStatusFilter(st);
+                            setMoviePage(1);
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                            movieStatusFilter === st
+                              ? "bg-orange-600 text-white shadow-2xs"
+                              : "text-gray-600 hover:text-gray-900"
+                          }`}
+                        >
+                          <span>{label}</span>
+                          {count !== undefined && (
+                            <span
+                              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                                movieStatusFilter === st
+                                  ? "bg-white/20 text-white"
+                                  : "bg-gray-200/80 text-gray-600"
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {(movieSearch.trim() !== "" ||

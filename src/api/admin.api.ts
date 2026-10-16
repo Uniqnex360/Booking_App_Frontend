@@ -58,7 +58,15 @@ export async function getAdminMovies(params?: {
   genre?: string;
   page?: number;
   limit?: number;
-}): Promise<{ movies: AdminMovieItem[]; pagination: any }> {
+}): Promise<{
+  movies: AdminMovieItem[];
+  pagination: any;
+  facets?: {
+    languages: { name: string; count: number }[];
+    genres: { name: string; count: number }[];
+    statuses: Record<string, number>;
+  };
+}> {
   const res = await api.get('/admin/movies', { params });
   return res.data?.data || res.data;
 }

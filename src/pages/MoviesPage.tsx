@@ -34,31 +34,6 @@ interface MovieItem {
   votes_count?: number;
 }
 
-const ALL_GENRES = [
-  "Action",
-  "Adventure",
-  "Animation",
-  "Biography",
-  "Comedy",
-  "Crime",
-  "Drama",
-  "Family",
-  "Fantasy",
-  "Historical",
-  "Horror",
-  "Music",
-  "Musical",
-  "Mystery",
-  "Period",
-  "Psychological",
-  "Romance",
-  "Sci-Fi",
-  "Sports",
-  "Suspense",
-  "Thriller",
-  "War",
-];
-
 const splitLangs = (s?: string) =>
   (s || "")
     .split(/[,/&]/)
@@ -78,6 +53,7 @@ export default function MoviesPage() {
   const [selectedTag, setSelectedTag] = useState<"all" | "new" | "re-release">("all");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+  const [selectedCertificates, setSelectedCertificates] = useState<string[]>([]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
 
@@ -86,9 +62,10 @@ export default function MoviesPage() {
     tags: true,
     languages: true,
     genres: true,
+    certificates: true,
   });
 
-  const toggleSection = (section: "tags" | "languages" | "genres") => {
+  const toggleSection = (section: "tags" | "languages" | "genres" | "certificates") => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
@@ -129,21 +106,58 @@ export default function MoviesPage() {
     fetchMovies();
   }, [city]);
 
-  // Derive unique languages and comprehensive genres for filter lists
-  const availableLanguages = useMemo(() => {
-    const set = new Set<string>();
-    movies.forEach((m) => splitLangs(m.language).forEach((l) => set.add(l)));
-    return Array.from(set).sort();
+  // Derive purely dynamic facets strictly from active catalog
+  const dynamicLanguages = useMemo(() => {
+    const counts = new Map<string, number>();
+    movies.forEach((m) => {
+      splitLangs(m.language).forEach((l) => {
+        counts.set(l, (counts.get(l) || 0) + 1);
+      });
+    });
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([lang, count]) => ({ lang, count }));
   }, [movies]);
 
-  const availableGenres = useMemo(() => {
-    const set = new Set<string>(ALL_GENRES);
+  const dynamicGenres = useMemo(() => {
+    const counts = new Map<string, number>();
     movies.forEach((m) => {
       if (m.genre) {
-        m.genre.split(",").forEach((g) => set.add(g.trim()));
+        m.genre.split(/[,/&]/).forEach((g) => {
+          const clean = g.trim();
+          if (clean) {
+            const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
+            counts.set(formatted, (counts.get(formatted) || 0) + 1);
+          }
+        });
       }
     });
-    return Array.from(set).sort();
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([genre, count]) => ({ genre, count }));
+  }, [movies]);
+
+  const dynamicCertificates = useMemo(() => {
+    const counts = new Map<string, number>();
+    movies.forEach((m) => {
+      if (m.certificate) {
+        const c = m.certificate.trim().toUpperCase();
+        counts.set(c, (counts.get(c) || 0) + 1);
+      }
+    });
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([cert, count]) => ({ cert, count }));
+  }, [movies]);
+
+  const releaseCounts = useMemo(() => {
+    let newCount = 0;
+    let reReleaseCount = 0;
+    movies.forEach((m) => {
+      if (isReRelease(m)) reReleaseCount++;
+      else newCount++;
+    });
+    return { all: movies.length, new: newCount, reRelease: reReleaseCount };
   }, [movies]);
 
   // Check if a movie is considered a re-release
@@ -191,19 +205,29 @@ export default function MoviesPage() {
 
       // Genres
       if (selectedGenres.length > 0) {
-        const movieGenres = m.genre?.split(",").map((g) => g.trim().toLowerCase()) || [];
+        const movieGenres = m.genre?.split(/[,/&]/).map((g) => g.trim().toLowerCase()) || [];
         const hasMatchingGenre = selectedGenres.some((g) =>
           movieGenres.includes(g.toLowerCase()),
         );
         if (!hasMatchingGenre) return false;
       }
 
+      // Certificates
+      if (selectedCertificates.length > 0) {
+        const movieCert = m.certificate?.trim().toUpperCase();
+        if (!movieCert || !selectedCertificates.includes(movieCert)) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [movies, search, selectedTag, selectedLanguages, selectedGenres]);
+  }, [movies, search, selectedTag, selectedLanguages, selectedGenres, selectedCertificates]);
 
   const toggleLanguageFilter = (lang: string) => {
-    setSelectedLanguages((prev) => (prev.includes(lang) ? [] : [lang]));
+    setSelectedLanguages((prev) =>
+      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang],
+    );
   };
 
   const toggleGenreFilter = (genre: string) => {
@@ -212,10 +236,17 @@ export default function MoviesPage() {
     );
   };
 
+  const toggleCertificateFilter = (cert: string) => {
+    setSelectedCertificates((prev) =>
+      prev.includes(cert) ? prev.filter((c) => c !== cert) : [...prev, cert],
+    );
+  };
+
   const clearAllFilters = () => {
     setSelectedTag("all");
     setSelectedLanguages([]);
     setSelectedGenres([]);
+    setSelectedCertificates([]);
     setSearch("");
   };
 
@@ -223,6 +254,7 @@ export default function MoviesPage() {
     selectedTag !== "all" ||
     selectedLanguages.length > 0 ||
     selectedGenres.length > 0 ||
+    selectedCertificates.length > 0 ||
     search !== "";
 
   return (
@@ -334,7 +366,7 @@ export default function MoviesPage() {
                         : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                     }`}
                   >
-                    All Movies
+                    All Movies <span className="opacity-75 text-[10px]">({releaseCounts.all})</span>
                   </button>
                   <button
                     onClick={() => setSelectedTag(selectedTag === "new" ? "all" : "new")}
@@ -344,7 +376,7 @@ export default function MoviesPage() {
                         : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                     }`}
                   >
-                    New Releases
+                    New Releases <span className="opacity-75 text-[10px]">({releaseCounts.new})</span>
                   </button>
                   <button
                     onClick={() =>
@@ -356,57 +388,68 @@ export default function MoviesPage() {
                         : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                     }`}
                   >
-                    Re-Release
+                    Re-Release <span className="opacity-75 text-[10px]">({releaseCounts.reRelease})</span>
                   </button>
                 </div>
               )}
             </div>
 
             {/* Languages Accordion */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-              <button
-                onClick={() => toggleSection("languages")}
-                className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
-              >
-                <span className="flex items-center gap-2">
-                  <ChevronDown
-                    className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
-                      openSections.languages ? "rotate-0" : "-rotate-90"
-                    }`}
-                  />
-                  Languages
-                </span>
-                {selectedLanguages.length > 0 && (
-                  <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
-                    {selectedLanguages.length}
+            {dynamicLanguages.length > 0 && (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <button
+                  onClick={() => toggleSection("languages")}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <ChevronDown
+                      className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
+                        openSections.languages ? "rotate-0" : "-rotate-90"
+                      }`}
+                    />
+                    Languages
                   </span>
-                )}
-              </button>
+                  {selectedLanguages.length > 0 && (
+                    <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
+                      {selectedLanguages.length}
+                    </span>
+                  )}
+                </button>
 
-              {openSections.languages && (
-                <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2">
-                  {availableLanguages.map((lang) => {
-                    const isSelected = selectedLanguages.includes(lang);
-                    return (
-                      <button
-                        key={lang}
-                        onClick={() => toggleLanguageFilter(lang)}
-                        className={`text-xs px-3 py-1.5 rounded-md border transition ${
-                          isSelected
-                            ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
-                            : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                        }`}
-                      >
-                        {lang}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                {openSections.languages && (
+                  <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2">
+                    {dynamicLanguages.map(({ lang, count }) => {
+                      const isSelected = selectedLanguages.includes(lang);
+                      return (
+                        <button
+                          key={lang}
+                          onClick={() => toggleLanguageFilter(lang)}
+                          className={`text-xs px-2.5 py-1.5 rounded-md border transition flex items-center gap-1.5 ${
+                            isSelected
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium shadow-xs"
+                              : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                          }`}
+                        >
+                          <span>{lang}</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              isSelected
+                                ? "bg-white/20 text-white font-bold"
+                                : "bg-gray-100 text-gray-500 font-medium"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Genres Accordion */}
-            {availableGenres.length > 0 && (
+            {dynamicGenres.length > 0 && (
               <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                 <button
                   onClick={() => toggleSection("genres")}
@@ -429,19 +472,82 @@ export default function MoviesPage() {
 
                 {openSections.genres && (
                   <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2">
-                    {availableGenres.map((g) => {
-                      const isSelected = selectedGenres.includes(g);
+                    {dynamicGenres.map(({ genre, count }) => {
+                      const isSelected = selectedGenres.includes(genre);
                       return (
                         <button
-                          key={g}
-                          onClick={() => toggleGenreFilter(g)}
-                          className={`text-xs px-3 py-1.5 rounded-md border transition ${
+                          key={genre}
+                          onClick={() => toggleGenreFilter(genre)}
+                          className={`text-xs px-2.5 py-1.5 rounded-md border transition flex items-center gap-1.5 ${
                             isSelected
-                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium shadow-xs"
                               : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                           }`}
                         >
-                          {g}
+                          <span>{genre}</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              isSelected
+                                ? "bg-white/20 text-white font-bold"
+                                : "bg-gray-100 text-gray-500 font-medium"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Certificate Accordion */}
+            {dynamicCertificates.length > 0 && (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                <button
+                  onClick={() => toggleSection("certificates")}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-gray-50 transition"
+                >
+                  <span className="flex items-center gap-2">
+                    <ChevronDown
+                      className={`h-4 w-4 text-[#7B1E3D] transition-transform duration-200 ${
+                        openSections.certificates ? "rotate-0" : "-rotate-90"
+                      }`}
+                    />
+                    Certification
+                  </span>
+                  {selectedCertificates.length > 0 && (
+                    <span className="text-[11px] font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2 py-0.5 rounded-full">
+                      {selectedCertificates.length}
+                    </span>
+                  )}
+                </button>
+
+                {openSections.certificates && (
+                  <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2">
+                    {dynamicCertificates.map(({ cert, count }) => {
+                      const isSelected = selectedCertificates.includes(cert);
+                      return (
+                        <button
+                          key={cert}
+                          onClick={() => toggleCertificateFilter(cert)}
+                          className={`text-xs px-2.5 py-1.5 rounded-md border transition flex items-center gap-1.5 ${
+                            isSelected
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium shadow-xs"
+                              : "bg-white border-gray-200 text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                          }`}
+                        >
+                          <span>{cert}</span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              isSelected
+                                ? "bg-white/20 text-white font-bold"
+                                : "bg-gray-100 text-gray-500 font-medium"
+                            }`}
+                          >
+                            {count}
+                          </span>
                         </button>
                       );
                     })}
@@ -455,110 +561,158 @@ export default function MoviesPage() {
           <div className="flex-1 min-w-0">
             {/* ─── Direct Filter Strip for Mobile (Release Tags + Languages + Genres) ─── */}
             <div className="lg:hidden space-y-2.5 mb-5">
-              {/* Release Type Tags (New Releases, Re-Release) */}
+              {/* Release Type Tags */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
                   Type:
                 </span>
                 <button
                   onClick={() => setSelectedTag("all")}
-                  className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
+                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
                     selectedTag === "all"
-                      ? "bg-[#7B1E3D] text-white shadow-sm"
+                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
                       : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  All
+                  All ({releaseCounts.all})
                 </button>
                 <button
                   onClick={() => setSelectedTag(selectedTag === "new" ? "all" : "new")}
-                  className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
+                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
                     selectedTag === "new"
                       ? "bg-[#7B1E3D] text-white shadow-sm font-bold"
                       : "bg-white text-gray-700 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                   }`}
                 >
-                  ✨ New Releases
+                  ✨ New ({releaseCounts.new})
                 </button>
                 <button
                   onClick={() =>
                     setSelectedTag(selectedTag === "re-release" ? "all" : "re-release")
                   }
-                  className={`shrink-0 text-xs px-3.5 py-1.5 rounded-full font-medium transition ${
+                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
                     selectedTag === "re-release"
                       ? "bg-[#7B1E3D] text-white shadow-sm font-bold"
                       : "bg-white text-gray-700 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
                   }`}
                 >
-                  🔁 Re-Release
+                  🔁 Re-Release ({releaseCounts.reRelease})
                 </button>
               </div>
 
               {/* Languages Bar */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
-                  Languages:
-                </span>
-                <button
-                  onClick={() => setSelectedLanguages([])}
-                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
-                    selectedLanguages.length === 0
-                      ? "bg-gray-900 text-white"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  All
-                </button>
-                {availableLanguages.map((lang) => {
-                  const isSelected = selectedLanguages.includes(lang);
-                  return (
-                    <button
-                      key={lang}
-                      onClick={() => toggleLanguageFilter(lang)}
-                      className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
-                        isSelected
-                          ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                          : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  );
-                })}
-              </div>
+              {dynamicLanguages.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
+                    Lang:
+                  </span>
+                  <button
+                    onClick={() => setSelectedLanguages([])}
+                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition ${
+                      selectedLanguages.length === 0
+                        ? "bg-gray-900 text-white"
+                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {dynamicLanguages.map(({ lang, count }) => {
+                    const isSelected = selectedLanguages.includes(lang);
+                    return (
+                      <button
+                        key={lang}
+                        onClick={() => toggleLanguageFilter(lang)}
+                        className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
+                          isSelected
+                            ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                            : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                        }`}
+                      >
+                        <span>{lang}</span>
+                        <span className={`text-[10px] px-1 py-0.2 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-400"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
-              {/* Comprehensive Genres Bar */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
-                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
-                  Genres:
-                </span>
-                <button
-                  onClick={() => setSelectedGenres([])}
-                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
-                    selectedGenres.length === 0
-                      ? "bg-gray-900 text-white"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  All Genres
-                </button>
-                {availableGenres.map((g) => {
-                  const isSelected = selectedGenres.includes(g);
-                  return (
-                    <button
-                      key={g}
-                      onClick={() => toggleGenreFilter(g)}
-                      className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
-                        isSelected
-                          ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                          : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                      }`}
-                    >
-                      {g}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Dynamic Genres Bar */}
+              {dynamicGenres.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
+                    Genre:
+                  </span>
+                  <button
+                    onClick={() => setSelectedGenres([])}
+                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition ${
+                      selectedGenres.length === 0
+                        ? "bg-gray-900 text-white"
+                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {dynamicGenres.map(({ genre, count }) => {
+                    const isSelected = selectedGenres.includes(genre);
+                    return (
+                      <button
+                        key={genre}
+                        onClick={() => toggleGenreFilter(genre)}
+                        className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
+                          isSelected
+                            ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                            : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                        }`}
+                      >
+                        <span>{genre}</span>
+                        <span className={`text-[10px] px-1 py-0.2 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-400"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Certification Bar */}
+              {dynamicCertificates.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
+                    Cert:
+                  </span>
+                  <button
+                    onClick={() => setSelectedCertificates([])}
+                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition ${
+                      selectedCertificates.length === 0
+                        ? "bg-gray-900 text-white"
+                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    All
+                  </button>
+                  {dynamicCertificates.map(({ cert, count }) => {
+                    const isSelected = selectedCertificates.includes(cert);
+                    return (
+                      <button
+                        key={cert}
+                        onClick={() => toggleCertificateFilter(cert)}
+                        className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
+                          isSelected
+                            ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                            : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
+                        }`}
+                      >
+                        <span>{cert}</span>
+                        <span className={`text-[10px] px-1 py-0.2 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-400"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Movies List */}
@@ -687,84 +841,131 @@ export default function MoviesPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => setSelectedTag("all")}
-                    className={`text-xs px-3 py-1.5 rounded-md border ${
+                    className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
                       selectedTag === "all"
                         ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
                         : "bg-white border-gray-200 text-gray-700"
                     }`}
                   >
-                    All Movies
+                    <span>All Movies</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedTag === "all" ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                      {releaseCounts.all}
+                    </span>
                   </button>
                   <button
                     onClick={() => setSelectedTag(selectedTag === "new" ? "all" : "new")}
-                    className={`text-xs px-3 py-1.5 rounded-md border ${
+                    className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
                       selectedTag === "new"
                         ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
                         : "bg-white border-gray-200 text-gray-700"
                     }`}
                   >
-                    ✨ New Releases
+                    <span>✨ New Releases</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedTag === "new" ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                      {releaseCounts.new}
+                    </span>
                   </button>
                   <button
                     onClick={() =>
                       setSelectedTag(selectedTag === "re-release" ? "all" : "re-release")
                     }
-                    className={`text-xs px-3 py-1.5 rounded-md border ${
+                    className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
                       selectedTag === "re-release"
                         ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
                         : "bg-white border-gray-200 text-gray-700"
                     }`}
                   >
-                    🔁 Re-Release
+                    <span>🔁 Re-Release</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedTag === "re-release" ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                      {releaseCounts.reRelease}
+                    </span>
                   </button>
                 </div>
               </div>
 
-              {/* Languages */}
-              <div>
-                <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
-                  Languages
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {availableLanguages.map((lang) => {
-                    const isSelected = selectedLanguages.includes(lang);
-                    return (
-                      <button
-                        key={lang}
-                        onClick={() => toggleLanguageFilter(lang)}
-                        className={`text-xs px-3 py-1.5 rounded-md border ${
-                          isSelected
-                            ? "bg-[#7B1E3D] border-[#7B1E3D] text-white"
-                            : "bg-white border-gray-200 text-gray-700"
-                        }`}
-                      >
-                        {lang}
-                      </button>
-                    );
-                  })}
+              {/* Dynamic Languages */}
+              {dynamicLanguages.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
+                    Languages
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {dynamicLanguages.map(({ lang, count }) => {
+                      const isSelected = selectedLanguages.includes(lang);
+                      return (
+                        <button
+                          key={lang}
+                          onClick={() => toggleLanguageFilter(lang)}
+                          className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
+                            isSelected
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                              : "bg-white border-gray-200 text-gray-700"
+                          }`}
+                        >
+                          <span>{lang}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Genres */}
-              {availableGenres.length > 0 && (
+              {/* Dynamic Genres */}
+              {dynamicGenres.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
                     Genres
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {availableGenres.map((g) => {
-                      const isSelected = selectedGenres.includes(g);
+                    {dynamicGenres.map(({ genre, count }) => {
+                      const isSelected = selectedGenres.includes(genre);
                       return (
                         <button
-                          key={g}
-                          onClick={() => toggleGenreFilter(g)}
-                          className={`text-xs px-3 py-1.5 rounded-md border ${
+                          key={genre}
+                          onClick={() => toggleGenreFilter(genre)}
+                          className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
                             isSelected
-                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white"
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
                               : "bg-white border-gray-200 text-gray-700"
                           }`}
                         >
-                          {g}
+                          <span>{genre}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Dynamic Certification */}
+              {dynamicCertificates.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
+                    Certification
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {dynamicCertificates.map(({ cert, count }) => {
+                      const isSelected = selectedCertificates.includes(cert);
+                      return (
+                        <button
+                          key={cert}
+                          onClick={() => toggleCertificateFilter(cert)}
+                          className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
+                            isSelected
+                              ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                              : "bg-white border-gray-200 text-gray-700"
+                          }`}
+                        >
+                          <span>{cert}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-500"}`}>
+                            {count}
+                          </span>
                         </button>
                       );
                     })}
