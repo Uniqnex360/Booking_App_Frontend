@@ -432,7 +432,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-[#0D0E12] text-white">
       <Header />
 
-      <main className="mx-auto max-w-7xl px-4 pt-28 pb-16 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pt-32 sm:pt-36 lg:pt-44 pb-16 sm:px-6 lg:px-8">
         {/* TOP TITLE BAR */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#22242B]">
           <div>
