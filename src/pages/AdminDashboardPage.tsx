@@ -475,7 +475,7 @@ export default function AdminDashboardPage() {
         <div className="sticky top-[72px] sm:top-[88px] lg:top-[128px] z-30 bg-[#0D0E12]/95 backdrop-blur-md py-2.5 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 border-b border-[#1E2028] shadow-md shadow-black/20">
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-1 scrollbar-none">
           {[
-            { id: "overview", label: "Overview", icon: LayoutDashboard },
+            { id: "overview", label: "Overview & Performance", icon: LayoutDashboard },
             {
               id: "theatres",
               label: "Theatres & Commercials",
@@ -552,10 +552,107 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* ================================================================= */}
-        {/* TAB 1: OVERVIEW METRICS                                           */}
+        {/* TAB 1: OVERVIEW METRICS & BUSINESS PERFORMANCE                    */}
         {/* ================================================================= */}
         {activeTab === "overview" && (
           <div className="py-6 space-y-6">
+            {/* Business Performance & Revenue Operations (Central Admin Portal) */}
+            <div className="bg-[#15161C] border border-[#222530] p-6 rounded-2xl space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#222530] pb-4">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <IndianRupee className="w-5 h-5 text-red-500" />
+                    Business Performance & Revenue Operations
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Centralized platform gross volume, net commission earnings, cash realization, and gateway health.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => handleTabChange("bookings_rec")}
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#1E202A] border-[#2C2F3D] text-xs text-gray-300 hover:text-white"
+                  >
+                    Audit Bookings
+                  </Button>
+                  <Button
+                    onClick={() => handleTabChange("theatres")}
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#1E202A] border-[#2C2F3D] text-xs text-gray-300 hover:text-white"
+                  >
+                    Configure Theatres
+                  </Button>
+                  <Button
+                    onClick={() => handleTabChange("invoices")}
+                    variant="outline"
+                    size="sm"
+                    className="bg-[#1E202A] border-[#2C2F3D] text-xs text-gray-300 hover:text-white"
+                  >
+                    View Invoices
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
+                  <div className="text-xs uppercase font-medium text-gray-400">Gross Ticket Volume</div>
+                  <div className="text-2xl font-bold text-white mt-1">
+                    ₹{(((compStats?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">{compStats?.total_tickets || 0} tickets sold across {compStats?.total_bookings || 0} bookings</div>
+                </div>
+
+                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
+                  <div className="text-xs uppercase font-medium text-gray-400">Commission Earned</div>
+                  <div className="text-2xl font-bold text-emerald-400 mt-1">
+                    ₹{(((compStats?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">Platform revenue base (₹30/tix default)</div>
+                </div>
+
+                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
+                  <div className="text-xs uppercase font-medium text-gray-400">Total Billed Invoices</div>
+                  <div className="text-2xl font-bold text-blue-400 mt-1">
+                    ₹{(((compStats?.commission_invoiced_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-emerald-400 mt-1">₹{(((compStats?.commission_collected_paise || 0) / 100)).toLocaleString('en-IN')} collected</div>
+                </div>
+
+                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
+                  <div className="text-xs uppercase font-medium text-gray-400">Outstanding Receivables</div>
+                  <div className="text-2xl font-bold text-amber-400 mt-1">
+                    ₹{(((compStats?.commission_outstanding_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  </div>
+                  <div className="text-xs text-amber-500/80 mt-1">{compStats?.overdue_invoices_count || 0} overdue invoices</div>
+                </div>
+              </div>
+
+              {/* Integration Gateway Health */}
+              {healthItems.length > 0 && (
+                <div className="pt-3 border-t border-[#222530]">
+                  <div className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-emerald-400" /> Integration & Settlement Gateways
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {healthItems.map((h, i) => (
+                      <div key={i} className="flex items-center justify-between bg-[#111217] px-3.5 py-2.5 rounded-xl border border-[#252834] text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="font-semibold text-white">{h.provider}</span>
+                        </div>
+                        <div className="text-right text-gray-400 font-mono">
+                          <span className="text-emerald-400">{h.latency_ms}ms</span> &bull; {h.success_rate}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Movies Stat */}
@@ -711,95 +808,6 @@ export default function AdminDashboardPage() {
                   <span>Approve Partners ({stats?.partners.pending || 0})</span>
                 </Button>
               </div>
-            </div>
-
-            {/* Commercial Operations & Commission Settlement (Central Admin Portal) */}
-            <div className="bg-[#15161C] border border-[#222530] p-6 rounded-2xl space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#222530] pb-4">
-                <div>
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <IndianRupee className="w-5 h-5 text-red-500" />
-                    Commercial Operations & Commission Settlement
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Theatre-wise payment routing, automated commission receivables, and reconciliation status.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => handleTabChange("theatres")}
-                    variant="outline"
-                    size="sm"
-                    className="bg-[#1E202A] border-[#2C2F3D] text-xs text-gray-300 hover:text-white"
-                  >
-                    Configure Theatres
-                  </Button>
-                  <Button
-                    onClick={() => handleTabChange("invoices")}
-                    variant="outline"
-                    size="sm"
-                    className="bg-[#1E202A] border-[#2C2F3D] text-xs text-gray-300 hover:text-white"
-                  >
-                    View Invoices
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
-                  <div className="text-xs uppercase font-medium text-gray-400">Gross Ticket Volume</div>
-                  <div className="text-2xl font-bold text-white mt-1">
-                    ₹{(((compStats?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">{compStats?.total_tickets || 0} tickets sold</div>
-                </div>
-
-                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
-                  <div className="text-xs uppercase font-medium text-gray-400">Commission Earned</div>
-                  <div className="text-2xl font-bold text-red-400 mt-1">
-                    ₹{(((compStats?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">Platform revenue base</div>
-                </div>
-
-                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
-                  <div className="text-xs uppercase font-medium text-gray-400">Total Billed Invoices</div>
-                  <div className="text-2xl font-bold text-blue-400 mt-1">
-                    ₹{(((compStats?.commission_invoiced_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-xs text-emerald-400 mt-1">₹{(((compStats?.commission_collected_paise || 0) / 100)).toLocaleString('en-IN')} collected</div>
-                </div>
-
-                <div className="bg-[#191A23] p-4 rounded-xl border border-[#282B38]">
-                  <div className="text-xs uppercase font-medium text-gray-400">Outstanding Receivables</div>
-                  <div className="text-2xl font-bold text-amber-400 mt-1">
-                    ₹{(((compStats?.commission_outstanding_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                  </div>
-                  <div className="text-xs text-amber-500/80 mt-1">{compStats?.overdue_invoices_count || 0} overdue invoices</div>
-                </div>
-              </div>
-
-              {/* Integration Gateway Health */}
-              {healthItems.length > 0 && (
-                <div className="pt-3 border-t border-[#222530]">
-                  <div className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-emerald-400" /> Integration & Settlement Gateways
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {healthItems.map((h, i) => (
-                      <div key={i} className="flex items-center justify-between bg-[#111217] px-3.5 py-2.5 rounded-xl border border-[#252834] text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="font-semibold text-white">{h.provider}</span>
-                        </div>
-                        <div className="text-right text-gray-400 font-mono">
-                          <span className="text-emerald-400">{h.latency_ms}ms</span> &bull; {h.success_rate}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
