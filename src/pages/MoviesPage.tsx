@@ -57,6 +57,12 @@ export default function MoviesPage() {
   const navigate = useNavigate();
   const [movies, setMovies] = useState<MovieItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dbFacets, setDbFacets] = useState<{
+    languages: { name: string; count: number }[];
+    genres: { name: string; count: number }[];
+    certificates: { name: string; count: number }[];
+    release_types: { all: number; new: number; re_release: number };
+  } | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   const city = searchParams.get("city") || "Kochi";
@@ -103,24 +109,38 @@ export default function MoviesPage() {
   }, []);
 
   useEffect(() => {
-    const fetchMovies = async () => {
+    const fetchMoviesAndFilters = async () => {
       try {
         setLoading(true);
-        const data = await unwrap<MovieItem[]>(
-          api.get(`/movies`, { params: { city, limit: 100 } }),
-        );
-        setMovies(data);
+        // Fetch movies and dynamic database facets in parallel
+        const [moviesData, filtersRes] = await Promise.allSettled([
+          unwrap<MovieItem[]>(api.get(`/movies`, { params: { city, limit: 100 } })),
+          api.get(`/movies/filters`, { params: { city } }),
+        ]);
+
+        if (moviesData.status === "fulfilled") {
+          setMovies(moviesData.value);
+        }
+        if (filtersRes.status === "fulfilled" && filtersRes.value.data) {
+          const payload = filtersRes.value.data?.data || filtersRes.value.data;
+          if (payload?.languages || payload?.genres) {
+            setDbFacets(payload);
+          }
+        }
       } catch (err) {
-        console.error("Failed to load movies", err);
+        console.error("Failed to load movies or DB filters", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchMovies();
+    fetchMoviesAndFilters();
   }, [city]);
 
-  // Derive purely dynamic facets strictly from active catalog
+  // Derive dynamic facets strictly from Database facets (with active catalog fallback)
   const dynamicLanguages = useMemo(() => {
+    if (dbFacets?.languages && dbFacets.languages.length > 0) {
+      return dbFacets.languages.map((l) => ({ lang: l.name, count: l.count }));
+    }
     const counts = new Map<string, number>();
     movies.forEach((m) => {
       splitLangs(m.language).forEach((l) => {
@@ -130,9 +150,12 @@ export default function MoviesPage() {
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([lang, count]) => ({ lang, count }));
-  }, [movies]);
+  }, [dbFacets, movies]);
 
   const dynamicGenres = useMemo(() => {
+    if (dbFacets?.genres && dbFacets.genres.length > 0) {
+      return dbFacets.genres.map((g) => ({ genre: g.name, count: g.count }));
+    }
     const counts = new Map<string, number>();
     movies.forEach((m) => {
       if (m.genre) {
@@ -148,9 +171,12 @@ export default function MoviesPage() {
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([genre, count]) => ({ genre, count }));
-  }, [movies]);
+  }, [dbFacets, movies]);
 
   const dynamicCertificates = useMemo(() => {
+    if (dbFacets?.certificates && dbFacets.certificates.length > 0) {
+      return dbFacets.certificates.map((c) => ({ cert: c.name, count: c.count }));
+    }
     const counts = new Map<string, number>();
     movies.forEach((m) => {
       if (m.certificate) {
@@ -161,9 +187,16 @@ export default function MoviesPage() {
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .map(([cert, count]) => ({ cert, count }));
-  }, [movies]);
+  }, [dbFacets, movies]);
 
   const releaseCounts = useMemo(() => {
+    if (dbFacets?.release_types) {
+      return {
+        all: dbFacets.release_types.all,
+        new: dbFacets.release_types.new,
+        reRelease: dbFacets.release_types.re_release,
+      };
+    }
     let newCount = 0;
     let reReleaseCount = 0;
     movies.forEach((m) => {
@@ -171,7 +204,7 @@ export default function MoviesPage() {
       else newCount++;
     });
     return { all: movies.length, new: newCount, reRelease: reReleaseCount };
-  }, [movies]);
+  }, [dbFacets, movies]);
 
   // Filter logic
   const filteredMovies = useMemo(() => {
