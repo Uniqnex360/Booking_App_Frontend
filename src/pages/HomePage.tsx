@@ -195,12 +195,12 @@ export default function HomePage() {
       try {
         const [moviesData, eventsData] = await Promise.all([
           unwrap<MovieCard[]>(
-            api.get(`/movies`, { params: { city } })
+            api.get(`/movies`, { params: { city, limit: 100 } })
           ).catch(() => []),
           unwrap<any>(api.get(`/events`, { params: { limit: 100 } })).catch(() => ({ items: [] })),
         ]);
         if (cancelled) return;
-        setMovies(moviesData.slice(0, 10));
+        setMovies(moviesData.slice(0, 50));
         const items = Array.isArray(eventsData)
           ? eventsData
           : eventsData.items || [];

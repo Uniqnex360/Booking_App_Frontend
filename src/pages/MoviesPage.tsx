@@ -117,7 +117,7 @@ export default function MoviesPage() {
       try {
         setLoading(true);
         const data = await unwrap<MovieItem[]>(
-          api.get(`/movies`, { params: { city } }),
+          api.get(`/movies`, { params: { city, limit: 100 } }),
         );
         setMovies(data);
       } catch (err) {
