@@ -67,6 +67,40 @@ export function TheatreConfigModal({
     }
   };
 
+  const getProviderOptions = () => {
+    const vLower = (venueName || "").toLowerCase();
+    const isAgs = vLower.includes("ags");
+    const isPvr = vLower.includes("pvr") || vLower.includes("inox");
+
+    const options: { value: string; label: string }[] = [
+      {
+        value: "THEATRE_GATEWAY",
+        label: isAgs
+          ? "AGS Direct Gateway"
+          : isPvr
+          ? "PVR Direct Gateway"
+          : "Theatre Direct Gateway",
+      },
+    ];
+
+    if (isAgs) {
+      options.push({ value: "AGS_API", label: "AGS Cinemas Direct API" });
+    } else if (isPvr) {
+      options.push({ value: "PVR_API", label: "PVR Inox Provider API" });
+    } else {
+      options.push({ value: "THEATRE_API", label: "Partner Box Office API" });
+    }
+
+    options.push({ value: "RAZORPAY", label: "Vybhz Razorpay Gateway (Model B)" });
+
+    // Preserve existing value if not already present
+    if (config?.payment_provider && !options.some((o) => o.value === config.payment_provider)) {
+      options.unshift({ value: config.payment_provider, label: `${config.payment_provider} (Current)` });
+    }
+
+    return options;
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!venueId || !config) return;
@@ -162,10 +196,11 @@ export function TheatreConfigModal({
                           value={config.payment_provider}
                           onChange={(e) => setConfig({ ...config, payment_provider: e.target.value })}
                         >
-                          <option value="THEATRE_GATEWAY">Theatre Direct Gateway</option>
-                          <option value="PVR_API">PVR Inox Provider API</option>
-                          <option value="AGS_API">AGS Cinemas Direct API</option>
-                          <option value="RAZORPAY">Vybhz Razorpay Gateway</option>
+                          {getProviderOptions().map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
