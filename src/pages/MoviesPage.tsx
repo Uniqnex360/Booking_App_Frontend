@@ -40,6 +40,19 @@ const splitLangs = (s?: string) =>
     .map((l) => l.trim())
     .filter(Boolean);
 
+const isReRelease = (movie: MovieItem): boolean => {
+  const lowerTitle = movie.title.toLowerCase();
+  if (lowerTitle.includes("re-release") || lowerTitle.includes("rerelease")) {
+    return true;
+  }
+  if (movie.release_date) {
+    const releaseYear = new Date(movie.release_date).getFullYear();
+    const currentYear = new Date().getFullYear();
+    if (currentYear - releaseYear >= 1) return true;
+  }
+  return false;
+};
+
 export default function MoviesPage() {
   const navigate = useNavigate();
   const [movies, setMovies] = useState<MovieItem[]>([]);
@@ -159,20 +172,6 @@ export default function MoviesPage() {
     });
     return { all: movies.length, new: newCount, reRelease: reReleaseCount };
   }, [movies]);
-
-  // Check if a movie is considered a re-release
-  const isReRelease = (movie: MovieItem): boolean => {
-    const lowerTitle = movie.title.toLowerCase();
-    if (lowerTitle.includes("re-release") || lowerTitle.includes("rerelease")) {
-      return true;
-    }
-    if (movie.release_date) {
-      const releaseYear = new Date(movie.release_date).getFullYear();
-      const currentYear = new Date().getFullYear();
-      if (currentYear - releaseYear >= 1) return true;
-    }
-    return false;
-  };
 
   // Filter logic
   const filteredMovies = useMemo(() => {
