@@ -84,7 +84,9 @@ export function TheatreConfigModal({
         commission_model: config.commission_model,
         rate_type: config.rate_type,
         rate_value: Number(config.rate_value),
-        fixed_fee_paise: Number(config.fixed_fee_paise || 0),
+        fixed_fee_paise: config.rate_type === "PER_TICKET"
+          ? Math.round(Number(config.rate_value) * 100)
+          : Number(config.fixed_fee_paise || 0),
         calculation_base: config.calculation_base,
         invoice_cycle: config.invoice_cycle,
         due_days: Number(config.due_days),
@@ -181,16 +183,23 @@ export function TheatreConfigModal({
                             value={config.rate_type}
                             onChange={(e) => setConfig({ ...config, rate_type: e.target.value })}
                           >
+                            <option value="PER_TICKET">Fixed Per Ticket (₹/tix) [Default]</option>
                             <option value="PERCENTAGE">Percentage (%)</option>
-                            <option value="FIXED_FEE">Fixed Fee (Paise)</option>
+                            <option value="FIXED_FEE">Fixed Fee Per Order (₹)</option>
                             <option value="HYBRID">Hybrid (% + Fee)</option>
                           </select>
                         </div>
                         <div>
-                          <Label className="text-xs text-gray-600">Commission Rate (%)</Label>
+                          <Label className="text-xs text-gray-600">
+                            {config.rate_type === "PER_TICKET"
+                              ? "Per Ticket Fee (₹)"
+                              : config.rate_type === "FIXED_FEE"
+                              ? "Fixed Fee (₹)"
+                              : "Commission Rate (%)"}
+                          </Label>
                           <Input
                             type="number"
-                            step="0.1"
+                            step={config.rate_type === "PERCENTAGE" ? "0.1" : "1"}
                             className="mt-1 h-8 text-xs"
                             value={config.rate_value}
                             onChange={(e) => setConfig({ ...config, rate_value: parseFloat(e.target.value) || 0 })}
