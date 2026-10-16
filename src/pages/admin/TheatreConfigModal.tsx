@@ -220,6 +220,7 @@ export function TheatreConfigModal({
                           value={config.invoice_cycle}
                           onChange={(e) => setConfig({ ...config, invoice_cycle: e.target.value })}
                         >
+                          <option value="DAILY">Daily (Nightly cutoff)</option>
                           <option value="WEEKLY">Weekly (Monday cutoff)</option>
                           <option value="MONTHLY">Monthly (1st of Month)</option>
                           <option value="BI_WEEKLY">Bi-Weekly</option>
@@ -231,7 +232,7 @@ export function TheatreConfigModal({
                           type="number"
                           className="mt-1.5 h-9"
                           value={config.due_days}
-                          onChange={(e) => setConfig({ ...config, due_days: parseInt(e.target.value) || 15 })}
+                          onChange={(e) => setConfig({ ...config, due_days: parseInt(e.target.value) || 1 })}
                         />
                       </div>
                       <div>

@@ -257,6 +257,9 @@ export interface AdminDetailedBooking {
   total_paise: number;
   eligible_commission_base_paise: number;
   commission_earned_paise: number;
+  commission_tax_paise?: number;
+  commission_cgst_paise?: number;
+  commission_sgst_paise?: number;
   booking_status: string;
   payment_status: string;
   refund_status: string;
@@ -278,6 +281,8 @@ export interface CommissionLedgerItem {
   rate_value: number;
   commission_paise: number;
   tax_paise: number;
+  cgst_paise?: number;
+  sgst_paise?: number;
   status: string;
   invoice_id?: string | null;
   invoice_number?: string | null;
@@ -297,6 +302,8 @@ export interface CommissionInvoice {
   commission_paise: number;
   adjustments_paise: number;
   tax_paise: number;
+  cgst_paise?: number;
+  sgst_paise?: number;
   total_paise: number;
   paid_paise: number;
   balance_paise: number;

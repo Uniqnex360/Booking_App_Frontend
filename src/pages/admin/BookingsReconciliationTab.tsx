@@ -234,6 +234,17 @@ export function BookingsReconciliationTab() {
                 <span>Vybhz Commission Accrued:</span>
                 <span>₹{(selectedBooking.commission_earned_paise / 100).toFixed(2)}</span>
               </div>
+              {selectedBooking.commission_earned_paise > 0 && (
+                <div className="flex justify-between text-gray-500 pl-2 text-[11px]">
+                  <span>GST on Commission (18%):</span>
+                  <span>
+                    ₹{((selectedBooking.commission_tax_paise ?? Math.round(selectedBooking.commission_earned_paise * 0.18)) / 100).toFixed(2)}
+                    <span className="text-[10px] text-gray-400 ml-1">
+                      (CGST 9%: ₹{((selectedBooking.commission_cgst_paise ?? Math.floor((selectedBooking.commission_tax_paise ?? Math.round(selectedBooking.commission_earned_paise * 0.18)) / 2)) / 100).toFixed(2)}, SGST 9%: ₹{((selectedBooking.commission_sgst_paise ?? ((selectedBooking.commission_tax_paise ?? Math.round(selectedBooking.commission_earned_paise * 0.18)) - Math.floor((selectedBooking.commission_tax_paise ?? Math.round(selectedBooking.commission_earned_paise * 0.18)) / 2))) / 100).toFixed(2)})
+                    </span>
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Show Details */}

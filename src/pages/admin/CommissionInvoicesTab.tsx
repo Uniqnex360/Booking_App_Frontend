@@ -49,7 +49,7 @@ export const CommissionInvoicesTab: React.FC = () => {
   const [genPeriodEnd, setGenPeriodEnd] = useState(() => {
     return new Date().toISOString().split('T')[0];
   });
-  const [genDueDays, setGenDueDays] = useState(15);
+  const [genDueDays, setGenDueDays] = useState(1);
   const [genNotes, setGenNotes] = useState('');
   const [generating, setGenerating] = useState(false);
 
@@ -364,7 +364,10 @@ export const CommissionInvoicesTab: React.FC = () => {
                       ₹{(inv.commission_paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-4 px-5 text-right font-mono text-slate-400">
-                      ₹{(inv.tax_paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      <div>₹{(inv.tax_paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                      <div className="text-[10px] text-slate-500 font-sans">
+                        CGST: ₹{((inv.cgst_paise ?? Math.floor(inv.tax_paise / 2)) / 100).toFixed(2)} | SGST: ₹{((inv.sgst_paise ?? (inv.tax_paise - Math.floor(inv.tax_paise / 2))) / 100).toFixed(2)}
+                      </div>
                     </td>
                     <td className="py-4 px-5 text-right font-mono text-white font-bold">
                       ₹{(inv.total_paise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -482,7 +485,7 @@ export const CommissionInvoicesTab: React.FC = () => {
                   min="1"
                   max="90"
                   value={genDueDays}
-                  onChange={(e) => setGenDueDays(parseInt(e.target.value) || 15)}
+                  onChange={(e) => setGenDueDays(parseInt(e.target.value) || 1)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-red-500"
                 />
               </div>
