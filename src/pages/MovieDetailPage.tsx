@@ -252,6 +252,14 @@ export default function MovieDetailPage() {
       Object.entries(map).map(([lang, formats]) => [lang, Array.from(formats)]),
     );
   }, [movie]);
+
+  const distinctFormats = useMemo(() => {
+    const formats = new Set<string>();
+    Object.values(langFormatMap).forEach((fList) => {
+      fList.forEach((fmt) => formats.add(fmt));
+    });
+    return Array.from(formats);
+  }, [langFormatMap]);
   useEffect(() => {
     const el = heroRef.current;
     if (!el) return;
@@ -557,16 +565,14 @@ export default function MovieDetailPage() {
                 <span>{formatReleaseDate(movie.release_date)}</span>
               </div>
               <div className="flex flex-wrap gap-2 mt-3 sm:mt-5">
-                {Object.values(langFormatMap)
-                  .flat()
-                  .map((fmt, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded"
-                    >
-                      {fmt}
-                    </span>
-                  ))}
+                {distinctFormats.map((fmt) => (
+                  <span
+                    key={fmt}
+                    className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded"
+                  >
+                    {fmt}
+                  </span>
+                ))}
                 <span className="bg-white/10 backdrop-blur border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded">
                   {movie.language}
                 </span>
@@ -603,33 +609,6 @@ export default function MovieDetailPage() {
               {isSynopsisExpanded ? "Show Less" : "Read More"}
             </button>
           )}
-
-          {/* Key Details Tags */}
-          <div className="mt-5 flex flex-wrap items-center gap-2 pt-4 border-t border-gray-100">
-            {movie.certificate && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-200">
-                {movie.certificate?.toUpperCase() === "A" ? "A • Adults Only (18+)" : movie.certificate}
-              </span>
-            )}
-            {movie.duration_min && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-200">
-                {formatDuration(movie.duration_min)}
-              </span>
-            )}
-            {movie.language && (
-              <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-gray-100 text-gray-800 border border-gray-200">
-                {movie.language}
-              </span>
-            )}
-            {genres.map((g, idx) => (
-              <span
-                key={idx}
-                className="text-xs font-medium px-2.5 py-1 rounded-md bg-[#7B1E3D]/5 text-[#7B1E3D] border border-[#7B1E3D]/20"
-              >
-                {g}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
 

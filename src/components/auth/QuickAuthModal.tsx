@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { checkEmailExists } from "@/api/auth.api";
 import { X, ChevronLeft, Mail, Loader2, EyeOff, Eye } from "lucide-react";
@@ -12,6 +13,7 @@ export type AuthModalView =
   | "mobile-otp";
 
 export function QuickAuthModal() {
+  const navigate = useNavigate();
   const {
     isAuthModalOpen,
     closeAuthModal,
@@ -373,6 +375,11 @@ export function QuickAuthModal() {
       } else {
         toast.success("Signed in successfully!");
         closeAuthModal();
+        if (res.user?.role === "THEATRE_PARTNER") {
+          navigate("/theatre/dashboard");
+        } else if (res.user?.role === "ADMIN" || res.user?.role === "SUPER_ADMIN") {
+          navigate("/admin");
+        }
       }
     } catch (err: any) {
       setError(err?.message || "Login failed.");

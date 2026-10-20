@@ -115,10 +115,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (payload: LoginPayload) => {
     try {
       await loginApi(payload);
-      await fetchUser(); 
-      return { error: null };
+      const data = await getCurrentUser();
+      setUser(data);
+      return { error: null, user: data };
     } catch (err: unknown) {
-     return { error: getErrorMessage(err) }; 
+     return { error: getErrorMessage(err), user: null }; 
     }
   };
  const initiateSignUp = async (payload: RegisterPayload) => {

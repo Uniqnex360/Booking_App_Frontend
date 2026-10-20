@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, X, Crosshair, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { detectCity } from "@/utils/geolocation";
+import { detectUserLocation } from "@/utils/geolocation";
 
 export interface CitySelectionModalProps {
   isOpen: boolean;
@@ -94,62 +94,19 @@ export function CitySelectionModal({
   const handleDetectLocation = async () => {
     setDetecting(true);
     try {
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-
-            let closest = CITIES[0];
-            let minDistance = Infinity;
-
-            for (const c of CITIES) {
-              const d = Math.hypot(c.lat - userLat, c.lng - userLng);
-              if (d < minDistance) {
-                minDistance = d;
-                closest = c;
-              }
-            }
-
-            setDetecting(false);
-            onSelectCity(closest.id);
-            toast.success(`Location detected: ${closest.name}`);
-            onClose();
-          },
-          async () => {
-            const ipCity = await detectCity();
-            setDetecting(false);
-            if (ipCity) {
-              const matched = CITIES.find(
-                (c) => c.id.toLowerCase() === ipCity.toLowerCase()
-              );
-              if (matched) {
-                onSelectCity(matched.id);
-                toast.success(`Location detected: ${matched.name}`);
-                onClose();
-                return;
-              }
-            }
-            toast.info("Please select your city from the list.");
-          },
-          { timeout: 7000 }
+      const detectedCityId = await detectUserLocation();
+      setDetecting(false);
+      if (detectedCityId) {
+        const matched = CITIES.find(
+          (c) => c.id.toLowerCase() === detectedCityId.toLowerCase()
         );
-      } else {
-        const ipCity = await detectCity();
-        setDetecting(false);
-        if (ipCity) {
-          const matched = CITIES.find(
-            (c) => c.id.toLowerCase() === ipCity.toLowerCase()
-          );
-          if (matched) {
-            onSelectCity(matched.id);
-            toast.success(`Location detected: ${matched.name}`);
-            onClose();
-            return;
-          }
-        }
-        toast.info("Please select your city from the list.");
+        const displayName = matched ? matched.name : detectedCityId;
+        onSelectCity(detectedCityId);
+        toast.success(`Location detected: ${displayName}`);
+        onClose();
+        return;
       }
+      toast.info("Please select your city from the list.");
     } catch {
       setDetecting(false);
       toast.error("Could not detect location. Please select manually.");

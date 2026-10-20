@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getMyPartnerProfile, registerPartner } from '@/api/partner.api';
+import { submitTheatreEnquiry } from '@/api/theatre.api';
 import type { Partner, PartnerType } from '@/types/partner.types';
 
 import {
@@ -65,6 +66,46 @@ export default function BecomePartnerPage() {
   const [submitting, setSubmitting] = useState(false);
    const [checking, setChecking] = useState(true); 
   const [existingPartner, setExistingPartner] = useState<Partner | null>(null);
+  const [partnerMode, setPartnerMode] = useState<'events_dining' | 'theatre'>('events_dining');
+  const [submittingTheatre, setSubmittingTheatre] = useState(false);
+  const [theatreSubmitted, setTheatreSubmitted] = useState(false);
+  const [theatreData, setTheatreData] = useState({
+    theatre_name: '',
+    contact_name: '',
+    email: '',
+    phone: '',
+    city: '',
+    screen_count: 1,
+    message: '',
+  });
+
+  const handleTheatreSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!theatreData.theatre_name || !theatreData.contact_name || !theatreData.email || !theatreData.phone || !theatreData.city) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    setSubmittingTheatre(true);
+    try {
+      await submitTheatreEnquiry({
+        theatre_name: theatreData.theatre_name,
+        contact_name: theatreData.contact_name,
+        email: theatreData.email,
+        phone: theatreData.phone,
+        city: theatreData.city,
+        screen_count: Number(theatreData.screen_count) || 1,
+        message: theatreData.message || undefined,
+      });
+      setTheatreSubmitted(true);
+      toast.success('Enquiry submitted successfully!', {
+        description: 'Our theatre partnerships team will contact you shortly.',
+      });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to submit enquiry');
+    } finally {
+      setSubmittingTheatre(false);
+    }
+  };
 
   const {
     register,
@@ -197,15 +238,186 @@ export default function BecomePartnerPage() {
         </Link>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
-          <h2 className="font-serif text-2xl font-semibold text-slate-900">
-            Partner Application
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Fill in your business details below. Fields marked with * are
-            required.
-          </p>
+          <div className="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6">
+            <button
+              type="button"
+              onClick={() => setPartnerMode('events_dining')}
+              className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                partnerMode === 'events_dining'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Store className="w-4 h-4 text-[#7B1E3D]" />
+              Dining & Event Organiser
+            </button>
+            <button
+              type="button"
+              onClick={() => setPartnerMode('theatre')}
+              className={`flex-1 py-2.5 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
+                partnerMode === 'theatre'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Film className="w-4 h-4 text-[#7B1E3D]" />
+              Cinema & Multiplex Operator
+            </button>
+          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
+          {partnerMode === 'theatre' ? (
+            <div>
+              <div className="mb-6">
+                <h2 className="font-serif text-2xl font-semibold text-slate-900">
+                  Cinema Partner Enquiry
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Are you a theatre chain or independent cinema owner? Send us an enquiry to integrate ticketing, box office, or direct settlement.
+                </p>
+              </div>
+
+              {theatreSubmitted ? (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-6 text-center">
+                  <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+                    <Check className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-base font-bold text-emerald-950">Enquiry Received!</h3>
+                  <p className="text-sm text-emerald-800 mt-1">
+                    Thank you, <strong>{theatreData.contact_name}</strong>. Our theatre onboarding team will review your enquiry for <strong>{theatreData.theatre_name}</strong> and reach out to you within 24 hours.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setTheatreSubmitted(false);
+                      setTheatreData({
+                        theatre_name: '',
+                        contact_name: '',
+                        email: '',
+                        phone: '',
+                        city: '',
+                        screen_count: 1,
+                        message: '',
+                      });
+                    }}
+                    variant="outline"
+                    className="mt-4 text-xs font-semibold"
+                  >
+                    Send Another Enquiry
+                  </Button>
+                </div>
+              ) : (
+                <form onSubmit={handleTheatreSubmit} className="space-y-4">
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700">Cinema / Multiplex Name *</Label>
+                    <Input
+                      placeholder="e.g. Cinepolis Grand or Raj Cinema"
+                      value={theatreData.theatre_name}
+                      onChange={(e) => setTheatreData({ ...theatreData, theatre_name: e.target.value })}
+                      className="mt-1 h-10"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Contact Person Name *</Label>
+                      <Input
+                        placeholder="e.g. Rajesh Kumar"
+                        value={theatreData.contact_name}
+                        onChange={(e) => setTheatreData({ ...theatreData, contact_name: e.target.value })}
+                        className="mt-1 h-10"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">City / Location *</Label>
+                      <Input
+                        placeholder="e.g. Kochi, Chennai, Bengaluru"
+                        value={theatreData.city}
+                        onChange={(e) => setTheatreData({ ...theatreData, city: e.target.value })}
+                        className="mt-1 h-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Official Email *</Label>
+                      <Input
+                        type="email"
+                        placeholder="manager@theatre.com"
+                        value={theatreData.email}
+                        onChange={(e) => setTheatreData({ ...theatreData, email: e.target.value })}
+                        className="mt-1 h-10"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Phone Number *</Label>
+                      <Input
+                        placeholder="+91 98765 43210"
+                        value={theatreData.phone}
+                        onChange={(e) => setTheatreData({ ...theatreData, phone: e.target.value })}
+                        className="mt-1 h-10"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700">Number of Screens</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={theatreData.screen_count}
+                      onChange={(e) => setTheatreData({ ...theatreData, screen_count: parseInt(e.target.value) || 1 })}
+                      className="mt-1 h-10"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700">Ticketing System / Integration Details</Label>
+                    <textarea
+                      placeholder="e.g., We use Vista ticketing software / Looking for direct gateway settlement / 4 screens in Lulu Mall."
+                      value={theatreData.message}
+                      onChange={(e) => setTheatreData({ ...theatreData, message: e.target.value })}
+                      className="mt-1 w-full rounded-md border border-slate-200 p-2.5 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#7B1E3D]"
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={submittingTheatre}
+                    className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 mt-4"
+                  >
+                    {submittingTheatre ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Submitting Enquiry...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Submit Cinema Partnership Enquiry
+                      </>
+                    )}
+                  </Button>
+                </form>
+              )}
+            </div>
+          ) : (
+            <div>
+              <h2 className="font-serif text-2xl font-semibold text-slate-900">
+                Partner Application
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Fill in your business details below. Fields marked with * are
+                required.
+              </p>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
             {/* Partner Type */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">
@@ -390,7 +602,9 @@ export default function BecomePartnerPage() {
             </Button>
           </form>
         </div>
-      </div>
+      )}
     </div>
-  );
+  </div>
+</div>
+);
 }

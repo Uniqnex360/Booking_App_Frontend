@@ -4,13 +4,19 @@ import { useAuth } from "@/hooks/useAuth";
 import HomePage from "./HomePage";
 
 export default function LoginPage() {
-  const { openAuthModal, isAuthModalOpen, isAuthenticated } = useAuth() as any;
+  const { openAuthModal, isAuthModalOpen, isAuthenticated, user } = useAuth() as any;
   const navigate = useNavigate();
   const openedOnce = useRef(false);
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      if (user?.role === "THEATRE_PARTNER") {
+        navigate("/theatre/dashboard");
+      } else if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/");
+      }
       return;
     }
     if (!openedOnce.current) {
@@ -19,7 +25,7 @@ export default function LoginPage() {
     } else if (!isAuthModalOpen) {
       navigate("/");
     }
-  }, [isAuthenticated, isAuthModalOpen, openAuthModal, navigate]);
+  }, [isAuthenticated, isAuthModalOpen, openAuthModal, navigate, user]);
 
   return <HomePage />;
 }

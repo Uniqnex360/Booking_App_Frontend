@@ -32,6 +32,13 @@ import VenuesPage from "@/pages/VenuesPage";
 import FoodPage from "@/pages/FoodPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import { TheatreLayout } from "@/pages/theatre/TheatreLayout";
+import TheatreDashboardPage from "@/pages/theatre/TheatreDashboardPage";
+import TheatreVenuesPage from "@/pages/theatre/TheatreVenuesPage";
+import TheatreShowtimesPage from "@/pages/theatre/TheatreShowtimesPage";
+import TheatreBookingsPage from "@/pages/theatre/TheatreBookingsPage";
+import TheatreInvoicesPage from "@/pages/theatre/TheatreInvoicesPage";
+import TheatreExceptionsPage from "@/pages/theatre/TheatreExceptionsPage";
 
 export function AppRoutes() {
   return (
@@ -41,6 +48,24 @@ export function AppRoutes() {
       <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
       <Route path="/admin/movies" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
       <Route path="/admin/users" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
+      
+      {/* Theatre Partner Scoped Portal */}
+      <Route
+        path="/theatre"
+        element={
+          <PrivateRoute>
+            <TheatreLayout />
+          </PrivateRoute>
+        }
+      >
+        <Route index element={<Navigate to="/theatre/dashboard" replace />} />
+        <Route path="dashboard" element={<TheatreDashboardPage />} />
+        <Route path="venues" element={<TheatreVenuesPage />} />
+        <Route path="showtimes" element={<TheatreShowtimesPage />} />
+        <Route path="bookings" element={<TheatreBookingsPage />} />
+        <Route path="invoices" element={<TheatreInvoicesPage />} />
+        <Route path="exceptions" element={<TheatreExceptionsPage />} />
+      </Route>
       <Route path="/confirmation" element={<ConfirmationPage />} />
       <Route path="/movies/:id/reviews" element={<MovieReviewsPage />} />
       <Route path="/forgot-password" element={<PrivateRoute guest><ForgotPasswordPage /></PrivateRoute>} />

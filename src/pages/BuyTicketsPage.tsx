@@ -337,7 +337,17 @@ export default function BuyTicketsPage() {
       v.showtimes
         .filter((s) => new Date(s.starts_at).getTime() > now)
         .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
-        .forEach((s) => set.add(`${s.language} - ${s.format}`)),
+        .forEach((s) => {
+          const langs = (s.language || "")
+            .split(/[,/&|]+/)
+            .map((str: string) => str.trim())
+            .filter(Boolean);
+          if (langs.length > 0) {
+            langs.forEach((l) => set.add(`${l} - ${s.format || "2D"}`));
+          } else {
+            set.add(`${s.language || "Tamil"} - ${s.format || "2D"}`);
+          }
+        }),
     );
     return Array.from(set).sort();
   }, [venuesInCity, activeDate, now]);
@@ -368,7 +378,8 @@ export default function BuyTicketsPage() {
             const parts = filterLower.split("-").map((p) => p.trim());
             if (parts.length === 2) {
               const [reqLang, reqFmt] = parts;
-              const matchesLang = (s.language || "").toLowerCase().trim() === reqLang;
+              const slotLangs = (s.language || "").toLowerCase().split(/[,/&|]+/).map((l: string) => l.trim());
+              const matchesLang = slotLangs.includes(reqLang) || (s.language || "").toLowerCase().includes(reqLang);
               const sFmt = (s.format || "").toLowerCase().trim();
               const matchesFmt = sFmt.includes(reqFmt) || reqFmt.includes(sFmt);
               return matchesLang && matchesFmt;

@@ -58,6 +58,12 @@ export default function SeatMapPage() {
   }, [mapData]);
   const isCoupleSeat = (seat: SeatItem) =>
     isCoupleScreen || Boolean(seat.is_couple);
+  const isSameSeat = (a?: SeatItem | null, b?: SeatItem | null): boolean => {
+    if (!a || !b) return false;
+    if (a.seat_ref && b.seat_ref && a.seat_ref === b.seat_ref) return true;
+    if (a.code && b.code && a.code.toLowerCase() === b.code.toLowerCase()) return true;
+    return a.row_label === b.row_label && a.number === b.number;
+  };
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState<SeatItem[]>([]);
   const [isCommitLoading, setIsCommitLoading] = useState(false);
@@ -231,15 +237,15 @@ export default function SeatMapPage() {
       // If clicked seat or partner is already selected, deselect only this pair
       const isAlreadySelected = selectedSeats.some(
         (s) =>
-          s.seat_ref === clickedSeat.seat_ref ||
-          s.seat_ref === partnerSeat.seat_ref,
+          isSameSeat(s, clickedSeat) ||
+          (partnerSeat && isSameSeat(s, partnerSeat)),
       );
       if (isAlreadySelected) {
         setSelectedSeats((prev) =>
           prev.filter(
             (s) =>
-              s.seat_ref !== clickedSeat.seat_ref &&
-              s.seat_ref !== partnerSeat.seat_ref,
+              !isSameSeat(s, clickedSeat) &&
+              (!partnerSeat || !isSameSeat(s, partnerSeat)),
           ),
         );
         idempotencyKeyRef.current = crypto.randomUUID();
@@ -307,11 +313,11 @@ export default function SeatMapPage() {
     }
     // Normal seat click
     const isAlreadySelected = selectedSeats.some(
-      (s) => s.seat_ref === clickedSeat.seat_ref,
+      (s) => isSameSeat(s, clickedSeat),
     );
     if (isAlreadySelected) {
       setSelectedSeats((prev) =>
-        prev.filter((s) => s.seat_ref !== clickedSeat.seat_ref),
+        prev.filter((s) => !isSameSeat(s, clickedSeat)),
       );
       idempotencyKeyRef.current = crypto.randomUUID();
       return;
@@ -393,13 +399,13 @@ export default function SeatMapPage() {
       setSelectedSeats((prev) =>
         prev.filter(
           (s) =>
-            s.seat_ref !== seat.seat_ref &&
-            (!partner || s.seat_ref !== partner.seat_ref),
+            !isSameSeat(s, seat) &&
+            (!partner || !isSameSeat(s, partner)),
         ),
       );
     } else {
       setSelectedSeats((prev) =>
-        prev.filter((s) => s.seat_ref !== seat.seat_ref),
+        prev.filter((s) => !isSameSeat(s, seat)),
       );
     }
     idempotencyKeyRef.current = crypto.randomUUID();
@@ -870,6 +876,16 @@ export default function SeatMapPage() {
               {isRetrying ? "Retrying..." : "Retry Connection"}
             </button>
           </div>
+        ) : tiers.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white border border-gray-200 rounded-2xl max-w-lg mx-auto text-center px-6 mt-8 shadow-xs">
+            <AlertCircle className="h-12 w-12 text-[#7B1E3D] mb-3" />
+            <h2 className="text-xl font-bold mb-2 text-gray-900">
+              Seat layout is being prepared
+            </h2>
+            <p className="text-gray-500 text-sm">
+              The seat arrangement for this screen is currently being prepared. Please select another timing or check back shortly.
+            </p>
+          </div>
         ) : (
           <div
             className="w-max min-w-full mx-auto px-4 sm:px-6 flex flex-col items-center transition-transform duration-150 origin-top"
@@ -947,7 +963,7 @@ export default function SeatMapPage() {
                                     return pairs.map((pair, pIdx) => {
                                       const isPairSelected = pair.every((s) =>
                                         selectedSeats.some(
-                                          (sel) => sel.seat_ref === s.seat_ref,
+                                          (sel) => isSameSeat(sel, s),
                                         ),
                                       );
                                       const isPairSold = pair.some(
@@ -967,8 +983,7 @@ export default function SeatMapPage() {
                                           {pair.map((seat, sIdx) => {
                                             const isSelected =
                                               selectedSeats.some(
-                                                (s) =>
-                                                  s.seat_ref === seat.seat_ref,
+                                                (s) => isSameSeat(s, seat),
                                               );
                                             const isLeft = sIdx === 0;
                                             const isRight = sIdx === 1;
@@ -981,13 +996,13 @@ export default function SeatMapPage() {
                                                 "bg-[#EEEEEE] border border-[#EEEEEE] text-transparent cursor-not-allowed";
                                             } else if (isSelected) {
                                               seatStyle =
-                                                "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
+                                                "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-xs scale-105 z-10";
                                             } else if (seat.is_bestseller) {
                                               seatStyle =
-                                                "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
+                                                "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623]/15 cursor-pointer";
                                             } else {
                                               seatStyle =
-                                                "bg-white border border-[#1ea83c] text-[#1ea83c] group-hover/pair:bg-[#1ea83c] group-hover/pair:text-white cursor-pointer";
+                                                "bg-white border border-[#1ea83c] text-[#1ea83c] group-hover/pair:bg-[#1ea83c]/15 hover:bg-[#1ea83c]/15 cursor-pointer";
                                             }
                                             const rounding =
                                               pair.length === 2
@@ -1021,7 +1036,7 @@ export default function SeatMapPage() {
                                                       )} (Booked in pairs of 2)`
                                                     : `Couple Seat ${seat.code || `${seat.row_label}${seat.number}`} (Sold)`
                                                 }
-                                                className={`w-7 h-7 sm:w-8 sm:h-8 text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all ${rounding} ${seatStyle} ${
+                                                className={`w-7 h-7 sm:w-8 sm:h-8 text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all focus:outline-none focus:ring-0 touch-manipulation select-none active:scale-95 ${rounding} ${seatStyle} ${
                                                   isInspectMode
                                                     ? "!cursor-pointer hover:ring-2 hover:ring-purple-500 hover:scale-110 !text-gray-900 font-bold"
                                                     : ""
@@ -1048,7 +1063,7 @@ export default function SeatMapPage() {
                                     <div className="flex items-center gap-1 sm:gap-1.5">
                                       {block.map((seat) => {
                                         const isSelected = selectedSeats.some(
-                                          (s) => s.seat_ref === seat.seat_ref,
+                                          (s) => isSameSeat(s, seat),
                                         );
                                         let seatStyle = "";
                                         if (!seat.is_available) {
@@ -1056,13 +1071,13 @@ export default function SeatMapPage() {
                                             "bg-[#EEEEEE] border border-[#EEEEEE] text-transparent cursor-not-allowed";
                                         } else if (isSelected) {
                                           seatStyle =
-                                            "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-2xs";
+                                            "bg-[#1ea83c] border border-[#1ea83c] text-white font-bold shadow-xs scale-105 z-10";
                                         } else if (seat.is_bestseller) {
                                           seatStyle =
-                                            "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623] hover:text-white cursor-pointer";
+                                            "bg-white border border-[#f5a623] text-[#f5a623] hover:bg-[#f5a623]/15 cursor-pointer";
                                         } else {
                                           seatStyle =
-                                            "bg-white border border-[#1ea83c] text-[#1ea83c] hover:bg-[#1ea83c] hover:text-white cursor-pointer";
+                                            "bg-white border border-[#1ea83c] text-[#1ea83c] hover:bg-[#1ea83c]/15 cursor-pointer";
                                         }
                                         return (
                                           <button
@@ -1085,7 +1100,7 @@ export default function SeatMapPage() {
                                                   )}`
                                                 : `Seat ${seat.code || `${seat.row_label}${seat.number}`} (Sold)`
                                             }
-                                            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-[3px] text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all ${seatStyle} ${
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-[3px] text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all focus:outline-none focus:ring-0 touch-manipulation select-none active:scale-95 ${seatStyle} ${
                                               isInspectMode
                                                 ? "!cursor-pointer hover:ring-2 hover:ring-purple-500 hover:scale-110 !text-gray-900 font-bold"
                                                 : ""
