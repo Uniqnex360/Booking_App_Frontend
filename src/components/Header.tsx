@@ -530,7 +530,7 @@ export function Header() {
           <div className="flex w-full items-center bg-gray-50 group-hover:bg-white border border-gray-200 group-hover:border-gray-300 rounded-md transition shadow-inner shadow-gray-100/50 py-2.5 px-3">
             <Search className="h-4 w-4 text-gray-400 mr-3 shrink-0" />
             <span className="text-sm text-gray-400 select-none truncate">
-              Search for Movies, Events, Plays, Sports and Activities
+              Search for Movies, Events...
             </span>
           </div>
         </div>

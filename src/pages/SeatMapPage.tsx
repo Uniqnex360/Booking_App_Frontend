@@ -1125,7 +1125,7 @@ export default function SeatMapPage() {
                   </div>
                 ))}
                 <div className="w-full flex flex-col items-center mt-12 mb-8 select-none">
-                  <div className="w-64 sm:w-80 h-7 relative flex items-center justify-center">
+                  <div className="w-72 sm:w-96 md:w-[440px] h-8 sm:h-9 relative flex items-center justify-center">
                     <svg
                       viewBox="0 0 320 28"
                       className="w-full h-full drop-shadow-[0_4px_12px_rgba(144,202,249,0.35)]"
@@ -1158,11 +1158,11 @@ export default function SeatMapPage() {
                       />
                     </svg>
                   </div>
-                  <div className="text-xs text-gray-400 font-normal mt-3 tracking-normal select-none">
+                  <div className="text-sm sm:text-base md:text-lg text-gray-500 font-medium mt-3.5 tracking-wide select-none">
                     All eyes this way please
                   </div>
                   {frontDist !== null && backDist !== null && (
-                    <div className="mt-2 flex items-center gap-4 text-[11px] text-gray-500">
+                    <div className="mt-2.5 flex items-center gap-4 text-xs sm:text-sm text-gray-500">
                       <span>
                         Screen → front row:{" "}
                         <b className="text-gray-800">~{frontDist} m</b>

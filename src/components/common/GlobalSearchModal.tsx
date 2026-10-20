@@ -9,20 +9,12 @@ const RECENT_SEARCHES_STORAGE_KEY = "vyhbz_recent_searches";
 export type SearchCategoryTab =
   | "All"
   | "Movies"
-  | "STREAM"
-  | "Events"
-  | "Plays"
-  | "Sports"
-  | "Activities";
+  | "Events";
 
 const TABS: SearchCategoryTab[] = [
   "All",
   "Movies",
-  "STREAM",
   "Events",
-  "Plays",
-  "Sports",
-  "Activities",
 ];
 
 export interface GlobalSearchModalProps {
@@ -169,21 +161,11 @@ export function GlobalSearchModal({
 
         // Map Events
         rawEvents.forEach((e: any) => {
-          let tabCat: SearchCategoryTab = "Events";
-          const catLower = (e.category || "").toLowerCase();
-          if (catLower === "theatre" || catLower === "plays") {
-            tabCat = "Plays";
-          } else if (catLower === "sports") {
-            tabCat = "Sports";
-          } else if (catLower === "workshop" || catLower === "exhibition") {
-            tabCat = "Activities";
-          }
-
           const venue = e.venue_name ? `${e.venue_name}` : e.city || city;
           unified.push({
             id: e.id,
             type: "event",
-            tabCategory: tabCat,
+            tabCategory: "Events",
             title: e.title,
             subtitle: `In ${e.category || "Events"} | ${venue}`,
             image: e.poster_image_url,
@@ -212,10 +194,7 @@ export function GlobalSearchModal({
     if (!q) return [];
 
     return allItems.filter((item) => {
-      if (activeTab === "STREAM") {
-        if (item.tabCategory !== "Movies" && item.tabCategory !== "STREAM")
-          return false;
-      } else if (activeTab !== "All" && item.tabCategory !== activeTab) {
+      if (activeTab !== "All" && item.tabCategory !== activeTab) {
         return false;
       }
 
@@ -257,11 +236,7 @@ export function GlobalSearchModal({
     onClose();
     if (activeTab === "Movies") {
       navigate(withCity("/movies", city));
-    } else if (
-      activeTab === "Events" ||
-      activeTab === "Plays" ||
-      activeTab === "Sports"
-    ) {
+    } else if (activeTab === "Events") {
       navigate(withCity("/events", city));
     } else {
       navigate(withCity("/movies", city));
