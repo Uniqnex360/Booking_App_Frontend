@@ -15,6 +15,8 @@ import {
   ChevronRight,
   ShieldCheck,
   Loader2,
+  Menu,
+  X,
 } from "lucide-react";
 
 export function TheatreLayout() {
@@ -22,6 +24,7 @@ export function TheatreLayout() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<TheatrePartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -49,10 +52,19 @@ export function TheatreLayout() {
   const brandName = profile?.chain?.name || (profile?.venues?.[0]?.name ? profile.venues[0].name : "Cinema Partner");
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="h-screen w-full bg-slate-50 flex flex-col font-sans overflow-hidden">
       {/* Top Header */}
-      <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-40 shadow-xs">
+      <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between shrink-0 z-40 shadow-xs">
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 -ml-1 text-slate-600 hover:text-slate-900 md:hidden rounded-lg hover:bg-slate-100 transition cursor-pointer"
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+
           <Link to="/theatre/dashboard" className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-[#7B1E3D] text-white flex items-center justify-center font-bold shadow-sm">
               <Film className="w-5 h-5" />
@@ -102,7 +114,7 @@ export function TheatreLayout() {
                 navigate("/login");
               }}
               title="Sign Out"
-              className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+              className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -110,9 +122,23 @@ export function TheatreLayout() {
         </div>
       </header>
 
-      <div className="flex-1 flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-slate-200 p-4 flex flex-col justify-between hidden md:flex shrink-0">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile Backdrop */}
+        {mobileMenuOpen && (
+          <div
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 top-16 bg-slate-900/40 backdrop-blur-xs z-30 md:hidden animate-in fade-in duration-200"
+          />
+        )}
+
+        {/* Sidebar (Fixed Desktop & Drawer Mobile) */}
+        <aside
+          className={`w-64 bg-white border-r border-slate-200 p-4 flex flex-col justify-between shrink-0 h-full overflow-y-auto z-40 transition-transform duration-200 ease-in-out md:translate-x-0 md:static ${
+            mobileMenuOpen
+              ? "fixed top-16 bottom-0 left-0 translate-x-0 shadow-2xl"
+              : "fixed top-16 bottom-0 left-0 -translate-x-full md:flex"
+          }`}
+        >
           <div className="space-y-6">
             {/* Scoped Brand Card */}
             <div className="p-3.5 rounded-xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-sm">
@@ -138,6 +164,7 @@ export function TheatreLayout() {
                   <NavLink
                     key={item.to}
                     to={item.to}
+                    onClick={() => setMobileMenuOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                         isActive
@@ -167,8 +194,8 @@ export function TheatreLayout() {
           </div>
         </aside>
 
-        {/* Content Body */}
-        <main className="flex-1 p-6 lg:p-8 overflow-y-auto">
+        {/* Content Body - Independent Scroll Container */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto h-full scroll-smooth">
           {loading ? (
             <div className="py-24 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />
