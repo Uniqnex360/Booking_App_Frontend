@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { getTheatreProfile, TheatrePartnerProfile } from "@/api/theatre.api";
 import {
@@ -25,6 +25,14 @@ export function TheatreLayout() {
   const [profile, setProfile] = useState<TheatrePartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     async function load() {
@@ -195,7 +203,7 @@ export function TheatreLayout() {
         </aside>
 
         {/* Content Body - Independent Scroll Container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto h-full scroll-smooth">
+        <main ref={mainRef} className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto h-full scroll-smooth">
           {loading ? (
             <div className="py-24 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />

@@ -73,6 +73,12 @@ export default function MoviesPage() {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedCertificates, setSelectedCertificates] = useState<string[]>([]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, [selectedTag]);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
 

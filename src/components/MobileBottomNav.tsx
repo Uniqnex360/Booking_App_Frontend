@@ -110,6 +110,11 @@ export function MobileBottomNav() {
               <Link
                 key={item.label}
                 to={withCity(item.href || "/", city)}
+                onClick={() => {
+                  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                }}
                 className={`flex flex-col items-center justify-center flex-1 h-full py-1 transition-colors select-none ${
                   item.isActive
                     ? "text-[#7B1E3D] font-bold"

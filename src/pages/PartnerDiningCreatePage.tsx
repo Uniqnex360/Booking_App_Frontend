@@ -139,6 +139,12 @@ export default function PartnerDiningCreatePage() {
   const [partnerLoading, setPartnerLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"details" | "schedule" | "pricing" | "media">("details");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [activeTab]);
   const [currentMin, setCurrentMin] = useState("");
 
   useEffect(() => {

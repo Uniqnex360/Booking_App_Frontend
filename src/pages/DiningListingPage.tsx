@@ -211,6 +211,9 @@ export default function DiningListingPage() {
       nextTags = [...selectedTags, val];
     }
     updateQuery('tags', nextTags.length > 0 ? nextTags.join(',') : null);
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
   };
 
   const clearAllFilters = () => {
@@ -468,7 +471,12 @@ export default function DiningListingPage() {
               <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
                 <button
                   type="button"
-                  onClick={() => updateQuery('tags', null)}
+                  onClick={() => {
+                    updateQuery('tags', null);
+                    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                    if (document.documentElement) document.documentElement.scrollTop = 0;
+                    if (document.body) document.body.scrollTop = 0;
+                  }}
                   className={`px-3.5 py-1.5 text-xs rounded-full whitespace-nowrap font-medium transition cursor-pointer border shrink-0 ${
                     !tagsParam
                       ? 'bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-sm font-semibold'

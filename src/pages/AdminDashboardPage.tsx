@@ -101,6 +101,9 @@ export default function AdminDashboardPage() {
   const handleTabChange = (tab: ActiveTab) => {
     setActiveTab(tab);
     setSearchParams({ tab });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
 
   // Sync tab from URL if changed externally
@@ -108,6 +111,9 @@ export default function AdminDashboardPage() {
     const tabFromUrl = searchParams.get("tab") as ActiveTab;
     if (tabFromUrl && tabFromUrl !== activeTab) {
       setActiveTab(tabFromUrl);
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     }
   }, [searchParams]);
 

@@ -128,6 +128,12 @@ export default function BookingPage() {
   // Booking Modal States
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState<1 | 2>(1); // 1 = Date & Time, 2 = Ticket
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, [bookingStep]);
   const [selectedBookingDate, setSelectedBookingDate] = useState<Date | null>(null);
   const [calendarView, setCalendarView] = useState(false); // false = quick dates, true = calendar month
   const [calendarMonth, setCalendarMonth] = useState(new Date());

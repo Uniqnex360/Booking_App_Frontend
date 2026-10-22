@@ -278,6 +278,9 @@ export default function EventsPage() {
       next.set('cat', cat);
     }
     setSearchParams(next);
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
   };
 
   // Only upcoming or live events (not past)

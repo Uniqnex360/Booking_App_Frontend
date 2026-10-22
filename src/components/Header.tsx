@@ -502,7 +502,15 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm transition-all duration-300 font-sans pt-[env(safe-area-inset-top,0px)]">
       <div className="mx-auto flex max-w-[1240px] items-center gap-2 sm:gap-6 px-3 sm:px-4 h-[72px] sm:h-[88px]">
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <Link to={withCity("/", city)} className="flex items-center shrink-0 py-1">
+          <Link
+            to={withCity("/", city)}
+            onClick={() => {
+              window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+              document.documentElement.scrollTop = 0;
+              document.body.scrollTop = 0;
+            }}
+            className="flex items-center shrink-0 py-1"
+          >
             <img
               src="/logo.png"
               alt="Vyhbz"
@@ -621,6 +629,11 @@ export function Header() {
               <Link
                 key={`${link.href}-${i}`}
                 to={withCity(link.href, city)}
+                onClick={() => {
+                  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                  document.documentElement.scrollTop = 0;
+                  document.body.scrollTop = 0;
+                }}
                 className={`text-[13px] font-medium transition-colors hover:text-[#7B1E3D] ${
                   location.pathname.startsWith(link.href)
                     ? "text-[#7B1E3D] font-semibold"
