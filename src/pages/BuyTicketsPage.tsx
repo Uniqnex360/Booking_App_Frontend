@@ -314,7 +314,9 @@ export default function BuyTicketsPage() {
   const now = Date.now();
 
   const venuesInCity = useMemo(() => {
-    return (movie?.venues ?? []).filter((v) => v.city === city);
+    return (movie?.venues ?? []).filter(
+      (v) => (v.city || "").toLowerCase() === (city || "").toLowerCase(),
+    );
   }, [movie, city]);
 
   const dateKeys = useMemo(() => {
@@ -381,7 +383,11 @@ export default function BuyTicketsPage() {
               const slotLangs = (s.language || "").toLowerCase().split(/[,/&|]+/).map((l: string) => l.trim());
               const matchesLang = slotLangs.includes(reqLang) || (s.language || "").toLowerCase().includes(reqLang);
               const sFmt = (s.format || "").toLowerCase().trim();
-              const matchesFmt = sFmt.includes(reqFmt) || reqFmt.includes(sFmt);
+              const is2D = !sFmt.includes("3d");
+              const matchesFmt =
+                reqFmt === "2d"
+                  ? is2D
+                  : sFmt.includes(reqFmt) || reqFmt.includes(sFmt);
               return matchesLang && matchesFmt;
             }
             return false;
@@ -1302,6 +1308,36 @@ export default function BuyTicketsPage() {
                   <p className="text-xs text-gray-400 mt-1">
                     Try changing date, language, or preferred time.
                   </p>
+                  <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLangFormatFilter("all");
+                        setPreferredTime("any");
+                        setSelectedPriceRanges([]);
+                        setSelectedSpecialFormats([]);
+                        setSelectedOtherFilters([]);
+                        setSearchQuery("");
+                      }}
+                      className="px-4 py-2 text-xs font-semibold bg-[#7B1E3D] text-white rounded-lg hover:bg-[#631831] transition shadow-xs"
+                    >
+                      Clear All Filters
+                    </button>
+                    {dateKeys.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextDate =
+                            dateKeys.find((d) => d !== activeDate) ||
+                            dateKeys[1];
+                          if (nextDate) setSelectedDate(nextDate);
+                        }}
+                        className="px-4 py-2 text-xs font-semibold border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                      >
+                        Check Other Dates
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                 venuesForDate.map((venue) => {
