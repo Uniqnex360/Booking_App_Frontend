@@ -143,6 +143,18 @@ export default function ProfilePage() {
           setGender(data.gender || "");
           setPreferredLanguage(data.preferred_language || "en");
           setBio(data.bio || "");
+          if (data.full_name) {
+            const rawName = data.full_name === "Phone User" ? "" : data.full_name;
+            const parts = rawName.trim().split(/\s+/).filter(Boolean);
+            setFirstName(parts[0] || "");
+            setLastName(parts.slice(1).join(" ") || "");
+          }
+          if (data.phone) {
+            setPhone(data.phone);
+          }
+          if (data.email) {
+            setEmail(data.email);
+          }
         }
       } catch {
         if (isMounted) setProfile(null);
@@ -285,6 +297,19 @@ export default function ProfilePage() {
       setPreferredLanguage(updated.preferred_language || "en");
       setBio(updated.bio || "");
 
+      if (updated.full_name) {
+        const rawName = updated.full_name === "Phone User" ? "" : updated.full_name;
+        const parts = rawName.trim().split(/\s+/).filter(Boolean);
+        setFirstName(parts[0] || "");
+        setLastName(parts.slice(1).join(" ") || "");
+      }
+      if (updated.phone) {
+        setPhone(updated.phone);
+      }
+      if (updated.email) {
+        setEmail(updated.email);
+      }
+
       setEditingPhone(false);
       setEditingEmail(false);
 
@@ -304,13 +329,13 @@ export default function ProfilePage() {
     }
   };
 
-  const currentFullName = (user.full_name || "").trim();
+  const currentFullName = (user?.full_name || profile?.full_name || "").trim();
   const newFullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
   const hasChanges =
     currentFullName !== newFullName ||
-    phone.trim() !== (user.phone || "") ||
-    email.trim() !== (user.email || "") ||
+    phone.trim() !== (user?.phone || profile?.phone || "") ||
+    email.trim() !== (user?.email || profile?.email || "") ||
     (dateOfBirth || "") !== (profile?.date_of_birth?.slice(0, 10) || "") ||
     (gender || "") !== (profile?.gender || "") ||
     (preferredLanguage || "") !== (profile?.preferred_language || "en") ||

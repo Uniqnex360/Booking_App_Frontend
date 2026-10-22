@@ -3,6 +3,9 @@ export type Gender = 'Male' | 'Female' | 'Other' | 'Prefer not to say';
 export interface ExtendedProfile {
   id: string;
   user_id: string;
+  full_name?: string;
+  email?: string;
+  phone?: string;
   avatar_url?: string;
   date_of_birth?: string;
   gender?: Gender;

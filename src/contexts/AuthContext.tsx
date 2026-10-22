@@ -44,6 +44,7 @@ initiateSignUp: (payload: RegisterPayload) => Promise<{ userId: string | null; e
   continueWithGoogle: () => Promise<{ error: string | null; cancelled?: boolean }>;
   continueWithApple: () => Promise<{ error: string | null; cancelled?: boolean }>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<boolean>;
   isAuthModalOpen: boolean;
   authModalInitialView: "get-started" | "email" | "mobile-otp" | "email-otp";
   openAuthModal: (initialView?: "get-started" | "email" | "mobile-otp" | "email-otp") => void;
@@ -271,6 +272,10 @@ const signInWithPhoneEmail = async (payload: { url: string }) => {
     return { error: message };
   }
 };
+  const refreshUser = useCallback(async (): Promise<boolean> => {
+    return await fetchUser();
+  }, [fetchUser]);
+
   return (
     <AuthContext.Provider
       value={{ 
@@ -284,6 +289,7 @@ const signInWithPhoneEmail = async (payload: { url: string }) => {
         verifySignUp,   
         signInWithFirebase, 
         signOut,
+        refreshUser,
         continueWithGoogle,
         continueWithApple,
         signInWithPhoneEmail,
