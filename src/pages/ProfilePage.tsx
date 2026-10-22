@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   getWishlist,
@@ -116,7 +116,17 @@ export default function ProfilePage() {
   const [preferredLanguage, setPreferredLanguage] = useState("en");
   const [bio, setBio] = useState("");
 
-  const todayDateStr = new Date().toISOString().split("T")[0];
+  const maxDobDateStr = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 13);
+    return d.toISOString().split("T")[0];
+  }, []);
+
+  const minDobDateStr = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 120);
+    return d.toISOString().split("T")[0];
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -252,8 +262,21 @@ export default function ProfilePage() {
     if (dateOfBirth) {
       const selectedDate = new Date(dateOfBirth);
       const today = new Date();
+      const minAgeDate = new Date();
+      minAgeDate.setFullYear(today.getFullYear() - 13);
+      const maxAgeDate = new Date();
+      maxAgeDate.setFullYear(today.getFullYear() - 120);
+
       if (selectedDate > today) {
-        toast.error("Birthday cannot be a future date.");
+        toast.error("Date of birth cannot be a future date.");
+        return false;
+      }
+      if (selectedDate > minAgeDate) {
+        toast.error("You must be at least 13 years old.");
+        return false;
+      }
+      if (selectedDate < maxAgeDate) {
+        toast.error("Please enter a valid date of birth.");
         return false;
       }
     }
@@ -533,13 +556,17 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                       <div>
-                        <label className="block text-sm font-medium text-gray-600 mb-2">
-                          Birthday (Optional)
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-medium text-gray-600">
+                            Birthday (Optional)
+                          </label>
+                          <span className="text-xs text-gray-400">Min. 13 years old</span>
+                        </div>
                         <div className="relative">
                           <input
                             type="date"
-                            max={todayDateStr}
+                            min={minDobDateStr}
+                            max={maxDobDateStr}
                             value={dateOfBirth}
                             onChange={(e) => setDateOfBirth(e.target.value)}
                             className="w-full border border-gray-200 rounded-lg p-3.5 text-gray-800 text-sm font-medium bg-white focus:outline-none focus:ring-2 focus:ring-[#7B1E3D]/30 focus:border-[#7B1E3D]"
