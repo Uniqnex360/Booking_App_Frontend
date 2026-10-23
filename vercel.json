@@ -1,10 +1,5 @@
 {
-  "cleanUrls": true,
   "rewrites": [
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/privacy-policy", "destination": "/privacy.html" },
-    { "source": "/delete-account", "destination": "/delete-account.html" },
-    { "source": "/account-deletion", "destination": "/delete-account.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
