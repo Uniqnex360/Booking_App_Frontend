@@ -30,6 +30,8 @@ import {
   Loader2,
   Trash2,
   Film,
+  Building2,
+  LayoutDashboard,
   Calendar as CalendarIcon,
 } from "lucide-react";
 import {  isUpcoming } from "@/utils/dateFormatter";
@@ -398,6 +400,27 @@ export default function ProfilePage() {
               active={activeTab === "saved"}
               onClick={() => handleTabChange("saved")}
             />
+            {user?.role === "THEATRE_PARTNER" && (
+              <SidebarItem
+                icon={Building2}
+                label="Theatre Partner Portal"
+                onClick={() => navigate("/theatre/dashboard")}
+              />
+            )}
+            {user?.role === "PARTNER" && (
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Partner Dashboard"
+                onClick={() => navigate("/partner/dashboard")}
+              />
+            )}
+            {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
+              <SidebarItem
+                icon={LayoutDashboard}
+                label="Admin Portal"
+                onClick={() => navigate("/admin")}
+              />
+            )}
             <div className="my-2 border-t border-gray-100 mx-4" />
             <Link
               to="/profile/edit"

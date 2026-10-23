@@ -20,6 +20,7 @@ import {
   Menu,
   User,
   LayoutDashboard,
+  Building2,
   ShieldCheck,
   Users,
   Sparkles,
@@ -596,6 +597,38 @@ export function Header() {
             <Menu className="h-6 w-6" />
           </button>
 
+          {/* Mobile Quick Portal Pill for Theatre Partner, Partner, or Admin */}
+          {user?.role === "THEATRE_PARTNER" && (
+            <Link
+              to="/theatre/dashboard"
+              className="md:hidden flex items-center gap-1 text-[11px] font-bold text-white bg-[#7B1E3D] hover:bg-[#5C0F2A] active:scale-95 px-2.5 py-1.5 rounded-full shadow-xs transition shrink-0"
+              title="Theatre Partner Portal"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Portal</span>
+            </Link>
+          )}
+          {user?.role === "PARTNER" && (
+            <Link
+              to="/partner/dashboard"
+              className="md:hidden flex items-center gap-1 text-[11px] font-bold text-white bg-[#7B1E3D] hover:bg-[#5C0F2A] active:scale-95 px-2.5 py-1.5 rounded-full shadow-xs transition shrink-0"
+              title="Partner Dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Portal</span>
+            </Link>
+          )}
+          {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
+            <Link
+              to="/admin"
+              className="md:hidden flex items-center gap-1 text-[11px] font-bold text-white bg-[#7B1E3D] hover:bg-[#5C0F2A] active:scale-95 px-2.5 py-1.5 rounded-full shadow-xs transition shrink-0"
+              title="Admin Portal"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Admin</span>
+            </Link>
+          )}
+
           {/* Mobile Only: Single Profile Icon Button */}
           <button
             type="button"
@@ -644,12 +677,38 @@ export function Header() {
               </Link>
             ))}
           </div>
-          <Link
-            to="/partner/become"
-            className="text-[13px] font-medium text-gray-600 hover:text-[#7B1E3D] transition-colors"
-          >
-            List Your Show
-          </Link>
+          {user?.role === "THEATRE_PARTNER" ? (
+            <Link
+              to="/theatre/dashboard"
+              className="flex items-center gap-1.5 text-[13px] font-semibold text-[#7B1E3D] bg-[#7B1E3D]/5 hover:bg-[#7B1E3D]/10 px-2.5 py-1 rounded-full transition-colors"
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Theatre Dashboard</span>
+            </Link>
+          ) : user?.role === "PARTNER" ? (
+            <Link
+              to="/partner/dashboard"
+              className="flex items-center gap-1.5 text-[13px] font-semibold text-[#7B1E3D] bg-[#7B1E3D]/5 hover:bg-[#7B1E3D]/10 px-2.5 py-1 rounded-full transition-colors"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Partner Dashboard</span>
+            </Link>
+          ) : user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ? (
+            <Link
+              to="/admin"
+              className="flex items-center gap-1.5 text-[13px] font-semibold text-[#7B1E3D] bg-[#7B1E3D]/5 hover:bg-[#7B1E3D]/10 px-2.5 py-1 rounded-full transition-colors"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Admin Portal</span>
+            </Link>
+          ) : (
+            <Link
+              to="/partner/become"
+              className="text-[13px] font-medium text-gray-600 hover:text-[#7B1E3D] transition-colors"
+            >
+              List Your Show
+            </Link>
+          )}
         </div>
       </div>
 
@@ -769,6 +828,15 @@ export function Header() {
                 </div>
 
                 <div className="py-1">
+                  {user?.role === "THEATRE_PARTNER" && (
+                    <DrawerMenuItem
+                      icon={Building2}
+                      title="Theatre Partner Portal"
+                      subtitle="Manage screens, showtimes & bookings"
+                      onClick={() => handleProfileNavigation("/theatre/dashboard")}
+                    />
+                  )}
+
                   {user?.role === "PARTNER" && (
                     <DrawerMenuItem
                       icon={LayoutDashboard}
@@ -778,16 +846,19 @@ export function Header() {
                     />
                   )}
 
-                  {user?.role !== "PARTNER" && user?.role !== "ADMIN" && (
-                    <DrawerMenuItem
-                      icon={Sparkles}
-                      title="List Your Show"
-                      subtitle="Got an event? Partner with us"
-                      onClick={() => handleProfileNavigation("/partner/become")}
-                    />
-                  )}
+                  {user?.role !== "PARTNER" &&
+                    user?.role !== "THEATRE_PARTNER" &&
+                    user?.role !== "ADMIN" &&
+                    user?.role !== "SUPER_ADMIN" && (
+                      <DrawerMenuItem
+                        icon={Sparkles}
+                        title="List Your Show"
+                        subtitle="Got an event? Partner with us"
+                        onClick={() => handleProfileNavigation("/partner/become")}
+                      />
+                    )}
 
-                  {user?.role === "ADMIN" && (
+                  {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
                     <>
                       <DrawerMenuItem
                         icon={LayoutDashboard}

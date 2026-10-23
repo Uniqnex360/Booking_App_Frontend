@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { Home, Film, Calendar, Search } from "lucide-react";
+import { Home, Film, Calendar, Search, LayoutDashboard } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { withCity } from "@/lib/cityLink";
 import { getStoredCity } from "@/utils/geolocation";
 import { GlobalSearchModal } from "@/components/common/GlobalSearchModal";
 
 export function MobileBottomNav() {
+  const { user } = useAuth();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const city = searchParams.get("city") || getStoredCity() || "Kochi";
@@ -19,11 +21,13 @@ export function MobileBottomNav() {
 
   const pathname = location.pathname;
 
-  // Don't render on dedicated immersive booking flows (Movie Details, SeatMap, FoodStep, etc.)
+  // Don't render on dedicated immersive booking flows or dedicated backend portals
   if (
     pathname.includes("/seat-map") ||
     pathname.startsWith("/food/") ||
     pathname.startsWith("/admin") ||
+    pathname.startsWith("/theatre") ||
+    pathname.startsWith("/partner/dashboard") ||
     pathname.startsWith("/buytickets") ||
     pathname.startsWith("/confirmation") ||
     /^\/movies\/[^/]+/.test(pathname) ||
@@ -35,8 +39,16 @@ export function MobileBottomNav() {
   const isHome = !isSearchOpen && (pathname === "/" || pathname === "/home");
   const isMovies = !isSearchOpen && pathname.startsWith("/movies");
   const isEvents = !isSearchOpen && pathname.startsWith("/events");
+  const isDashboard = !isSearchOpen && (pathname.startsWith("/theatre") || pathname.startsWith("/partner") || pathname.startsWith("/admin"));
 
-  const navItems = [
+  const navItems: Array<{
+    label: string;
+    icon: any;
+    href?: string;
+    isActive: boolean;
+    isAction?: boolean;
+    onClick?: () => void;
+  }> = [
     {
       label: "Home",
       icon: Home,
@@ -63,6 +75,29 @@ export function MobileBottomNav() {
       isActive: isSearchOpen,
     },
   ];
+
+  if (user?.role === "THEATRE_PARTNER") {
+    navItems.push({
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/theatre/dashboard",
+      isActive: isDashboard,
+    });
+  } else if (user?.role === "PARTNER") {
+    navItems.push({
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      href: "/partner/dashboard",
+      isActive: isDashboard,
+    });
+  } else if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") {
+    navItems.push({
+      label: "Admin",
+      icon: LayoutDashboard,
+      href: "/admin",
+      isActive: isDashboard,
+    });
+  }
 
   return (
     <>
@@ -106,10 +141,17 @@ export function MobileBottomNav() {
               );
             }
 
+            const dest =
+              item.href?.startsWith("/theatre") ||
+              item.href?.startsWith("/partner") ||
+              item.href?.startsWith("/admin")
+                ? item.href
+                : withCity(item.href || "/", city);
+
             return (
               <Link
                 key={item.label}
-                to={withCity(item.href || "/", city)}
+                to={dest}
                 onClick={() => {
                   window.scrollTo({ top: 0, left: 0, behavior: "instant" });
                   document.documentElement.scrollTop = 0;
