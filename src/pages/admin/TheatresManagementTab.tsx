@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
+import { INDIAN_STATES, getStateForCity, getCitiesForState } from "@/utils/indiaGeography";
 import {
   getAdminTheatres,
   getAdminChains,
@@ -54,6 +55,7 @@ export function TheatresManagementTab() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
 
+  const [selectedState, setSelectedState] = useState("ALL");
   const [selectedCity, setSelectedCity] = useState("ALL");
   const [selectedChain, setSelectedChain] = useState("ALL");
   const [selectedPaymentModel, setSelectedPaymentModel] = useState("ALL");
@@ -208,8 +210,18 @@ export function TheatresManagementTab() {
     }
   };
 
+  const availableCities = useMemo(() => {
+    return getCitiesForState(selectedState);
+  }, [selectedState]);
+
+  const displayedTheatres = useMemo(() => {
+    if (selectedState === "ALL") return theatres;
+    return theatres.filter((t) => getStateForCity(t.city) === selectedState);
+  }, [theatres, selectedState]);
+
   const hasActiveFilters =
     search.trim() !== "" ||
+    selectedState !== "ALL" ||
     selectedCity !== "ALL" ||
     selectedChain !== "ALL" ||
     selectedPaymentModel !== "ALL" ||
@@ -217,6 +229,7 @@ export function TheatresManagementTab() {
 
   const handleResetFilters = () => {
     setSearch("");
+    setSelectedState("ALL");
     setSelectedCity("ALL");
     setSelectedChain("ALL");
     setSelectedPaymentModel("ALL");
@@ -323,7 +336,7 @@ export function TheatresManagementTab() {
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
           }`}
         >
-          Cinema Locations & Terms ({theatres.length})
+          Cinema Locations & Terms ({displayedTheatres.length})
         </button>
 
         <button
@@ -386,19 +399,35 @@ export function TheatresManagementTab() {
                   ))}
                 </select>
 
-                {/* City Filter */}
+                {/* State Filter */}
+                <select
+                  className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                  value={selectedState}
+                  onChange={(e) => {
+                    setSelectedState(e.target.value);
+                    setSelectedCity("ALL");
+                  }}
+                >
+                  <option value="ALL">All States</option>
+                  {INDIAN_STATES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+
+                {/* City Filter (Cascading) */}
                 <select
                   className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   value={selectedCity}
                   onChange={(e) => setSelectedCity(e.target.value)}
                 >
-                  <option value="ALL">All Cities</option>
-                  <option value="Kochi">Kochi</option>
-                  <option value="Bangalore">Bangalore</option>
-                  <option value="Chennai">Chennai</option>
-                  <option value="Hyderabad">Hyderabad</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Delhi">Delhi-NCR</option>
+                  <option value="ALL">All Cities {selectedState !== "ALL" ? `(${selectedState})` : ""}</option>
+                  {availableCities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
 
                 {/* Payment Model Filter */}
@@ -443,7 +472,8 @@ export function TheatresManagementTab() {
               <div className="flex items-center gap-2">
                 <Filter className="w-3.5 h-3.5 text-gray-400" />
                 <span>
-                  Showing <strong className="text-gray-900">{theatres.length}</strong> theatre venues
+                  Showing <strong className="text-gray-900">{displayedTheatres.length}</strong> of{" "}
+                  <strong>{theatres.length}</strong> theatre venues
                 </span>
               </div>
               {loading && (
@@ -457,11 +487,11 @@ export function TheatresManagementTab() {
 
           {/* Theatres Table */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden relative">
-            {loading && theatres.length === 0 ? (
+            {loading && displayedTheatres.length === 0 ? (
               <div className="py-20 flex justify-center items-center">
                 <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
               </div>
-            ) : theatres.length === 0 ? (
+            ) : displayedTheatres.length === 0 ? (
               <div className="py-16 text-center text-sm text-gray-500">
                 No theatre venues found matching your criteria.
               </div>
@@ -480,11 +510,21 @@ export function TheatresManagementTab() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {theatres.map((t) => (
+                    {displayedTheatres.map((t) => {
+                      const theatreState = getStateForCity(t.city);
+                      return (
                       <tr key={t.id} className="hover:bg-orange-50/20 transition-colors">
                         <td className="py-3.5 px-4 font-semibold text-gray-900">
                           <div>{t.name}</div>
-                          <div className="text-[11px] text-gray-500 font-normal">{t.city}</div>
+                          <div className="text-[11px] text-gray-500 font-normal flex items-center gap-1.5 mt-0.5">
+                            <span>{t.city}</span>
+                            {theatreState !== "Other" && (
+                              <>
+                                <span className="text-gray-300">•</span>
+                                <span className="text-orange-600 font-medium">{theatreState}</span>
+                              </>
+                            )}
+                          </div>
                         </td>
                         <td className="py-3.5 px-4">
                           {t.chain_name ? (
@@ -525,7 +565,8 @@ export function TheatresManagementTab() {
                           </Button>
                         </td>
                       </tr>
-                    ))}
+                    );
+                  })}
                   </tbody>
                 </table>
               </div>

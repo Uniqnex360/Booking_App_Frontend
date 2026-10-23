@@ -73,18 +73,15 @@ export function TheatreLayout() {
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
 
-          <Link to="/theatre/dashboard" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-[#7B1E3D] text-white flex items-center justify-center font-bold shadow-sm">
-              <Film className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-serif font-black text-slate-900 tracking-tight text-lg">
-                VYHBZ
-              </span>
-              <span className="ml-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#7B1E3D]/10 text-[#7B1E3D] uppercase tracking-wider">
-                Partner Portal
-              </span>
-            </div>
+          <Link to="/theatre/dashboard" className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="Vyhbz"
+              className="h-10 sm:h-12 w-auto object-contain hover:scale-105 transition-transform shrink-0"
+            />
+            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#7B1E3D]/10 text-[#7B1E3D] uppercase tracking-wider shrink-0 hidden xs:inline-block">
+              Theatre Admin
+            </span>
           </Link>
 
           {profile?.chain && (
@@ -212,7 +209,7 @@ export function TheatreLayout() {
           </div>
 
           <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-400">
-            <div>Vyhbz Theatre Operating Portal</div>
+            <div>Vyhbz Theatre Admin Portal</div>
             <div className="text-[10px] text-slate-400">v2.4 • Isolated Brand Workspace</div>
           </div>
         </aside>
