@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { INDIAN_STATES, getStateForCity, getCitiesForState } from "@/utils/indiaGeography";
+import { CinemaSeatMapLayout } from "@/components/seats/CinemaSeatMapLayout";
 
 export default function TheatreShowtimesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -503,101 +504,22 @@ export default function TheatreShowtimesPage() {
                     </div>
                   </div>
 
-                  {/* Customer-Perspective Seating Layout */}
-                  <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200 overflow-x-auto">
-                    {/* Curved Cinema Screen */}
-                    <div className="w-full flex flex-col items-center mb-8">
-                      <div className="w-3/4 max-w-md h-2 bg-gradient-to-r from-transparent via-[#7B1E3D]/50 to-transparent rounded-t-full shadow-sm" />
-                      <div className="w-2/3 max-w-sm h-1 bg-[#7B1E3D] rounded-full shadow-[0_4px_16px_rgba(123,30,61,0.4)] mb-1" />
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                        AUDITORIUM SCREEN (ALL EYES THIS WAY)
-                      </span>
-                    </div>
-
-                    {/* Interactive Customer Layout Rows */}
-                    {seatsData.seats.length === 0 ? (
-                      <p className="text-xs text-slate-400 text-center py-10">No seat positions mapped for this auditorium.</p>
-                    ) : (
-                      <div className="space-y-3 min-w-[500px] flex flex-col items-center">
-                        {(() => {
-                          // Group seats by row_label
-                          const rowsGroup: Record<string, typeof seatsData.seats> = {};
-                          seatsData.seats.forEach((s) => {
-                            if (!rowsGroup[s.row_label]) rowsGroup[s.row_label] = [];
-                            rowsGroup[s.row_label].push(s);
-                          });
-
-                          return Object.entries(rowsGroup).map(([rowLabel, rowSeats]) => {
-                            const sortedSeats = [...rowSeats].sort((a, b) => a.number - b.number);
-                            return (
-                              <div key={rowLabel} className="flex items-center gap-3 w-full justify-center">
-                                {/* Left Row Label */}
-                                <span className="w-6 text-center font-bold text-xs text-slate-400 select-none">
-                                  {rowLabel}
-                                </span>
-
-                                {/* Row Seats Container */}
-                                <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                                  {sortedSeats.map((seat) => {
-                                    const isSelected = selectedSeatIds.includes(seat.id);
-                                    const isBooked = seat.status === "BOOKED" || seat.status === "LOCKED";
-                                    const isBlocked = seat.status === "BLOCKED";
-
-                                    return (
-                                      <button
-                                        key={seat.id}
-                                        type="button"
-                                        disabled={isBooked}
-                                        onClick={() => handleToggleSeatSelect(seat.id)}
-                                        title={`Seat ${seat.code} • Status: ${seat.status}${
-                                          seat.blocked_reason ? ` (${seat.blocked_reason})` : ""
-                                        }${isBooked ? " (Booked by customer - cannot modify)" : ""}`}
-                                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center justify-center border select-none ${
-                                          isSelected
-                                            ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-md scale-105 z-10"
-                                            : isBooked
-                                            ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed opacity-80"
-                                            : isBlocked
-                                            ? "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
-                                            : "bg-white text-slate-700 border-slate-300 hover:border-[#7B1E3D] hover:bg-slate-50"
-                                        }`}
-                                      >
-                                        {seat.number}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-
-                                {/* Right Row Label */}
-                                <span className="w-6 text-center font-bold text-xs text-slate-400 select-none">
-                                  {rowLabel}
-                                </span>
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-                    )}
-
-                    {/* Customer-Perspective Seating Legend */}
-                    <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8 pt-4 border-t border-slate-200/80 text-xs">
-                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                        <div className="w-4 h-4 rounded-md bg-white border border-slate-300" />
-                        <span>Available (Live on User Screen)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                        <div className="w-4 h-4 rounded-md bg-slate-200 border border-slate-300 opacity-80" />
-                        <span>Booked (Customer Sold)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                        <div className="w-4 h-4 rounded-md bg-amber-100 border border-amber-300" />
-                        <span>Blocked / VIP Hold (Hidden from Users)</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                        <div className="w-4 h-4 rounded-md bg-[#7B1E3D] border border-[#7B1E3D]" />
-                        <span>Selected for Action</span>
-                      </div>
-                    </div>
+                  {/* Customer-Perspective Seating Layout (Reused User Booking UI) */}
+                  <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+                    <CinemaSeatMapLayout
+                      seats={seatsData.seats.map((s) => ({
+                        id: s.id,
+                        row_label: s.row_label,
+                        number: s.number,
+                        code: s.code,
+                        price_paise: s.price_paise,
+                        status: s.status,
+                        blocked_reason: s.blocked_reason,
+                      }))}
+                      selectedSeatIds={selectedSeatIds}
+                      onToggleSeat={handleToggleSeatSelect}
+                      screenText="All eyes this way please"
+                    />
                   </div>
 
                   {actionSuccessMsg && (
