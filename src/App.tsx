@@ -4,6 +4,7 @@ import { Toaster } from 'sonner';
 import { AppRoutes } from './routes';
 import { QuickAuthModal } from '@/components/auth/QuickAuthModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { CustomerViewBanner } from '@/components/common/CustomerViewBanner';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
@@ -46,6 +47,7 @@ export default function App() {
       <Toaster richColors position="top-right" duration={3000} />
       <AppRoutes />
       <MobileBottomNav />
+      <CustomerViewBanner />
       <QuickAuthModal />
     </>
   );
