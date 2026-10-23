@@ -20,6 +20,11 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
+  QrCode,
+  FileText,
+  ShieldAlert,
+  Wifi,
+  Activity,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -89,16 +94,24 @@ export default function TheatreDashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Gross Box Office */}
+        {/* Gross Box Office or Gate Status */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Gross Box Office</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              {stats?.can_view_finances !== false ? "Gross Box Office" : "Gate Terminal"}
+            </span>
             <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900">₹{grossRupees}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Direct customer ticket volume</div>
+          <div className="text-2xl font-black text-slate-900">
+            {stats?.can_view_finances !== false ? `₹${grossRupees}` : "Online & Active"}
+          </div>
+          <div className="text-[11px] text-slate-500 mt-1">
+            {stats?.can_view_finances !== false
+              ? "Direct customer ticket volume"
+              : "Box office admission desk"}
+          </div>
         </div>
 
         {/* Tickets Sold */}
@@ -131,17 +144,180 @@ export default function TheatreDashboardPage() {
           </div>
         </div>
 
-        {/* Commission Due */}
+        {/* Commission Due or Gate Queue */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Platform Commission Due</span>
+            <span className="text-xs font-bold uppercase tracking-wider">
+              {stats?.can_view_finances !== false ? "Platform Commission Due" : "Access Level"}
+            </span>
             <div className="p-2 rounded-lg bg-orange-50 text-orange-600">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900">₹{commissionDueRupees}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Net post-pay platform fee balance</div>
+          <div className="text-2xl font-black text-slate-900">
+            {stats?.can_view_finances !== false ? `₹${commissionDueRupees}` : "Box Office"}
+          </div>
+          <div className="text-[11px] text-slate-500 mt-1">
+            {stats?.can_view_finances !== false
+              ? "Net post-pay platform fee balance"
+              : "Financial ledger restricted"}
+          </div>
         </div>
+      </div>
+
+      {/* Payment Health Queues (Spec Section 4) */}
+      {stats?.can_view_finances !== false && stats?.payment_queues && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
+                Confirmed Transactions
+              </span>
+              <div className="text-lg font-black text-emerald-950 mt-0.5">
+                {stats.payment_queues.confirmed.count} Bookings
+              </div>
+            </div>
+            <div className="text-right font-black text-sm text-emerald-800">
+              ₹{((stats.payment_queues.confirmed.paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-amber-50/60 border border-amber-200 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">
+                Pending Reconciliation
+              </span>
+              <div className="text-lg font-black text-amber-950 mt-0.5">
+                {stats.payment_queues.pending.count} In-Flight
+              </div>
+            </div>
+            <div className="text-right font-black text-sm text-amber-800">
+              ₹{((stats.payment_queues.pending.paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-rose-50/60 border border-rose-200 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-bold text-rose-800 uppercase tracking-wider block">
+                Cancelled / Failed
+              </span>
+              <div className="text-lg font-black text-rose-950 mt-0.5">
+                {stats.payment_queues.cancelled.count} Cancelled
+              </div>
+            </div>
+            <div className="text-right font-black text-sm text-rose-800">
+              ₹{((stats.payment_queues.cancelled.paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Exception Banner if any open exceptions exist */}
+      {(stats?.open_exceptions_count || 0) > 0 && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5 text-amber-900 font-medium">
+            <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+            <span>
+              You have <strong>{stats?.open_exceptions_count}</strong> unresolved reconciliation{" "}
+              {stats?.open_exceptions_count === 1 ? "exception" : "exceptions"} flagged for your locations.
+            </span>
+          </div>
+          <Link
+            to="/theatre/exceptions"
+            className="font-bold text-amber-900 hover:underline flex items-center gap-1 shrink-0"
+          >
+            Review Audit Discrepancies <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
+      {/* Real-time Integration & POS Sync Status Widget (Spec Section 4 & 13) */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-200 text-teal-700 flex items-center justify-center shrink-0">
+            <Wifi className="w-5 h-5 animate-pulse" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-slate-900 text-xs sm:text-sm">
+                {stats?.sync_health?.provider_name || "Cinema Ticketing POS Gateway"}
+              </span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                {stats?.sync_health?.status || "HEALTHY"}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Source of Truth: <strong className="text-slate-700">{stats?.sync_health?.authoritative_source || "CINEMA_POS"}</strong> • Channel: <span className="font-mono">{stats?.sync_health?.channel || "DIRECT_POS_INTEGRATION"}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4 text-xs">
+          <div className="text-right">
+            <div className="text-[11px] text-slate-400">Last Synced</div>
+            <div className="font-semibold text-slate-800">
+              {stats?.sync_health?.last_sync_at
+                ? new Date(stats.sync_health.last_sync_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                : "Active"}
+            </div>
+          </div>
+          <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+          <div className="text-right">
+            <div className="text-[11px] text-slate-400">Sync Latency</div>
+            <div className="font-bold text-emerald-600">
+              {stats?.sync_health?.sync_lag_seconds ? `${stats.sync_health.sync_lag_seconds}s` : "< 30s"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Operations Shortcuts */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Link
+          to="/theatre/validate"
+          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#7B1E3D] hover:shadow-md transition flex items-center gap-3.5 group"
+        >
+          <div className="p-3 rounded-xl bg-orange-50 text-[#7B1E3D] group-hover:bg-[#7B1E3D] group-hover:text-white transition">
+            <QrCode className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="font-bold text-sm text-slate-900 group-hover:text-[#7B1E3D]">
+              Gate QR Validator
+            </div>
+            <div className="text-xs text-slate-500">Scan customer tickets & verify admission</div>
+          </div>
+        </Link>
+
+        <Link
+          to="/theatre/invoices"
+          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#7B1E3D] hover:shadow-md transition flex items-center gap-3.5 group"
+        >
+          <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white transition">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="font-bold text-sm text-slate-900 group-hover:text-emerald-700">
+              Commission Statements
+            </div>
+            <div className="text-xs text-slate-500">Download invoices & submit bank remittance</div>
+          </div>
+        </Link>
+
+        <Link
+          to="/theatre/venues"
+          className="p-4 rounded-2xl bg-white border border-slate-200 hover:border-[#7B1E3D] hover:shadow-md transition flex items-center gap-3.5 group"
+        >
+          <div className="p-3 rounded-xl bg-blue-50 text-blue-700 group-hover:bg-blue-600 group-hover:text-white transition">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="font-bold text-sm text-slate-900 group-hover:text-blue-700">
+              Multiplex Locations
+            </div>
+            <div className="text-xs text-slate-500">Manage screens, auditoriums & terms</div>
+          </div>
+        </Link>
       </div>
 
       {/* Tables Grid */}

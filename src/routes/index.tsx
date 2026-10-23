@@ -39,6 +39,7 @@ import TheatreShowtimesPage from "@/pages/theatre/TheatreShowtimesPage";
 import TheatreBookingsPage from "@/pages/theatre/TheatreBookingsPage";
 import TheatreInvoicesPage from "@/pages/theatre/TheatreInvoicesPage";
 import TheatreExceptionsPage from "@/pages/theatre/TheatreExceptionsPage";
+import TheatreTicketValidatorPage from "@/pages/theatre/TheatreTicketValidatorPage";
 
 export function AppRoutes() {
   return (
@@ -63,6 +64,7 @@ export function AppRoutes() {
         <Route path="venues" element={<TheatreVenuesPage />} />
         <Route path="showtimes" element={<TheatreShowtimesPage />} />
         <Route path="bookings" element={<TheatreBookingsPage />} />
+        <Route path="validate" element={<TheatreTicketValidatorPage />} />
         <Route path="invoices" element={<TheatreInvoicesPage />} />
         <Route path="exceptions" element={<TheatreExceptionsPage />} />
       </Route>

@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { getTheatreProfile, TheatrePartnerProfile } from "@/api/theatre.api";
+import { toast } from "sonner";
+import {
+  getTheatreProfile,
+  getTheatreNotifications,
+  TheatrePartnerProfile,
+  TheatreNotificationItem,
+} from "@/api/theatre.api";
 import {
   LayoutDashboard,
   Building2,
@@ -11,12 +17,16 @@ import {
   AlertTriangle,
   LogOut,
   Film,
+  QrCode,
   ExternalLink,
   ChevronRight,
   ShieldCheck,
   Loader2,
   Menu,
   X,
+  Bell,
+  Info,
+  RotateCcw,
 } from "lucide-react";
 
 export function TheatreLayout() {
@@ -25,6 +35,11 @@ export function TheatreLayout() {
   const [profile, setProfile] = useState<TheatrePartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [notifications, setNotifications] = useState<TheatreNotificationItem[]>([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const seenNotifIdsRef = useRef<Set<string>>(new Set());
+  const isFirstLoadRef = useRef(true);
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
 
@@ -34,11 +49,12 @@ export function TheatreLayout() {
     }
   }, [location.pathname]);
 
+  // Initial Profile Load
   useEffect(() => {
     async function load() {
       try {
-        const data = await getTheatreProfile();
-        setProfile(data);
+        const pData = await getTheatreProfile();
+        setProfile(pData);
       } catch (err) {
         console.warn("Failed to load theatre partner profile", err);
       } finally {
@@ -48,14 +64,91 @@ export function TheatreLayout() {
     load();
   }, []);
 
-  const navItems = [
+  // Real-time Live Notifications Polling & Delta Alert (Spec Section 12)
+  const syncNotifications = async (isManual = false) => {
+    try {
+      if (isManual) setIsSyncing(true);
+      const nData = await getTheatreNotifications();
+      const freshList = nData || [];
+
+      // Check for newly arrived notifications (not present in first load)
+      if (!isFirstLoadRef.current) {
+        freshList.forEach((item) => {
+          if (!seenNotifIdsRef.current.has(item.id)) {
+            // Brand new alert received without page refresh!
+            if (item.severity === "CRITICAL") {
+              toast.error(item.title, {
+                description: item.message,
+                action: item.link ? { label: "View", onClick: () => navigate(item.link!) } : undefined,
+                duration: 6000,
+              });
+            } else if (item.severity === "WARNING") {
+              toast.warning(item.title, {
+                description: item.message,
+                action: item.link ? { label: "Review", onClick: () => navigate(item.link!) } : undefined,
+                duration: 5000,
+              });
+            } else {
+              toast.info(item.title, {
+                description: item.message,
+                action: item.link ? { label: "Open", onClick: () => navigate(item.link!) } : undefined,
+                duration: 4000,
+              });
+            }
+          }
+        });
+      }
+
+      // Record seen IDs
+      const newIdSet = new Set<string>();
+      freshList.forEach((n) => newIdSet.add(n.id));
+      seenNotifIdsRef.current = newIdSet;
+      isFirstLoadRef.current = false;
+
+      setNotifications(freshList);
+    } catch (err) {
+      // quiet polling error
+    } finally {
+      if (isManual) setIsSyncing(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    syncNotifications();
+
+    // Auto-poll every 12 seconds in the background
+    const intervalId = setInterval(() => {
+      syncNotifications();
+    }, 12000);
+
+    // Sync immediately when tab regains focus
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        syncNotifications();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  const isBoxOffice = profile?.access_level === "BOX_OFFICE";
+
+  const allNavItems = [
     { to: "/theatre/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/theatre/venues", label: "My Venues & Screens", icon: Building2 },
-    { to: "/theatre/showtimes", label: "Showtimes Schedule", icon: Calendar },
+    { to: "/theatre/validate", label: "Gate QR Validator", icon: QrCode },
     { to: "/theatre/bookings", label: "Customer Bookings", icon: Ticket },
-    { to: "/theatre/invoices", label: "Invoices & Settlement", icon: FileText },
-    { to: "/theatre/exceptions", label: "Audit & Exceptions", icon: AlertTriangle },
+    { to: "/theatre/showtimes", label: "Showtimes Schedule", icon: Calendar },
+    { to: "/theatre/venues", label: "My Venues & Screens", icon: Building2 },
+    { to: "/theatre/invoices", label: "Invoices & Settlement", icon: FileText, hideForBoxOffice: true },
+    { to: "/theatre/exceptions", label: "Audit & Exceptions", icon: AlertTriangle, hideForBoxOffice: true },
   ];
+
+  const navItems = allNavItems.filter((item) => !(isBoxOffice && item.hideForBoxOffice));
 
   const brandName = profile?.chain?.name || (profile?.venues?.[0]?.name ? profile.venues[0].name : "Cinema Partner");
 
@@ -80,7 +173,7 @@ export function TheatreLayout() {
               className="h-10 sm:h-12 w-auto object-contain hover:scale-105 transition-transform shrink-0"
             />
             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#7B1E3D]/10 text-[#7B1E3D] uppercase tracking-wider shrink-0 hidden xs:inline-block">
-              Theatre Admin
+              {profile?.access_level === "BOX_OFFICE" ? "Box Office Gate" : "Theatre Admin"}
             </span>
           </Link>
 
@@ -95,6 +188,90 @@ export function TheatreLayout() {
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          {/* Real-time Alerts Bell (Spec Section 12) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setNotifOpen(!notifOpen)}
+              className="relative p-2 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition cursor-pointer"
+              title="Operational & Invoice Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#7B1E3D] text-white text-[10px] font-bold flex items-center justify-center">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+
+            {notifOpen && (
+              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="p-3.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-[#7B1E3D]" />
+                    <span className="text-xs font-bold text-slate-900">Notifications & Alerts</span>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                      Live
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isSyncing}
+                      onClick={() => syncNotifications(true)}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-200/60 transition cursor-pointer"
+                      title="Sync alerts now"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-[#7B1E3D]" : ""}`} />
+                    </button>
+                    <span className="text-[11px] font-semibold text-slate-500">
+                      {notifications.length} active
+                    </span>
+                  </div>
+                </div>
+
+                <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 text-xs">
+                  {notifications.length === 0 ? (
+                    <div className="p-6 text-center text-slate-400 text-xs">No active alerts.</div>
+                  ) : (
+                    notifications.map((n) => (
+                      <Link
+                        key={n.id}
+                        to={n.link || "#"}
+                        onClick={() => setNotifOpen(false)}
+                        className="p-3.5 block hover:bg-slate-50/80 transition"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span
+                            className={`font-bold ${
+                              n.severity === "CRITICAL"
+                                ? "text-rose-600"
+                                : n.severity === "WARNING"
+                                ? "text-amber-700"
+                                : "text-slate-900"
+                            }`}
+                          >
+                            {n.title}
+                          </span>
+                          <span className="text-[10px] text-slate-400 shrink-0">
+                            {new Date(n.timestamp).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-600 mt-1 leading-snug">
+                          {n.message}
+                        </p>
+                      </Link>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <Link
             to="/movies"
             className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-medium transition"

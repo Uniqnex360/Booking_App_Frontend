@@ -29,7 +29,7 @@ export interface CreateTheatreAccountPayload {
   email: string;
   password: string;
   phone?: string;
-  access_level: 'CHAIN_ADMIN' | 'VENUE_MANAGER';
+  access_level: 'CHAIN_ADMIN' | 'VENUE_MANAGER' | 'BOX_OFFICE' | 'FINANCE_STAFF' | 'AUDITOR';
   chain_id?: string;
   venue_id?: string;
 }
@@ -73,6 +73,8 @@ export interface TheatrePartnerProfile {
 }
 
 export interface TheatreDashboardStats {
+  access_level?: string;
+  can_view_finances?: boolean;
   total_bookings: number;
   total_tickets: number;
   gross_revenue_paise: number;
@@ -82,6 +84,19 @@ export interface TheatreDashboardStats {
   screens_count: number;
   upcoming_showtimes_count: number;
   open_exceptions_count: number;
+  payment_queues?: {
+    confirmed: { count: number; paise: number };
+    pending: { count: number; paise: number };
+    cancelled: { count: number; paise: number };
+  };
+  sync_health?: {
+    provider_name: string;
+    status: string;
+    last_sync_at: string;
+    sync_lag_seconds: number;
+    authoritative_source?: string;
+    channel?: string;
+  };
 }
 
 export interface TheatreVenueItem {
@@ -217,6 +232,67 @@ export async function getTheatreBookings(params?: {
   return unwrap(res.data);
 }
 
+export interface InvoiceDetailItem {
+  id: string;
+  invoice_number: string;
+  venue_id: string;
+  venue_name: string;
+  venue_city: string;
+  period_start: string;
+  period_end: string;
+  booking_count: number;
+  ticket_count: number;
+  gross_sales_paise: number;
+  commission_paise: number;
+  adjustments_paise: number;
+  tax_paise: number;
+  total_paise: number;
+  paid_paise: number;
+  balance_paise: number;
+  status: string;
+  issue_date?: string;
+  due_date: string;
+  notes?: string;
+  items: Array<{
+    id: string;
+    description: string;
+    item_type: string;
+    amount_paise: number;
+    created_at: string;
+  }>;
+  collections: Array<{
+    id: string;
+    payment_ref: string;
+    payment_method: string;
+    amount_paise: number;
+    status: string;
+    collected_at: string;
+    notes?: string;
+  }>;
+  remittance_instructions: {
+    beneficiary_name: string;
+    bank_name: string;
+    account_number: string;
+    ifsc_code: string;
+    payment_reference_hint: string;
+    dispute_email: string;
+  };
+}
+
+export interface InvoiceDisputePayload {
+  reason: string;
+  disputed_amount_paise?: number;
+  booking_ids?: string[];
+  notes?: string;
+}
+
+export interface InvoiceRemittancePayload {
+  payment_ref: string;
+  payment_method: string;
+  amount_paise: number;
+  notes?: string;
+}
+
 export async function getTheatreInvoices(params?: {
   venue_id?: string;
   status?: string;
@@ -224,6 +300,27 @@ export async function getTheatreInvoices(params?: {
   offset?: number;
 }): Promise<TheatreInvoiceItem[]> {
   const res = await api.get('/theatre/invoices', { params });
+  return unwrap(res.data);
+}
+
+export async function getTheatreInvoiceDetails(invoiceId: string): Promise<InvoiceDetailItem> {
+  const res = await api.get(`/theatre/invoices/${invoiceId}`);
+  return unwrap(res.data);
+}
+
+export async function raiseTheatreInvoiceDispute(
+  invoiceId: string,
+  payload: InvoiceDisputePayload
+): Promise<any> {
+  const res = await api.post(`/theatre/invoices/${invoiceId}/dispute`, payload);
+  return unwrap(res.data);
+}
+
+export async function submitTheatreInvoiceRemittance(
+  invoiceId: string,
+  payload: InvoiceRemittancePayload
+): Promise<any> {
+  const res = await api.post(`/theatre/invoices/${invoiceId}/remittance`, payload);
   return unwrap(res.data);
 }
 
@@ -235,6 +332,148 @@ export async function getTheatreExceptions(params?: {
 }): Promise<TheatreExceptionItem[]> {
   const res = await api.get('/theatre/exceptions', { params });
   return unwrap(res.data);
+}
+
+export async function updateTheatreException(
+  exceptionId: string,
+  payload: {
+    status?: string;
+    resolution_notes?: string;
+    assigned_to?: string;
+  }
+): Promise<any> {
+  const res = await api.patch(`/theatre/exceptions/${exceptionId}`, payload);
+  return unwrap(res.data);
+}
+
+export interface ShowtimeSeatItem {
+  id: string;
+  row_id: string;
+  row_label: string;
+  section?: string;
+  price_paise: number;
+  number: number;
+  code: string;
+  status: 'AVAILABLE' | 'BOOKED' | 'LOCKED' | 'BLOCKED';
+  blocked_reason?: string;
+}
+
+export interface ShowtimeSeatsData {
+  showtime: {
+    id: string;
+    starts_at: string;
+    movie_title: string;
+    screen_name: string;
+    venue_name: string;
+    total_seats: number;
+    booked_count: number;
+    blocked_count: number;
+    available_count: number;
+    sync_metadata?: {
+      source: string;
+      status: string;
+      last_synced_at: string;
+    };
+  };
+  seats: ShowtimeSeatItem[];
+}
+
+export async function getShowtimeSeats(showtimeId: string): Promise<ShowtimeSeatsData> {
+  const res = await api.get(`/theatre/showtimes/${showtimeId}/seats`);
+  return unwrap(res.data);
+}
+
+export async function blockShowtimeSeats(
+  showtimeId: string,
+  payload: {
+    seat_ids: string[];
+    action: 'BLOCK' | 'UNBLOCK';
+    reason?: string;
+    notes?: string;
+  }
+): Promise<any> {
+  const res = await api.post(`/theatre/showtimes/${showtimeId}/seats/block`, payload);
+  return unwrap(res.data);
+}
+
+export interface TheatreNotificationItem {
+  id: string;
+  type: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  title: string;
+  message: string;
+  timestamp: string;
+  link?: string;
+}
+
+export async function getTheatreNotifications(): Promise<TheatreNotificationItem[]> {
+  const res = await api.get('/theatre/notifications');
+  return unwrap(res.data);
+}
+
+export async function validateTheatreTicket(payload: ValidateTicketPayload): Promise<TicketValidationResult> {
+  const res = await api.post('/theatre/tickets/validate', payload);
+  return unwrap(res.data);
+}
+
+export async function listTheatreAdmissions(params?: {
+  venue_id?: string;
+  limit?: number;
+}): Promise<TicketAdmissionItem[]> {
+  const res = await api.get('/theatre/tickets/admissions', { params });
+  return unwrap(res.data);
+}
+
+export interface ValidateTicketPayload {
+  code: string;
+  venue_id?: string;
+  gate_device?: string;
+  admit_now?: boolean;
+  notes?: string;
+}
+
+export interface TicketValidationResult {
+  valid: boolean;
+  status:
+    | "VALID"
+    | "ALREADY_USED"
+    | "CANCELLED"
+    | "UNCONFIRMED"
+    | "NOT_FOUND"
+    | "WRONG_VENUE"
+    | "UNAUTHORIZED_VENUE"
+    | "INVALID_INPUT";
+  message: string;
+  admitted_at?: string;
+  admitted_by?: string;
+  gate_device?: string;
+  booking?: {
+    id?: string;
+    ref_code?: string;
+    movie_title?: string;
+    movie_poster?: string;
+    venue_name?: string;
+    screen_name?: string;
+    showtime?: string;
+    quantity?: number;
+    seats?: string;
+    contact_email?: string;
+    contact_phone?: string;
+  };
+}
+
+export interface TicketAdmissionItem {
+  id: string;
+  booking_id: string;
+  ref_code?: string;
+  venue_name?: string;
+  screen_name?: string;
+  ticket_count: number;
+  admitted_at: string;
+  admitted_by?: string;
+  gate_device?: string;
+  status: string;
+  seats?: string;
 }
 
 // ---------------------------------------------------------------------------

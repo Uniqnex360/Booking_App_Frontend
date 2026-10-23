@@ -85,7 +85,7 @@ export function TheatresManagementTab() {
     email: "",
     password: "",
     phone: "",
-    access_level: "CHAIN_ADMIN" as "CHAIN_ADMIN" | "VENUE_MANAGER",
+    access_level: "CHAIN_ADMIN" as "CHAIN_ADMIN" | "VENUE_MANAGER" | "BOX_OFFICE" | "FINANCE_STAFF" | "AUDITOR",
     chain_id: "",
     venue_id: "",
     onboardingEnquiryId: "" as string | null,
@@ -841,8 +841,11 @@ export function TheatresManagementTab() {
                   value={accountForm.access_level}
                   onChange={(e) => setAccountForm({ ...accountForm, access_level: e.target.value as any })}
                 >
-                  <option value="CHAIN_ADMIN">Chain Administrator</option>
-                  <option value="VENUE_MANAGER">Single Venue Manager</option>
+                  <option value="CHAIN_ADMIN">Chain Owner / Administrator</option>
+                  <option value="VENUE_MANAGER">Multiplex Manager</option>
+                  <option value="BOX_OFFICE">Box Office / Gate Staff (QR Scan & Admissions Only)</option>
+                  <option value="FINANCE_STAFF">Finance Staff (Statements & Disputes)</option>
+                  <option value="AUDITOR">Auditor (Read-Only)</option>
                 </select>
               </div>
 

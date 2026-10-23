@@ -59,6 +59,7 @@
     "expo": "^57.0.28",
     "firebase": "^12.18.0",
     "framer-motion": "^13.1.1",
+    "html5-qrcode": "^2.3.8",
     "input-otp": "^1.2.4",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.446.0",
