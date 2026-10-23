@@ -32,6 +32,7 @@ import VenuesPage from "@/pages/VenuesPage";
 import FoodPage from "@/pages/FoodPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import DeleteAccountPage from "@/pages/DeleteAccountPage";
 import { TheatreLayout } from "@/pages/theatre/TheatreLayout";
 import TheatreDashboardPage from "@/pages/theatre/TheatreDashboardPage";
 import TheatreVenuesPage from "@/pages/theatre/TheatreVenuesPage";
@@ -82,6 +83,9 @@ export function AppRoutes() {
       <Route path="/help" element={<SupportPage />} />
       <Route path="/terms" element={<TermsAndConditionsPage />} />
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+      <Route path="/delete-account" element={<DeleteAccountPage />} />
+      <Route path="/account-deletion" element={<DeleteAccountPage />} />
       <Route path="/showtimes/:id/seat-map" element={<SeatMapPage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:id" element={<BookingPage />} />
