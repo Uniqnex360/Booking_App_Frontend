@@ -17,7 +17,6 @@ import {
   Loader2,
   Menu,
   X,
-  Eye,
 } from "lucide-react";
 
 export function TheatreLayout() {
@@ -98,15 +97,15 @@ export function TheatreLayout() {
           )}
         </div>
 
-        <div className="flex items-center gap-2.5 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
-            to="/movies?view=customer"
-            className="flex items-center gap-1.5 text-xs text-white bg-[#7B1E3D] hover:bg-[#5C0F2A] px-2.5 sm:px-3 py-1.5 rounded-lg font-bold shadow-xs transition"
-            title="See as User: browse movies and cinemas from customer view"
+            to="/movies"
+            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg font-medium transition"
+            title="Browse Movies on Customer Storefront"
           >
-            <Eye className="w-3.5 h-3.5 text-emerald-300" />
-            <span className="hidden sm:inline">See as User</span>
-            <span className="sm:hidden">User View</span>
+            <Film className="w-3.5 h-3.5 text-[#7B1E3D]" />
+            <span className="hidden sm:inline">Customer Storefront</span>
+            <span className="sm:hidden">Storefront</span>
           </Link>
 
           <div className="h-5 w-px bg-slate-200 hidden md:block" />
@@ -196,16 +195,16 @@ export function TheatreLayout() {
               })}
             </nav>
 
-            {/* Direct Switch to Customer View */}
+            {/* Direct Switch to Customer Storefront */}
             <div className="pt-2 border-t border-slate-100">
               <Link
-                to="/movies?view=customer"
+                to="/movies"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-800 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 transition"
+                className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 border border-slate-200 transition"
               >
                 <div className="flex items-center gap-2.5">
-                  <Eye className="w-4 h-4 text-[#7B1E3D]" />
-                  <span>See as User (Storefront)</span>
+                  <Film className="w-4 h-4 text-[#7B1E3D]" />
+                  <span>Customer Storefront</span>
                 </div>
                 <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
               </Link>

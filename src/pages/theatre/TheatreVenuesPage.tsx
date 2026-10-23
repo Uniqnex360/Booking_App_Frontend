@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getTheatreVenues, TheatreVenueItem } from "@/api/theatre.api";
-import { Building2, MapPin, Film, Sliders, Loader2, ArrowRight, Eye } from "lucide-react";
+import { Building2, MapPin, Film, Sliders, Loader2, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export default function TheatreVenuesPage() {
@@ -92,31 +92,20 @@ export default function TheatreVenuesPage() {
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between">
                 <Link
                   to={`/theatre/showtimes?venue_id=${v.id}`}
                   className="text-xs font-semibold text-[#7B1E3D] hover:underline flex items-center gap-1"
                 >
-                  Showtimes <ArrowRight className="w-3.5 h-3.5" />
+                  View Showtimes <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
 
-                <div className="flex items-center gap-3">
-                  <Link
-                    to={`/movies?city=${encodeURIComponent(v.city)}&view=customer`}
-                    className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
-                    title={`See movies in ${v.city} as a user`}
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>See as User</span>
-                  </Link>
-
-                  <Link
-                    to={`/theatre/bookings?venue_id=${v.id}`}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900"
-                  >
-                    Bookings
-                  </Link>
-                </div>
+                <Link
+                  to={`/theatre/bookings?venue_id=${v.id}`}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-900"
+                >
+                  Bookings
+                </Link>
               </div>
             </div>
           ))}

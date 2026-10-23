@@ -20,7 +20,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -86,36 +85,6 @@ export default function TheatreDashboardPage() {
             Brand Workspace Active
           </Badge>
         </div>
-      </div>
-
-      {/* Experience as Customer Banner */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3.5">
-          <div className="p-2.5 rounded-xl bg-white/10 text-emerald-400 shrink-0">
-            <Eye className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-sm sm:text-base text-white">
-                Experience Platform as a Customer
-              </h3>
-              <Badge className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold px-2 py-0.5">
-                Live Preview
-              </Badge>
-            </div>
-            <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
-              Want to see how your movies, showtimes, formats, and seat layouts appear to ticket buyers? Switch to customer view mode to experience the live booking journey.
-            </p>
-          </div>
-        </div>
-        <Link
-          to="/movies?view=customer"
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs transition shrink-0 shadow-sm active:scale-95 cursor-pointer"
-        >
-          <Eye className="w-4 h-4 text-[#7B1E3D]" />
-          <span>See as User</span>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-        </Link>
       </div>
 
       {/* KPI Cards */}
