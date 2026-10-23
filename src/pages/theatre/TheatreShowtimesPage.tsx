@@ -459,12 +459,12 @@ export default function TheatreShowtimesPage() {
       {/* Seat Block & Hold Management Modal (Spec Section 5) */}
       {selectedShowtimeForSeats && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-3xl max-w-4xl w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                   <Layers className="w-5 h-5 text-[#7B1E3D]" />
-                  Auditorium Capacity & Seat Block Control
+                  Auditorium Seating Layout & Partner Hold Control
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {selectedShowtimeForSeats.movie.title} • {selectedShowtimeForSeats.venue.name} ({selectedShowtimeForSeats.screen.name})
@@ -481,7 +481,7 @@ export default function TheatreShowtimesPage() {
 
             <div className="p-6 overflow-y-auto space-y-5 flex-1">
               {loadingSeats ? (
-                <div className="py-16 text-center">
+                <div className="py-20 text-center">
                   <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D] mx-auto mb-2" />
                   <p className="text-xs text-slate-500">Querying live seat availability from cinema engine...</p>
                 </div>
@@ -490,16 +490,113 @@ export default function TheatreShowtimesPage() {
                   {/* Status Pills */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
-                      <div className="text-xs font-semibold text-emerald-700">Available</div>
+                      <div className="text-xs font-semibold text-emerald-700">Available to Users</div>
                       <div className="text-xl font-black text-emerald-900">{seatsData.showtime.available_count}</div>
                     </div>
                     <div className="p-3 rounded-xl bg-slate-100 border border-slate-300 text-center">
-                      <div className="text-xs font-semibold text-slate-700">Booked</div>
+                      <div className="text-xs font-semibold text-slate-700">Booked by Users</div>
                       <div className="text-xl font-black text-slate-900">{seatsData.showtime.booked_count}</div>
                     </div>
                     <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-center">
-                      <div className="text-xs font-semibold text-amber-700">Blocked / VIP Hold</div>
+                      <div className="text-xs font-semibold text-amber-700">Blocked / VIP Holds</div>
                       <div className="text-xl font-black text-amber-900">{seatsData.showtime.blocked_count}</div>
+                    </div>
+                  </div>
+
+                  {/* Customer-Perspective Seating Layout */}
+                  <div className="p-5 rounded-3xl bg-slate-50/70 border border-slate-200 overflow-x-auto">
+                    {/* Curved Cinema Screen */}
+                    <div className="w-full flex flex-col items-center mb-8">
+                      <div className="w-3/4 max-w-md h-2 bg-gradient-to-r from-transparent via-[#7B1E3D]/50 to-transparent rounded-t-full shadow-sm" />
+                      <div className="w-2/3 max-w-sm h-1 bg-[#7B1E3D] rounded-full shadow-[0_4px_16px_rgba(123,30,61,0.4)] mb-1" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                        AUDITORIUM SCREEN (ALL EYES THIS WAY)
+                      </span>
+                    </div>
+
+                    {/* Interactive Customer Layout Rows */}
+                    {seatsData.seats.length === 0 ? (
+                      <p className="text-xs text-slate-400 text-center py-10">No seat positions mapped for this auditorium.</p>
+                    ) : (
+                      <div className="space-y-3 min-w-[500px] flex flex-col items-center">
+                        {(() => {
+                          // Group seats by row_label
+                          const rowsGroup: Record<string, typeof seatsData.seats> = {};
+                          seatsData.seats.forEach((s) => {
+                            if (!rowsGroup[s.row_label]) rowsGroup[s.row_label] = [];
+                            rowsGroup[s.row_label].push(s);
+                          });
+
+                          return Object.entries(rowsGroup).map(([rowLabel, rowSeats]) => {
+                            const sortedSeats = [...rowSeats].sort((a, b) => a.number - b.number);
+                            return (
+                              <div key={rowLabel} className="flex items-center gap-3 w-full justify-center">
+                                {/* Left Row Label */}
+                                <span className="w-6 text-center font-bold text-xs text-slate-400 select-none">
+                                  {rowLabel}
+                                </span>
+
+                                {/* Row Seats Container */}
+                                <div className="flex items-center gap-1.5 flex-wrap justify-center">
+                                  {sortedSeats.map((seat) => {
+                                    const isSelected = selectedSeatIds.includes(seat.id);
+                                    const isBooked = seat.status === "BOOKED" || seat.status === "LOCKED";
+                                    const isBlocked = seat.status === "BLOCKED";
+
+                                    return (
+                                      <button
+                                        key={seat.id}
+                                        type="button"
+                                        disabled={isBooked}
+                                        onClick={() => handleToggleSeatSelect(seat.id)}
+                                        title={`Seat ${seat.code} • Status: ${seat.status}${
+                                          seat.blocked_reason ? ` (${seat.blocked_reason})` : ""
+                                        }${isBooked ? " (Booked by customer - cannot modify)" : ""}`}
+                                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg text-[10px] sm:text-xs font-bold transition flex items-center justify-center border select-none ${
+                                          isSelected
+                                            ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-md scale-105 z-10"
+                                            : isBooked
+                                            ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed opacity-80"
+                                            : isBlocked
+                                            ? "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
+                                            : "bg-white text-slate-700 border-slate-300 hover:border-[#7B1E3D] hover:bg-slate-50"
+                                        }`}
+                                      >
+                                        {seat.number}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Right Row Label */}
+                                <span className="w-6 text-center font-bold text-xs text-slate-400 select-none">
+                                  {rowLabel}
+                                </span>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Customer-Perspective Seating Legend */}
+                    <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-8 pt-4 border-t border-slate-200/80 text-xs">
+                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+                        <div className="w-4 h-4 rounded-md bg-white border border-slate-300" />
+                        <span>Available (Live on User Screen)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+                        <div className="w-4 h-4 rounded-md bg-slate-200 border border-slate-300 opacity-80" />
+                        <span>Booked (Customer Sold)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+                        <div className="w-4 h-4 rounded-md bg-amber-100 border border-amber-300" />
+                        <span>Blocked / VIP Hold (Hidden from Users)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+                        <div className="w-4 h-4 rounded-md bg-[#7B1E3D] border border-[#7B1E3D]" />
+                        <span>Selected for Action</span>
+                      </div>
                     </div>
                   </div>
 
@@ -510,89 +607,49 @@ export default function TheatreShowtimesPage() {
                     </div>
                   )}
 
-                  {/* Seat Grid */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-700">
-                        Select Seats ({selectedSeatIds.length} selected)
-                      </span>
-                      <span className="text-[11px] text-slate-400">Click a seat to toggle selection</span>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 max-h-64 overflow-y-auto">
-                      {seatsData.seats.length === 0 ? (
-                        <p className="text-xs text-slate-400 text-center py-6">No individual seat positions mapped for this auditorium.</p>
-                      ) : (
-                        <div className="grid grid-cols-6 sm:grid-cols-10 gap-2">
-                          {seatsData.seats.map((seat) => {
-                            const isSelected = selectedSeatIds.includes(seat.id);
-                            const isBooked = seat.status === "BOOKED" || seat.status === "LOCKED";
-                            const isBlocked = seat.status === "BLOCKED";
-
-                            return (
-                              <button
-                                key={seat.id}
-                                type="button"
-                                disabled={isBooked}
-                                onClick={() => handleToggleSeatSelect(seat.id)}
-                                title={`${seat.code} (${seat.status}) ${seat.blocked_reason ? `- ${seat.blocked_reason}` : ""}`}
-                                className={`h-8 rounded-lg text-xs font-bold transition flex items-center justify-center border ${
-                                  isSelected
-                                    ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-xs"
-                                    : isBooked
-                                    ? "bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed"
-                                    : isBlocked
-                                    ? "bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-200"
-                                    : "bg-white text-slate-700 border-slate-200 hover:border-[#7B1E3D]"
-                                }`}
-                              >
-                                {seat.code}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
                   {/* Action Controls */}
                   <div className="pt-2 border-t border-slate-100 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-bold text-slate-700 shrink-0">Reason:</span>
-                      <select
-                        value={blockReason}
-                        onChange={(e) => setBlockReason(e.target.value)}
-                        className="h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium text-slate-800 flex-1"
-                      >
-                        <option value="VIP Hold">VIP / Partner Hold</option>
-                        <option value="Broken Armrest / Seat Damage">Broken Armrest / Seat Damage</option>
-                        <option value="Sound / Projection Maintenance">Auditorium Maintenance</option>
-                        <option value="Executive Reservation">Executive Reservation</option>
-                      </select>
-                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                        <span>Selected:</span>
+                        <span className="font-bold text-[#7B1E3D]">{selectedSeatIds.length} seats</span>
+                        <span className="text-slate-400">•</span>
+                        <span>Reason:</span>
+                        <select
+                          value={blockReason}
+                          onChange={(e) => setBlockReason(e.target.value)}
+                          className="h-9 rounded-xl border border-slate-200 px-3 bg-white text-xs font-medium text-slate-800"
+                        >
+                          <option value="VIP Hold">VIP / Partner Hold</option>
+                          <option value="Broken Armrest / Seat Damage">Broken Armrest / Seat Damage</option>
+                          <option value="Sound / Projection Maintenance">Auditorium Maintenance</option>
+                          <option value="Executive Reservation">Executive Reservation</option>
+                        </select>
+                      </div>
 
-                    <div className="flex items-center justify-end gap-2.5">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={selectedSeatIds.length === 0 || actionLoading}
-                        onClick={() => handleSeatAction("UNBLOCK")}
-                        className="h-9 text-xs rounded-xl gap-1 text-slate-700 hover:bg-slate-100"
-                      >
-                        <Unlock className="w-3.5 h-3.5" />
-                        Unblock Selected
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={selectedSeatIds.length === 0 || actionLoading}
-                        onClick={() => handleSeatAction("BLOCK")}
-                        className="h-9 text-xs rounded-xl gap-1 bg-[#7B1E3D] hover:bg-[#601730] text-white"
-                      >
-                        {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
-                        Block Selected ({selectedSeatIds.length})
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={selectedSeatIds.length === 0 || actionLoading}
+                          onClick={() => handleSeatAction("UNBLOCK")}
+                          className="h-9 text-xs rounded-xl gap-1 text-slate-700 hover:bg-slate-100"
+                        >
+                          <Unlock className="w-3.5 h-3.5" />
+                          Unblock for Users
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={selectedSeatIds.length === 0 || actionLoading}
+                          onClick={() => handleSeatAction("BLOCK")}
+                          className="h-9 text-xs rounded-xl gap-1 bg-[#7B1E3D] hover:bg-[#601730] text-white"
+                        >
+                          {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lock className="w-3.5 h-3.5" />}
+                          Block from Users ({selectedSeatIds.length})
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </>
