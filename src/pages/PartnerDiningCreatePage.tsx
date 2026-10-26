@@ -300,7 +300,7 @@ export default function PartnerDiningCreatePage() {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <Header />
 
-      <main className="max-w-4xl mx-auto w-full px-4 pt-28 pb-16 flex-1">
+      <main className="max-w-4xl mx-auto w-full px-4 pt-28 sm:pt-36 lg:pt-40 pb-16 flex-1">
         {/* Back link */}
         <div className="mb-6">
           <Link

@@ -361,7 +361,7 @@
       <div className="min-h-screen bg-slate-50">
         <Header />
 
-        <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
+        <div className="bg-gradient-to-b from-wine-50 to-background pt-28 sm:pt-36 lg:pt-40 pb-8">
           <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
             <Link
               to="/partner/dashboard"

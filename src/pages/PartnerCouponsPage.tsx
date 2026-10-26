@@ -219,7 +219,7 @@ export default function PartnerCouponsPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <Header />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-36 lg:pt-40 pb-16 w-full">
         {/* Navigation & Title */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>

@@ -288,7 +288,7 @@ export default function PartnerDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Header />
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 pt-20 sm:pt-24">
+      <main className="flex-grow max-w-7xl w-full mx-auto px-4 pb-16 pt-28 sm:pt-36 lg:pt-40">
         <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-8 mb-6 sm:mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6 shadow-sm">
           <div>
             <div className="flex items-center gap-3">
