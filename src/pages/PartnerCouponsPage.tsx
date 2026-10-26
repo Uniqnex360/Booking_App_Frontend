@@ -35,6 +35,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Loader } from "@/components/common/Loader";
+import { LoadingPage } from "./LoadingPage";
 import { formatRupees } from "@/utils/currencyFormatter";
 import { getMyPartnerProfile } from "@/api/partner.api";
 import { getMyEvents } from "@/api/event.api";
@@ -201,15 +202,7 @@ export default function PartnerCouponsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader />
-        </div>
-        <Footer />
-      </div>
-    );
+    return <LoadingPage showFooter={false} />;
   }
 
   const activeCount = coupons.filter((c) => c.is_active).length;
