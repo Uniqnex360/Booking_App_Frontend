@@ -224,10 +224,10 @@ export default function PartnerCouponsPage() {
               <ArrowLeft className="h-4 w-4" /> Back to Dashboard
             </Button>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Tag className="h-8 w-8 text-[#7B1E3D]" /> Dining Coupons
+              <Tag className="h-8 w-8 text-[#7B1E3D]" /> Event & Experience Coupons
             </h1>
             <p className="text-slate-500 text-sm mt-1">
-              Create discount coupons for your dining events and drive bookings.
+              Create discount coupons for your events and experiences to drive bookings.
             </p>
           </div>
 
@@ -324,7 +324,7 @@ export default function PartnerCouponsPage() {
                             </span>
                           ) : (
                             <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-600">
-                              All Dining Events
+                              All Events & Experiences
                             </Badge>
                           )}
                         </td>
@@ -394,7 +394,7 @@ export default function PartnerCouponsPage() {
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-900">
-              <Tag className="h-5 w-5 text-[#7B1E3D]" /> Create Dining Coupon
+              <Tag className="h-5 w-5 text-[#7B1E3D]" /> Create Coupon
             </DialogTitle>
           </DialogHeader>
 
@@ -420,7 +420,7 @@ export default function PartnerCouponsPage() {
                 onChange={(e) => setEventId(e.target.value)}
                 className="mt-1 w-full border border-slate-300 rounded-lg p-2.5 text-sm bg-white"
               >
-                <option value="ALL">All my dining events</option>
+                <option value="ALL">All my events & experiences</option>
                 {events.map((e) => (
                   <option key={e.id} value={e.id}>
                     {e.title}

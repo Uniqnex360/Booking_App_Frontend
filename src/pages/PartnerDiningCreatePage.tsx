@@ -289,7 +289,19 @@ export default function PartnerDiningCreatePage() {
       toast.success("Dining experience submitted for moderation! An admin will review it shortly.");
       navigate("/partner/dashboard");
     } catch (err: any) {
-      const msg = err?.message || err?.response?.data?.detail || "Failed to create dining experience";
+      let msg = "Failed to create dining experience";
+      if (err?.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (typeof detail === "string") {
+          msg = detail;
+        } else if (Array.isArray(detail)) {
+          msg = detail.map((d: any) => d.msg || JSON.stringify(d)).join(", ");
+        } else if (typeof detail === "object") {
+          msg = detail.message || JSON.stringify(detail);
+        }
+      } else if (err?.message) {
+        msg = err.message;
+      }
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
