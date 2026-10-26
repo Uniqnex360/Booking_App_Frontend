@@ -302,7 +302,7 @@ export function BookingCard({
       </div>
 
       {/* Discount / Coupon breakdown if present */}
-      {b.discount_paise && b.discount_paise > 0 && (
+      {Boolean(b.discount_paise && b.discount_paise > 0) && (
         <div className="border-t border-gray-100 bg-emerald-50/70 px-4 py-2.5 text-xs flex items-center justify-between text-emerald-800">
           <span className="flex items-center gap-1.5 font-medium">
             <span>Coupon Discount</span>
@@ -327,7 +327,7 @@ export function BookingCard({
               Cancelled
             </Badge>
           )}
-          {b.discount_paise && b.discount_paise > 0 && b.subtotal_paise && (
+          {Boolean(b.discount_paise && b.discount_paise > 0 && b.subtotal_paise) && (
             <span className="text-xs text-gray-400 line-through">
               {formatCurrency(b.subtotal_paise / 100)}
             </span>
