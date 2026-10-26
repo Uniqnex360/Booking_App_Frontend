@@ -50,8 +50,8 @@ export default function BookingDetailPage() {
   };
 
   if (loading) {
-  return <LoadingPage showFooter={true} />;
-}
+    return <LoadingPage showFooter={false} />;
+  }
 
   if (!booking) {
     return (
@@ -72,7 +72,10 @@ export default function BookingDetailPage() {
   const isMovie = booking.type === 'MOVIE' && !!booking.starts_at;
   const isEvent = booking.type === 'EVENT' && !!booking.starts_at;
   const showtime = booking.starts_at ? new Date(booking.starts_at) : null;
-  const isPastShowtime = showtime ? showtime.getTime() <= Date.now() : false;
+  const eventEnd = booking.ends_at ? new Date(booking.ends_at) : null;
+  const isPastShowtime = eventEnd
+    ? eventEnd.getTime() <= Date.now()
+    : showtime ? showtime.getTime() <= Date.now() : false;
   const isCancellable = (booking.status === 'CONFIRMED' || booking.status === 'HELD') && !isPastShowtime;
   const seats = booking.seat_codes ?? [];
   const qty = booking.quantity ?? seats.length ?? booking.guests ?? 1;

@@ -101,7 +101,7 @@ export default function ConfirmationPage() {
         </div>
       </main>
 
-      {!Capacitor.isNativePlatform() && (
+      {!loading && !Capacitor.isNativePlatform() && (
         <div className="hidden md:block">
           <Footer />
         </div>

@@ -206,7 +206,7 @@ export default function ProfilePage() {
   const upcoming = bookings.filter(
     (b) =>
       (b.status === "CONFIRMED" || b.status === "HELD") &&
-      isUpcoming(b.starts_at ?? b.booking_date),
+      (b.ends_at ? isUpcoming(b.ends_at) : isUpcoming(b.starts_at ?? b.booking_date)),
   );
   const past = bookings.filter((b) => !upcoming.some((u) => u.id === b.id));
 

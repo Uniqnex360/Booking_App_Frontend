@@ -582,7 +582,7 @@ export default function BookingPage() {
   };
 
   if (loading) {
-    return <LoadingPage showFooter={true} />;
+    return <LoadingPage showFooter={false} />;
   }
 
   if (!eventData) {

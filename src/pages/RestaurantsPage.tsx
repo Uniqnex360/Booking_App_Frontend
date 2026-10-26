@@ -221,7 +221,7 @@ export default function RestaurantsPage() {
         </div>
       </section>
 
-      <Footer />
+      {!loading && <Footer />}
     </div>
   );
 }

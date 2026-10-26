@@ -460,7 +460,7 @@ export default function HomePage() {
         </section>
       </div>
 
-      {!Capacitor.isNativePlatform() && (
+      {!loading && !Capacitor.isNativePlatform() && (
         <div className="hidden md:block">
           <Footer />
         </div>

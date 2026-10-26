@@ -799,7 +799,7 @@ export default function DiningListingPage() {
         }}
       />
 
-      <Footer />
+      {!loading && <Footer />}
     </div>
   );
 }

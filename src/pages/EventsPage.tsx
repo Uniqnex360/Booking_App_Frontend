@@ -1120,7 +1120,7 @@ export default function EventsPage() {
         }}
       />
 
-      <Footer />
+      {!loading && <Footer />}
     </div>
   );
 }

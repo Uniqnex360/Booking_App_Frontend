@@ -115,7 +115,7 @@ export default function VenuesPage() {
         </div>
       </main>
 
-      <Footer />
+      {!loading && <Footer />}
     </div>
   );
 }

@@ -1047,7 +1047,7 @@ export default function MoviesPage() {
         </div>
       )}
 
-      <Footer />
+      {!loading && <Footer />}
       <CitySelectionModal
         isOpen={isCityModalOpen}
         onClose={() => setIsCityModalOpen(false)}

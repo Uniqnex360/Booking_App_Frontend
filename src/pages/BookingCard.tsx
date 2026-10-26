@@ -59,7 +59,10 @@ export function BookingCard({
   const ticketLabel = booking.type === "EVENT" ? "E-Ticket" : "M-Ticket";
 
   const isCancelled = currentStatus === "CANCELLED";
-  const isPastShowtime = bookingDate.getTime() <= Date.now();
+  const eventEnd = booking.ends_at ? new Date(booking.ends_at) : null;
+  const isPastShowtime = eventEnd
+    ? eventEnd.getTime() <= Date.now()
+    : bookingDate.getTime() <= Date.now();
   const statusLabel =
     isCancelled
       ? "Cancelled"
