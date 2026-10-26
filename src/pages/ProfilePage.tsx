@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   getWishlist,
@@ -182,26 +182,22 @@ export default function ProfilePage() {
     };
   }, [user]);
 
+  const fetchBookings = useCallback(async () => {
+    try {
+      const data = await getBookings();
+      setBookings(data);
+    } catch {
+      setBookings([]);
+    } finally {
+      setBookingsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchBookings = async () => {
-      try {
-        const data = await getBookings();
-        if (isMounted) setBookings(data);
-      } catch {
-        if (isMounted) setBookings([]);
-      } finally {
-        if (isMounted) setBookingsLoading(false);
-      }
-    };
-
-    if (user) fetchBookings();
-
-    return () => {
-      isMounted = false; 
-    };
-  }, [user]);
+    if (user) {
+      fetchBookings();
+    }
+  }, [user, fetchBookings]);
 
   if (loading || !user) {
     return <LoadingPage showFooter={false} />;
@@ -742,7 +738,11 @@ export default function ProfilePage() {
                       </h3>
                       <div className="grid gap-4">
                         {upcoming.map((b) => (
-                          <BookingCard key={b.id} booking={b} />
+                          <BookingCard
+                            key={b.id}
+                            booking={b}
+                            onCancelled={fetchBookings}
+                          />
                         ))}
                       </div>
                     </div>
@@ -754,7 +754,12 @@ export default function ProfilePage() {
                       </h3>
                       <div className="grid gap-4">
                         {past.map((b) => (
-                          <BookingCard key={b.id} booking={b} past />
+                          <BookingCard
+                            key={b.id}
+                            booking={b}
+                            past
+                            onCancelled={fetchBookings}
+                          />
                         ))}
                       </div>
                     </div>

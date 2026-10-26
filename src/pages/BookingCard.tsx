@@ -1,19 +1,37 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { MapPin, Users, Ticket } from "lucide-react";
+import { MapPin, Users, Ticket, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { formatDate } from "@/utils/dateFormatter";
 import { toast } from "sonner";
+import { api, unwrap } from "@/api/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Booking } from "@/types/booking.types";
 
 export function BookingCard({
   booking,
   past = false,
+  onCancelled,
 }: {
   booking: Booking;
   past?: boolean;
+  onCancelled?: () => void;
 }) {
+  const [currentStatus, setCurrentStatus] = useState<string>(booking.status);
+  const [cancelling, setCancelling] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   // --- adapter: support both the list shape and the confirmation DTO ---
   const b = booking as any;
   const poster = b.image_url ?? b.poster_url ?? null;
@@ -40,12 +58,32 @@ export function BookingCard({
   const screenOrTier = booking.tier_name || booking.screen_name || (booking.type === "EVENT" ? "ENTRY PASS" : "SCREEN");
   const ticketLabel = booking.type === "EVENT" ? "E-Ticket" : "M-Ticket";
 
+  const isCancelled = currentStatus === "CANCELLED";
+  const isPastShowtime = bookingDate.getTime() <= Date.now();
   const statusLabel =
-    booking.status === "CANCELLED"
+    isCancelled
       ? "Cancelled"
-      : past
+      : past || isPastShowtime
         ? "Completed"
         : "Confirmed";
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      await unwrap<any>(api.patch(`/bookings/${booking.id}/cancel`));
+      toast.success("Booking cancelled successfully", {
+        description: `A refund of ₹${Math.round(totalRupees).toLocaleString("en-IN")} has been initiated to your original payment method.`,
+      });
+      setCurrentStatus("CANCELLED");
+      setShowConfirm(false);
+      onCancelled?.();
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message || "Failed to cancel booking";
+      toast.error("Cancellation failed", { description: msg });
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const dateStr = bookingDate.toLocaleString("en-IN", {
     weekday: "short",
@@ -239,11 +277,20 @@ export function BookingCard({
           </button>
           <button
             type="button"
-            disabled={past || booking.status === "CANCELLED"}
-            onClick={() => toast.info("Cancellation coming soon")}
-            className="py-2 text-xs text-gray-400 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={past || isPastShowtime || isCancelled || cancelling}
+            onClick={() => setShowConfirm(true)}
+            className="py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 disabled:opacity-40 disabled:cursor-not-allowed transition"
           >
-            Cancel booking
+            {cancelling ? (
+              <span className="inline-flex items-center gap-1 justify-center">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Cancelling...
+              </span>
+            ) : isCancelled ? (
+              "Cancelled"
+            ) : (
+              "Cancel booking"
+            )}
           </button>
           <Link
             to="/contact"
@@ -275,7 +322,7 @@ export function BookingCard({
       <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm">
         <span className="text-gray-600">Total Paid</span>
         <div className="flex items-center gap-2">
-          {booking.status === "CANCELLED" && (
+          {isCancelled && (
             <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px] font-bold uppercase">
               Cancelled
             </Badge>
@@ -290,6 +337,50 @@ export function BookingCard({
           </span>
         </div>
       </div>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-rose-600">
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              Cancel Booking?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 space-y-2 pt-2">
+              <span className="block text-sm">
+                Are you sure you want to cancel your booking for{" "}
+                <strong className="text-gray-900">{title}</strong>?
+              </span>
+              <span className="block text-xs text-gray-500 bg-gray-50 p-2.5 rounded border border-gray-200 mt-2">
+                A full refund of{" "}
+                <strong className="text-gray-900 font-bold">
+                  ₹{Math.round(totalRupees).toLocaleString("en-IN")}
+                </strong>{" "}
+                will be initiated to your original payment method within 5-7 business days. Your reserved seats will be released immediately.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep Booking</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancel();
+              }}
+              disabled={cancelling}
+              className="bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500"
+            >
+              {cancelling ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Cancelling...
+                </span>
+              ) : (
+                "Confirm Cancellation"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
