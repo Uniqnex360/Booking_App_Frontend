@@ -237,9 +237,12 @@ export default function AdminPartnersPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All types</SelectItem>
-                  <SelectItem value="restaurant">Restaurant</SelectItem>
+                  <SelectItem value="experience_partner">
+                    Experience & Dining Partner
+                  </SelectItem>
+                  <SelectItem value="restaurant">Restaurant (Legacy)</SelectItem>
                   <SelectItem value="event_organiser">
-                    Event Organizer
+                    Event Organizer (Legacy)
                   </SelectItem>
                 </SelectContent>
               </Select>

@@ -42,9 +42,9 @@ const partnerSchema = z.object({
   business_name: z
     .string()
     .min(2, 'Business name must be at least 2 characters'),
-  partner_type: z.enum(['restaurant', 'event_organiser'], {
-    errorMap: () => ({ message: 'Please select a partner type' }),
-  }),
+  partner_type: z
+    .enum(['experience_partner', 'restaurant', 'event_organiser', 'cinema'])
+    .default('experience_partner'),
   contact_name: z
     .string()
     .min(2, 'Contact name must be at least 2 characters'),
@@ -115,6 +115,9 @@ export default function BecomePartnerPage() {
     formState: { errors },
   } = useForm<PartnerFormData>({
     resolver: zodResolver(partnerSchema),
+    defaultValues: {
+      partner_type: 'experience_partner',
+    },
   });
   
   const onSubmit = async (data: PartnerFormData) => {
@@ -248,8 +251,8 @@ export default function BecomePartnerPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Store className="w-4 h-4 text-[#7B1E3D]" />
-              Dining & Event Organiser
+              <Sparkles className="w-4 h-4 text-[#7B1E3D]" />
+              Experience & Dining Partner
             </button>
             <button
               type="button"
@@ -418,50 +421,20 @@ export default function BecomePartnerPage() {
               </p>
 
               <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
-            {/* Partner Type */}
+            {/* Partner Category */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Partner Type *
-              </Label>
-              <Controller
-                control={control}
-                name="partner_type"
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger className="h-11 rounded-xl">
-                      <SelectValue placeholder="Select your business type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(partnerTypeMeta) as (keyof typeof partnerTypeMeta)[]).map(
-  (key) => {
-    const meta = partnerTypeMeta[key];
-    if (!meta) return null;
-    const Icon = meta.icon;
-    return (
-      <SelectItem key={key} value={key}>
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-[#7B1E3D]" />
-          <span>{meta.label}</span>
-          <span className="text-xs text-slate-500">
-            — {meta.desc}
-          </span>
-        </div>
-      </SelectItem>
-    );
-  }
-)}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.partner_type && (
-                <p className="text-xs text-rose-600">
-                  {errors.partner_type.message}
-                </p>
-              )}
+              <Label className="text-sm font-medium">Partner Category</Label>
+              <div className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="w-10 h-10 rounded-xl bg-[#7B1E3D]/10 text-[#7B1E3D] flex items-center justify-center shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Experience & Dining Partner</p>
+                  <p className="text-xs text-slate-500">
+                    Host live events, festivals, Sunday brunches, buffets, and dining passes
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Business Name */}
