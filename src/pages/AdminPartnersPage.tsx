@@ -52,6 +52,15 @@ import {
   Loader2,
   Users,
   Search,
+  FileCheck,
+  FileText,
+  ExternalLink,
+  Download,
+  Eye,
+  AlertCircle,
+  Copy,
+  Building2,
+  CheckCircle2,
 } from 'lucide-react';
 import { getAdminPartners, updatePartnerStatus } from '@/api/admin.api';
 import { PaginatedResponse } from '@/types';
@@ -85,6 +94,10 @@ export default function AdminPartnersPage() {
   const [rejectPartner, setRejectPartner] = useState<Partner | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
+
+  // KYC Document Verification Modal state
+  const [selectedPartnerForDocs, setSelectedPartnerForDocs] = useState<Partner | null>(null);
+  const [activeDocTab, setActiveDocTab] = useState<'gst' | 'pan'>('gst');
 
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
@@ -155,7 +168,7 @@ export default function AdminPartnersPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Header />
+      <Header hideLocation />
 
      <div className="mx-auto max-w-6xl px-4 pt-32 pb-8 sm:px-6 lg:px-8">
 
@@ -285,6 +298,9 @@ export default function AdminPartnersPage() {
                     <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 lg:table-cell">
                       City
                     </th>
+                    <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 md:table-cell">
+                      KYC Documents
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Status
                     </th>
@@ -333,6 +349,42 @@ export default function AdminPartnersPage() {
                             {partner.city}
                           </span>
                         </td>
+                        <td className="hidden px-4 py-4 md:table-cell">
+                          <div className="flex flex-col gap-1 items-start">
+                            {(partner.gst_certificate_url || partner.pan_card_url) ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedPartnerForDocs(partner);
+                                  setActiveDocTab(partner.gst_certificate_url ? 'gst' : 'pan');
+                                }}
+                                className="h-7 rounded-lg border-emerald-300 bg-emerald-50/50 px-2 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100 flex items-center gap-1.5"
+                              >
+                                <FileCheck className="h-3.5 w-3.5 text-emerald-600" />
+                                Review Docs ({[partner.gst_certificate_url, partner.pan_card_url].filter(Boolean).length}/2)
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedPartnerForDocs(partner);
+                                  setActiveDocTab('gst');
+                                }}
+                                className="h-7 rounded-lg px-2 text-[11px] text-slate-400 hover:text-slate-700"
+                              >
+                                <FileText className="h-3.5 w-3.5 mr-1" />
+                                No docs
+                              </Button>
+                            )}
+                            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono">
+                              {partner.gst_number ? <span>GST: {partner.gst_number}</span> : null}
+                              {partner.gst_number && partner.pan_number ? <span>•</span> : null}
+                              {partner.pan_number ? <span>PAN: {partner.pan_number}</span> : null}
+                            </div>
+                          </div>
+                        </td>
                         <td className="px-4 py-4">
                           <Badge
                             className={`border ${statusBadge[partner.status]}`}
@@ -342,6 +394,19 @@ export default function AdminPartnersPage() {
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setSelectedPartnerForDocs(partner);
+                                setActiveDocTab(partner.gst_certificate_url ? 'gst' : 'pan');
+                              }}
+                              className="h-8 rounded-full px-2.5 text-xs text-slate-600 hover:bg-slate-100"
+                              title="Verify GST and PAN Documents"
+                            >
+                              <Eye className="h-3.5 w-3.5 mr-1 text-slate-500" />
+                              Docs
+                            </Button>
                             {partner.status === 'PENDING_APPROVAL' && (
                               <>
                                 <AlertDialog>
@@ -497,6 +562,342 @@ export default function AdminPartnersPage() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* KYC Document Verification Modal */}
+      <Dialog
+        open={!!selectedPartnerForDocs}
+        onOpenChange={(open) => !open && setSelectedPartnerForDocs(null)}
+      >
+        <DialogContent className="max-w-3xl rounded-2xl p-6">
+          <DialogHeader className="border-b border-slate-100 pb-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <DialogTitle className="font-serif text-xl font-semibold text-slate-900 flex items-center gap-2">
+                  <FileCheck className="h-5 w-5 text-[#7B1E3D]" />
+                  KYC & Tax Compliance Verification
+                </DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 mt-1">
+                  Verify business documentation and government identity proofs for{' '}
+                  <span className="font-semibold text-slate-900">
+                    {selectedPartnerForDocs?.business_name}
+                  </span>
+                </DialogDescription>
+              </div>
+              {selectedPartnerForDocs && (
+                <Badge
+                  className={`border text-xs ${statusBadge[selectedPartnerForDocs.status]}`}
+                >
+                  {statusLabel[selectedPartnerForDocs.status]}
+                </Badge>
+              )}
+            </div>
+          </DialogHeader>
+
+          {selectedPartnerForDocs && (
+            <div className="space-y-5 pt-2">
+              {/* Partner Overview Strip */}
+              <div className="grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-4 text-xs">
+                <div>
+                  <span className="text-slate-400 block font-medium">Business</span>
+                  <span className="font-semibold text-slate-800">{selectedPartnerForDocs.business_name}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Contact Person</span>
+                  <span className="font-semibold text-slate-800">{selectedPartnerForDocs.contact_name} ({selectedPartnerForDocs.contact_phone})</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">City</span>
+                  <span className="font-semibold text-slate-800">{selectedPartnerForDocs.city}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-medium">Category</span>
+                  <span className="font-semibold text-slate-800">
+                    {partnerTypeMeta[selectedPartnerForDocs.partner_type]?.label || selectedPartnerForDocs.partner_type}
+                  </span>
+                </div>
+              </div>
+
+              {/* Document Tabs */}
+              <div className="flex gap-2 border-b border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setActiveDocTab('gst')}
+                  className={`pb-2.5 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+                    activeDocTab === 'gst'
+                      ? 'border-[#7B1E3D] text-[#7B1E3D]'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <FileText className="h-4 w-4" />
+                  GST Certificate
+                  {selectedPartnerForDocs.gst_certificate_url ? (
+                    <span className="ml-1 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-800 font-bold">✓ Attached</span>
+                  ) : (
+                    <span className="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">Missing</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveDocTab('pan')}
+                  className={`pb-2.5 text-xs font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+                    activeDocTab === 'pan'
+                      ? 'border-[#7B1E3D] text-[#7B1E3D]'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <FileText className="h-4 w-4" />
+                  PAN Card Document
+                  {selectedPartnerForDocs.pan_card_url ? (
+                    <span className="ml-1 rounded-full bg-indigo-100 px-1.5 py-0.5 text-[10px] text-indigo-800 font-bold">✓ Attached</span>
+                  ) : (
+                    <span className="ml-1 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500">Missing</span>
+                  )}
+                </button>
+              </div>
+
+              {/* GST Certificate Tab View */}
+              {activeDocTab === 'gst' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3">
+                    <div>
+                      <span className="text-[11px] text-slate-400 block font-medium">Declared GSTIN Number</span>
+                      <span className="font-mono text-sm font-bold text-slate-900">
+                        {selectedPartnerForDocs.gst_number || 'Not provided'}
+                      </span>
+                    </div>
+                    {selectedPartnerForDocs.gst_number && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedPartnerForDocs.gst_number!);
+                          toast.success('GST number copied to clipboard');
+                        }}
+                        className="h-8 text-xs text-slate-600 hover:text-slate-900"
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        Copy GSTIN
+                      </Button>
+                    )}
+                  </div>
+
+                  {selectedPartnerForDocs.gst_certificate_url ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                          <span className="text-xs font-semibold text-slate-800">
+                            GST Certificate Document File
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs rounded-lg"
+                          >
+                            <a
+                              href={selectedPartnerForDocs.gst_certificate_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                              Open in New Window
+                            </a>
+                          </Button>
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs rounded-lg"
+                          >
+                            <a
+                              href={selectedPartnerForDocs.gst_certificate_url}
+                              download
+                            >
+                              <Download className="h-3.5 w-3.5 mr-1" />
+                              Download
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex max-h-[55vh] items-center justify-center overflow-auto rounded-lg bg-white p-2 border border-slate-200">
+                        {selectedPartnerForDocs.gst_certificate_url.toLowerCase().includes('.pdf') ? (
+                          <iframe
+                            src={selectedPartnerForDocs.gst_certificate_url}
+                            title="GST Certificate"
+                            className="h-[400px] w-full rounded border-0"
+                          />
+                        ) : (
+                          <img
+                            src={selectedPartnerForDocs.gst_certificate_url}
+                            alt="GST Certificate"
+                            className="max-h-[400px] w-auto rounded object-contain"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+                      <AlertCircle className="mx-auto h-8 w-8 text-amber-500 mb-2" />
+                      <p className="text-sm font-semibold text-amber-900">
+                        No GST Certificate Uploaded
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        The partner did not attach a digital GST registration certificate during submission.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* PAN Card Tab View */}
+              {activeDocTab === 'pan' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3">
+                    <div>
+                      <span className="text-[11px] text-slate-400 block font-medium">Declared PAN Number</span>
+                      <span className="font-mono text-sm font-bold text-slate-900">
+                        {selectedPartnerForDocs.pan_number || 'Not provided'}
+                      </span>
+                    </div>
+                    {selectedPartnerForDocs.pan_number && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(selectedPartnerForDocs.pan_number!);
+                          toast.success('PAN number copied to clipboard');
+                        }}
+                        className="h-8 text-xs text-slate-600 hover:text-slate-900"
+                      >
+                        <Copy className="h-3.5 w-3.5 mr-1" />
+                        Copy PAN
+                      </Button>
+                    )}
+                  </div>
+
+                  {selectedPartnerForDocs.pan_card_url ? (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-indigo-600" />
+                          <span className="text-xs font-semibold text-slate-800">
+                            PAN Card Document File
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs rounded-lg"
+                          >
+                            <a
+                              href={selectedPartnerForDocs.pan_card_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                              Open in New Window
+                            </a>
+                          </Button>
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs rounded-lg"
+                          >
+                            <a
+                              href={selectedPartnerForDocs.pan_card_url}
+                              download
+                            >
+                              <Download className="h-3.5 w-3.5 mr-1" />
+                              Download
+                            </a>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex max-h-[55vh] items-center justify-center overflow-auto rounded-lg bg-white p-2 border border-slate-200">
+                        {selectedPartnerForDocs.pan_card_url.toLowerCase().includes('.pdf') ? (
+                          <iframe
+                            src={selectedPartnerForDocs.pan_card_url}
+                            title="PAN Card"
+                            className="h-[400px] w-full rounded border-0"
+                          />
+                        ) : (
+                          <img
+                            src={selectedPartnerForDocs.pan_card_url}
+                            alt="PAN Card"
+                            className="max-h-[400px] w-auto rounded object-contain"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+                      <AlertCircle className="mx-auto h-8 w-8 text-amber-500 mb-2" />
+                      <p className="text-sm font-semibold text-amber-900">
+                        No PAN Card Document Uploaded
+                      </p>
+                      <p className="text-xs text-amber-700 mt-1">
+                        The partner did not attach a digital PAN card during submission.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons in Modal */}
+              <div className="flex items-center justify-between border-t border-slate-200 pt-4 mt-6">
+                <div>
+                  {selectedPartnerForDocs.status === 'PENDING_APPROVAL' && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const id = selectedPartnerForDocs.id;
+                          setSelectedPartnerForDocs(null);
+                          handleApprove(id);
+                        }}
+                        className="rounded-xl bg-emerald-600 text-xs font-semibold text-slate-900 hover:bg-emerald-700"
+                      >
+                        <Check className="h-3.5 w-3.5 mr-1" />
+                        Approve Partner
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const p = selectedPartnerForDocs;
+                          setSelectedPartnerForDocs(null);
+                          openRejectDialog(p);
+                        }}
+                        className="rounded-xl border-red-300 text-xs font-semibold text-red-600 hover:bg-red-50"
+                      >
+                        <X className="h-3.5 w-3.5 mr-1" />
+                        Reject Application
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedPartnerForDocs(null)}
+                  className="rounded-xl text-xs"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

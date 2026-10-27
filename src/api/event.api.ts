@@ -1,5 +1,5 @@
 import { api, unwrap } from './client';
-import { EventItem } from '@/types/event.types';
+import { EventItem, EventCategoryRecord } from '@/types/event.types';
 
 export interface VenueItem {
   venue_name: string;
@@ -38,4 +38,9 @@ export async function getEventVenues(city?: string): Promise<VenueItem[]> {
     api.get('/events/venues', { params: city ? { city } : undefined })
   );
   return data.items || [];
+}
+
+export async function getActiveEventCategories(): Promise<EventCategoryRecord[]> {
+  const data = await unwrap<{ categories: EventCategoryRecord[] }>(api.get('/events/categories'));
+  return data.categories || [];
 }

@@ -8,8 +8,8 @@ import { ChevronDown, ImageOff, X, SlidersHorizontal, RotateCcw, Search, MapPin 
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { CitySelectionModal } from '@/components/common/CitySelectionModal';
-import { getEvents } from '@/api/event.api';
-import type { EventItem } from '@/types/event.types';
+import { getEvents, getActiveEventCategories } from '@/api/event.api';
+import type { EventItem, EventCategoryRecord } from '@/types/event.types';
 import { WINE_COLOR, WINE_HOVER } from '@/constants/theme';
 
 const DISPLAY_LABELS: Record<string, string> = {
@@ -17,7 +17,6 @@ const DISPLAY_LABELS: Record<string, string> = {
   concert: 'Music Shows',
   comedy: 'Comedy Shows',
   theatre: 'Performances',
-  dining: 'Dining & Food',
   kids: 'Kids',
   spirituality: 'Spirituality',
   meetups: 'Meetups',
@@ -74,7 +73,6 @@ const EVENT_CATEGORY_OPTIONS = [
   { key: 'comedy', label: 'Comedy Shows' },
   { key: 'concert', label: 'Music Shows' },
   { key: 'theatre', label: 'Performances' },
-  { key: 'dining', label: 'Dining & Food' },
   { key: 'meetups', label: 'Meetups' },
   { key: 'exhibition', label: 'Exhibitions' },
   { key: 'kids', label: 'Kids' },
@@ -228,6 +226,21 @@ export default function EventsPage() {
     return count;
   }, [activeCategory, activeDate, activePrice, activeLangs, activeTags, activeFlags, search]);
 
+  const [dbCategories, setDbCategories] = useState<EventCategoryRecord[]>([]);
+
+  useEffect(() => {
+    getActiveEventCategories()
+      .then((cats) => {
+        const nonDining = (cats || []).filter(
+          (c) => c.slug.toLowerCase() !== "dining" && c.is_active
+        );
+        if (nonDining.length > 0) {
+          setDbCategories(nonDining);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -283,20 +296,32 @@ export default function EventsPage() {
     if (document.body) document.body.scrollTop = 0;
   };
 
-  // Only upcoming or live events (not past)
+  // Only upcoming or live events (excluding dining, which is a separate vertical)
   const upcomingOrLiveEvents = useMemo(() => {
     const now = new Date();
-    return events.filter((e) => !e.ends_at || new Date(e.ends_at) >= now);
+    return events.filter(
+      (e) =>
+        e.category?.toLowerCase() !== "dining" &&
+        (!e.ends_at || new Date(e.ends_at) >= now)
+    );
   }, [events]);
 
   // Full list of categories: all standard event categories plus any custom categories from events
   const availableCategories = useMemo(() => {
     const map = new Map<string, string>();
-    EVENT_CATEGORY_OPTIONS.forEach((c) => map.set(c.key, c.label));
+    if (dbCategories.length > 0) {
+      dbCategories.forEach((c) => map.set(c.slug, c.name));
+    } else {
+      EVENT_CATEGORY_OPTIONS.forEach((c) => map.set(c.key, c.label));
+    }
 
-    // Also include any dynamic categories from events
+    // Also include any dynamic categories from events (excluding dining)
     events.forEach((e) => {
-      if (e.category && !map.has(e.category)) {
+      if (
+        e.category &&
+        e.category.toLowerCase() !== "dining" &&
+        !map.has(e.category)
+      ) {
         map.set(
           e.category,
           DISPLAY_LABELS[e.category] ||
@@ -306,7 +331,7 @@ export default function EventsPage() {
     });
 
     return Array.from(map.entries()).map(([key, label]) => ({ key, label }));
-  }, [events]);
+  }, [events, dbCategories]);
 
   // Client-side filtering logic
   const filteredEvents = useMemo(() => {

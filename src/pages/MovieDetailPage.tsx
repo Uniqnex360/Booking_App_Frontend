@@ -935,7 +935,7 @@ export default function MovieDetailPage() {
           </div>
         </div>
 
-        {/* ─── List your Show Banner (Matching BMS Exact Reference) ─── */}
+        {/* ─── Become a Partner Banner ─── */}
         <div className="bg-[#404046] text-white py-4 mt-4">
           <div className="max-w-[1240px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -945,7 +945,7 @@ export default function MovieDetailPage() {
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                   <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
-                    List your Show
+                    Become a Partner
                   </span>
                   <span className="text-xs text-gray-300">
                     Got a show, event, activity or a great experience? Partner
@@ -955,7 +955,7 @@ export default function MovieDetailPage() {
               </div>
             </div>
             <Link
-              to="/partner/register"
+              to="/partner/become"
               className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
             >
               Contact today!

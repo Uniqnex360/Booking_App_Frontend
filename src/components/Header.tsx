@@ -59,7 +59,7 @@ const CITY_STORAGE_KEY = "vyhbz_selected_city";
 const navLinks = [
   { href: "/movies", label: "Movies" },
   { href: "/events", label: "Events" },
-  { href: "/dining", label: "Dining" },
+  { href: "/restaurants", label: "Restaurants & Dining" },
 ];
 
 interface SearchResults {
@@ -151,10 +151,21 @@ const DEFAULT_NOTIFICATIONS: DrawerNotification[] = [
   },
 ];
 
-export function Header() {
+export interface HeaderProps {
+  hideLocation?: boolean;
+}
+
+export function Header({ hideLocation }: HeaderProps = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, openAuthModal } = useAuth() as any;
+
+  const isAdmin =
+    user?.role === "ADMIN" ||
+    user?.role === "SUPER_ADMIN" ||
+    location.pathname.startsWith("/admin");
+
+  const showLocation = !hideLocation && !isAdmin;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isCityModalOpen, setIsCityModalOpen] = useState(false);
@@ -520,16 +531,18 @@ export function Header() {
           </Link>
 
           {/* Mobile Location Selector */}
-          <button
-            type="button"
-            onClick={() => setIsCityModalOpen(true)}
-            className="md:hidden flex items-center gap-1 text-xs font-semibold text-gray-800 bg-gray-100 hover:bg-gray-200 active:scale-95 px-2.5 py-1.5 rounded-full transition cursor-pointer select-none shrink-0 border border-gray-200/80 shadow-2xs"
-            title="Select City"
-          >
-            <MapPin className="h-3.5 w-3.5 text-[#7B1E3D] shrink-0" />
-            <span className="max-w-[85px] sm:max-w-[120px] truncate">{displayCityName(city)}</span>
-            <ChevronDown className="h-3 w-3 text-gray-500 shrink-0" />
-          </button>
+          {showLocation && (
+            <button
+              type="button"
+              onClick={() => setIsCityModalOpen(true)}
+              className="md:hidden flex items-center gap-1 text-xs font-semibold text-gray-800 bg-gray-100 hover:bg-gray-200 active:scale-95 px-2.5 py-1.5 rounded-full transition cursor-pointer select-none shrink-0 border border-gray-200/80 shadow-2xs"
+              title="Select City"
+            >
+              <MapPin className="h-3.5 w-3.5 text-[#7B1E3D] shrink-0" />
+              <span className="max-w-[85px] sm:max-w-[120px] truncate">{displayCityName(city)}</span>
+              <ChevronDown className="h-3 w-3 text-gray-500 shrink-0" />
+            </button>
+          )}
         </div>
 
         <div
@@ -546,15 +559,17 @@ export function Header() {
 
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 ml-auto">
           {/* Desktop City Selector */}
-          <button
-            type="button"
-            onClick={() => setIsCityModalOpen(true)}
-            className="hidden md:flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-[#7B1E3D] transition-colors cursor-pointer select-none py-1 px-1.5 rounded-md hover:bg-gray-50"
-          >
-            <MapPin className="h-4 w-4 text-[#7B1E3D] shrink-0" />
-            <span>{displayCityName(city)}</span>
-            <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
-          </button>
+          {showLocation && (
+            <button
+              type="button"
+              onClick={() => setIsCityModalOpen(true)}
+              className="hidden md:flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-[#7B1E3D] transition-colors cursor-pointer select-none py-1 px-1.5 rounded-md hover:bg-gray-50"
+            >
+              <MapPin className="h-4 w-4 text-[#7B1E3D] shrink-0" />
+              <span>{displayCityName(city)}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-gray-500" />
+            </button>
+          )}
 
           {/* Desktop User / Sign In */}
           <div className="hidden md:flex items-center">
@@ -706,7 +721,7 @@ export function Header() {
               to="/partner/become"
               className="text-[13px] font-medium text-gray-600 hover:text-[#7B1E3D] transition-colors"
             >
-              List Your Show
+              Become a Partner
             </Link>
           )}
         </div>
@@ -852,8 +867,8 @@ export function Header() {
                     user?.role !== "SUPER_ADMIN" && (
                       <DrawerMenuItem
                         icon={Sparkles}
-                        title="List Your Show"
-                        subtitle="Got an event? Partner with us"
+                        title="Become a Partner"
+                        subtitle="Got an event or venue? Partner with us"
                         onClick={() => handleProfileNavigation("/partner/become")}
                       />
                     )}
@@ -1245,25 +1260,27 @@ export function Header() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-2 shadow-sm">
-                  <label className="text-xs font-semibold text-gray-700 block uppercase tracking-wider">
-                    Current City
-                  </label>
-                  <p className="text-xs text-gray-500">
-                    Showtimes and event schedules will be tailored to this city.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDrawerOpen(false);
-                      setIsCityModalOpen(true);
-                    }}
-                    className="w-full flex items-center justify-between rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 hover:border-[#7B1E3D] transition cursor-pointer"
-                  >
-                    <span>{displayCityName(city)}</span>
-                    <ChevronDown className="h-4 w-4 text-gray-400" />
-                  </button>
-                </div>
+                {showLocation && (
+                  <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-2 shadow-sm">
+                    <label className="text-xs font-semibold text-gray-700 block uppercase tracking-wider">
+                      Current City
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Showtimes and event schedules will be tailored to this city.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDrawerOpen(false);
+                        setIsCityModalOpen(true);
+                      }}
+                      className="w-full flex items-center justify-between rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 hover:border-[#7B1E3D] transition cursor-pointer"
+                    >
+                      <span>{displayCityName(city)}</span>
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </button>
+                  </div>
+                )}
 
                 <div className="p-4 rounded-xl border border-gray-200 bg-white space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -1408,12 +1425,14 @@ export function Header() {
         </SheetContent>
       </Sheet>
 
-      <CitySelectionModal
-        isOpen={isCityModalOpen}
-        onClose={() => setIsCityModalOpen(false)}
-        currentCity={city}
-        onSelectCity={(newCity) => setCity(newCity)}
-      />
+      {showLocation && (
+        <CitySelectionModal
+          isOpen={isCityModalOpen}
+          onClose={() => setIsCityModalOpen(false)}
+          currentCity={city}
+          onSelectCity={(newCity) => setCity(newCity)}
+        />
+      )}
       <GlobalSearchModal
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}

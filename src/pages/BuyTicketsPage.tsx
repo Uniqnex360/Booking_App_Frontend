@@ -25,6 +25,8 @@ import {
   Utensils,
   PartyPopper,
   ArrowLeft,
+  Languages,
+  Check,
 } from "lucide-react";
 import { withCity } from "@/lib/cityLink";
 import { LoadingPage } from "./LoadingPage";
@@ -88,6 +90,17 @@ function dateTabParts(dateKey: string) {
     day: dt.toLocaleDateString("en-IN", { day: "2-digit", timeZone: "UTC" }),
     month: dt.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" }),
   };
+}
+
+function matchesCity(vCity?: string | null, targetCity?: string | null): boolean {
+  if (!vCity || !targetCity) return false;
+  const a = vCity.toLowerCase().trim();
+  const b = targetCity.toLowerCase().trim();
+  if (a === b) return true;
+  if ((a === "bangalore" || a === "bengaluru") && (b === "bangalore" || b === "bengaluru")) return true;
+  if ((a === "kochi" || a === "cochin") && (b === "kochi" || b === "cochin")) return true;
+  if ((a === "chennai" || a === "madras") && (b === "chennai" || b === "madras")) return true;
+  return false;
 }
 
 function getCityState(city: string): string {
@@ -315,7 +328,7 @@ export default function BuyTicketsPage() {
 
   const venuesInCity = useMemo(() => {
     return (movie?.venues ?? []).filter(
-      (v) => (v.city || "").toLowerCase() === (city || "").toLowerCase(),
+      (v) => matchesCity(v.city, city),
     );
   }, [movie, city]);
 
@@ -333,26 +346,47 @@ export default function BuyTicketsPage() {
 
   const activeDate = selectedDate ?? dateKeys[0] ?? null;
 
+  const distinctLanguages = useMemo(() => {
+    const set = new Set<string>();
+    if (movie?.language) {
+      movie.language.split(/[,/&|]+/).forEach((l) => {
+        const clean = l.trim();
+        if (clean) set.add(clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase());
+      });
+    }
+    venuesInCity.forEach((v) =>
+      v.showtimes.forEach((s) => {
+        if (s.language) {
+          s.language.split(/[,/&|]+/).forEach((l: string) => {
+            const clean = l.trim();
+            if (clean) set.add(clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase());
+          });
+        }
+      })
+    );
+    return Array.from(set).sort();
+  }, [venuesInCity, movie?.language]);
+
   const langFormatOptions = useMemo(() => {
     const set = new Set<string>();
     venuesInCity.forEach((v) =>
       v.showtimes
         .filter((s) => new Date(s.starts_at).getTime() > now)
-        .filter((s) => !activeDate || istDateKey(s.starts_at) === activeDate)
         .forEach((s) => {
           const langs = (s.language || "")
             .split(/[,/&|]+/)
             .map((str: string) => str.trim())
             .filter(Boolean);
+          const fmt = s.format || "2D";
           if (langs.length > 0) {
-            langs.forEach((l) => set.add(`${l} - ${s.format || "2D"}`));
+            langs.forEach((l) => set.add(`${l.charAt(0).toUpperCase() + l.slice(1).toLowerCase()} - ${fmt}`));
           } else {
-            set.add(`${s.language || "Tamil"} - ${s.format || "2D"}`);
+            set.add(`${(movie?.language || "Tamil").split(/[,/&|]+/)[0].trim()} - ${fmt}`);
           }
         }),
     );
     return Array.from(set).sort();
-  }, [venuesInCity, activeDate, now]);
+  }, [venuesInCity, movie?.language, now]);
 
   const genres = useMemo(() => {
     if (!movie?.genre) return ["Action", "Thriller"];
@@ -374,20 +408,25 @@ export default function BuyTicketsPage() {
           .filter((s) => {
             if (!langFormatFilter || langFormatFilter === "all") return true;
             const filterLower = langFormatFilter.toLowerCase().trim();
-            const slotLangFmt = `${s.language} - ${s.format}`.toLowerCase().trim();
+            const slotLang = (s.language || "").toLowerCase().trim();
+            const slotFmt = (s.format || "2D").toLowerCase().trim();
+            const slotLangFmt = `${slotLang} - ${slotFmt}`;
+
             if (slotLangFmt === filterLower) return true;
-            if (s.language && s.language.toLowerCase().trim() === filterLower) return true;
+            if (slotLang === filterLower) return true;
+
+            const slotLangs = slotLang.split(/[,/&|]+/).map((l: string) => l.trim());
+            if (slotLangs.includes(filterLower)) return true;
+
             const parts = filterLower.split("-").map((p) => p.trim());
             if (parts.length === 2) {
               const [reqLang, reqFmt] = parts;
-              const slotLangs = (s.language || "").toLowerCase().split(/[,/&|]+/).map((l: string) => l.trim());
-              const matchesLang = slotLangs.includes(reqLang) || (s.language || "").toLowerCase().includes(reqLang);
-              const sFmt = (s.format || "").toLowerCase().trim();
-              const is2D = !sFmt.includes("3d");
+              const matchesLang = slotLangs.includes(reqLang) || slotLang.includes(reqLang);
+              const is2D = !slotFmt.includes("3d");
               const matchesFmt =
                 reqFmt === "2d"
                   ? is2D
-                  : sFmt.includes(reqFmt) || reqFmt.includes(sFmt);
+                  : slotFmt.includes(reqFmt) || reqFmt.includes(slotFmt);
               return matchesLang && matchesFmt;
             }
             return false;
@@ -738,12 +777,20 @@ export default function BuyTicketsPage() {
     );
   }
 
-  const activeFormatDisplay =
-    langFormatFilter === "all"
-      ? (langFormatOptions[0] || `${movie.language} - 2D`)
-      : (langFormatOptions.find(
-          (o) => o.toLowerCase() === langFormatFilter.toLowerCase(),
-        ) || langFormatFilter);
+  const activeFormatDisplay = useMemo(() => {
+    if (!langFormatFilter || langFormatFilter === "all") {
+      return "All Languages";
+    }
+    const matched = langFormatOptions.find(
+      (o) => o.toLowerCase() === langFormatFilter.toLowerCase(),
+    );
+    if (matched) return matched;
+    const matchedLang = distinctLanguages.find(
+      (l) => l.toLowerCase() === langFormatFilter.toLowerCase(),
+    );
+    if (matchedLang) return `${matchedLang} (All Formats)`;
+    return langFormatFilter;
+  }, [langFormatFilter, langFormatOptions, distinctLanguages]);
 
   return (
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">
@@ -895,46 +942,98 @@ export default function BuyTicketsPage() {
                   })}
                 </div>
               </div>
-<div className="flex items-center h-[36px] sm:h-[44px] lg:h-full w-full lg:w-auto lg:shrink-0 overflow-x-auto lg:overflow-visible border-t border-gray-100 lg:border-t-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px] sm:text-xs">                <div className="relative h-full flex items-center border-r border-gray-200 px-5">
+<div className="flex items-center h-[36px] sm:h-[44px] lg:h-full w-full lg:w-auto lg:shrink-0 overflow-x-auto lg:overflow-visible border-t border-gray-100 lg:border-t-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden text-[11px] sm:text-xs">                <div className="relative h-full flex items-center border-r border-gray-200 px-3 sm:px-4">
                   <button
                     onClick={() => toggleDropdown("langFormat")}
-                    className="flex items-center gap-1 text-xs font-semibold text-gray-900 h-full whitespace-nowrap cursor-pointer"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-gray-900 h-full whitespace-nowrap cursor-pointer hover:text-[#7B1E3D] transition"
                   >
+                    <Languages className="w-3.5 h-3.5 text-gray-500" />
                     <span>{activeFormatDisplay}</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-gray-500 transition-transform ${
+                        openDropdown === "langFormat" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#7B1E3D]" />
+                  {langFormatFilter !== "all" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#7B1E3D]" />
+                  )}
 
                   {openDropdown === "langFormat" && (
-                    <div className="fixed left-2 right-2 top-[216px] lg:absolute lg:left-0 lg:right-auto lg:top-full z-50 bg-white border border-gray-200 rounded-b-md shadow-xl py-1 min-w-[180px]">
+                    <div className="fixed left-2 right-2 top-[216px] lg:absolute lg:left-0 lg:right-auto lg:top-full z-50 bg-white border border-gray-200 rounded-xl shadow-xl py-2 min-w-[210px] max-h-[340px] overflow-y-auto">
+                      <div className="px-3.5 py-1 text-[10px] uppercase font-bold text-gray-400">
+                        Language & Format
+                      </div>
                       <button
                         onClick={() => {
                           setLangFormatFilter("all");
                           setOpenDropdown(null);
                         }}
-                        className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
+                        className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-gray-50 transition cursor-pointer ${
                           langFormatFilter === "all"
-                            ? "text-[#7B1E3D] font-semibold"
-                            : "text-gray-700"
+                            ? "text-[#7B1E3D] font-bold bg-[#7B1E3D]/5"
+                            : "text-gray-700 font-medium"
                         }`}
                       >
-                        All Formats
+                        <span>All Languages & Formats</span>
+                        {langFormatFilter === "all" && <Check className="w-3.5 h-3.5 text-[#7B1E3D]" />}
                       </button>
-                      {langFormatOptions.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => {
-                            setLangFormatFilter(opt);
-                            setOpenDropdown(null);
-                          }}
-                          className={`w-full text-left px-4 py-2 text-xs hover:bg-gray-50 ${
-                            langFormatFilter.toLowerCase() === opt.toLowerCase()
-                              ? "text-[#7B1E3D] font-semibold"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
+
+                      {distinctLanguages.length > 0 && (
+                        <>
+                          <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase font-bold text-gray-400 border-t border-gray-100 mt-1">
+                            Filter by Language
+                          </div>
+                          {distinctLanguages.map((lang) => {
+                            const isSelected = langFormatFilter.toLowerCase() === lang.toLowerCase();
+                            return (
+                              <button
+                                key={lang}
+                                onClick={() => {
+                                  setLangFormatFilter(lang);
+                                  setOpenDropdown(null);
+                                }}
+                                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-gray-50 transition cursor-pointer ${
+                                  isSelected
+                                    ? "text-[#7B1E3D] font-bold bg-[#7B1E3D]/5"
+                                    : "text-gray-700 font-medium"
+                                }`}
+                              >
+                                <span>{lang} (All Formats)</span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-[#7B1E3D]" />}
+                              </button>
+                            );
+                          })}
+                        </>
+                      )}
+
+                      {langFormatOptions.length > 0 && (
+                        <>
+                          <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase font-bold text-gray-400 border-t border-gray-100 mt-1">
+                            Specific Formats
+                          </div>
+                          {langFormatOptions.map((opt) => {
+                            const isSelected = langFormatFilter.toLowerCase() === opt.toLowerCase();
+                            return (
+                              <button
+                                key={opt}
+                                onClick={() => {
+                                  setLangFormatFilter(opt);
+                                  setOpenDropdown(null);
+                                }}
+                                className={`w-full text-left px-3.5 py-2 text-xs flex items-center justify-between hover:bg-gray-50 transition cursor-pointer ${
+                                  isSelected
+                                    ? "text-[#7B1E3D] font-bold bg-[#7B1E3D]/5"
+                                    : "text-gray-700 font-medium"
+                                }`}
+                              >
+                                <span>{opt}</span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-[#7B1E3D]" />}
+                              </button>
+                            );
+                          })}
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1607,7 +1706,7 @@ export default function BuyTicketsPage() {
                 <div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <span className="text-sm sm:text-base font-bold text-white whitespace-nowrap">
-                      List your Show
+                      Become a Partner
                     </span>
                     <span className="text-xs text-gray-300">
                       Got a show, event, activity or a great experience? Partner
@@ -1617,7 +1716,7 @@ export default function BuyTicketsPage() {
                 </div>
               </div>
               <Link
-                to="/partner/register"
+                to="/partner/become"
                 className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-semibold text-xs px-5 py-2.5 rounded-md transition shrink-0 cursor-pointer shadow-xs whitespace-nowrap"
               >
                 Contact today!

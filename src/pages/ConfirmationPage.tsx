@@ -37,8 +37,8 @@ export default function ConfirmationPage() {
 
   const isDining = booking?.category === "dining";
   const isEvent = booking?.type === "EVENT" || booking?.category;
-  const backLabel = isDining ? "Back to dining" : isEvent ? "Back to events" : "Back to movies";
-  const backPath = isDining ? "/dining" : isEvent ? "/events" : "/movies";
+  const backLabel = isDining ? "Back to restaurants & dining" : isEvent ? "Back to events" : "Back to movies";
+  const backPath = isDining ? "/restaurants" : isEvent ? "/events" : "/movies";
 
   const adapted = booking
     ? {

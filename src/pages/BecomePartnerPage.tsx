@@ -16,7 +16,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getMyPartnerProfile, registerPartner } from '@/api/partner.api';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { getMyPartnerProfile, registerPartner, uploadPartnerDocument } from '@/api/partner.api';
 import { submitTheatreEnquiry } from '@/api/theatre.api';
 import type { Partner, PartnerType } from '@/types/partner.types';
 
@@ -34,6 +41,12 @@ import {
   Sparkles,
   Clock,
   AlertCircle,
+  FileUp,
+  FileCheck,
+  Eye,
+  Trash2,
+  CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 import { LoadingPage } from './LoadingPage';
 import { partnerTypeMeta } from '@/lib/partnerTypeMeta';
@@ -55,6 +68,8 @@ const partnerSchema = z.object({
   city: z.string().min(2, 'City is required'),
   gst_number: z.string().optional().or(z.literal('')),
   pan_number: z.string().optional().or(z.literal('')),
+  gst_certificate_url: z.string().optional().or(z.literal('')),
+  pan_card_url: z.string().optional().or(z.literal('')),
 });
 
 type PartnerFormData = z.infer<typeof partnerSchema>;
@@ -64,11 +79,19 @@ type PartnerFormData = z.infer<typeof partnerSchema>;
 export default function BecomePartnerPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
-   const [checking, setChecking] = useState(true); 
+  const [checking, setChecking] = useState(true); 
   const [existingPartner, setExistingPartner] = useState<Partner | null>(null);
   const [partnerMode, setPartnerMode] = useState<'events_dining' | 'theatre'>('events_dining');
   const [submittingTheatre, setSubmittingTheatre] = useState(false);
   const [theatreSubmitted, setTheatreSubmitted] = useState(false);
+
+  // Document states & preview
+  const [gstDoc, setGstDoc] = useState<{ name: string; url: string; isPdf: boolean } | null>(null);
+  const [panDoc, setPanDoc] = useState<{ name: string; url: string; isPdf: boolean } | null>(null);
+  const [uploadingGst, setUploadingGst] = useState(false);
+  const [uploadingPan, setUploadingPan] = useState(false);
+  const [previewModalDoc, setPreviewModalDoc] = useState<{ title: string; url: string; isPdf: boolean } | null>(null);
+
   const [theatreData, setTheatreData] = useState({
     theatre_name: '',
     contact_name: '',
@@ -111,14 +134,83 @@ export default function BecomePartnerPage() {
     register,
     handleSubmit,
     control,
+    setValue,
     reset,
     formState: { errors },
   } = useForm<PartnerFormData>({
     resolver: zodResolver(partnerSchema),
     defaultValues: {
       partner_type: 'experience_partner',
+      gst_certificate_url: '',
+      pan_card_url: '',
     },
   });
+
+  const handleDocumentUpload = async (file: File, type: 'gst' | 'pan') => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File too large', { description: 'Maximum file size allowed is 10MB.' });
+      return;
+    }
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isImage = file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name);
+    if (!isPdf && !isImage) {
+      toast.error('Unsupported file format', { description: 'Please upload a PDF or an Image (PNG, JPG, WEBP).' });
+      return;
+    }
+
+    if (type === 'gst') {
+      setUploadingGst(true);
+    } else {
+      setUploadingPan(true);
+    }
+
+    try {
+      const docTypeSlug = type === 'gst' ? 'gst_certificate' : 'pan_card';
+      let resolvedUrl = '';
+
+      try {
+        const uploadRes = await uploadPartnerDocument(file, docTypeSlug);
+        if (uploadRes && uploadRes.url) {
+          resolvedUrl = uploadRes.url;
+        }
+      } catch (err) {
+        console.warn('Backend document upload fallback to base64 data URL:', err);
+        const reader = new FileReader();
+        resolvedUrl = await new Promise<string>((resolve) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (type === 'gst') {
+        setValue('gst_certificate_url', resolvedUrl, { shouldValidate: true });
+        setGstDoc({ name: file.name, url: resolvedUrl, isPdf });
+        toast.success('GST Certificate attached successfully');
+      } else {
+        setValue('pan_card_url', resolvedUrl, { shouldValidate: true });
+        setPanDoc({ name: file.name, url: resolvedUrl, isPdf });
+        toast.success('PAN Card attached successfully');
+      }
+    } catch (err: any) {
+      toast.error('Failed to attach document', { description: err.message || 'Please try again.' });
+    } finally {
+      if (type === 'gst') {
+        setUploadingGst(false);
+      } else {
+        setUploadingPan(false);
+      }
+    }
+  };
+
+  const handleRemoveDoc = (type: 'gst' | 'pan') => {
+    if (type === 'gst') {
+      setValue('gst_certificate_url', '', { shouldValidate: true });
+      setGstDoc(null);
+    } else {
+      setValue('pan_card_url', '', { shouldValidate: true });
+      setPanDoc(null);
+    }
+  };
   
   const onSubmit = async (data: PartnerFormData) => {
     setSubmitting(true);
@@ -131,9 +223,11 @@ export default function BecomePartnerPage() {
         city: data.city,
         gst_number: data.gst_number || undefined,
         pan_number: data.pan_number || undefined,
+        gst_certificate_url: data.gst_certificate_url || undefined,
+        pan_card_url: data.pan_card_url || undefined,
       });
       toast.success('Application submitted!', {
-        description: 'We will review your request and get back to you soon.',
+        description: 'We will review your documents and get back to you soon.',
       });
       navigate('/partner/dashboard');
   } catch (error: any) {
@@ -169,7 +263,18 @@ export default function BecomePartnerPage() {
           city: partner.city,
           gst_number: partner.gst_number || '',
           pan_number: partner.pan_number || '',
+          gst_certificate_url: partner.gst_certificate_url || '',
+          pan_card_url: partner.pan_card_url || '',
         });
+
+        if (partner.gst_certificate_url) {
+          const isPdf = partner.gst_certificate_url.toLowerCase().includes('.pdf');
+          setGstDoc({ name: 'GST Certificate (Uploaded)', url: partner.gst_certificate_url, isPdf });
+        }
+        if (partner.pan_card_url) {
+          const isPdf = partner.pan_card_url.toLowerCase().includes('.pdf');
+          setPanDoc({ name: 'PAN Card (Uploaded)', url: partner.pan_card_url, isPdf });
+        }
       } catch (err: any) {
         // 404 means no application yet, which is fine!
       } finally {
@@ -558,6 +663,227 @@ export default function BecomePartnerPage() {
               </div>
             </div>
 
+            {/* Business & Tax Verification Documents (GST & PAN) */}
+            <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                  <FileCheck className="h-4 w-4 text-[#7B1E3D]" />
+                  KYC Verification Documents
+                </h4>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Upload your business GST Registration Certificate and PAN Card for account verification. (Max 10MB; PDF, JPG, PNG, WEBP)
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* GST Certificate Upload Box */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>GST Registration Certificate</span>
+                    {gstDoc && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Attached
+                      </span>
+                    )}
+                  </Label>
+
+                  {gstDoc ? (
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 flex flex-col justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 font-bold text-xs uppercase overflow-hidden">
+                          {gstDoc.isPdf ? (
+                            'PDF'
+                          ) : (
+                            <img
+                              src={gstDoc.url}
+                              alt="GST Preview"
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-semibold text-slate-800">
+                            {gstDoc.name}
+                          </p>
+                          <p className="text-[11px] text-emerald-700">
+                            Ready for verification
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1 border-t border-emerald-100">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setPreviewModalDoc({
+                              title: 'GST Registration Certificate',
+                              url: gstDoc.url,
+                              isPdf: gstDoc.isPdf,
+                            })
+                          }
+                          className="h-7 px-2 text-xs text-slate-700 hover:text-slate-900"
+                        >
+                          <Eye className="mr-1 h-3.5 w-3.5" />
+                          View
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveDoc('gst')}
+                          className="h-7 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="gst_file_input"
+                        accept=".pdf,image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleDocumentUpload(file, 'gst');
+                          e.target.value = '';
+                        }}
+                        disabled={uploadingGst}
+                      />
+                      <label
+                        htmlFor="gst_file_input"
+                        className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white p-4 text-center cursor-pointer transition-colors hover:border-[#7B1E3D] hover:bg-[#7B1E3D]/5"
+                      >
+                        {uploadingGst ? (
+                          <div className="flex flex-col items-center gap-1.5 py-2">
+                            <Loader2 className="h-6 w-6 animate-spin text-[#7B1E3D]" />
+                            <span className="text-xs font-medium text-slate-600">Uploading & verifying GST doc...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <FileUp className="h-6 w-6 text-slate-400 mb-1" />
+                            <span className="text-xs font-semibold text-slate-800">
+                              Upload GST Certificate
+                            </span>
+                            <span className="text-[11px] text-slate-500 mt-0.5">
+                              Click or drop PDF / Image
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {/* PAN Card Upload Box */}
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>PAN Card</span>
+                    {panDoc && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Attached
+                      </span>
+                    )}
+                  </Label>
+
+                  {panDoc ? (
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-3 flex flex-col justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700 font-bold text-xs uppercase overflow-hidden">
+                          {panDoc.isPdf ? (
+                            'PDF'
+                          ) : (
+                            <img
+                              src={panDoc.url}
+                              alt="PAN Preview"
+                              className="h-full w-full object-cover"
+                            />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-semibold text-slate-800">
+                            {panDoc.name}
+                          </p>
+                          <p className="text-[11px] text-indigo-700">
+                            Ready for verification
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1 border-t border-indigo-100">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setPreviewModalDoc({
+                              title: 'PAN Card Document',
+                              url: panDoc.url,
+                              isPdf: panDoc.isPdf,
+                            })
+                          }
+                          className="h-7 px-2 text-xs text-slate-700 hover:text-slate-900"
+                        >
+                          <Eye className="mr-1 h-3.5 w-3.5" />
+                          View
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveDoc('pan')}
+                          className="h-7 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        id="pan_file_input"
+                        accept=".pdf,image/png,image/jpeg,image/webp"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleDocumentUpload(file, 'pan');
+                          e.target.value = '';
+                        }}
+                        disabled={uploadingPan}
+                      />
+                      <label
+                        htmlFor="pan_file_input"
+                        className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white p-4 text-center cursor-pointer transition-colors hover:border-[#7B1E3D] hover:bg-[#7B1E3D]/5"
+                      >
+                        {uploadingPan ? (
+                          <div className="flex flex-col items-center gap-1.5 py-2">
+                            <Loader2 className="h-6 w-6 animate-spin text-[#7B1E3D]" />
+                            <span className="text-xs font-medium text-slate-600">Uploading & verifying PAN doc...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <FileUp className="h-6 w-6 text-slate-400 mb-1" />
+                            <span className="text-xs font-semibold text-slate-800">
+                              Upload PAN Card
+                            </span>
+                            <span className="text-[11px] text-slate-500 mt-0.5">
+                              Click or drop PDF / Image
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* Submit */}
             <Button
               type="submit"
@@ -578,6 +904,39 @@ export default function BecomePartnerPage() {
       )}
     </div>
   </div>
+
+  {/* Lightbox / Preview Modal for applicant */}
+  <Dialog
+    open={!!previewModalDoc}
+    onOpenChange={(open) => !open && setPreviewModalDoc(null)}
+  >
+    <DialogContent className="max-w-2xl rounded-2xl p-6">
+      <DialogHeader>
+        <DialogTitle className="font-serif text-lg font-semibold text-slate-900">
+          {previewModalDoc?.title}
+        </DialogTitle>
+        <DialogDescription className="text-xs text-slate-500">
+          Verification document preview
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="mt-4 flex max-h-[70vh] items-center justify-center overflow-auto rounded-xl bg-slate-100 p-2">
+        {previewModalDoc?.isPdf ? (
+          <iframe
+            src={previewModalDoc.url}
+            title={previewModalDoc.title}
+            className="h-[500px] w-full rounded-lg border border-slate-200"
+          />
+        ) : (
+          <img
+            src={previewModalDoc?.url}
+            alt={previewModalDoc?.title}
+            className="max-h-[500px] w-auto rounded-lg object-contain shadow-sm"
+          />
+        )}
+      </div>
+    </DialogContent>
+  </Dialog>
 </div>
 );
 }

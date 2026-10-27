@@ -18,8 +18,9 @@
     SelectTrigger,
     SelectValue,
   } from "@/components/ui/select";
-  import { createEvent } from "@/api/event.api";
-  import type { EventCategory } from "@/types/event.types";
+  import { createEvent, getActiveEventCategories } from "@/api/event.api";
+  import type { EventCategory, EventCategoryRecord } from "@/types/event.types";
+  import { ICON_MAP } from "@/pages/admin/EventCategoriesTab";
   import { LocationPicker } from "./LocationPicker";
 
   import {
@@ -49,8 +50,8 @@
   import { fileToDataUrl } from "@/utils/fileToDataUrl";
 
   const categoryMeta: Record<
-    EventCategory,
-    { label: string; icon: typeof Music }
+    string,
+    { label: string; icon: any }
   > = {
     concert: { label: "Concert", icon: CalendarIcon },
     comedy: { label: "Comedy", icon: Mic },
@@ -58,7 +59,6 @@
     workshop: { label: "Workshop", icon: Wrench },
     theatre: { label: "Theatre", icon: Drama },
     exhibition: { label: "Exhibition", icon: Palette },
-    dining: { label: "Dining", icon: Utensils },
     other: { label: "Other", icon: Sparkles },
   };
 
@@ -221,6 +221,21 @@
         ],
       },
     });
+
+    const [dynamicCategories, setDynamicCategories] = useState<EventCategoryRecord[]>([]);
+
+    useEffect(() => {
+      getActiveEventCategories()
+        .then((cats) => {
+          const nonDining = (cats || []).filter(
+            (c) => c.slug.toLowerCase() !== "dining" && c.is_active
+          );
+          if (nonDining.length > 0) {
+            setDynamicCategories(nonDining);
+          }
+        })
+        .catch((err) => console.error("Failed to load active event categories:", err));
+    }, []);
 
     const {
       fields: ticketFields,
@@ -470,19 +485,29 @@
                               <SelectValue placeholder="Select category" />
                             </SelectTrigger>
                             <SelectContent>
-                              {Object.entries(categoryMeta).map(
-                                ([value, meta]) => {
-                                  const Icon = meta.icon;
-                                  return (
-                                    <SelectItem key={value} value={value}>
-                                      <span className="flex items-center gap-2">
-                                        <Icon className="h-4 w-4 text-[#7B1E3D]" />
-                                        {meta.label}
-                                      </span>
-                                    </SelectItem>
-                                  );
-                                },
-                              )}
+                              {dynamicCategories.length > 0
+                                ? dynamicCategories.map((cat) => {
+                                    const IconComp = (cat.icon && ICON_MAP[cat.icon]) || Sparkles;
+                                    return (
+                                      <SelectItem key={cat.slug} value={cat.slug}>
+                                        <span className="flex items-center gap-2">
+                                          <IconComp className="h-4 w-4 text-[#7B1E3D]" />
+                                          {cat.name}
+                                        </span>
+                                      </SelectItem>
+                                    );
+                                  })
+                                : Object.entries(categoryMeta).map(([value, meta]) => {
+                                    const Icon = meta.icon;
+                                    return (
+                                      <SelectItem key={value} value={value}>
+                                        <span className="flex items-center gap-2">
+                                          <Icon className="h-4 w-4 text-[#7B1E3D]" />
+                                          {meta.label}
+                                        </span>
+                                      </SelectItem>
+                                    );
+                                  })}
                             </SelectContent>
                           </Select>
                         )}
@@ -492,6 +517,19 @@
                           {errors.category.message}
                         </p>
                       )}
+                    </div>
+
+                    <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Utensils className="h-4 w-4 text-amber-700" />
+                        Hosting a restaurant or dining experience?
+                      </span>
+                      <Link
+                        to="/partner/dining/new"
+                        className="font-bold text-amber-800 hover:text-amber-950 underline flex items-center gap-1"
+                      >
+                        Host Dining &rarr;
+                      </Link>
                     </div>
 
                     <div className="grid gap-5 sm:grid-cols-2">

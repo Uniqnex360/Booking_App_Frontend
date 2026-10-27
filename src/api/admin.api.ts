@@ -1,6 +1,13 @@
 import { api, unwrap } from './client';
 import { Event } from '@/types/api.types';
-import { AdminContentStatusPayload, Envelope, EventItem } from '@/types/event.types';
+import {
+  AdminContentStatusPayload,
+  Envelope,
+  EventItem,
+  EventCategoryRecord,
+  EventCategoryCreateInput,
+  EventCategoryUpdateInput,
+} from '@/types/event.types';
 import { Partner, PartnerStatus } from '@/types/partner.types';
 
 export interface AdminStats {
@@ -24,6 +31,10 @@ export interface AdminMovieItem {
   trailer_url?: string | null;
   synopsis?: string | null;
   status: string;
+  theatres_count?: number;
+  screens_count?: number;
+  cities_count?: number;
+  cities?: string[];
 }
 
 export interface AdminUserItem {
@@ -31,7 +42,15 @@ export interface AdminUserItem {
   full_name: string;
   email: string;
   phone?: string | null;
-  role: 'USER' | 'PARTNER' | 'ADMIN';
+  role:
+    | 'USER'
+    | 'PARTNER'
+    | 'ADMIN'
+    | 'SUPER_ADMIN'
+    | 'FINANCE_ADMIN'
+    | 'OPERATIONS_ADMIN'
+    | 'SUPPORT_ADMIN'
+    | string;
   is_active: boolean;
   is_verified: boolean;
   last_login_at?: string | null;
@@ -56,6 +75,9 @@ export async function getAdminMovies(params?: {
   search?: string;
   language?: string;
   genre?: string;
+  state?: string;
+  city?: string;
+  date?: string;
   page?: number;
   limit?: number;
 }): Promise<{
@@ -86,11 +108,24 @@ export async function updateAdminMovieStatus(
 export async function getAdminEvents(params?: {
   status?: string;
   search?: string;
+  city?: string;
+  state?: string;
+  category?: string;
   page?: number;
   limit?: number;
 }): Promise<{ events: EventItem[]; pagination: any }> {
   const res = await api.get('/admin/events', { params });
   return res.data?.data || res.data;
+}
+
+export async function getAdminEventById(eventId: string): Promise<EventItem> {
+  try {
+    const res = await api.get(`/admin/events/${eventId}`);
+    return res.data?.data || res.data;
+  } catch (err) {
+    const res = await api.get(`/events/${eventId}`);
+    return res.data?.data || res.data;
+  }
 }
 
 export async function updateAdminEventStatus(
@@ -255,9 +290,13 @@ export interface AdminDetailedBooking {
   customer_email?: string | null;
   customer_phone?: string | null;
   booking_type: string;
+  movie_id?: string | null;
   movie_or_event_title: string;
   venue_id?: string | null;
   venue_name: string;
+  city?: string | null;
+  language?: string | null;
+  screen_name?: string | null;
   showtime_at: string;
   seats: string[];
   quantity: number;
@@ -355,12 +394,20 @@ export interface AdminComprehensiveStats {
 }
 
 export interface IntegrationHealthItem {
+  id: string;
   provider: string;
   endpoint: string;
+  type?: 'TICKETING_POS' | 'PAYMENT_GATEWAY' | 'SETTLEMENT_ENGINE';
+  adapter?: string;
   status: string;
+  enabled?: boolean;
   latency_ms: number;
   success_rate: string;
   last_sync: string;
+  showtimes_count?: number;
+  bookings_count?: number;
+  hold_ttl_seconds?: number;
+  details?: Record<string, any>;
 }
 
 export async function getAdminComprehensiveStats(): Promise<AdminComprehensiveStats> {
@@ -419,6 +466,11 @@ export async function searchDetailedBookings(params?: {
   query?: string;
   venue_id?: string;
   status?: string;
+  movie_id?: string;
+  city?: string;
+  language?: string;
+  date_from?: string;
+  date_to?: string;
   limit?: number;
   offset?: number;
 }): Promise<{ bookings: AdminDetailedBooking[]; total: number }> {
@@ -501,8 +553,164 @@ export async function resolveReconciliationException(
   return res.data?.data || res.data;
 }
 
-export async function getIntegrationsHealth(): Promise<IntegrationHealthItem[]> {
-  const res = await api.get('/admin/integrations/health');
+export async function getIntegrationsHealth(checkLive = false): Promise<IntegrationHealthItem[]> {
+  const res = await api.get('/admin/integrations/health', {
+    params: { check_live: checkLive },
+  });
   return res.data?.data || res.data;
 }
+
+export async function pingIntegrationGateway(providerId: string): Promise<{
+  provider_id: string;
+  provider: string;
+  endpoint: string;
+  latency_ms: number;
+  status: string;
+  http_status: number;
+  tested_at: string;
+}> {
+  const res = await api.post(`/admin/integrations/${providerId}/ping`);
+  return res.data?.data || res.data;
+}
+
+export async function toggleIntegrationGateway(providerId: string): Promise<{
+  provider_id: string;
+  provider: string;
+  enabled: boolean;
+  status: string;
+}> {
+  const res = await api.post(`/admin/integrations/${providerId}/toggle`);
+  return res.data?.data || res.data;
+}
+
+export async function syncIntegrationCatalog(providerId: string): Promise<{
+  provider_id: string;
+  provider: string;
+  synced: boolean;
+  total_showtimes: number;
+  timestamp: string;
+}> {
+  const res = await api.post(`/admin/integrations/${providerId}/sync`);
+  return res.data?.data || res.data;
+}
+
+// ---------------------------------------------------------------------------
+// Section-wise RBAC
+// ---------------------------------------------------------------------------
+
+export interface AdminSectionItem {
+  key: string;
+  name: string;
+  category: string;
+  description: string;
+}
+
+export interface AdminUserPermissions {
+  id: string;
+  full_name: string;
+  email: string;
+  phone?: string | null;
+  role: string;
+  is_super_admin: boolean;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string | null;
+  assigned_sections: string[];
+}
+
+export interface MyAdminPermissionsResponse {
+  user_id: string;
+  full_name: string;
+  email: string;
+  role: string;
+  is_super_admin: boolean;
+  allowed_sections: string[];
+}
+
+export interface CreateAdminPayload {
+  full_name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  role: string;
+  assigned_sections: string[];
+}
+
+export interface UpdateAdminPermissionsPayload {
+  role?: string;
+  assigned_sections: string[];
+  is_active?: boolean;
+}
+
+export async function getAdminSections(): Promise<{
+  sections: AdminSectionItem[];
+  presets: Record<string, string[]>;
+}> {
+  const res = await api.get('/admin/rbac/sections');
+  return res.data?.data || res.data;
+}
+
+export async function getMyAdminPermissions(): Promise<MyAdminPermissionsResponse> {
+  const res = await api.get('/admin/rbac/me/permissions');
+  return res.data?.data || res.data;
+}
+
+export async function getAdminUsersWithPermissions(): Promise<{
+  admins: AdminUserPermissions[];
+  total: number;
+}> {
+  const res = await api.get('/admin/rbac/admins');
+  return res.data?.data || res.data;
+}
+
+export async function createAdminUser(
+  payload: CreateAdminPayload
+): Promise<AdminUserPermissions> {
+  const res = await api.post('/admin/rbac/admins', payload);
+  return res.data?.data || res.data;
+}
+
+export async function updateAdminPermissions(
+  adminId: string,
+  payload: UpdateAdminPermissionsPayload
+): Promise<AdminUserPermissions> {
+  const res = await api.put(`/admin/rbac/admins/${adminId}/permissions`, payload);
+  return res.data?.data || res.data;
+}
+
+export async function getAdminEventCategories(params?: {
+  search?: string;
+  active_only?: boolean;
+}): Promise<{ categories: EventCategoryRecord[]; total: number }> {
+  const res = await api.get('/admin/event-categories', { params });
+  return res.data?.data || res.data;
+}
+
+export async function createAdminEventCategory(
+  payload: EventCategoryCreateInput
+): Promise<EventCategoryRecord> {
+  const res = await api.post('/admin/event-categories', payload);
+  return res.data?.data || res.data;
+}
+
+export async function updateAdminEventCategory(
+  categoryId: string,
+  payload: EventCategoryUpdateInput
+): Promise<EventCategoryRecord> {
+  const res = await api.patch(`/admin/event-categories/${categoryId}`, payload);
+  return res.data?.data || res.data;
+}
+
+export async function deleteAdminEventCategory(
+  categoryId: string
+): Promise<{ deleted: boolean; deactivated: boolean; message?: string }> {
+  const res = await api.delete(`/admin/event-categories/${categoryId}`);
+  return {
+    deleted: res.data?.data?.deleted ?? false,
+    deactivated: res.data?.data?.deactivated ?? false,
+    message: res.data?.message,
+  };
+}
+
+
 

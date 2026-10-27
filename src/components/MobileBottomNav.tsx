@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { Home, Film, Calendar, Search, LayoutDashboard } from "lucide-react";
+import { Home, Film, Calendar, Search, LayoutDashboard, Utensils } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { withCity } from "@/lib/cityLink";
 import { getStoredCity } from "@/utils/geolocation";
@@ -39,6 +39,7 @@ export function MobileBottomNav() {
   const isHome = !isSearchOpen && (pathname === "/" || pathname === "/home");
   const isMovies = !isSearchOpen && pathname.startsWith("/movies");
   const isEvents = !isSearchOpen && pathname.startsWith("/events");
+  const isDining = !isSearchOpen && (pathname.startsWith("/dining") || pathname.startsWith("/restaurants"));
   const isDashboard = !isSearchOpen && (pathname.startsWith("/theatre") || pathname.startsWith("/partner") || pathname.startsWith("/admin"));
 
   const navItems: Array<{
@@ -62,10 +63,16 @@ export function MobileBottomNav() {
       isActive: isMovies,
     },
     {
-      label: "Live Events",
+      label: "Events",
       icon: Calendar,
       href: "/events",
       isActive: isEvents,
+    },
+    {
+      label: "Dining",
+      icon: Utensils,
+      href: "/restaurants",
+      isActive: isDining,
     },
     {
       label: "Search",

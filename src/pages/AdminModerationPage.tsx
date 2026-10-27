@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
@@ -6,9 +6,12 @@ import { format, parseISO } from 'date-fns';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader } from '@/components/common/Loader';
+import { INDIAN_STATES, STATE_CITIES, ALL_SUPPORTED_CITIES } from '@/utils/indiaGeography';
+import { AdminEventDetailModal } from './admin/AdminEventDetailModal';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +47,8 @@ import {
   ImageOff,
   Ticket,
   Clock,
+  Eye,
+  Search,
 } from 'lucide-react';
 
 export default function AdminModerationPage() {
@@ -53,6 +58,43 @@ export default function AdminModerationPage() {
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [selectedState, setSelectedState] = useState('ALL');
+  const [selectedCity, setSelectedCity] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedEventForDetails, setSelectedEventForDetails] = useState<EventItem | null>(null);
+
+  const availableCities = useMemo(() => {
+    if (selectedState !== 'ALL' && STATE_CITIES[selectedState]) {
+      return STATE_CITIES[selectedState];
+    }
+    return ALL_SUPPORTED_CITIES;
+  }, [selectedState]);
+
+  const filteredEvents = useMemo(() => {
+    return events.filter((ev) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          ev.title.toLowerCase().includes(q) ||
+          ev.venue_name.toLowerCase().includes(q) ||
+          ev.city.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      if (selectedCity !== 'ALL' && !ev.city.toLowerCase().includes(selectedCity.toLowerCase())) {
+        return false;
+      }
+      if (selectedState !== 'ALL') {
+        const stateLower = selectedState.toLowerCase();
+        const matchState =
+          ev.city.toLowerCase().includes(stateLower) ||
+          (ev.venue_address && ev.venue_address.toLowerCase().includes(stateLower));
+        if (!matchState && !STATE_CITIES[selectedState]?.some((c) => ev.city.toLowerCase().includes(c.toLowerCase()))) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [events, searchQuery, selectedCity, selectedState]);
 
   const fetchEvents = async () => {
     setLoading(true);
@@ -112,7 +154,7 @@ export default function AdminModerationPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Header />
+      <Header hideLocation />
 
       {/* Header */}
       <div className="bg-gradient-to-b from-wine-50 to-background pt-28 pb-8">
@@ -153,15 +195,82 @@ export default function AdminModerationPage() {
             Event Moderation
           </button>
         </div>
+
+        {/* Filter and Location Search Bar */}
+        <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search pending events by title, venue, or city..."
+                className="h-10 pl-9 rounded-xl border-slate-200 text-xs"
+              />
+            </div>
+
+            {/* State Location Filter */}
+            <select
+              value={selectedState}
+              onChange={(e) => {
+                setSelectedState(e.target.value);
+                setSelectedCity('ALL');
+              }}
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 cursor-pointer"
+            >
+              <option value="ALL">All States (India)</option>
+              {INDIAN_STATES.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+
+            {/* City Location Filter */}
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 cursor-pointer"
+            >
+              <option value="ALL">
+                {selectedState !== 'ALL' ? `All Cities in ${selectedState}` : 'All Cities'}
+              </option>
+              {availableCities.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+
+            {(searchQuery.trim() !== '' || selectedState !== 'ALL' || selectedCity !== 'ALL') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedState('ALL');
+                  setSelectedCity('ALL');
+                }}
+                className="h-10 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl"
+              >
+                <X className="w-3.5 h-3.5 mr-1" />
+                Reset
+              </Button>
+            )}
+          </div>
+          <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
+            <span>
+              Showing <strong>{filteredEvents.length}</strong> of {events.length} pending submissions
+            </span>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-20">
             <Loader className="h-8 w-8" />
           </div>
-        ) : events.length === 0 ? (
+        ) : filteredEvents.length === 0 ? (
           <EmptyState />
         ) : (
           <div className="space-y-4">
-            {events.map((event, i) => (
+            {filteredEvents.map((event, i) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -231,6 +340,16 @@ export default function AdminModerationPage() {
 
                   {/* Actions */}
                   <div className="flex flex-shrink-0 gap-2 sm:flex-col">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedEventForDetails(event)}
+                      className="rounded-full border-slate-300 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1 text-[#7B1E3D]" />
+                      Details
+                    </Button>
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
@@ -342,6 +461,19 @@ export default function AdminModerationPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Event Details Inspection Modal */}
+      <AdminEventDetailModal
+        event={selectedEventForDetails}
+        open={!!selectedEventForDetails}
+        onOpenChange={(op) => !op && setSelectedEventForDetails(null)}
+        onApprove={(ev) => handleApprove(ev.id)}
+        onReject={(ev) => {
+          setSelectedEventForDetails(null);
+          openRejectDialog(ev);
+        }}
+        isActionLoading={!!approvingId}
+      />
     </div>
   );
 }

@@ -19,3 +19,22 @@ export async function getPartnerRevenue(fromDate?: string, toDate?: string) {
   const response = await api.get<any>('/partner/revenue', { params });
   return response.data.data;
 }
+
+export async function uploadPartnerDocument(
+  file: File,
+  docType: string = 'document'
+): Promise<{ url: string; filename: string; size: number }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('doc_type', docType);
+  const response = await api.post<ApiResponse<{ url: string; filename: string; size: number }>>(
+    '/partner/upload-document',
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
+  return response.data.data;
+}

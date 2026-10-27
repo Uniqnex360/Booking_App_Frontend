@@ -8,7 +8,41 @@ export type EventCategory =
   | 'theatre'
   | 'exhibition'
   | 'dining'
-  | 'other';
+  | 'festival'
+  | 'conference'
+  | 'other'
+  | (string & {});
+
+export interface EventCategoryRecord {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string;
+  description?: string;
+  is_active: boolean;
+  display_order: number;
+  event_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventCategoryCreateInput {
+  name: string;
+  slug?: string;
+  icon?: string;
+  description?: string;
+  is_active?: boolean;
+  display_order?: number;
+}
+
+export interface EventCategoryUpdateInput {
+  name?: string;
+  slug?: string;
+  icon?: string;
+  description?: string;
+  is_active?: boolean;
+  display_order?: number;
+}
 
 export const DINING_TAGS = [
   'FINE_DINING',

@@ -22,6 +22,8 @@ export interface Partner {
   commission_rate: number;
   gst_number?: string;
   pan_number?: string;
+  gst_certificate_url?: string;
+  pan_card_url?: string;
   approved_at?: string;
   rejection_reason?: string;
   created_at: string;
@@ -35,6 +37,8 @@ export interface PartnerRegisterPayload {
   city: string;
   gst_number?: string;
   pan_number?: string;
+  gst_certificate_url?: string;
+  pan_card_url?: string;
 }
 
 

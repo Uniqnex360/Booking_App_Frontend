@@ -31,6 +31,7 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import VenuesPage from "@/pages/VenuesPage";
 import FoodPage from "@/pages/FoodPage";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import AdminEventDetailPage from "@/pages/admin/AdminEventDetailPage";
 import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 import DeleteAccountPage from "@/pages/DeleteAccountPage";
 import { TheatreLayout } from "@/pages/theatre/TheatreLayout";
@@ -49,6 +50,8 @@ export function AppRoutes() {
       <Route path="/admin" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
       <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
       <Route path="/admin/movies" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/events" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/events/:eventId" element={<PrivateRoute><AdminEventDetailPage /></PrivateRoute>} />
       <Route path="/admin/users" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
       
       {/* Theatre Partner Scoped Portal */}
@@ -90,7 +93,7 @@ export function AppRoutes() {
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:id" element={<BookingPage />} />
       <Route path="/dining" element={<DiningListingPage />} />
-      <Route path="/restaurants" element={<Navigate to="/dining" replace />} />
+      <Route path="/restaurants" element={<DiningListingPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
     <Route path="/venues" element={<VenuesPage />} />
@@ -122,6 +125,14 @@ export function AppRoutes() {
       />
       <Route
         path="/partner/become"
+        element={
+          <PrivateRoute>
+            <BecomePartnerPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/partner/register"
         element={
           <PrivateRoute>
             <BecomePartnerPage />

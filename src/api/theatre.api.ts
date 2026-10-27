@@ -224,6 +224,10 @@ export async function getTheatreShowtimes(params?: {
 export async function getTheatreBookings(params?: {
   venue_id?: string;
   status?: string;
+  movie_id?: string;
+  city?: string;
+  date_from?: string;
+  date_to?: string;
   search?: string;
   limit?: number;
   offset?: number;

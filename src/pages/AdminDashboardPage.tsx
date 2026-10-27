@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { INDIAN_STATES, STATE_CITIES, ALL_SUPPORTED_CITIES } from "@/utils/indiaGeography";
 import {
   Dialog,
   DialogContent,
@@ -38,16 +39,30 @@ import {
   updatePartnerStatus,
   getAdminComprehensiveStats,
   getIntegrationsHealth,
+  getMyAdminPermissions,
+  getAdminSections,
+  getAdminUsersWithPermissions,
   AdminStats,
   AdminMovieItem,
   AdminUserItem,
   AdminComprehensiveStats,
   IntegrationHealthItem,
+  AdminSectionItem,
+  AdminUserPermissions,
+  MyAdminPermissionsResponse,
 } from "@/api/admin.api";
 import { TheatresManagementTab } from "./admin/TheatresManagementTab";
 import { BookingsReconciliationTab } from "./admin/BookingsReconciliationTab";
 import { CommissionInvoicesTab } from "./admin/CommissionInvoicesTab";
 import { ReconciliationExceptionsTab } from "./admin/ReconciliationExceptionsTab";
+import { IntegrationsGatewaysTab } from "./admin/IntegrationsGatewaysTab";
+import { AdminMovieDistributionModal } from "./admin/AdminMovieDistributionModal";
+import { AdminEventDetailModal } from "./admin/AdminEventDetailModal";
+import EventCategoriesTab from "./admin/EventCategoriesTab";
+import { getActiveEventCategories } from "@/api/event.api";
+import { EventCategoryRecord } from "@/types/event.types";
+import { AdminCreateModal } from "./admin/AdminCreateModal";
+import { AdminPermissionsModal } from "./admin/AdminPermissionsModal";
 import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { EventItem } from "@/types/event.types";
@@ -70,6 +85,7 @@ import {
   X,
   UserX,
   UserCheck,
+  UserPlus,
   RefreshCw,
   Loader2,
   Clock,
@@ -80,6 +96,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
+  Tags,
 } from "lucide-react";
 
 type ActiveTab =
@@ -90,8 +107,10 @@ type ActiveTab =
   | "exceptions"
   | "movies"
   | "events"
+  | "event_categories"
   | "users"
-  | "partners";
+  | "partners"
+  | "integrations";
 
 export default function AdminDashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -116,6 +135,56 @@ export default function AdminDashboardPage() {
       document.body.scrollTop = 0;
     }
   }, [searchParams]);
+
+  // -------------------------------------------------------------------------
+  // RBAC & SECTION ACCESS STATE
+  // -------------------------------------------------------------------------
+  const [myPermissions, setMyPermissions] = useState<MyAdminPermissionsResponse | null>(null);
+  const [rbacSections, setRbacSections] = useState<AdminSectionItem[]>([]);
+  const [rbacPresets, setRbacPresets] = useState<Record<string, string[]>>({});
+  const [adminUsersMap, setAdminUsersMap] = useState<Record<string, AdminUserPermissions>>({});
+  const [isCreateAdminOpen, setIsCreateAdminOpen] = useState(false);
+  const [permissionModalAdmin, setPermissionModalAdmin] = useState<AdminUserPermissions | null>(null);
+
+  const fetchRbacData = useCallback(async () => {
+    try {
+      const [permRes, secRes, adminRes] = await Promise.allSettled([
+        getMyAdminPermissions(),
+        getAdminSections(),
+        getAdminUsersWithPermissions(),
+      ]);
+      if (permRes.status === "fulfilled") {
+        setMyPermissions(permRes.value);
+      }
+      if (secRes.status === "fulfilled") {
+        setRbacSections(secRes.value.sections || []);
+        setRbacPresets(secRes.value.presets || {});
+      }
+      if (adminRes.status === "fulfilled") {
+        const map: Record<string, AdminUserPermissions> = {};
+        (adminRes.value.admins || []).forEach((adm) => {
+          map[adm.id] = adm;
+        });
+        setAdminUsersMap(map);
+      }
+    } catch (e) {
+      console.error("Error loading RBAC permissions:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRbacData();
+  }, [fetchRbacData]);
+
+  // Tab protection: if logged in as section-restricted admin and visiting restricted tab, redirect
+  useEffect(() => {
+    if (!myPermissions) return;
+    if (myPermissions.is_super_admin) return;
+    const allowed = myPermissions.allowed_sections || [];
+    if (allowed.length > 0 && !allowed.includes(activeTab)) {
+      handleTabChange(allowed[0] as ActiveTab);
+    }
+  }, [myPermissions, activeTab]);
 
   // -------------------------------------------------------------------------
   // OVERVIEW / STATS STATE
@@ -157,6 +226,10 @@ export default function AdminDashboardPage() {
   const [movieStatusFilter, setMovieStatusFilter] = useState("ALL");
   const [movieLanguageFilter, setMovieLanguageFilter] = useState("ALL");
   const [movieGenreFilter, setMovieGenreFilter] = useState("ALL");
+  const [movieStateFilter, setMovieStateFilter] = useState("ALL");
+  const [movieCityFilter, setMovieCityFilter] = useState("ALL");
+  const [movieDateFilter, setMovieDateFilter] = useState("");
+  const [selectedMovieForDistribution, setSelectedMovieForDistribution] = useState<AdminMovieItem | null>(null);
   const [moviePage, setMoviePage] = useState(1);
   const [moviePagination, setMoviePagination] = useState<any>(null);
   const [updatingMovieId, setUpdatingMovieId] = useState<string | null>(null);
@@ -166,6 +239,13 @@ export default function AdminDashboardPage() {
     statuses: Record<string, number>;
   } | null>(null);
 
+  const availableMovieCities = useMemo(() => {
+    if (movieStateFilter && movieStateFilter !== "ALL") {
+      return STATE_CITIES[movieStateFilter] || [];
+    }
+    return ALL_SUPPORTED_CITIES;
+  }, [movieStateFilter]);
+
   const fetchMovies = useCallback(async () => {
     setMoviesLoading(true);
     try {
@@ -174,6 +254,9 @@ export default function AdminDashboardPage() {
         status: movieStatusFilter !== "ALL" ? movieStatusFilter : undefined,
         language: movieLanguageFilter !== "ALL" ? movieLanguageFilter : undefined,
         genre: movieGenreFilter !== "ALL" ? movieGenreFilter : undefined,
+        state: movieStateFilter !== "ALL" ? movieStateFilter : undefined,
+        city: movieCityFilter !== "ALL" ? movieCityFilter : undefined,
+        date: movieDateFilter || undefined,
         page: moviePage,
         limit: 15,
       });
@@ -187,7 +270,7 @@ export default function AdminDashboardPage() {
     } finally {
       setMoviesLoading(false);
     }
-  }, [debouncedMovieSearch, movieStatusFilter, movieLanguageFilter, movieGenreFilter, moviePage]);
+  }, [debouncedMovieSearch, movieStatusFilter, movieLanguageFilter, movieGenreFilter, movieStateFilter, movieCityFilter, movieDateFilter, moviePage]);
 
   useEffect(() => {
     if (activeTab === "movies" || activeTab === "overview") {
@@ -218,7 +301,7 @@ export default function AdminDashboardPage() {
   };
 
   // -------------------------------------------------------------------------
-  // EVENTS MODERATION & CONTROL STATE
+  // Event management & CONTROL STATE
   // -------------------------------------------------------------------------
   const [events, setEvents] = useState<EventItem[]>([]);
   const [eventsLoading, setEventsLoading] = useState(false);
@@ -226,11 +309,32 @@ export default function AdminDashboardPage() {
   const debouncedEventSearch = useDebounce(eventSearch, 300);
   const [eventStatusFilter, setEventStatusFilter] = useState("ALL");
   const [eventCategoryFilter, setEventCategoryFilter] = useState("ALL");
+  const [dynamicCategories, setDynamicCategories] = useState<EventCategoryRecord[]>([]);
+  const [eventStateFilter, setEventStateFilter] = useState("ALL");
+  const [eventCityFilter, setEventCityFilter] = useState("ALL");
+  const [selectedEventForDetails, setSelectedEventForDetails] = useState<EventItem | null>(null);
   const [eventPage, setEventPage] = useState(1);
   const [eventPagination, setEventPagination] = useState<any>(null);
   const [rejectingEvent, setRejectingEvent] = useState<EventItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getActiveEventCategories()
+      .then((cats) => {
+        if (cats && cats.length > 0) {
+          setDynamicCategories(cats);
+        }
+      })
+      .catch((err) => console.error("Failed to load active event categories:", err));
+  }, []);
+
+  const availableEventCities = useMemo(() => {
+    if (eventStateFilter !== "ALL" && STATE_CITIES[eventStateFilter]) {
+      return STATE_CITIES[eventStateFilter];
+    }
+    return ALL_SUPPORTED_CITIES;
+  }, [eventStateFilter]);
 
   const fetchEvents = useCallback(async () => {
     setEventsLoading(true);
@@ -238,6 +342,9 @@ export default function AdminDashboardPage() {
       const res = await getAdminEvents({
         search: debouncedEventSearch.trim() || undefined,
         status: eventStatusFilter !== "ALL" ? eventStatusFilter : undefined,
+        city: eventCityFilter !== "ALL" ? eventCityFilter : undefined,
+        state: eventStateFilter !== "ALL" ? eventStateFilter : undefined,
+        category: eventCategoryFilter !== "ALL" ? eventCategoryFilter : undefined,
         page: eventPage,
         limit: 15,
       });
@@ -247,6 +354,11 @@ export default function AdminDashboardPage() {
           ev.category?.toLowerCase() === eventCategoryFilter.toLowerCase()
         );
       }
+      if (eventCityFilter !== "ALL") {
+        items = items.filter((ev: any) =>
+          ev.city?.toLowerCase().includes(eventCityFilter.toLowerCase())
+        );
+      }
       setEvents(items);
       setEventPagination(res.pagination || null);
     } catch {
@@ -254,7 +366,14 @@ export default function AdminDashboardPage() {
     } finally {
       setEventsLoading(false);
     }
-  }, [debouncedEventSearch, eventStatusFilter, eventCategoryFilter, eventPage]);
+  }, [
+    debouncedEventSearch,
+    eventStatusFilter,
+    eventCategoryFilter,
+    eventStateFilter,
+    eventCityFilter,
+    eventPage,
+  ]);
 
   useEffect(() => {
     if (activeTab === "events" || activeTab === "overview") {
@@ -460,7 +579,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <Header />
+      <Header hideLocation />
 
       <main className="mx-auto max-w-7xl px-4 pt-32 sm:pt-36 lg:pt-44 pb-16 sm:px-6 lg:px-8">
         {/* TOP TITLE BAR */}
@@ -471,9 +590,25 @@ export default function AdminDashboardPage() {
                 <ShieldCheck className="h-6 w-6" />
               </span>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
-                  Admin Control Center
-                </h1>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-gray-900">
+                    Admin Control Center
+                  </h1>
+                  {myPermissions && (
+                    <Badge
+                      className={`text-xs px-2.5 py-0.5 rounded-lg border font-semibold flex items-center gap-1.5 ${
+                        myPermissions.is_super_admin
+                          ? "bg-amber-100 text-amber-900 border-amber-300 shadow-2xs"
+                          : "bg-emerald-100 text-emerald-900 border-emerald-300 shadow-2xs"
+                      }`}
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5 text-orange-600" />
+                      {myPermissions.is_super_admin
+                        ? "Super Admin (Full Access)"
+                        : `${myPermissions.role} (${myPermissions.allowed_sections?.length || 0} Sections Active)`}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
                   Full platform governance for Movies, Events, User Accounts, and Partners
                 </p>
@@ -485,6 +620,7 @@ export default function AdminDashboardPage() {
             <Button
               onClick={() => {
                 fetchStats();
+                fetchRbacData();
                 if (activeTab === "movies") fetchMovies();
                 if (activeTab === "events") fetchEvents();
                 if (activeTab === "users") fetchUsers();
@@ -533,18 +669,35 @@ export default function AdminDashboardPage() {
             { id: "movies", label: "Movies Control", icon: Film, count: stats?.movies.total },
             {
               id: "events",
-              label: "Events Moderation",
+              label: "Event management",
               icon: CalendarDays,
               badge: stats?.events.pending ? `${stats.events.pending} pending` : undefined,
             },
-            { id: "users", label: "User Management", icon: Users, count: stats?.users.total },
+            {
+              id: "event_categories",
+              label: "Event Categories",
+              icon: Tags,
+              count: dynamicCategories.length > 0 ? dynamicCategories.length : undefined,
+            },
+            { id: "users", label: "User Management & RBAC", icon: Users, count: stats?.users.total },
             {
               id: "partners",
               label: "Partner Requests",
               icon: Building2,
               badge: stats?.partners.pending ? `${stats.partners.pending} new` : undefined,
             },
-          ].map((tab) => {
+            {
+              id: "integrations",
+              label: "Integrations & Gateways",
+              icon: Activity,
+              count: healthItems.length,
+            },
+          ]
+            .filter((tab) => {
+              if (!myPermissions || myPermissions.is_super_admin) return true;
+              return (myPermissions.allowed_sections || []).includes(tab.id);
+            })
+            .map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
             return (
@@ -663,15 +816,27 @@ export default function AdminDashboardPage() {
               {/* Integration Gateway Health */}
               {healthItems.length > 0 && (
                 <div className="pt-3 border-t border-gray-200">
-                  <div className="text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-emerald-600" /> Integration & Settlement Gateways
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs font-semibold text-gray-500 flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-emerald-600" /> Integration & Settlement Gateways
+                    </div>
+                    <button
+                      onClick={() => handleTabChange("integrations")}
+                      className="text-xs font-medium text-orange-600 hover:text-orange-700 flex items-center gap-1 transition cursor-pointer"
+                    >
+                      <span>Manage All ({healthItems.length}) &rarr;</span>
+                    </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {healthItems.map((h, i) => (
-                      <div key={i} className="flex items-center justify-between bg-gray-50 px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs">
+                    {healthItems.slice(0, 3).map((h, i) => (
+                      <div
+                        key={i}
+                        onClick={() => handleTabChange("integrations")}
+                        className="flex items-center justify-between bg-gray-50 hover:bg-orange-50/50 hover:border-orange-200 transition cursor-pointer px-3.5 py-2.5 rounded-xl border border-gray-200 text-xs"
+                      >
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="font-semibold text-gray-900">{h.provider}</span>
+                          <span className="font-semibold text-gray-900 truncate max-w-[150px]">{h.provider}</span>
                         </div>
                         <div className="text-right text-gray-500 font-mono">
                           <span className="text-emerald-600">{h.latency_ms}ms</span> &bull; {h.success_rate}
@@ -941,6 +1106,59 @@ export default function AdminDashboardPage() {
                     ))}
                   </select>
 
+                  {/* Location State Filter */}
+                  <select
+                    value={movieStateFilter}
+                    onChange={(e) => {
+                      const newState = e.target.value;
+                      setMovieStateFilter(newState);
+                      if (newState !== "ALL") {
+                        const stateCities = STATE_CITIES[newState] || [];
+                        if (!stateCities.includes(movieCityFilter)) {
+                          setMovieCityFilter("ALL");
+                        }
+                      }
+                      setMoviePage(1);
+                    }}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                  >
+                    <option value="ALL">All States</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Location City Filter */}
+                  <select
+                    value={movieCityFilter}
+                    onChange={(e) => {
+                      setMovieCityFilter(e.target.value);
+                      setMoviePage(1);
+                    }}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                  >
+                    <option value="ALL">
+                      {movieStateFilter !== "ALL" ? `All Cities in ${movieStateFilter}` : "All Cities"}
+                    </option>
+                    {availableMovieCities.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+
+                  {/* Date Filter */}
+                  <input
+                    type="date"
+                    value={movieDateFilter}
+                    onChange={(e) => {
+                      setMovieDateFilter(e.target.value);
+                      setMoviePage(1);
+                    }}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    title="Filter movies screening on date"
+                  />
+
                   {/* Status Filter Pills */}
                   <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
                     {["ALL", "PUBLISHED", "DRAFT", "PENDING_REVIEW"].map((st) => {
@@ -986,7 +1204,10 @@ export default function AdminDashboardPage() {
                   {(movieSearch.trim() !== "" ||
                     movieStatusFilter !== "ALL" ||
                     movieLanguageFilter !== "ALL" ||
-                    movieGenreFilter !== "ALL") && (
+                    movieGenreFilter !== "ALL" ||
+                    movieStateFilter !== "ALL" ||
+                    movieCityFilter !== "ALL" ||
+                    movieDateFilter !== "") && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -995,6 +1216,9 @@ export default function AdminDashboardPage() {
                         setMovieStatusFilter("ALL");
                         setMovieLanguageFilter("ALL");
                         setMovieGenreFilter("ALL");
+                        setMovieStateFilter("ALL");
+                        setMovieCityFilter("ALL");
+                        setMovieDateFilter("");
                         setMoviePage(1);
                       }}
                       className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
@@ -1013,6 +1237,13 @@ export default function AdminDashboardPage() {
                     Showing <strong className="text-gray-900">{movies.length}</strong> movies
                     {moviePagination?.total ? ` (Total: ${moviePagination.total})` : ""}
                   </span>
+                  {(movieStateFilter !== "ALL" || movieCityFilter !== "ALL") && (
+                    <span className="inline-flex items-center gap-1 bg-orange-50 border border-orange-200 text-orange-800 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                      <MapPin className="w-3 h-3 text-orange-600" />
+                      {movieStateFilter !== "ALL" ? movieStateFilter : "All States"}
+                      {movieCityFilter !== "ALL" ? ` • ${movieCityFilter}` : ""}
+                    </span>
+                  )}
                 </div>
                 {moviesLoading && (
                   <span className="inline-flex items-center gap-1.5 text-orange-600 font-medium">
@@ -1047,6 +1278,7 @@ export default function AdminDashboardPage() {
                       <tr>
                         <th className="py-3.5 px-4">Movie</th>
                         <th className="py-3.5 px-4">Genre / Lang</th>
+                        <th className="py-3.5 px-4">Theatres Released</th>
                         <th className="py-3.5 px-4">Duration</th>
                         <th className="py-3.5 px-4">Catalog Status</th>
                         <th className="py-3.5 px-4 text-right">Visibility Action</th>
@@ -1095,6 +1327,42 @@ export default function AdminDashboardPage() {
                                 {m.genre || "Drama"}
                               </p>
                             </td>
+                            <td className="py-3 px-4">
+                              {m.theatres_count !== undefined && m.theatres_count > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedMovieForDistribution(m)}
+                                  className="text-left group/theatres hover:opacity-85 transition cursor-pointer"
+                                  title="Click to view all theatres, screens & showtimes"
+                                >
+                                  <div className="flex items-center gap-1.5">
+                                    <Building2 className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                    <span className="font-bold text-gray-900 group-hover/theatres:text-indigo-600 transition text-xs sm:text-sm">
+                                      {m.theatres_count} {m.theatres_count === 1 ? 'Theatre' : 'Theatres'}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1">
+                                    <span>{m.screens_count || 1} screens</span>
+                                    <span>&bull;</span>
+                                    <span>{m.cities_count || 1} {m.cities_count === 1 ? 'city' : 'cities'}</span>
+                                  </div>
+                                  {m.cities && m.cities.length > 0 && (
+                                    <div className="text-[10px] text-gray-400 truncate max-w-[170px] mt-0.5">
+                                      {m.cities.slice(0, 3).join(', ')}{m.cities.length > 3 ? ` +${m.cities.length - 3}` : ''}
+                                    </div>
+                                  )}
+                                </button>
+                              ) : (
+                                <div>
+                                  <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md inline-block">
+                                    Not Released
+                                  </span>
+                                  <p className="text-[10px] text-gray-400 mt-0.5">
+                                    0 active theatres
+                                  </p>
+                                </div>
+                              )}
+                            </td>
                             <td className="py-3 px-4 text-gray-600">
                               {m.duration_min} mins
                             </td>
@@ -1110,31 +1378,43 @@ export default function AdminDashboardPage() {
                               </Badge>
                             </td>
                             <td className="py-3 px-4 text-right">
-                              <Button
-                                onClick={() => handleToggleMovieVisibility(m)}
-                                disabled={isUpdating}
-                                size="sm"
-                                variant={isPublished ? "destructive" : "default"}
-                                className={`text-xs h-8 font-semibold gap-1.5 transition ${
-                                  isPublished
-                                    ? "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
-                                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
-                                }`}
-                              >
-                                {isUpdating ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : isPublished ? (
-                                  <>
-                                    <EyeOff className="h-3.5 w-3.5" />
-                                    <span>Hide Movie</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Eye className="h-3.5 w-3.5" />
-                                    <span>Show in Catalog</span>
-                                  </>
-                                )}
-                              </Button>
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  onClick={() => setSelectedMovieForDistribution(m)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs h-8 font-semibold gap-1.5 bg-white border-gray-200 text-gray-700 hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200 shadow-2xs"
+                                  title="Inspect showtimes, screens, divisions & languages"
+                                >
+                                  <Clock className="h-3.5 w-3.5 text-orange-600" />
+                                  <span>Showtimes</span>
+                                </Button>
+                                <Button
+                                  onClick={() => handleToggleMovieVisibility(m)}
+                                  disabled={isUpdating}
+                                  size="sm"
+                                  variant={isPublished ? "destructive" : "default"}
+                                  className={`text-xs h-8 font-semibold gap-1.5 transition ${
+                                    isPublished
+                                      ? "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                                      : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                  }`}
+                                >
+                                  {isUpdating ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : isPublished ? (
+                                    <>
+                                      <EyeOff className="h-3.5 w-3.5" />
+                                      <span>Hide Movie</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Eye className="h-3.5 w-3.5" />
+                                      <span>Show in Catalog</span>
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1178,11 +1458,19 @@ export default function AdminDashboardPage() {
                 </div>
               )}
             </div>
+
+            {/* MOVIE DISTRIBUTION & SHOWTIME INSPECTOR MODAL */}
+            {selectedMovieForDistribution && (
+              <AdminMovieDistributionModal
+                movie={selectedMovieForDistribution}
+                onClose={() => setSelectedMovieForDistribution(null)}
+              />
+            )}
           </div>
         )}
 
         {/* ================================================================= */}
-        {/* TAB 3: EVENTS MODERATION & CONTROL                                */}
+        {/* TAB 3: Event management & CONTROL                                */}
         {/* ================================================================= */}
         {activeTab === "events" && (
           <div className="py-6 space-y-4">
@@ -1215,12 +1503,66 @@ export default function AdminDashboardPage() {
                     className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">All Categories</option>
-                    <option value="Music">Music</option>
-                    <option value="Comedy">Comedy</option>
-                    <option value="Workshop">Workshop</option>
-                    <option value="Conference">Conference</option>
-                    <option value="Sports">Sports</option>
-                    <option value="Theater">Theater</option>
+                    {dynamicCategories.length > 0 ? (
+                      dynamicCategories.map((cat) => (
+                        <option key={cat.id} value={cat.slug}>
+                          {cat.name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="concert">Concert</option>
+                        <option value="comedy">Comedy</option>
+                        <option value="workshop">Workshop</option>
+                        <option value="sports">Sports</option>
+                        <option value="theatre">Theatre</option>
+                        <option value="exhibition">Exhibition</option>
+                      </>
+                    )}
+                  </select>
+
+                  <button
+                    onClick={() => handleTabChange("event_categories")}
+                    className="h-10 flex items-center gap-1.5 px-3 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
+                    title="Open Super Admin Event Categories CRUD"
+                  >
+                    <Tags className="h-3.5 w-3.5 text-orange-600" />
+                    <span className="hidden sm:inline">Manage Categories</span>
+                  </button>
+
+                  {/* Location State Filter */}
+                  <select
+                    value={eventStateFilter}
+                    onChange={(e) => {
+                      setEventStateFilter(e.target.value);
+                      setEventCityFilter("ALL");
+                      setEventPage(1);
+                    }}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                  >
+                    <option value="ALL">All States (India)</option>
+                    {INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Location City Filter */}
+                  <select
+                    value={eventCityFilter}
+                    onChange={(e) => {
+                      setEventCityFilter(e.target.value);
+                      setEventPage(1);
+                    }}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                  >
+                    <option value="ALL">
+                      {eventStateFilter !== "ALL" ? `All Cities in ${eventStateFilter}` : "All Cities"}
+                    </option>
+                    {availableEventCities.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
                   </select>
 
                   {/* Status Filter Pills */}
@@ -1251,7 +1593,9 @@ export default function AdminDashboardPage() {
 
                   {(eventSearch.trim() !== "" ||
                     eventStatusFilter !== "ALL" ||
-                    eventCategoryFilter !== "ALL") && (
+                    eventCategoryFilter !== "ALL" ||
+                    eventStateFilter !== "ALL" ||
+                    eventCityFilter !== "ALL") && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1259,6 +1603,8 @@ export default function AdminDashboardPage() {
                         setEventSearch("");
                         setEventStatusFilter("ALL");
                         setEventCategoryFilter("ALL");
+                        setEventStateFilter("ALL");
+                        setEventCityFilter("ALL");
                         setEventPage(1);
                       }}
                       className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
@@ -1382,6 +1728,17 @@ export default function AdminDashboardPage() {
 
                         {/* Action Buttons */}
                         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                          <Button
+                            onClick={() => setSelectedEventForDetails(e)}
+                            size="sm"
+                            variant="outline"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-100 font-semibold text-xs h-9 gap-1.5 shadow-2xs rounded-xl"
+                            title="Inspect event details, tickets, and location"
+                          >
+                            <Eye className="h-3.5 w-3.5 text-orange-600" />
+                            <span>Details</span>
+                          </Button>
+
                           {isPending && (
                             <>
                               <Button
@@ -1449,10 +1806,56 @@ export default function AdminDashboardPage() {
         )}
 
         {/* ================================================================= */}
-        {/* TAB 4: USER MANAGEMENT                                            */}
+        {/* TAB: EVENT CATEGORIES GOVERNANCE (SUPER ADMIN CRUD)               */}
+        {/* ================================================================= */}
+        {activeTab === "event_categories" && (
+          <div className="py-6">
+            <EventCategoriesTab
+              onCategoryCountChange={() => {
+                getActiveEventCategories()
+                  .then((cats) => {
+                    if (cats) setDynamicCategories(cats);
+                  })
+                  .catch(() => {});
+              }}
+            />
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB 4: USER MANAGEMENT & RBAC                                     */}
         {/* ================================================================= */}
         {activeTab === "users" && (
           <div className="py-6 space-y-4">
+            {/* RBAC Governance Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Users className="w-5 h-5 text-orange-600" />
+                  <h3 className="text-base font-bold text-gray-900">
+                    User Accounts & Access Management (RBAC)
+                  </h3>
+                  <Badge className="bg-orange-100 text-orange-800 border-orange-200 text-xs">
+                    Section-wise Access
+                  </Badge>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Super Admin decides section-level checkbox permissions (Finance, Operations, Support, Exceptions) for all admin team members.
+                </p>
+              </div>
+
+              {myPermissions?.is_super_admin && (
+                <Button
+                  onClick={() => setIsCreateAdminOpen(true)}
+                  size="sm"
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-xl h-9 sm:h-10 px-4 gap-2 shadow-sm shadow-orange-600/30 cursor-pointer self-start sm:self-auto shrink-0"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>+ Create Admin User</span>
+                </Button>
+              )}
+            </div>
+
             {/* Filter & Search Bar */}
             <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
               <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
@@ -1584,6 +1987,15 @@ export default function AdminDashboardPage() {
                       {users.map((u) => {
                         const isActive = u.is_active;
                         const isActing = userActionLoadingId === u.id;
+                        const isAdminAccount = [
+                          "ADMIN",
+                          "SUPER_ADMIN",
+                          "FINANCE_ADMIN",
+                          "OPERATIONS_ADMIN",
+                          "SUPPORT_ADMIN",
+                        ].includes(u.role);
+                        const adminData = adminUsersMap[u.id];
+
                         return (
                           <tr
                             key={u.id}
@@ -1607,18 +2019,37 @@ export default function AdminDashboardPage() {
                             </td>
 
                             <td className="py-3 px-4">
-                              <Badge
-                                variant="outline"
-                                className={
-                                  u.role === "ADMIN"
-                                    ? "bg-purple-50 text-purple-700 border-purple-200"
-                                    : u.role === "PARTNER"
-                                    ? "bg-blue-50 text-blue-700 border-blue-200"
-                                    : "bg-gray-100 text-gray-700 border-gray-200"
-                                }
-                              >
-                                {u.role}
-                              </Badge>
+                              <div className="flex flex-col gap-1 items-start">
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    u.role === "SUPER_ADMIN"
+                                      ? "bg-purple-100 text-purple-800 border-purple-300 font-bold"
+                                      : u.role === "FINANCE_ADMIN"
+                                      ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-semibold"
+                                      : u.role === "OPERATIONS_ADMIN"
+                                      ? "bg-blue-100 text-blue-800 border-blue-300 font-semibold"
+                                      : u.role === "SUPPORT_ADMIN"
+                                      ? "bg-indigo-100 text-indigo-800 border-indigo-300 font-semibold"
+                                      : u.role === "ADMIN"
+                                      ? "bg-purple-50 text-purple-700 border-purple-200 font-medium"
+                                      : u.role === "PARTNER"
+                                      ? "bg-amber-50 text-amber-800 border-amber-200 font-medium"
+                                      : "bg-gray-100 text-gray-700 border-gray-200"
+                                  }
+                                >
+                                  {u.role}
+                                </Badge>
+
+                                {isAdminAccount && (
+                                  <span className="text-[11px] text-gray-600 font-medium flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                                    {u.role === "SUPER_ADMIN" || adminData?.is_super_admin
+                                      ? "All 10 Sections"
+                                      : `${adminData?.assigned_sections?.length ?? 0} Sections Active`}
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             <td className="py-3 px-4 text-gray-500 text-xs">
@@ -1640,36 +2071,64 @@ export default function AdminDashboardPage() {
                             </td>
 
                             <td className="py-3 px-4 text-right">
-                              {u.role === "ADMIN" ? (
-                                <span className="text-xs text-gray-400 italic pr-2">
-                                  Protected Admin
-                                </span>
-                              ) : isActive ? (
-                                <Button
-                                  onClick={() => setUserToBlock(u)}
-                                  disabled={isActing}
-                                  size="sm"
-                                  variant="destructive"
-                                  className="h-8 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 gap-1.5 shadow-2xs"
-                                >
-                                  <UserX className="h-3.5 w-3.5" />
-                                  <span>Block User</span>
-                                </Button>
-                              ) : (
-                                <Button
-                                  onClick={() => handleToggleUserBlock(u, true)}
-                                  disabled={isActing}
-                                  size="sm"
-                                  className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-2xs"
-                                >
-                                  {isActing ? (
-                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                  ) : (
-                                    <UserCheck className="h-3.5 w-3.5" />
-                                  )}
-                                  <span>Unblock User</span>
-                                </Button>
-                              )}
+                              <div className="flex items-center justify-end gap-2">
+                                {myPermissions?.is_super_admin && isAdminAccount && (
+                                  <Button
+                                    onClick={() => {
+                                      const adm = adminData || {
+                                        id: u.id,
+                                        full_name: u.full_name,
+                                        email: u.email,
+                                        phone: u.phone,
+                                        role: u.role,
+                                        is_super_admin: u.role === "SUPER_ADMIN" || u.email === "admin@vybhz.com",
+                                        is_active: u.is_active,
+                                        is_verified: u.is_verified,
+                                        created_at: u.created_at || null,
+                                        assigned_sections: [],
+                                      };
+                                      setPermissionModalAdmin(adm);
+                                    }}
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 text-xs font-semibold border-orange-200 bg-orange-50/50 text-orange-800 hover:bg-orange-100 gap-1.5 rounded-xl cursor-pointer"
+                                  >
+                                    <ShieldCheck className="w-3.5 h-3.5 text-orange-600" />
+                                    <span>Edit Access</span>
+                                  </Button>
+                                )}
+
+                                {u.role === "SUPER_ADMIN" || u.email === "admin@vybhz.com" ? (
+                                  <span className="text-xs text-gray-400 italic pr-2">
+                                    Root Super Admin
+                                  </span>
+                                ) : isActive ? (
+                                  <Button
+                                    onClick={() => setUserToBlock(u)}
+                                    disabled={isActing}
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-8 text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 gap-1.5 shadow-2xs rounded-xl"
+                                  >
+                                    <UserX className="h-3.5 w-3.5" />
+                                    <span>Block</span>
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    onClick={() => handleToggleUserBlock(u, true)}
+                                    disabled={isActing}
+                                    size="sm"
+                                    className="h-8 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-2xs rounded-xl"
+                                  >
+                                    {isActing ? (
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                    ) : (
+                                      <UserCheck className="h-3.5 w-3.5" />
+                                    )}
+                                    <span>Unblock</span>
+                                  </Button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -1812,6 +2271,15 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* ================================================================= */}
+        {/* TAB: DYNAMIC INTEGRATION & SETTLEMENT GATEWAYS                    */}
+        {/* ================================================================= */}
+        {activeTab === "integrations" && (
+          <div className="py-6">
+            <IntegrationsGatewaysTab onNavigateTab={handleTabChange} />
+          </div>
+        )}
       </main>
 
       {/* ================================================================= */}
@@ -1903,6 +2371,44 @@ export default function AdminDashboardPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* RBAC MODALS */}
+      <AdminCreateModal
+        isOpen={isCreateAdminOpen}
+        onClose={() => setIsCreateAdminOpen(false)}
+        onCreated={() => {
+          fetchUsers();
+          fetchRbacData();
+        }}
+        sections={rbacSections}
+        presets={rbacPresets}
+      />
+
+      <AdminPermissionsModal
+        isOpen={!!permissionModalAdmin}
+        onClose={() => setPermissionModalAdmin(null)}
+        onUpdated={() => {
+          fetchUsers();
+          fetchRbacData();
+        }}
+        adminUser={permissionModalAdmin}
+        sections={rbacSections}
+        presets={rbacPresets}
+      />
+
+      {/* Event Details Inspection Modal */}
+      <AdminEventDetailModal
+        event={selectedEventForDetails}
+        open={!!selectedEventForDetails}
+        onOpenChange={(op) => !op && setSelectedEventForDetails(null)}
+        onApprove={handleApproveEvent}
+        onReject={(ev) => {
+          setSelectedEventForDetails(null);
+          setRejectingEvent(ev);
+        }}
+        onToggleDelist={handleToggleEventDelist}
+        isActionLoading={!!actionLoadingId}
+      />
     </div>
   );
 }

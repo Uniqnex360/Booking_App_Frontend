@@ -300,10 +300,10 @@ export default function DiningListingPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200">
           <div>
             <h1 className="text-2xl font-bold text-[#1A1A2E] tracking-tight">
-              Dining in {cityParam}
+              Restaurants & Dining in {cityParam}
             </h1>
             <p className="text-xs text-gray-500 mt-0.5">
-              Explore curated dining experiences, brunches & culinary events in your city
+              Explore curated fine dining restaurants, buffets, Sunday brunches & chef tastings in your city
             </p>
           </div>
 
@@ -313,7 +313,7 @@ export default function DiningListingPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search for Dining..."
+                placeholder="Search restaurants, cuisines, or dining..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-xs sm:text-sm focus:outline-none focus:border-[#7B1E3D] focus:ring-1 focus:ring-[#7B1E3D]/30"
