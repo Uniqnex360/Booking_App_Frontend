@@ -66,6 +66,7 @@ import { toast } from 'sonner';
 import { LoadingPage } from './LoadingPage';
 import { loadScript } from '@/utils/loadScript';
 import { TermsModal } from './TermsModal';
+import { normalizeTermsToBullets, STANDARD_EVENT_TERMS } from '@/lib/eventTerms';
 import { applyCoupon, removeCoupon, getAvailableCoupons } from '@/api/coupon.api';
 import type { ApplyCouponResult, AvailableCoupon } from '@/types/coupon.types';
 import { Capacitor } from '@capacitor/core';
@@ -905,25 +906,41 @@ export default function BookingPage() {
               </div>
             )}
 
-            {/* Terms and Conditions */}
-            {eventData.terms_and_conditions &&
-              eventData.terms_and_conditions.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <FileText className="h-6 w-6 text-[#7B1E3D]" />
-                    Terms & Conditions
-                  </h2>
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
-                    <ul className="list-disc list-inside space-y-1.5 text-xs text-gray-600 leading-relaxed">
-                      {eventData.terms_and_conditions.map((term: string, idx: number) => (
-                        <li key={idx} className="marker:text-[#7B1E3D]">
-                          {term}
-                        </li>
+            {/* Terms and Conditions (Bullet-wise) */}
+            {(() => {
+              const bullets = normalizeTermsToBullets(eventData.terms_and_conditions);
+              const list = bullets.length > 0 ? bullets : STANDARD_EVENT_TERMS;
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                      <FileText className="h-6 w-6 text-[#7B1E3D]" />
+                      Terms & Conditions
+                    </h2>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+                      {list.length} Bullet Points
+                    </span>
+                  </div>
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5">
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {list.map((term: string, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-150 shadow-xs hover:border-orange-200 transition"
+                        >
+                          <span className="w-5 h-5 rounded-full bg-[#7B1E3D]/10 text-[#7B1E3D] font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                            {idx + 1}
+                          </span>
+                          <span className="text-xs text-gray-700 leading-relaxed font-normal">
+                            {term}
+                          </span>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 </div>
-              )}
+              );
+            })()}
           </div>
 
           {/* Right Booking Card */}

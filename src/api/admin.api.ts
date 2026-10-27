@@ -159,6 +159,16 @@ export async function updateAdminEventStatus(
   return res.data?.data || res.data;
 }
 
+export async function updateAdminEventTerms(
+  eventId: string,
+  terms: string[]
+): Promise<EventItem> {
+  const res = await api.patch(`/admin/events/${eventId}/terms`, {
+    terms_and_conditions: terms,
+  });
+  return res.data?.data || res.data;
+}
+
 // ---------------------------------------------------------------------------
 // Users
 // ---------------------------------------------------------------------------

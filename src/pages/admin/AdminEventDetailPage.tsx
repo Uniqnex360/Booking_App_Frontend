@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getAdminEventById, updateAdminEventStatus } from '@/api/admin.api';
+import { getAdminEventById, updateAdminEventStatus, updateAdminEventTerms } from '@/api/admin.api';
+import { STANDARD_EVENT_TERMS, normalizeTermsToBullets } from '@/lib/eventTerms';
 import type { EventItem } from '@/types/event.types';
 import {
   ArrowLeft,
@@ -30,6 +31,15 @@ import {
   AlertTriangle,
   Loader2,
   CalendarClock,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Copy,
+  Edit3,
+  Save,
+  RotateCcw,
+  ListOrdered,
 } from 'lucide-react';
 import {
   Dialog,
@@ -52,6 +62,19 @@ export default function AdminEventDetailPage() {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  const [isEditingTerms, setIsEditingTerms] = useState(false);
+  const [bulletTerms, setBulletTerms] = useState<string[]>([]);
+  const [newBulletInput, setNewBulletInput] = useState('');
+  const [isSavingTerms, setIsSavingTerms] = useState(false);
+
+  useEffect(() => {
+    if (event) {
+      setBulletTerms(normalizeTermsToBullets(event.terms_and_conditions));
+      setIsEditingTerms(false);
+      setNewBulletInput('');
+    }
+  }, [event]);
 
   useEffect(() => {
     async function loadEvent() {
@@ -416,19 +439,17 @@ export default function AdminEventDetailPage() {
                 Gallery ({event.gallery_images.length})
               </button>
             )}
-            {((event.faqs && event.faqs.length > 0) || (event.terms_and_conditions && event.terms_and_conditions.length > 0)) && (
-              <button
-                onClick={() => setActiveTab('faq')}
-                className={`pb-3 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
-                  activeTab === 'faq'
-                    ? 'border-orange-600 text-orange-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-900'
-                }`}
-              >
-                <HelpCircle className="w-4 h-4" />
-                FAQs & Terms
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('faq')}
+              className={`pb-3 text-xs sm:text-sm font-semibold border-b-2 transition whitespace-nowrap flex items-center gap-1.5 ${
+                activeTab === 'faq'
+                  ? 'border-orange-600 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              FAQs & Terms ({bulletTerms.length} Points)
+            </button>
           </div>
 
           {/* TAB 1: Ticket Categories */}
@@ -629,9 +650,269 @@ export default function AdminEventDetailPage() {
 
           {/* TAB 5: FAQs & Terms */}
           {activeTab === 'faq' && (
-            <div className="space-y-4 pt-2 text-xs">
+            <div className="space-y-6 pt-2 text-xs">
+              {/* Bullet-wise Terms & Conditions Section */}
+              <div className="space-y-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold shrink-0">
+                      <ListOrdered className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-gray-900 text-sm">Terms & Conditions</h4>
+                        <Badge className="bg-orange-50 text-orange-700 border-orange-200/80 font-mono text-[10px] px-2 py-0.5">
+                          {bulletTerms.length} Points
+                        </Badge>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5">
+                        Bullet-wise guidelines and entry regulations for event attendees
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto flex-wrap">
+                    {bulletTerms.length > 0 && !isEditingTerms && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const text = bulletTerms.map((t, i) => `${i + 1}. ${t}`).join('\n');
+                          navigator.clipboard.writeText(text);
+                          toast.success('Terms & conditions copied to clipboard');
+                        }}
+                        className="text-[11px] h-7 px-2.5 rounded-lg border-gray-200 text-gray-600 hover:text-gray-900 gap-1"
+                      >
+                        <Copy className="w-3 h-3" />
+                        Copy All
+                      </Button>
+                    )}
+
+                    {!isEditingTerms ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          if (bulletTerms.length === 0) {
+                            setBulletTerms([...STANDARD_EVENT_TERMS]);
+                          }
+                          setIsEditingTerms(true);
+                        }}
+                        className="text-[11px] h-7 px-2.5 rounded-lg border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 gap-1 font-semibold"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        {bulletTerms.length === 0 ? 'Add Terms' : 'Edit Bullets'}
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setBulletTerms(normalizeTermsToBullets(event?.terms_and_conditions));
+                            setIsEditingTerms(false);
+                          }}
+                          className="text-[11px] h-7 px-2 rounded-lg text-gray-500 hover:text-gray-900"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={isSavingTerms}
+                          onClick={async () => {
+                            if (!event?.id) return;
+                            try {
+                              setIsSavingTerms(true);
+                              await updateAdminEventTerms(event.id, bulletTerms);
+                              setEvent(prev => prev ? { ...prev, terms_and_conditions: bulletTerms } : null);
+                              setIsEditingTerms(false);
+                              toast.success('Event terms & conditions saved successfully');
+                            } catch (err: any) {
+                              toast.error('Failed to update terms', {
+                                description: err?.response?.data?.message || err.message,
+                              });
+                            } finally {
+                              setIsSavingTerms(false);
+                            }
+                          }}
+                          className="text-[11px] h-7 px-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold gap-1 shadow-xs"
+                        >
+                          <Save className="w-3 h-3" />
+                          {isSavingTerms ? 'Saving...' : 'Save Bullets'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Edit Mode */}
+                {isEditingTerms ? (
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-gray-700">
+                        Edit or Reorder Bullet Points
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setBulletTerms([...STANDARD_EVENT_TERMS])}
+                        className="text-[10px] h-6 px-2 rounded-md border-gray-200 text-gray-600 hover:text-orange-600 gap-1"
+                      >
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        Load Standard Template
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                      {bulletTerms.map((term, idx) => (
+                        <div key={idx} className="flex items-start gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                          <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                            {idx + 1}
+                          </span>
+                          <textarea
+                            value={term}
+                            rows={2}
+                            onChange={(e) => {
+                              const updated = [...bulletTerms];
+                              updated[idx] = e.target.value;
+                              setBulletTerms(updated);
+                            }}
+                            className="flex-1 bg-white border border-gray-200 rounded-lg p-1.5 text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                          />
+                          <div className="flex flex-col gap-1 shrink-0">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={() => {
+                                if (idx === 0) return;
+                                const updated = [...bulletTerms];
+                                const temp = updated[idx];
+                                updated[idx] = updated[idx - 1];
+                                updated[idx - 1] = temp;
+                                setBulletTerms(updated);
+                              }}
+                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-gray-500"
+                              title="Move Up"
+                            >
+                              <ArrowUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === bulletTerms.length - 1}
+                              onClick={() => {
+                                if (idx === bulletTerms.length - 1) return;
+                                const updated = [...bulletTerms];
+                                const temp = updated[idx];
+                                updated[idx] = updated[idx + 1];
+                                updated[idx + 1] = temp;
+                                setBulletTerms(updated);
+                              }}
+                              className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 text-gray-500"
+                              title="Move Down"
+                            >
+                              <ArrowDown className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBulletTerms(bulletTerms.filter((_, i) => i !== idx));
+                              }}
+                              className="p-1 rounded hover:bg-rose-100 text-rose-600"
+                              title="Delete Bullet"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Add New Point Form */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                      <input
+                        type="text"
+                        value={newBulletInput}
+                        onChange={(e) => setNewBulletInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (newBulletInput.trim()) {
+                              setBulletTerms([...bulletTerms, newBulletInput.trim()]);
+                              setNewBulletInput('');
+                            }
+                          }
+                        }}
+                        placeholder="Add a new bullet point and press Enter..."
+                        className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={!newBulletInput.trim()}
+                        onClick={() => {
+                          if (newBulletInput.trim()) {
+                            setBulletTerms([...bulletTerms, newBulletInput.trim()]);
+                            setNewBulletInput('');
+                          }
+                        }}
+                        className="text-xs h-8 px-3 rounded-lg bg-orange-600 hover:bg-orange-700 text-white gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Point
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* View Mode: Bullet-wise cards */
+                  <div className="pt-1">
+                    {bulletTerms.length === 0 ? (
+                      <div className="p-6 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <ListOrdered className="w-8 h-8 text-gray-400 mx-auto mb-2 opacity-60" />
+                        <p className="text-gray-600 font-medium">No terms & conditions specified for this event.</p>
+                        <p className="text-gray-400 text-[11px] mt-0.5">Click below to apply the standard 10-point event guidelines.</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setBulletTerms([...STANDARD_EVENT_TERMS]);
+                            setIsEditingTerms(true);
+                          }}
+                          className="mt-3 text-xs rounded-xl border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 gap-1.5 font-semibold"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Apply Standard Event Terms Template
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2">
+                        {bulletTerms.map((term, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-start gap-2.5 p-2.5 rounded-xl bg-gray-50/80 hover:bg-orange-50/30 transition border border-gray-150 group"
+                          >
+                            <span className="w-5 h-5 rounded-full bg-orange-100 group-hover:bg-orange-200 text-orange-700 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                              {idx + 1}
+                            </span>
+                            <span className="text-gray-700 leading-relaxed text-xs">
+                              {term}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* FAQs section */}
               {event.faqs && event.faqs.length > 0 && (
-                <div className="space-y-3">
+                <div className="space-y-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
                   <h4 className="font-bold text-gray-900 text-sm">Frequently Asked Questions</h4>
                   {event.faqs.map((faq, idx) => (
                     <div key={idx} className="p-4 bg-gray-50 rounded-2xl border border-gray-200">
@@ -639,17 +920,6 @@ export default function AdminEventDetailPage() {
                       <p className="text-gray-600 mt-1 text-xs">{faq.answer}</p>
                     </div>
                   ))}
-                </div>
-              )}
-
-              {event.terms_and_conditions && event.terms_and_conditions.length > 0 && (
-                <div className="space-y-3 mt-4">
-                  <h4 className="font-bold text-gray-900 text-sm">Terms & Conditions</h4>
-                  <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
-                    {event.terms_and_conditions.map((term, idx) => (
-                      <li key={idx}>{term}</li>
-                    ))}
-                  </ul>
                 </div>
               )}
             </div>

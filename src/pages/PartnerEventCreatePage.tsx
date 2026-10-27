@@ -46,7 +46,13 @@
     MapPin,
     Users,
     Utensils,
+    ListOrdered,
+    ArrowUp,
+    ArrowDown,
+    Copy,
+    RotateCcw,
   } from "lucide-react";
+  import { STANDARD_EVENT_TERMS, normalizeTermsToBullets } from "@/lib/eventTerms";
   import { fileToDataUrl } from "@/utils/fileToDataUrl";
 
   const categoryMeta: Record<
@@ -223,6 +229,14 @@
     });
 
     const [dynamicCategories, setDynamicCategories] = useState<EventCategoryRecord[]>([]);
+    const [bulletTerms, setBulletTerms] = useState<string[]>([]);
+    const [newBulletText, setNewBulletText] = useState("");
+    const [termsInputMode, setTermsInputMode] = useState<"bullets" | "raw">("bullets");
+
+    const updateBullets = (newBullets: string[]) => {
+      setBulletTerms(newBullets);
+      setValue("terms_text", newBullets.join("\n"));
+    };
 
     useEffect(() => {
       getActiveEventCategories()
@@ -1186,16 +1200,199 @@
                       ))}
                     </div>
 
-                    {/* Terms */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">
-                        Terms & Conditions{" "}
-                        <span className="text-slate-500">(one per line)</span>
-                      </Label>
-                      <Textarea
-                        className="min-h-[100px] rounded-xl"
-                        {...register("terms_text")}
-                      />
+                    {/* Bullet-wise Terms & Conditions */}
+                    <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-orange-100 text-orange-700 flex items-center justify-center font-bold shrink-0">
+                            <ListOrdered className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Label className="text-sm font-bold text-slate-900">
+                                Terms & Conditions
+                              </Label>
+                              <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-700 border border-orange-200">
+                                {bulletTerms.length} Points
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500">
+                              Establish clear attendee guidelines and entry requirements
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 self-end sm:self-auto flex-wrap">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateBullets([...STANDARD_EVENT_TERMS])}
+                            className="h-7 text-xs rounded-lg border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 gap-1 font-semibold"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            Load Standard Template
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (termsInputMode === "raw") {
+                                const raw = getValues("terms_text") || "";
+                                updateBullets(normalizeTermsToBullets(raw));
+                                setTermsInputMode("bullets");
+                              } else {
+                                setValue("terms_text", bulletTerms.join("\n"));
+                                setTermsInputMode("raw");
+                              }
+                            }}
+                            className="h-7 text-xs text-slate-600 hover:text-slate-900"
+                          >
+                            {termsInputMode === "bullets" ? "Switch to Raw Text" : "Switch to Bullet List"}
+                          </Button>
+                        </div>
+                      </div>
+
+                      {termsInputMode === "bullets" ? (
+                        <div className="space-y-3 pt-1">
+                          {bulletTerms.length === 0 ? (
+                            <div className="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                              <ListOrdered className="h-8 w-8 text-slate-400 mx-auto mb-2 opacity-60" />
+                              <p className="text-xs font-medium text-slate-700">No terms added yet</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                Add bullet points below or insert our standard 10-point event policy.
+                              </p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateBullets([...STANDARD_EVENT_TERMS])}
+                                className="mt-3 text-xs rounded-xl border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 gap-1 font-semibold"
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                                Insert Standard Event Terms
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                              {bulletTerms.map((term, idx) => (
+                                <div
+                                  key={idx}
+                                  className="flex items-start gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200"
+                                >
+                                  <span className="w-6 h-6 rounded-lg bg-orange-100 text-orange-800 font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5">
+                                    {idx + 1}
+                                  </span>
+                                  <textarea
+                                    value={term}
+                                    rows={2}
+                                    onChange={(e) => {
+                                      const updated = [...bulletTerms];
+                                      updated[idx] = e.target.value;
+                                      updateBullets(updated);
+                                    }}
+                                    className="flex-1 bg-white border border-slate-200 rounded-lg p-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                  />
+                                  <div className="flex flex-col gap-1 shrink-0">
+                                    <button
+                                      type="button"
+                                      disabled={idx === 0}
+                                      onClick={() => {
+                                        if (idx === 0) return;
+                                        const updated = [...bulletTerms];
+                                        const temp = updated[idx];
+                                        updated[idx] = updated[idx - 1];
+                                        updated[idx - 1] = temp;
+                                        updateBullets(updated);
+                                      }}
+                                      className="p-1 rounded hover:bg-slate-200 disabled:opacity-30 text-slate-500"
+                                      title="Move Up"
+                                    >
+                                      <ArrowUp className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={idx === bulletTerms.length - 1}
+                                      onClick={() => {
+                                        if (idx === bulletTerms.length - 1) return;
+                                        const updated = [...bulletTerms];
+                                        const temp = updated[idx];
+                                        updated[idx] = updated[idx + 1];
+                                        updated[idx + 1] = temp;
+                                        updateBullets(updated);
+                                      }}
+                                      className="p-1 rounded hover:bg-slate-200 disabled:opacity-30 text-slate-500"
+                                      title="Move Down"
+                                    >
+                                      <ArrowDown className="h-3 w-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateBullets(bulletTerms.filter((_, i) => i !== idx));
+                                      }}
+                                      className="p-1 rounded hover:bg-rose-100 text-rose-600"
+                                      title="Delete Point"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add New Point Form */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                            <Input
+                              type="text"
+                              value={newBulletText}
+                              onChange={(e) => setNewBulletText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  if (newBulletText.trim()) {
+                                    updateBullets([...bulletTerms, newBulletText.trim()]);
+                                    setNewBulletText("");
+                                  }
+                                }
+                              }}
+                              placeholder="Type a new condition point and press Enter..."
+                              className="flex-1 rounded-xl text-xs"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={!newBulletText.trim()}
+                              onClick={() => {
+                                if (newBulletText.trim()) {
+                                  updateBullets([...bulletTerms, newBulletText.trim()]);
+                                  setNewBulletText("");
+                                }
+                              }}
+                              className="h-9 px-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white gap-1 text-xs shrink-0"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Add Point
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 pt-1">
+                          <Textarea
+                            className="min-h-[140px] rounded-xl font-mono text-xs"
+                            placeholder="Paste multiple lines of terms and conditions here..."
+                            {...register("terms_text")}
+                            onChange={(e) => {
+                              setValue("terms_text", e.target.value);
+                            }}
+                          />
+                          <p className="text-[11px] text-slate-500">
+                            Enter one point per line. When you switch back to "Bullet List", they will automatically be parsed into numbered bullet points.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 )}
