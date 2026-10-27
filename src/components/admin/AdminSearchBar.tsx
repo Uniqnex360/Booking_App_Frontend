@@ -34,7 +34,7 @@ export function AdminSearchBar({
   };
 
   return (
-    <div className={`relative flex-1 ${className}`}>
+    <div className={`relative flex-1 min-w-[200px] ${className}`}>
       <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
       <Input
         value={value}

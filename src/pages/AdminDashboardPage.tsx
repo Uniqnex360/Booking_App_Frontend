@@ -101,6 +101,8 @@ import {
   ExternalLink,
   Tags,
   Utensils,
+  Filter,
+  RotateCcw,
 } from "lucide-react";
 
 type ActiveTab =
@@ -1166,24 +1168,74 @@ export default function AdminDashboardPage() {
         {activeTab === "movies" && (
           <div className="py-6 space-y-4">
             {/* Filter & Search Bar */}
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                <AdminSearchBar
-                  value={movieSearch}
-                  onChange={(val) => {
-                    setMovieSearch(val);
-                    setMoviePage(1);
-                  }}
-                  onClear={() => {
-                    setMovieSearch("");
-                    setMoviePage(1);
-                  }}
-                  placeholder="Search movie title, original title, genre..."
-                  isSearching={moviesLoading && movieSearch !== debouncedMovieSearch}
-                  className="flex-1"
-                />
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-4">
+              {/* ROW 1: 🔍 SEARCH & QUICK STATUS PILLS */}
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                <div className="flex-1 min-w-[280px]">
+                  <AdminSearchBar
+                    value={movieSearch}
+                    onChange={(val) => {
+                      setMovieSearch(val);
+                      setMoviePage(1);
+                    }}
+                    onClear={() => {
+                      setMovieSearch("");
+                      setMoviePage(1);
+                    }}
+                    placeholder="Search movie title, original title, genre..."
+                    isSearching={moviesLoading && movieSearch !== debouncedMovieSearch}
+                    className="w-full"
+                  />
+                </div>
 
-                {/* Filter Dropdowns & Pills */}
+                {/* Status Filter Pills */}
+                <div className="flex items-center gap-1 bg-gray-50/90 p-1 rounded-xl border border-gray-200 shadow-2xs self-start lg:self-auto shrink-0 overflow-x-auto max-w-full">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-2 hidden sm:inline">
+                    Status:
+                  </span>
+                  {["ALL", "PUBLISHED", "DRAFT", "PENDING_REVIEW"].map((st) => {
+                    const count = movieFacets?.statuses?.[st];
+                    const label =
+                      st === "ALL"
+                        ? "All Status"
+                        : st === "PUBLISHED"
+                        ? "Showing"
+                        : st === "DRAFT"
+                        ? "Hidden"
+                        : "Pending";
+                    return (
+                      <button
+                        key={st}
+                        onClick={() => {
+                          setMovieStatusFilter(st);
+                          setMoviePage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                          movieStatusFilter === st
+                            ? "bg-orange-600 text-white shadow-2xs font-bold"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
+                        }`}
+                      >
+                        <span>{label}</span>
+                        {count !== undefined && (
+                          <span
+                            className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                              movieStatusFilter === st
+                                ? "bg-white/20 text-white"
+                                : "bg-gray-200/80 text-gray-600"
+                            }`}
+                          >
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ROW 2: 🌐 LANGUAGE, 🎭 GENRE, 📍 LOCATION & 📅 DATE SECONDARY FILTERS */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-gray-100">
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Language Filter */}
                   <select
@@ -1192,7 +1244,7 @@ export default function AdminDashboardPage() {
                       setMovieLanguageFilter(e.target.value);
                       setMoviePage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">
                       All Languages {movieFacets ? `(${movieFacets.statuses.ALL || 0})` : ""}
@@ -1211,7 +1263,7 @@ export default function AdminDashboardPage() {
                       setMovieGenreFilter(e.target.value);
                       setMoviePage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">
                       All Genres {movieFacets ? `(${movieFacets.statuses.ALL || 0})` : ""}
@@ -1237,7 +1289,7 @@ export default function AdminDashboardPage() {
                       }
                       setMoviePage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">All States</option>
                     {INDIAN_STATES.map((s) => (
@@ -1254,7 +1306,7 @@ export default function AdminDashboardPage() {
                       setMovieCityFilter(e.target.value);
                       setMoviePage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">
                       {movieStateFilter !== "ALL" ? `All Cities in ${movieStateFilter}` : "All Cities"}
@@ -1272,87 +1324,46 @@ export default function AdminDashboardPage() {
                       setMovieDateFilter(e.target.value);
                       setMoviePage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                     title="Filter movies screening on date"
                   />
-
-                  {/* Status Filter Pills */}
-                  <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
-                    {["ALL", "PUBLISHED", "DRAFT", "PENDING_REVIEW"].map((st) => {
-                      const count = movieFacets?.statuses?.[st];
-                      const label =
-                        st === "ALL"
-                          ? "All Status"
-                          : st === "PUBLISHED"
-                          ? "Showing"
-                          : st === "DRAFT"
-                          ? "Hidden"
-                          : "Pending";
-                      return (
-                        <button
-                          key={st}
-                          onClick={() => {
-                            setMovieStatusFilter(st);
-                            setMoviePage(1);
-                          }}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
-                            movieStatusFilter === st
-                              ? "bg-orange-600 text-white shadow-2xs"
-                              : "text-gray-600 hover:text-gray-900"
-                          }`}
-                        >
-                          <span>{label}</span>
-                          {count !== undefined && (
-                            <span
-                              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                movieStatusFilter === st
-                                  ? "bg-white/20 text-white"
-                                  : "bg-gray-200/80 text-gray-600"
-                              }`}
-                            >
-                              {count}
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {(movieSearch.trim() !== "" ||
-                    movieStatusFilter !== "ALL" ||
-                    movieLanguageFilter !== "ALL" ||
-                    movieGenreFilter !== "ALL" ||
-                    movieStateFilter !== "ALL" ||
-                    movieCityFilter !== "ALL" ||
-                    movieDateFilter !== "") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setMovieSearch("");
-                        setMovieStatusFilter("ALL");
-                        setMovieLanguageFilter("ALL");
-                        setMovieGenreFilter("ALL");
-                        setMovieStateFilter("ALL");
-                        setMovieCityFilter("ALL");
-                        setMovieDateFilter("");
-                        setMoviePage(1);
-                      }}
-                      className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Reset
-                    </Button>
-                  )}
                 </div>
+
+                {(movieSearch.trim() !== "" ||
+                  movieStatusFilter !== "ALL" ||
+                  movieLanguageFilter !== "ALL" ||
+                  movieGenreFilter !== "ALL" ||
+                  movieStateFilter !== "ALL" ||
+                  movieCityFilter !== "ALL" ||
+                  movieDateFilter !== "") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setMovieSearch("");
+                      setMovieStatusFilter("ALL");
+                      setMovieLanguageFilter("ALL");
+                      setMovieGenreFilter("ALL");
+                      setMovieStateFilter("ALL");
+                      setMovieCityFilter("ALL");
+                      setMovieDateFilter("");
+                      setMoviePage(1);
+                    }}
+                    className="h-9 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1.5 rounded-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reset Filters
+                  </Button>
+                )}
               </div>
 
-              {/* Filter Summary */}
+              {/* ROW 3: FILTER SUMMARY */}
               <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
                 <div className="flex items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-gray-400" />
                   <span>
                     Showing <strong className="text-gray-900">{movies.length}</strong> movies
-                    {moviePagination?.total ? ` (Total: ${moviePagination.total})` : ""}
+                    {moviePagination?.total !== undefined ? ` (Total: ${moviePagination.total})` : ""}
                   </span>
                   {(movieStateFilter !== "ALL" || movieCityFilter !== "ALL") && (
                     <span className="inline-flex items-center gap-1 bg-orange-50 border border-orange-200 text-orange-800 text-[11px] font-semibold px-2 py-0.5 rounded-full">
@@ -1360,6 +1371,9 @@ export default function AdminDashboardPage() {
                       {movieStateFilter !== "ALL" ? movieStateFilter : "All States"}
                       {movieCityFilter !== "ALL" ? ` • ${movieCityFilter}` : ""}
                     </span>
+                  )}
+                  {movieDateFilter && (
+                    <span className="text-gray-400"> on {movieDateFilter}</span>
                   )}
                 </div>
                 {moviesLoading && (
@@ -1594,23 +1608,58 @@ export default function AdminDashboardPage() {
         {activeTab === "events" && (
           <div className="py-6 space-y-4">
             {/* Filter & Search Bar */}
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-                <AdminSearchBar
-                  value={eventSearch}
-                  onChange={(val) => {
-                    setEventSearch(val);
-                    setEventPage(1);
-                  }}
-                  onClear={() => {
-                    setEventSearch("");
-                    setEventPage(1);
-                  }}
-                  placeholder="Search live events by title, venue, city..."
-                  isSearching={eventsLoading && eventSearch !== debouncedEventSearch}
-                  className="flex-1"
-                />
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs space-y-4">
+              {/* ROW 1: 🔍 SEARCH & QUICK STATUS PILLS */}
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                <div className="flex-1 min-w-[280px]">
+                  <AdminSearchBar
+                    value={eventSearch}
+                    onChange={(val) => {
+                      setEventSearch(val);
+                      setEventPage(1);
+                    }}
+                    onClear={() => {
+                      setEventSearch("");
+                      setEventPage(1);
+                    }}
+                    placeholder="Search live events by title, venue, city..."
+                    isSearching={eventsLoading && eventSearch !== debouncedEventSearch}
+                    className="w-full"
+                  />
+                </div>
 
+                {/* Status Filter Pills */}
+                <div className="flex items-center gap-1 bg-gray-50/90 p-1 rounded-xl border border-gray-200 shadow-2xs self-start lg:self-auto shrink-0 overflow-x-auto max-w-full">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-2 hidden sm:inline">
+                    Status:
+                  </span>
+                  {[
+                    { id: "ALL", label: "All" },
+                    { id: "PENDING_APPROVAL", label: "Pending" },
+                    { id: "PUBLISHED", label: "Published" },
+                    { id: "REJECTED", label: "Rejected" },
+                    { id: "DRAFT", label: "Draft" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setEventStatusFilter(tab.id);
+                        setEventPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
+                        eventStatusFilter === tab.id
+                          ? "bg-orange-600 text-white shadow-2xs font-bold"
+                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/50"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ROW 2: 🏷️ CATEGORY, 📍 LOCATION & 🏢 ORGANIZER SECONDARY FILTERS */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5 pt-3 border-t border-gray-100">
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Category Filter */}
                   <select
@@ -1619,7 +1668,7 @@ export default function AdminDashboardPage() {
                       setEventCategoryFilter(e.target.value);
                       setEventPage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">All Categories</option>
                     {dynamicCategories.length > 0 ? (
@@ -1641,12 +1690,13 @@ export default function AdminDashboardPage() {
                   </select>
 
                   <button
+                    type="button"
                     onClick={() => handleTabChange("event_categories")}
-                    className="h-10 flex items-center gap-1.5 px-3 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
+                    className="h-9 flex items-center gap-1.5 px-3 rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-semibold cursor-pointer transition shadow-2xs"
                     title="Open Super Admin Event Categories CRUD"
                   >
                     <Tags className="h-3.5 w-3.5 text-orange-600" />
-                    <span className="hidden sm:inline">Manage Categories</span>
+                    <span>Manage Categories</span>
                   </button>
 
                   {/* Location State Filter */}
@@ -1657,7 +1707,7 @@ export default function AdminDashboardPage() {
                       setEventCityFilter("ALL");
                       setEventPage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">All States (India)</option>
                     {INDIAN_STATES.map((s) => (
@@ -1674,7 +1724,7 @@ export default function AdminDashboardPage() {
                       setEventCityFilter(e.target.value);
                       setEventPage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs"
                   >
                     <option value="ALL">
                       {eventStateFilter !== "ALL" ? `All Cities in ${eventStateFilter}` : "All Cities"}
@@ -1691,7 +1741,7 @@ export default function AdminDashboardPage() {
                       setEventPartnerFilter(e.target.value);
                       setEventPage(1);
                     }}
-                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs max-w-[200px] truncate"
+                    className="h-9 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs max-w-[220px] truncate"
                   >
                     <option value="ALL">All Event Organizers</option>
                     {approvedEventPartners.map((p) => (
@@ -1700,67 +1750,49 @@ export default function AdminDashboardPage() {
                       </option>
                     ))}
                   </select>
-
-                  {/* Status Filter Pills */}
-                  <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
-                    {[
-                      { id: "ALL", label: "All" },
-                      { id: "PENDING_APPROVAL", label: "Pending" },
-                      { id: "PUBLISHED", label: "Published" },
-                      { id: "REJECTED", label: "Rejected" },
-                      { id: "DRAFT", label: "Draft" },
-                    ].map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setEventStatusFilter(tab.id);
-                          setEventPage(1);
-                        }}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
-                          eventStatusFilter === tab.id
-                            ? "bg-orange-600 text-white shadow-2xs"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {(eventSearch.trim() !== "" ||
-                    eventStatusFilter !== "ALL" ||
-                    eventCategoryFilter !== "ALL" ||
-                    eventPartnerFilter !== "ALL" ||
-                    eventStateFilter !== "ALL" ||
-                    eventCityFilter !== "ALL") && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEventSearch("");
-                        setEventStatusFilter("ALL");
-                        setEventCategoryFilter("ALL");
-                        setEventPartnerFilter("ALL");
-                        setEventStateFilter("ALL");
-                        setEventCityFilter("ALL");
-                        setEventPage(1);
-                      }}
-                      className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      Reset
-                    </Button>
-                  )}
                 </div>
+
+                {(eventSearch.trim() !== "" ||
+                  eventStatusFilter !== "ALL" ||
+                  eventCategoryFilter !== "ALL" ||
+                  eventPartnerFilter !== "ALL" ||
+                  eventStateFilter !== "ALL" ||
+                  eventCityFilter !== "ALL") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setEventSearch("");
+                      setEventStatusFilter("ALL");
+                      setEventCategoryFilter("ALL");
+                      setEventPartnerFilter("ALL");
+                      setEventStateFilter("ALL");
+                      setEventCityFilter("ALL");
+                      setEventPage(1);
+                    }}
+                    className="h-9 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1.5 rounded-xl cursor-pointer"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reset Filters
+                  </Button>
+                )}
               </div>
 
-              {/* Filter Summary */}
+              {/* ROW 3: FILTER SUMMARY & STATUS */}
               <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
                 <div className="flex items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-gray-400" />
                   <span>
                     Showing <strong className="text-gray-900">{events.length}</strong> events
-                    {eventPagination?.total ? ` (Total: ${eventPagination.total})` : ""}
+                    {eventPagination?.total !== undefined ? ` (Total: ${eventPagination.total})` : ""}
                   </span>
+                  {(eventStateFilter !== "ALL" || eventCityFilter !== "ALL") && (
+                    <span className="inline-flex items-center gap-1 bg-orange-50 border border-orange-200 text-orange-800 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                      <MapPin className="w-3 h-3 text-orange-600" />
+                      {eventStateFilter !== "ALL" ? eventStateFilter : "All States"}
+                      {eventCityFilter !== "ALL" ? ` • ${eventCityFilter}` : ""}
+                    </span>
+                  )}
                 </div>
                 {eventsLoading && (
                   <span className="inline-flex items-center gap-1.5 text-orange-600 font-medium">
@@ -2016,7 +2048,7 @@ export default function AdminDashboardPage() {
                   }}
                   placeholder="Search user by name, email, or phone..."
                   isSearching={usersLoading && userSearch !== debouncedUserSearch}
-                  className="flex-1"
+                  className="flex-1 min-w-[280px]"
                 />
 
                 {/* Role & Status Filter Pills */}
@@ -2085,6 +2117,7 @@ export default function AdminDashboardPage() {
               {/* Filter Summary */}
               <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t border-gray-100">
                 <div className="flex items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-gray-400" />
                   <span>
                     Showing <strong className="text-gray-900">{users.length}</strong> users
                     {userPagination?.total ? ` (Total: ${userPagination.total})` : ""}
