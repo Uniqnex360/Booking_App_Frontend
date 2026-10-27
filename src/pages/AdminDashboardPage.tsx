@@ -611,9 +611,9 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <Header hideLocation />
 
-      <main className="mx-auto max-w-7xl px-4 pt-32 sm:pt-36 lg:pt-44 pb-16 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pt-[76px] sm:pt-[92px] lg:pt-[134px] pb-16 sm:px-6 lg:px-8">
         {/* TOP TITLE BAR */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-5 border-b border-gray-200">
           <div>
             <div className="flex items-center gap-2.5">
               <span className="p-2 rounded-xl bg-orange-100 text-orange-600 border border-orange-200">
@@ -848,7 +848,19 @@ export default function AdminDashboardPage() {
                     <div className="text-xs text-emerald-600 mt-1">₹{(((compStats?.commission_collected_paise || 0) / 100)).toLocaleString('en-IN')} collected</div>
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleTabChange("invoices")}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleTabChange("invoices");
+                      }
+                    }}
+                    className="bg-gray-50 hover:bg-amber-50/40 p-4 rounded-xl border border-gray-200 hover:border-amber-300 transition cursor-pointer group"
+                    title="Click to view Commission Invoices"
+                  >
                     <div className="text-xs uppercase font-medium text-gray-500">Outstanding Receivables</div>
                     <div className="text-2xl font-bold text-amber-600 mt-1">
                       ₹{(((compStats?.commission_outstanding_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}

@@ -434,21 +434,26 @@ export const CommissionInvoicesTab: React.FC = () => {
         </div>
 
         <div
+          role="button"
+          tabIndex={0}
           onClick={() => {
             setPendingSearchQuery('');
             setPendingStatusFilter('ALL');
             setIsPendingModalOpen(true);
           }}
-          className="bg-white border border-gray-200 hover:border-amber-400 p-5 rounded-2xl flex items-center justify-between shadow-2xs hover:shadow-md transition cursor-pointer group"
-          title="Click to view pending commission invoices popup"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              setPendingSearchQuery('');
+              setPendingStatusFilter('ALL');
+              setIsPendingModalOpen(true);
+            }
+          }}
+          className="bg-white border border-gray-200 hover:border-amber-400 hover:bg-amber-50/20 p-5 rounded-2xl flex items-center justify-between shadow-2xs hover:shadow-md active:scale-[0.99] transition cursor-pointer group"
+          title="Click to view pending commission invoices"
         >
           <div>
-            <div className="flex items-center gap-1.5">
-              <p className="text-xs uppercase font-medium text-gray-500">Outstanding Receivables</p>
-              <span className="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 py-0.5 rounded-full group-hover:bg-amber-200 transition">
-                View Popup &rarr;
-              </span>
-            </div>
+            <p className="text-xs uppercase font-medium text-gray-500">Outstanding Receivables</p>
             <h3 className="text-2xl font-bold text-amber-600 mt-1">₹{(totalOutstandingPaise / 100).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</h3>
             <p className="text-xs text-amber-600/70 mt-1">
               {pendingInvoices.length} invoices awaiting payment
