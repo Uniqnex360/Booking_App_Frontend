@@ -3,6 +3,7 @@ import api from './client';
 import type {
   Partner,
   PartnerRegisterPayload,
+  PartnerStatementResponse,
 } from '@/types/partner.types';
 
 export const registerPartner = (data: PartnerRegisterPayload) =>
@@ -17,6 +18,30 @@ export async function getPartnerRevenue(fromDate?: string, toDate?: string) {
   if (fromDate) params.from_date = fromDate;
   if (toDate) params.to_date = toDate;
   const response = await api.get<any>('/partner/revenue', { params });
+  return response.data.data;
+}
+
+export async function getMyStatement(params?: {
+  period?: string;
+  from_date?: string;
+  to_date?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PartnerStatementResponse> {
+  const response = await api.get<ApiResponse<PartnerStatementResponse>>('/partner/statement', { params });
+  return response.data.data;
+}
+
+export async function updateMyBankAccount(data: {
+  bank_account_number: string;
+  bank_ifsc_code: string;
+  bank_name: string;
+  bank_account_holder_name: string;
+  bank_account_type?: string;
+  bank_branch?: string;
+  remittance_schedule?: string;
+}): Promise<Partner> {
+  const response = await api.put<ApiResponse<Partner>>('/partner/bank-account', data);
   return response.data.data;
 }
 

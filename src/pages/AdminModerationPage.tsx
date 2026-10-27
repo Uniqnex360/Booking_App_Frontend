@@ -49,6 +49,7 @@ import {
   Clock,
   Eye,
   Search,
+  Utensils,
 } from 'lucide-react';
 
 export default function AdminModerationPage() {
@@ -60,6 +61,7 @@ export default function AdminModerationPage() {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState('ALL');
   const [selectedCity, setSelectedCity] = useState('ALL');
+  const [selectedVertical, setSelectedVertical] = useState<'ALL' | 'EVENTS' | 'DINING'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEventForDetails, setSelectedEventForDetails] = useState<EventItem | null>(null);
 
@@ -72,6 +74,10 @@ export default function AdminModerationPage() {
 
   const filteredEvents = useMemo(() => {
     return events.filter((ev) => {
+      const isDining = ev.category?.toLowerCase() === 'dining';
+      if (selectedVertical === 'EVENTS' && isDining) return false;
+      if (selectedVertical === 'DINING' && !isDining) return false;
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matches =
@@ -239,7 +245,7 @@ export default function AdminModerationPage() {
               ))}
             </select>
 
-            {(searchQuery.trim() !== '' || selectedState !== 'ALL' || selectedCity !== 'ALL') && (
+            {(searchQuery.trim() !== '' || selectedState !== 'ALL' || selectedCity !== 'ALL' || selectedVertical !== 'ALL') && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -247,6 +253,7 @@ export default function AdminModerationPage() {
                   setSearchQuery('');
                   setSelectedState('ALL');
                   setSelectedCity('ALL');
+                  setSelectedVertical('ALL');
                 }}
                 className="h-10 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl"
               >
@@ -255,6 +262,43 @@ export default function AdminModerationPage() {
               </Button>
             )}
           </div>
+
+          {/* Vertical Toggle */}
+          <div className="flex items-center gap-2 pt-3 mt-3 border-t border-slate-100 text-xs">
+            <span className="text-slate-500 font-semibold mr-1">Vertical:</span>
+            <button
+              onClick={() => setSelectedVertical('ALL')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
+                selectedVertical === 'ALL'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              All Submissions ({events.length})
+            </button>
+            <button
+              onClick={() => setSelectedVertical('EVENTS')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer ${
+                selectedVertical === 'EVENTS'
+                  ? 'bg-emerald-600 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Live Events ({events.filter((e) => e.category?.toLowerCase() !== 'dining').length})
+            </button>
+            <button
+              onClick={() => setSelectedVertical('DINING')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                selectedVertical === 'DINING'
+                  ? 'bg-amber-600 text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              <Utensils className="h-3.5 w-3.5" />
+              Restaurants & Dining ({events.filter((e) => e.category?.toLowerCase() === 'dining').length})
+            </button>
+          </div>
+
           <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
             <span>
               Showing <strong>{filteredEvents.length}</strong> of {events.length} pending submissions

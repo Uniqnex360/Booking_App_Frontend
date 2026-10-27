@@ -8,12 +8,13 @@ import {
   EventCategoryCreateInput,
   EventCategoryUpdateInput,
 } from '@/types/event.types';
-import { Partner, PartnerStatus } from '@/types/partner.types';
+import { Partner, PartnerStatus, PartnerStatementResponse } from '@/types/partner.types';
 
 export interface AdminStats {
   users: { total: number; active: number; blocked: number };
   movies: { total: number; published: number; draft: number };
   events: { total: number; published: number; pending: number; rejected: number };
+  dining?: { total: number; published: number; pending: number; rejected: number };
   partners: { total: number; pending: number; approved: number };
 }
 
@@ -111,10 +112,26 @@ export async function getAdminEvents(params?: {
   city?: string;
   state?: string;
   category?: string;
+  partner_id?: string;
+  exclude_dining?: boolean;
   page?: number;
   limit?: number;
 }): Promise<{ events: EventItem[]; pagination: any }> {
   const res = await api.get('/admin/events', { params });
+  return res.data?.data || res.data;
+}
+
+export async function getAdminDining(params?: {
+  status?: string;
+  search?: string;
+  city?: string;
+  state?: string;
+  cuisine?: string;
+  partner_id?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ items: EventItem[]; dining: EventItem[]; pagination: any }> {
+  const res = await api.get('/admin/dining', { params });
   return res.data?.data || res.data;
 }
 
@@ -194,7 +211,13 @@ export async function updateContentStatus(
   return data.data;
 }
 
-export async function getAdminPartners(params: any) {
+export async function getAdminPartners(params?: {
+  status?: string;
+  partner_type?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ partners: Partner[]; pagination: any }> {
   const response = await api.get('/admin/partners', { params });
   return response.data?.data || response.data;
 }
@@ -210,6 +233,55 @@ export const updatePartnerStatus = async (
   });
   return response.data?.data || response.data;
 };
+
+export async function getPartnerDetails(partnerId: string): Promise<Partner> {
+  const response = await api.get(`/admin/partners/${partnerId}`);
+  return response.data?.data || response.data;
+}
+
+export async function getPartnerStatement(
+  partnerId: string,
+  params?: {
+    period?: string;
+    from_date?: string;
+    to_date?: string;
+    page?: number;
+    limit?: number;
+  }
+): Promise<PartnerStatementResponse> {
+  const response = await api.get(`/admin/partners/${partnerId}/statement`, { params });
+  return response.data?.data || response.data;
+}
+
+export async function updatePartnerBankAccount(
+  partnerId: string,
+  data: {
+    bank_account_number: string;
+    bank_ifsc_code: string;
+    bank_name: string;
+    bank_account_holder_name: string;
+    bank_account_type?: string;
+    bank_branch?: string;
+    remittance_schedule?: string;
+  }
+): Promise<Partner> {
+  const response = await api.put(`/admin/partners/${partnerId}/bank-account`, data);
+  return response.data?.data || response.data;
+}
+
+export async function recordPartnerRemittance(
+  partnerId: string,
+  data: {
+    amount_paise: number;
+    utr_number: string;
+    bank_name?: string;
+    bank_account_number?: string;
+    notes?: string;
+  }
+) {
+  const response = await api.post(`/admin/partners/${partnerId}/remittance`, data);
+  return response.data?.data || response.data;
+}
 
 export async function updateEventStatus(
   eventId: string, 

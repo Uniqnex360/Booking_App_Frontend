@@ -1,5 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { toast } from 'sonner';
+import { useDebounce } from '@/hooks/useDebounce';
 
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -61,10 +62,12 @@ import {
   Copy,
   Building2,
   CheckCircle2,
+  Utensils,
 } from 'lucide-react';
 import { getAdminPartners, updatePartnerStatus } from '@/api/admin.api';
 import { PaginatedResponse } from '@/types';
 import { getPartnerTypeMeta, partnerTypeMeta } from '@/lib/partnerTypeMeta';
+import { AdminPartnerDetailModal } from './admin/AdminPartnerDetailModal';
 
 
 const statusBadge: Record<PartnerStatus, string> = {
@@ -89,6 +92,8 @@ export default function AdminPartnersPage() {
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [search, setSearch] = useState<string>('');
+  const debouncedSearch = useDebounce(search, 300);
 
   // Reject dialog state
   const [rejectPartner, setRejectPartner] = useState<Partner | null>(null);
@@ -99,6 +104,8 @@ export default function AdminPartnersPage() {
   const [selectedPartnerForDocs, setSelectedPartnerForDocs] = useState<Partner | null>(null);
   const [activeDocTab, setActiveDocTab] = useState<'gst' | 'pan'>('gst');
 
+  const [selectedPartnerIdForDetails, setSelectedPartnerIdForDetails] = useState<string | null>(null);
+
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const fetchPartners = useCallback(async () => {
@@ -107,6 +114,7 @@ export default function AdminPartnersPage() {
       const res = await getAdminPartners({
         status: statusFilter !== 'all' ? statusFilter : undefined,
         partner_type: typeFilter !== 'all' ? typeFilter : undefined,
+        search: debouncedSearch.trim() || undefined,
         page,
         limit: 10,
       });
@@ -119,7 +127,7 @@ export default function AdminPartnersPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, typeFilter, page]);
+  }, [statusFilter, typeFilter, debouncedSearch, page]);
 
   useEffect(() => {
     fetchPartners();
@@ -204,17 +212,64 @@ export default function AdminPartnersPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-slate-500" />
-            <span className="text-sm font-medium text-slate-900">Filters</span>
+        {/* Vertical Quick Filter Tabs */}
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          {[
+            { id: 'all', label: 'All Verticals', icon: Users },
+            { id: 'cinema', label: 'Theatres & Cinemas', icon: Film },
+            { id: 'event_organiser', label: 'Live Events & Shows', icon: CalendarDays },
+            { id: 'restaurant', label: 'Dining & Restaurants', icon: Utensils },
+          ].map((vert) => {
+            const Icon = vert.icon;
+            const isSelected = typeFilter === vert.id;
+            return (
+              <button
+                key={vert.id}
+                onClick={() => {
+                  setTypeFilter(vert.id);
+                  setPage(1);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#7B1E3D] text-white shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                <Icon className={`h-3.5 w-3.5 ${isSelected ? 'text-white' : 'text-slate-500'}`} />
+                <span>{vert.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Filters & Search */}
+        <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-soft sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search partner by business name, contact, city, phone..."
+              className="pl-9 h-10 rounded-xl bg-slate-50/50 border-slate-200 text-xs text-slate-900 placeholder:text-slate-400"
+            />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch('');
+                  setPage(1);
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
-          <div className="grid flex-1 gap-4 sm:grid-cols-2">
-            <div>
-              <Label className="mb-1.5 block text-xs font-medium">
-                Status
-              </Label>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="w-40">
               <Select
                 value={statusFilter}
                 onValueChange={(v) => {
@@ -222,8 +277,8 @@ export default function AdminPartnersPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="h-10 rounded-xl">
-                  <SelectValue />
+                <SelectTrigger className="h-10 rounded-xl text-xs">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All statuses</SelectItem>
@@ -234,10 +289,8 @@ export default function AdminPartnersPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="mb-1.5 block text-xs font-medium">
-                Partner Type
-              </Label>
+
+            <div className="w-48">
               <Select
                 value={typeFilter}
                 onValueChange={(v) => {
@@ -245,18 +298,14 @@ export default function AdminPartnersPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="h-10 rounded-xl">
-                  <SelectValue />
+                <SelectTrigger className="h-10 rounded-xl text-xs">
+                  <SelectValue placeholder="Vertical" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All types</SelectItem>
-                  <SelectItem value="experience_partner">
-                    Experience & Dining Partner
-                  </SelectItem>
-                  <SelectItem value="restaurant">Restaurant (Legacy)</SelectItem>
-                  <SelectItem value="event_organiser">
-                    Event Organizer (Legacy)
-                  </SelectItem>
+                  <SelectItem value="all">All Verticals</SelectItem>
+                  <SelectItem value="cinema">Theatres & Cinemas</SelectItem>
+                  <SelectItem value="event_organiser">Live Events & Shows</SelectItem>
+                  <SelectItem value="restaurant">Dining & Restaurants</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -334,10 +383,15 @@ export default function AdminPartnersPage() {
                           </div>
                         </td>
                         <td className="hidden px-4 py-4 sm:table-cell">
-                          <span className="text-sm text-slate-600">
-                            {partnerTypeMeta[partner.partner_type]?.label ?? partner.partner_type}
-
-                          </span>
+                          {(() => {
+                            const meta = getPartnerTypeMeta(partner.partner_type);
+                            return (
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${meta.badgeClass || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                                <TypeIcon className="h-3 w-3" />
+                                {meta.label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="hidden px-4 py-4 lg:table-cell">
                           <span className="text-sm text-slate-600">
@@ -393,7 +447,17 @@ export default function AdminPartnersPage() {
                           </Badge>
                         </td>
                         <td className="px-4 py-4">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end items-center gap-1.5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedPartnerIdForDetails(partner.id)}
+                              className="h-8 rounded-xl border-slate-200 bg-white px-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 flex items-center gap-1 shadow-2xs"
+                              title="View Partner Details, Account Statement & Remittance Bank Account"
+                            >
+                              <FileText className="h-3.5 w-3.5 text-orange-600" />
+                              <span>Statement</span>
+                            </Button>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -900,6 +964,14 @@ export default function AdminPartnersPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Partner Details, Account Statement & Bank of Remittance Modal */}
+      <AdminPartnerDetailModal
+        partnerId={selectedPartnerIdForDetails}
+        isOpen={!!selectedPartnerIdForDetails}
+        onClose={() => setSelectedPartnerIdForDetails(null)}
+        onPartnerUpdated={fetchPartners}
+      />
     </div>
   );
 }

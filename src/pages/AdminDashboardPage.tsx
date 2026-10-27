@@ -58,13 +58,16 @@ import { ReconciliationExceptionsTab } from "./admin/ReconciliationExceptionsTab
 import { IntegrationsGatewaysTab } from "./admin/IntegrationsGatewaysTab";
 import { AdminMovieDistributionModal } from "./admin/AdminMovieDistributionModal";
 import { AdminEventDetailModal } from "./admin/AdminEventDetailModal";
+import { AdminPartnerDetailModal } from "./admin/AdminPartnerDetailModal";
 import EventCategoriesTab from "./admin/EventCategoriesTab";
+import DiningModerationTab from "./admin/DiningModerationTab";
 import { getActiveEventCategories } from "@/api/event.api";
 import { EventCategoryRecord } from "@/types/event.types";
 import { AdminCreateModal } from "./admin/AdminCreateModal";
 import { AdminPermissionsModal } from "./admin/AdminPermissionsModal";
 import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
 import { useDebounce } from "@/hooks/useDebounce";
+import { getPartnerTypeMeta } from "@/lib/partnerTypeMeta";
 import type { EventItem } from "@/types/event.types";
 import type { Partner, PartnerStatus } from "@/types/partner.types";
 import {
@@ -97,6 +100,7 @@ import {
   ChevronRight,
   ExternalLink,
   Tags,
+  Utensils,
 } from "lucide-react";
 
 type ActiveTab =
@@ -107,6 +111,7 @@ type ActiveTab =
   | "exceptions"
   | "movies"
   | "events"
+  | "dining"
   | "event_categories"
   | "users"
   | "partners"
@@ -309,6 +314,8 @@ export default function AdminDashboardPage() {
   const debouncedEventSearch = useDebounce(eventSearch, 300);
   const [eventStatusFilter, setEventStatusFilter] = useState("ALL");
   const [eventCategoryFilter, setEventCategoryFilter] = useState("ALL");
+  const [eventPartnerFilter, setEventPartnerFilter] = useState("ALL");
+  const [approvedEventPartners, setApprovedEventPartners] = useState<Partner[]>([]);
   const [dynamicCategories, setDynamicCategories] = useState<EventCategoryRecord[]>([]);
   const [eventStateFilter, setEventStateFilter] = useState("ALL");
   const [eventCityFilter, setEventCityFilter] = useState("ALL");
@@ -327,6 +334,12 @@ export default function AdminDashboardPage() {
         }
       })
       .catch((err) => console.error("Failed to load active event categories:", err));
+
+    getAdminPartners({ status: "APPROVED", partner_type: "events", limit: 100 })
+      .then((res: any) => {
+        setApprovedEventPartners(res.partners || res.data || []);
+      })
+      .catch((err) => console.error("Failed to load approved event partners:", err));
   }, []);
 
   const availableEventCities = useMemo(() => {
@@ -345,10 +358,12 @@ export default function AdminDashboardPage() {
         city: eventCityFilter !== "ALL" ? eventCityFilter : undefined,
         state: eventStateFilter !== "ALL" ? eventStateFilter : undefined,
         category: eventCategoryFilter !== "ALL" ? eventCategoryFilter : undefined,
+        partner_id: eventPartnerFilter !== "ALL" ? eventPartnerFilter : undefined,
+        exclude_dining: true,
         page: eventPage,
         limit: 15,
       });
-      let items = res.events || [];
+      let items = (res.events || []).filter((ev: any) => ev.category?.toLowerCase() !== "dining");
       if (eventCategoryFilter !== "ALL") {
         items = items.filter((ev: any) =>
           ev.category?.toLowerCase() === eventCategoryFilter.toLowerCase()
@@ -370,6 +385,7 @@ export default function AdminDashboardPage() {
     debouncedEventSearch,
     eventStatusFilter,
     eventCategoryFilter,
+    eventPartnerFilter,
     eventStateFilter,
     eventCityFilter,
     eventPage,
@@ -520,28 +536,35 @@ export default function AdminDashboardPage() {
   const [partners, setPartners] = useState<Partner[]>([]);
   const [partnersLoading, setPartnersLoading] = useState(false);
   const [partnerStatusFilter, setPartnerStatusFilter] = useState("ALL");
+  const [partnerTypeFilter, setPartnerTypeFilter] = useState("ALL");
+  const [partnerSearch, setPartnerSearch] = useState("");
+  const debouncedPartnerSearch = useDebounce(partnerSearch, 300);
   const [partnerPage, setPartnerPage] = useState(1);
   const [partnerPagination, setPartnerPagination] = useState<any>(null);
   const [partnerActionLoadingId, setPartnerActionLoadingId] = useState<
     string | null
   >(null);
+  const [selectedPartnerIdForDetails, setSelectedPartnerIdForDetails] = useState<string | null>(null);
 
   const fetchPartners = useCallback(async () => {
     setPartnersLoading(true);
     try {
       const res = await getAdminPartners({
         status: partnerStatusFilter !== "ALL" ? partnerStatusFilter : undefined,
+        partner_type: partnerTypeFilter !== "ALL" ? partnerTypeFilter : undefined,
+        search: debouncedPartnerSearch.trim() || undefined,
         page: partnerPage,
         limit: 10,
       });
-      setPartners(res.partners || res.data || []);
-      setPartnerPagination(res.pagination || res.meta || null);
+      const raw: any = res;
+      setPartners(raw.partners || raw.data || []);
+      setPartnerPagination(raw.pagination || raw.meta || null);
     } catch {
       toast.error("Failed to load partners");
     } finally {
       setPartnersLoading(false);
     }
-  }, [partnerStatusFilter, partnerPage]);
+  }, [partnerStatusFilter, partnerTypeFilter, debouncedPartnerSearch, partnerPage]);
 
   useEffect(() => {
     if (activeTab === "partners" || activeTab === "overview") {
@@ -669,9 +692,16 @@ export default function AdminDashboardPage() {
             { id: "movies", label: "Movies Control", icon: Film, count: stats?.movies.total },
             {
               id: "events",
-              label: "Event management",
+              label: "Events Moderation",
               icon: CalendarDays,
               badge: stats?.events.pending ? `${stats.events.pending} pending` : undefined,
+            },
+            {
+              id: "dining",
+              label: "Dining & Restaurants",
+              icon: Utensils,
+              badge: stats?.dining?.pending ? `${stats.dining.pending} pending` : undefined,
+              count: stats?.dining?.total,
             },
             {
               id: "event_categories",
@@ -849,7 +879,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Stat Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {/* Movies Stat */}
               <div
                 onClick={() => handleTabChange("movies")}
@@ -904,6 +934,35 @@ export default function AdminDashboardPage() {
                     <span className="text-gray-400">•</span>
                     <span className="text-amber-600 font-medium">
                       {stats?.events.pending ?? 0} Pending Approval
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dining & Restaurants Stat */}
+              <div
+                onClick={() => handleTabChange("dining")}
+                className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-amber-400 shadow-2xs transition group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                    Dining & Restaurants
+                  </span>
+                  <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 group-hover:scale-110 transition">
+                    <Utensils className="h-5 w-5" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-3xl font-extrabold text-gray-900">
+                    {stats?.dining?.total ?? 0}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2 text-xs">
+                    <span className="text-emerald-600 font-medium">
+                      {stats?.dining?.published ?? 0} Live
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-amber-600 font-medium">
+                      {stats?.dining?.pending ?? 0} Pending
                     </span>
                   </div>
                 </div>
@@ -1565,6 +1624,23 @@ export default function AdminDashboardPage() {
                     ))}
                   </select>
 
+                  {/* Partner-Wise Event Organizer Filter */}
+                  <select
+                    value={eventPartnerFilter}
+                    onChange={(e) => {
+                      setEventPartnerFilter(e.target.value);
+                      setEventPage(1);
+                    }}
+                    className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs max-w-[200px] truncate"
+                  >
+                    <option value="ALL">All Event Organizers</option>
+                    {approvedEventPartners.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.business_name} ({p.city})
+                      </option>
+                    ))}
+                  </select>
+
                   {/* Status Filter Pills */}
                   <div className="flex items-center gap-1 bg-gray-50/80 p-1 rounded-xl border border-gray-200 shadow-2xs">
                     {[
@@ -1594,6 +1670,7 @@ export default function AdminDashboardPage() {
                   {(eventSearch.trim() !== "" ||
                     eventStatusFilter !== "ALL" ||
                     eventCategoryFilter !== "ALL" ||
+                    eventPartnerFilter !== "ALL" ||
                     eventStateFilter !== "ALL" ||
                     eventCityFilter !== "ALL") && (
                     <Button
@@ -1603,6 +1680,7 @@ export default function AdminDashboardPage() {
                         setEventSearch("");
                         setEventStatusFilter("ALL");
                         setEventCategoryFilter("ALL");
+                        setEventPartnerFilter("ALL");
                         setEventStateFilter("ALL");
                         setEventCityFilter("ALL");
                         setEventPage(1);
@@ -1803,6 +1881,13 @@ export default function AdminDashboardPage() {
               )}
             </div>
           </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: DINING & RESTAURANTS MODERATION                              */}
+        {/* ================================================================= */}
+        {activeTab === "dining" && (
+          <DiningModerationTab />
         )}
 
         {/* ================================================================= */}
@@ -2146,17 +2231,24 @@ export default function AdminDashboardPage() {
         {/* ================================================================= */}
         {activeTab === "partners" && (
           <div className="py-6 space-y-4">
-            <div className="flex items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs">
+            {/* Header & Quick Intro */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-2xs">
               <div>
-                <h3 className="font-bold text-gray-900 text-base">
-                  Partner Applications & Approvals
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Verify business registrations for cinema exhibitors and event organisers
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-orange-100 text-orange-600 border border-orange-200">
+                    <Building2 className="h-4 w-4" />
+                  </span>
+                  <h3 className="font-bold text-gray-900 text-base">
+                    Partner Applications & Verification
+                  </h3>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Manage commercial onboarding across Theatres & Cinemas, Live Events, and Dining & Restaurants
                 </p>
               </div>
 
-              <div className="flex items-center gap-1.5">
+              {/* Status Filter Buttons */}
+              <div className="flex items-center gap-1.5 bg-gray-50/80 p-1 rounded-xl border border-gray-200">
                 {["ALL", "PENDING_APPROVAL", "APPROVED", "REJECTED"].map((st) => (
                   <button
                     key={st}
@@ -2166,8 +2258,8 @@ export default function AdminDashboardPage() {
                     }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
                       partnerStatusFilter === st
-                        ? "bg-orange-600 text-white shadow-xs"
-                        : "bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200"
+                        ? "bg-orange-600 text-white shadow-2xs"
+                        : "text-gray-600 hover:text-gray-900"
                     }`}
                   >
                     {st === "ALL"
@@ -2182,6 +2274,83 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
+            {/* Vertical Filter Pills & Search */}
+            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: "ALL", label: "All Verticals", icon: Users },
+                  { id: "theatre", label: "Theatres & Cinemas", icon: Film },
+                  { id: "events", label: "Live Events & Shows", icon: CalendarDays },
+                  { id: "dining", label: "Dining & Restaurants", icon: Utensils },
+                ].map((vert) => {
+                  const Icon = vert.icon;
+                  const isSelected = partnerTypeFilter === vert.id;
+                  return (
+                    <button
+                      key={vert.id}
+                      onClick={() => {
+                        setPartnerTypeFilter(vert.id);
+                        setPartnerPage(1);
+                      }}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                        isSelected
+                          ? "bg-orange-600 text-white shadow-xs"
+                          : "bg-gray-50 border border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      }`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 ${isSelected ? "text-white" : "text-gray-500"}`} />
+                      <span>{vert.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Search Bar */}
+              <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={partnerSearch}
+                    onChange={(e) => {
+                      setPartnerSearch(e.target.value);
+                      setPartnerPage(1);
+                    }}
+                    placeholder="Search partner by business name, contact person, city, or phone..."
+                    className="pl-9 h-10 rounded-xl bg-gray-50/50 border-gray-200 text-xs text-gray-900 placeholder:text-gray-400"
+                  />
+                  {partnerSearch && (
+                    <button
+                      onClick={() => {
+                        setPartnerSearch("");
+                        setPartnerPage(1);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {(partnerSearch || partnerTypeFilter !== "ALL" || partnerStatusFilter !== "ALL") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setPartnerSearch("");
+                      setPartnerTypeFilter("ALL");
+                      setPartnerStatusFilter("ALL");
+                      setPartnerPage(1);
+                    }}
+                    className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Reset Filters
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Partners List */}
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-2xs">
               {partnersLoading ? (
                 <div className="p-16 flex flex-col items-center justify-center gap-3 text-gray-400">
@@ -2194,6 +2363,9 @@ export default function AdminDashboardPage() {
                   <p className="text-base font-semibold text-gray-700">
                     No partner applications found
                   </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Try another search term or vertical filter
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-100">
@@ -2201,13 +2373,15 @@ export default function AdminDashboardPage() {
                     const isPending = p.status === "PENDING_APPROVAL";
                     const isApproved = p.status === "APPROVED";
                     const isActing = partnerActionLoadingId === p.id;
+                    const meta = getPartnerTypeMeta(p.partner_type);
+                    const TypeIcon = meta.icon;
 
                     return (
                       <div
                         key={p.id}
                         className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-gray-50 transition"
                       >
-                        <div className="space-y-1 min-w-0">
+                        <div className="space-y-1.5 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-bold text-gray-900 text-base">
                               {p.business_name}
@@ -2223,25 +2397,62 @@ export default function AdminDashboardPage() {
                             >
                               {p.status}
                             </Badge>
-                            <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200">
-                              {p.partner_type}
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-xs font-semibold border ${
+                                meta.badgeClass || "bg-gray-100 text-gray-700 border-gray-200"
+                              }`}
+                            >
+                              <TypeIcon className="h-3 w-3" />
+                              {meta.label}
                             </span>
                           </div>
+
                           <p className="text-xs text-gray-500">
                             Contact: <span className="text-gray-900 font-medium">{p.contact_name}</span>{" "}
                             • Phone: <span className="text-gray-900 font-medium">{p.contact_phone}</span>{" "}
                             • City: <span className="text-gray-900 font-medium">{p.city}</span>
                           </p>
+
+                          {(p.gst_certificate_url || p.pan_card_url || p.gst_number || p.pan_number) && (
+                            <div className="flex items-center gap-2 text-[11px] pt-0.5">
+                              {p.gst_number && (
+                                <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 font-mono">
+                                  GST: {p.gst_number}
+                                </span>
+                              )}
+                              {p.pan_number && (
+                                <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200 font-mono">
+                                  PAN: {p.pan_number}
+                                </span>
+                              )}
+                              {p.gst_certificate_url && (
+                                <span className="text-emerald-700 font-medium">✓ GST Doc Uploaded</span>
+                              )}
+                              {p.pan_card_url && (
+                                <span className="text-emerald-700 font-medium">✓ PAN Card Uploaded</span>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            onClick={() => setSelectedPartnerIdForDetails(p.id)}
+                            size="sm"
+                            variant="outline"
+                            className="border-slate-200 text-slate-700 hover:bg-slate-100 font-semibold text-xs h-9 gap-1.5 shadow-2xs cursor-pointer"
+                          >
+                            <FileText className="h-3.5 w-3.5 text-orange-600" />
+                            <span>Details & Statement</span>
+                          </Button>
+
                           {isPending && (
                             <>
                               <Button
                                 onClick={() => handleApprovePartner(p.id)}
                                 disabled={isActing}
                                 size="sm"
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 gap-1 shadow-2xs"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs h-9 gap-1 shadow-2xs cursor-pointer"
                               >
                                 {isActing ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -2255,7 +2466,7 @@ export default function AdminDashboardPage() {
                                 disabled={isActing}
                                 size="sm"
                                 variant="outline"
-                                className="border-rose-200 text-rose-700 hover:bg-rose-50 font-semibold text-xs h-9 gap-1 shadow-2xs"
+                                className="border-rose-200 text-rose-700 hover:bg-rose-50 font-semibold text-xs h-9 gap-1 shadow-2xs cursor-pointer"
                               >
                                 <X className="h-3.5 w-3.5" />
                                 <span>Reject</span>
@@ -2266,6 +2477,37 @@ export default function AdminDashboardPage() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {partnerPagination && partnerPagination.total_pages > 1 && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50/50 text-xs text-gray-600">
+                  <span>
+                    Page {partnerPage} of {partnerPagination.total_pages} ({partnerPagination.total} partners)
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={partnerPage <= 1}
+                      onClick={() => setPartnerPage((p) => Math.max(1, p - 1))}
+                      className="h-8 px-2 text-xs"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                      Prev
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={partnerPage >= partnerPagination.total_pages}
+                      onClick={() => setPartnerPage((p) => p + 1)}
+                      className="h-8 px-2 text-xs"
+                    >
+                      Next
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -2408,6 +2650,14 @@ export default function AdminDashboardPage() {
         }}
         onToggleDelist={handleToggleEventDelist}
         isActionLoading={!!actionLoadingId}
+      />
+
+      {/* Partner Details, Bank Account & Account Statement Modal */}
+      <AdminPartnerDetailModal
+        partnerId={selectedPartnerIdForDetails}
+        isOpen={!!selectedPartnerIdForDetails}
+        onClose={() => setSelectedPartnerIdForDetails(null)}
+        onPartnerUpdated={fetchPartners}
       />
     </div>
   );

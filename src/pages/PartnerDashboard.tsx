@@ -11,11 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader } from "@/components/common/Loader";
-import { getMyPartnerProfile } from "@/api/partner.api";
-import { getPartnerRevenue } from "@/api/partner.api";
+import { getMyPartnerProfile, getPartnerRevenue, getMyStatement, updateMyBankAccount } from "@/api/partner.api";
 import { getMyEvents, updateEvent, cancelOrDeleteEvent } from "@/api/event.api";
 import { formatRupees } from "@/utils/currencyFormatter";
-import type { Partner, PartnerType } from "@/types/partner.types";
+import type { Partner, PartnerType, PartnerStatementResponse } from "@/types/partner.types";
 import type { EventItem } from "@/types/event.types";
 
 import {
@@ -39,6 +38,16 @@ import {
   TrendingUp,
   DollarSign,
   BarChart3,
+  Landmark,
+  FileText,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Download,
+  Copy,
+  Check,
+  Building2,
+  RefreshCw,
+  X,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -153,6 +162,599 @@ function RevenueDashboard({ partnerId }: { partnerId: string }) {
 }
 
 // ---------------------------------------------------------------------------
+// Partner Account Statement Component
+// ---------------------------------------------------------------------------
+function PartnerStatementDashboard() {
+  const [statementData, setStatementData] = useState<PartnerStatementResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<string>("ALL");
+
+  const fetchStatement = async () => {
+    setLoading(true);
+    try {
+      const data = await getMyStatement({ period });
+      setStatementData(data);
+    } catch {
+      toast.error("Failed to load account statement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatement();
+  }, [period]);
+
+  const handleExportCSV = () => {
+    if (!statementData || !statementData.statement_ledger) return;
+    const p = statementData.partner;
+    const headers = [
+      'Date',
+      'Transaction Type',
+      'Reference ID / UTR',
+      'Description',
+      'Item / Venue',
+      'Gross Amount (INR)',
+      'Commission Fee (INR)',
+      'Tax / TDS (INR)',
+      'Net Amount (INR)',
+      'Status',
+    ];
+
+    const rows = statementData.statement_ledger.map((item) => [
+      item.date ? format(parseISO(item.date), 'yyyy-MM-dd HH:mm:ss') : '',
+      item.type,
+      item.reference,
+      `"${item.description.replace(/"/g, '""')}"`,
+      `"${item.item_title.replace(/"/g, '""')}"`,
+      (item.gross_paise / 100).toFixed(2),
+      (item.commission_paise / 100).toFixed(2),
+      (item.tax_paise / 100).toFixed(2),
+      (item.net_paise / 100).toFixed(2),
+      item.status,
+    ]);
+
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute(
+      'download',
+      `my_account_statement_${format(new Date(), 'yyyyMMdd')}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Account statement exported to CSV');
+  };
+
+  if (loading && !statementData) return <Loader />;
+  if (!statementData) return <p className="text-slate-500">Failed to load account statement.</p>;
+
+  const fin = statementData.financial_summary;
+  const ledger = statementData.statement_ledger || [];
+  const remittances = statementData.remittances || [];
+  const bank = statementData.partner.bank_account;
+
+  return (
+    <div className="space-y-6">
+      {/* Financial Metrics Overview */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            Total Gross Sales
+          </span>
+          <p className="text-xl font-black text-slate-900 mt-1">
+            {formatRupees(fin.total_gross_paise)}
+          </p>
+          <span className="text-[11px] text-slate-400">{fin.total_bookings_count} bookings</span>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            Platform Fee
+          </span>
+          <p className="text-xl font-black text-rose-600 mt-1">
+            -{formatRupees(fin.platform_commission_paise)}
+          </p>
+          <span className="text-[11px] text-slate-400">{statementData.partner.commission_rate}% commission</span>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+            TDS / TCS (1%)
+          </span>
+          <p className="text-xl font-black text-slate-600 mt-1">
+            -{formatRupees(fin.tds_tcs_paise)}
+          </p>
+          <span className="text-[11px] text-slate-400">Statutory withholdings</span>
+        </div>
+
+        <div className="bg-white border border-emerald-200 bg-emerald-50/20 rounded-2xl p-4 shadow-sm">
+          <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
+            Remitted to Bank
+          </span>
+          <p className="text-xl font-black text-emerald-700 mt-1">
+            {formatRupees(fin.total_remitted_paise)}
+          </p>
+          <span className="text-[11px] text-emerald-600 font-medium">
+            {fin.total_remittances_count} payouts received
+          </span>
+        </div>
+
+        <div className="bg-white border border-amber-300 bg-amber-50/30 rounded-2xl p-4 shadow-sm col-span-2 sm:col-span-1">
+          <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block">
+            Pending Remittance
+          </span>
+          <p className="text-2xl font-black text-amber-700 mt-1">
+            {formatRupees(fin.pending_remittance_paise)}
+          </p>
+          <span className="text-[11px] text-amber-800 font-medium">Next payout cycle</span>
+        </div>
+      </div>
+
+      {/* Period Filter & CSV Export Toolbar */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-bold text-slate-500 mr-1">Period:</span>
+          {[
+            { id: 'ALL', label: 'All Time' },
+            { id: 'THIS_MONTH', label: 'This Month' },
+            { id: 'LAST_30_DAYS', label: 'Last 30 Days' },
+            { id: 'LAST_90_DAYS', label: 'Last 90 Days' },
+          ].map((p) => (
+            <button
+              key={p.id}
+              onClick={() => setPeriod(p.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                period === p.id
+                  ? 'bg-[#7B1E3D] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleExportCSV}
+          className="text-xs font-bold rounded-xl gap-1.5 border-slate-300 text-slate-700 hover:bg-slate-50"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export Statement (CSV)
+        </Button>
+      </div>
+
+      {/* Unified Statement Ledger Table */}
+      <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[#7B1E3D]" />
+            Account Statement Ledger
+          </h3>
+          <span className="text-xs text-slate-500">
+            {ledger.length} transactions recorded
+          </span>
+        </div>
+
+        {ledger.length === 0 ? (
+          <div className="p-12 text-center text-slate-400">
+            <Clock className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+            <p className="text-sm font-semibold text-slate-600">No transactions recorded for this period</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th className="px-5 py-3">Date</th>
+                  <th className="px-5 py-3">Type</th>
+                  <th className="px-5 py-3">Reference / UTR</th>
+                  <th className="px-5 py-3">Item / Event</th>
+                  <th className="px-5 py-3 text-right">Gross (INR)</th>
+                  <th className="px-5 py-3 text-right">Fee & Tax</th>
+                  <th className="px-5 py-3 text-right">Net Share (INR)</th>
+                  <th className="px-5 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {ledger.map((item) => {
+                  const isPayout = item.type === 'REMITTANCE_PAYOUT';
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition">
+                      <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">
+                        {item.date ? format(parseISO(item.date), 'dd MMM yyyy, hh:mm a') : '—'}
+                      </td>
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-bold ${
+                            isPayout
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}
+                        >
+                          {isPayout ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                          {isPayout ? 'Bank Remittance' : 'Ticket Sale'}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 font-mono font-bold text-slate-800 whitespace-nowrap">
+                        {item.reference}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <p className="font-bold text-slate-900 truncate max-w-[220px]">
+                          {item.item_title}
+                        </p>
+                        <p className="text-[11px] text-slate-500 truncate max-w-[220px]">
+                          {item.description}
+                        </p>
+                      </td>
+                      <td className="px-5 py-3.5 text-right font-medium text-slate-700 whitespace-nowrap">
+                        {isPayout ? '—' : formatRupees(item.gross_paise)}
+                      </td>
+                      <td className="px-5 py-3.5 text-right text-rose-600 whitespace-nowrap">
+                        {isPayout ? '—' : `-${formatRupees(item.commission_paise + item.tax_paise)}`}
+                      </td>
+                      <td
+                        className={`px-5 py-3.5 text-right font-black whitespace-nowrap ${
+                          isPayout ? 'text-emerald-700' : 'text-slate-900'
+                        }`}
+                      >
+                        {isPayout
+                          ? formatRupees(Math.abs(item.net_paise))
+                          : formatRupees(item.net_paise)}
+                      </td>
+                      <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                        <Badge
+                          className={
+                            item.status === 'REMITTED' || item.status === 'SETTLED'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }
+                        >
+                          {item.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Remittance Payouts to Bank */}
+      {remittances.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              Direct Bank Remittance Payouts History
+            </h3>
+            <span className="text-xs text-slate-500">
+              Paid to {bank?.bank_name} ({bank?.masked_account_number})
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider">
+                <tr>
+                  <th className="px-5 py-3">Date</th>
+                  <th className="px-5 py-3">Bank UTR Number</th>
+                  <th className="px-5 py-3">Destination Account</th>
+                  <th className="px-5 py-3 text-right">Amount (INR)</th>
+                  <th className="px-5 py-3">Notes</th>
+                  <th className="px-5 py-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {remittances.map((rem) => (
+                  <tr key={rem.id} className="hover:bg-slate-50/80 transition">
+                    <td className="px-5 py-3.5 text-slate-600 whitespace-nowrap">
+                      {rem.created_at ? format(parseISO(rem.created_at), 'dd MMM yyyy, hh:mm a') : '—'}
+                    </td>
+                    <td className="px-5 py-3.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                      {rem.utr_number}
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">
+                      {rem.bank_name || bank?.bank_name} • {rem.bank_account_number || bank?.masked_account_number}
+                    </td>
+                    <td className="px-5 py-3.5 text-right font-black text-emerald-700 whitespace-nowrap">
+                      {formatRupees(rem.amount_paise)}
+                    </td>
+                    <td className="px-5 py-3.5 text-slate-500">
+                      {rem.notes || 'Weekly settlement payout'}
+                    </td>
+                    <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                      <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                        SUCCESS
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Partner Bank Account of Remittance Component
+// ---------------------------------------------------------------------------
+function PartnerBankDashboard({ partner, onUpdated }: { partner: Partner; onUpdated: () => void }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState({
+    bank_name: partner.bank_name || '',
+    bank_account_holder_name: partner.bank_account_holder_name || partner.business_name || '',
+    bank_account_number: partner.bank_account_number || '',
+    bank_ifsc_code: partner.bank_ifsc_code || '',
+    bank_account_type: partner.bank_account_type || 'CURRENT',
+    bank_branch: partner.bank_branch || '',
+    remittance_schedule: partner.remittance_schedule || 'WEEKLY',
+  });
+  const [saving, setSaving] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const handleCopy = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.bank_name.trim() || !form.bank_account_number.trim() || !form.bank_ifsc_code.trim()) {
+      toast.error('Bank Name, Account Number and IFSC Code are required.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await updateMyBankAccount({
+        bank_name: form.bank_name.trim(),
+        bank_account_holder_name: form.bank_account_holder_name.trim() || partner.business_name,
+        bank_account_number: form.bank_account_number.trim(),
+        bank_ifsc_code: form.bank_ifsc_code.trim().toUpperCase(),
+        bank_account_type: form.bank_account_type,
+        bank_branch: form.bank_branch.trim() || undefined,
+        remittance_schedule: form.remittance_schedule,
+      });
+      toast.success('Remittance bank account updated successfully!');
+      setIsEditing(false);
+      onUpdated();
+    } catch {
+      toast.error('Failed to update bank account');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Visual Bank Card */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-7 sm:p-8 shadow-lg border border-slate-700">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+              <Landmark className="h-4 w-4" />
+              <span>Remittance Bank Account</span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-black text-white mt-2">
+              {partner.bank_name || 'No Bank Account Configured'}
+            </h3>
+            <p className="text-xs text-slate-300 mt-1">
+              {partner.bank_branch ? `Branch: ${partner.bank_branch}` : 'Designated account for automatic ticket and dining payout settlements'}
+            </p>
+          </div>
+
+          <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 text-xs py-1 px-2.5">
+            {partner.bank_verification_status || 'VERIFIED'}
+          </Badge>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 pt-6 border-t border-slate-700/80">
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-slate-400 block font-semibold">
+              Beneficiary Name
+            </span>
+            <p className="text-sm font-bold text-white mt-1 truncate">
+              {partner.bank_account_holder_name || partner.business_name}
+            </p>
+          </div>
+
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-slate-400 block font-semibold">
+              Account Number
+            </span>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm font-mono font-black text-white">
+                {partner.bank_account_number || '•••• •••• ••••'}
+              </p>
+              {partner.bank_account_number && (
+                <button
+                  onClick={() => handleCopy(partner.bank_account_number!, 'acc')}
+                  className="text-slate-400 hover:text-white transition"
+                  title="Copy account number"
+                >
+                  {copiedKey === 'acc' ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-slate-400 block font-semibold">
+              IFSC Code
+            </span>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-sm font-mono font-bold text-white">
+                {partner.bank_ifsc_code || '—'}
+              </p>
+              {partner.bank_ifsc_code && (
+                <button
+                  onClick={() => handleCopy(partner.bank_ifsc_code!, 'ifsc')}
+                  className="text-slate-400 hover:text-white transition"
+                  title="Copy IFSC"
+                >
+                  {copiedKey === 'ifsc' ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-slate-400 block font-semibold">
+              Type & Cycle
+            </span>
+            <p className="text-sm font-bold text-white mt-1">
+              {partner.bank_account_type || 'CURRENT'} • {partner.remittance_schedule || 'WEEKLY'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Edit Bank Account Details */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="font-bold text-slate-900 text-base">
+              {isEditing ? 'Edit Remittance Bank Credentials' : 'Bank Account Settings'}
+            </h4>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Ensure your banking credentials match your official PAN and GST business registration.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant={isEditing ? 'ghost' : 'outline'}
+            onClick={() => setIsEditing(!isEditing)}
+            className="rounded-xl text-xs font-bold gap-1.5"
+          >
+            {isEditing ? (
+              <>
+                <X className="h-3.5 w-3.5" /> Cancel
+              </>
+            ) : (
+              <>
+                <Edit3 className="h-3.5 w-3.5" /> Edit Bank Details
+              </>
+            )}
+          </Button>
+        </div>
+
+        {isEditing ? (
+          <form onSubmit={handleSave} className="pt-4 border-t border-slate-100 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-bold text-slate-700">Bank Name *</Label>
+                <Input
+                  value={form.bank_name}
+                  onChange={(e) => setForm({ ...form, bank_name: e.target.value })}
+                  placeholder="e.g. HDFC Bank, ICICI Bank, State Bank of India"
+                  className="h-10 text-xs rounded-xl mt-1"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-700">Beneficiary / Account Holder Name *</Label>
+                <Input
+                  value={form.bank_account_holder_name}
+                  onChange={(e) => setForm({ ...form, bank_account_holder_name: e.target.value })}
+                  placeholder="e.g. Acme Entertainment Pvt Ltd"
+                  className="h-10 text-xs rounded-xl mt-1"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-700">Account Number *</Label>
+                <Input
+                  value={form.bank_account_number}
+                  onChange={(e) => setForm({ ...form, bank_account_number: e.target.value })}
+                  placeholder="e.g. 50100239481726"
+                  className="h-10 text-xs font-mono rounded-xl mt-1"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-700">IFSC Code *</Label>
+                <Input
+                  value={form.bank_ifsc_code}
+                  onChange={(e) => setForm({ ...form, bank_ifsc_code: e.target.value })}
+                  placeholder="e.g. HDFC0001234"
+                  className="h-10 text-xs font-mono uppercase rounded-xl mt-1"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-700">Account Type</Label>
+                <select
+                  value={form.bank_account_type}
+                  onChange={(e) => setForm({ ...form, bank_account_type: e.target.value })}
+                  className="h-10 w-full border border-slate-200 rounded-xl px-3 text-xs bg-white mt-1 font-medium"
+                >
+                  <option value="CURRENT">Current Account</option>
+                  <option value="SAVINGS">Savings Account</option>
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs font-bold text-slate-700">Bank Branch</Label>
+                <Input
+                  value={form.bank_branch}
+                  onChange={(e) => setForm({ ...form, bank_branch: e.target.value })}
+                  placeholder="e.g. Indiranagar, Bengaluru"
+                  className="h-10 text-xs rounded-xl mt-1"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(false)}
+                className="rounded-xl text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={saving}
+                className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white text-xs font-bold rounded-xl"
+              >
+                {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                Save Bank Details
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="pt-2 text-xs text-slate-500">
+            Payout remittances are automatically scheduled every <strong>Monday</strong> to this verified account via NEFT / RTGS.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Partner Dashboard
 // ---------------------------------------------------------------------------
 export default function PartnerDashboard() {
@@ -161,7 +763,7 @@ export default function PartnerDashboard() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    "ACTIVE" | "PENDING" | "PAST" | "REVENUE"
+    "ACTIVE" | "PENDING" | "PAST" | "REVENUE" | "STATEMENT" | "BANK"
   >("ACTIVE");
   const [verticalFilter, setVerticalFilter] = useState<"ALL" | "EVENTS" | "DINING">("ALL");
 
@@ -462,6 +1064,32 @@ export default function PartnerDashboard() {
                     <TrendingUp className="h-4 w-4 shrink-0" />
                     <span>Revenue</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("STATEMENT")}
+                    className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                      activeTab === "STATEMENT"
+                        ? "bg-[#7B1E3D] text-white shadow-xs font-bold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                    }`}
+                  >
+                    <FileText className="h-4 w-4 shrink-0" />
+                    <span>Account Statement</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("BANK")}
+                    className={`flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                      activeTab === "BANK"
+                        ? "bg-[#7B1E3D] text-white shadow-xs font-bold"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                    }`}
+                  >
+                    <Landmark className="h-4 w-4 shrink-0" />
+                    <span>Bank & Remittance</span>
+                  </button>
                 </div>
 
                 {/* Vertical Filter Pills: Events vs Restaurants */}
@@ -509,7 +1137,15 @@ export default function PartnerDashboard() {
               <RevenueDashboard partnerId={partner.id} />
             )}
 
-            {activeTab !== "REVENUE" && currentList.length === 0 && (
+            {activeTab === "STATEMENT" && (
+              <PartnerStatementDashboard />
+            )}
+
+            {activeTab === "BANK" && partner && (
+              <PartnerBankDashboard partner={partner} onUpdated={fetchData} />
+            )}
+
+            {activeTab !== "REVENUE" && activeTab !== "STATEMENT" && activeTab !== "BANK" && currentList.length === 0 && (
               <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-500 shadow-sm">
                 <p className="text-base font-bold text-slate-800 mb-1">
                   No {verticalFilter === "DINING" ? "dining / restaurant listings" : verticalFilter === "EVENTS" ? "live events" : "listings"} found
