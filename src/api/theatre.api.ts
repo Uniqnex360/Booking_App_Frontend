@@ -306,6 +306,7 @@ export interface InvoiceRemittancePayload {
 export async function getTheatreInvoices(params?: {
   venue_id?: string;
   status?: string;
+  search?: string;
   limit?: number;
   offset?: number;
 }): Promise<TheatreInvoiceItem[]> {

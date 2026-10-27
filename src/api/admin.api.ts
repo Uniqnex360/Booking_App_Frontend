@@ -586,6 +586,7 @@ export async function generateCommissionInvoice(data: {
 export async function getCommissionInvoices(params?: {
   venue_id?: string;
   status?: string;
+  search?: string;
   limit?: number;
   offset?: number;
 }): Promise<{ invoices: CommissionInvoice[]; total: number }> {

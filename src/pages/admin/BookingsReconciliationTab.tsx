@@ -11,6 +11,7 @@ import {
 } from "@/api/admin.api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SearchableTheatreSelect } from "@/components/common/SearchableTheatreSelect";
 import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
 import { useDebounce } from "@/hooks/useDebounce";
 import { INDIAN_STATES, getStateForCity, STATE_CITIES } from "@/utils/indiaGeography";
@@ -499,20 +500,17 @@ export function BookingsReconciliationTab() {
                 </select>
               </div>
 
-              {/* Theatre / Venue Filter */}
+              {/* Theatre / Venue Filter with Search */}
               <div>
-                <select
+                <SearchableTheatreSelect
                   value={selectedVenue}
-                  onChange={(e) => setSelectedVenue(e.target.value)}
-                  className="w-full h-9 rounded-lg border border-gray-200 px-2.5 bg-white text-xs font-semibold text-gray-700 cursor-pointer shadow-2xs truncate"
-                >
-                  <option value="ALL">All Theatres ({availableTheatres.length})</option>
-                  {availableTheatres.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.city})
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedVenue}
+                  theatres={availableTheatres}
+                  allOptionLabel={`All Theatres (${availableTheatres.length})`}
+                  allOptionValue="ALL"
+                  className="w-full"
+                  buttonClassName="w-full h-9 rounded-lg border-gray-200 px-2.5 bg-white text-xs font-semibold text-gray-700 shadow-2xs"
+                />
               </div>
             </div>
           </div>

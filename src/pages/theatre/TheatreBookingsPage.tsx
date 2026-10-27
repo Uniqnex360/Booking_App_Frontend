@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SearchableTheatreSelect } from "@/components/common/SearchableTheatreSelect";
 import { useDebounce } from "@/hooks/useDebounce";
 import { INDIAN_STATES, getStateForCity, getCitiesForState } from "@/utils/indiaGeography";
 import { format, parseISO, subDays, addDays, startOfDay, isAfter } from "date-fns";
@@ -447,20 +448,17 @@ export default function TheatreBookingsPage() {
             </div>
 
             {/* Venue Filter */}
+            {/* Venue Filter with Search */}
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-semibold text-slate-500 hidden xl:inline">Venue:</span>
-              <select
-                className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+              <SearchableTheatreSelect
                 value={selectedVenue}
-                onChange={(e) => handleVenueChange(e.target.value)}
-              >
-                <option value="ALL">All Venues ({availableVenues.length})</option>
-                {availableVenues.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.name}
-                  </option>
-                ))}
-              </select>
+                onChange={handleVenueChange}
+                theatres={availableVenues}
+                allOptionLabel={`All Venues (${availableVenues.length})`}
+                allOptionValue="ALL"
+                buttonClassName="bg-slate-50 hover:bg-white focus:bg-white text-slate-800 border-slate-200"
+              />
             </div>
 
             {/* Screen Filter ("22.Location movies filter,date,screen filter in theatre admin") */}

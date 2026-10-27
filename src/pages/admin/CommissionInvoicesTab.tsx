@@ -28,6 +28,7 @@ import { AdminSearchBar } from '@/components/admin/AdminSearchBar';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SearchableTheatreSelect } from '@/components/common/SearchableTheatreSelect';
 
 export const CommissionInvoicesTab: React.FC = () => {
   const [invoices, setInvoices] = useState<CommissionInvoice[]>([]);
@@ -79,6 +80,7 @@ export const CommissionInvoicesTab: React.FC = () => {
       const res = await getCommissionInvoices({
         venue_id: venueFilter || undefined,
         status: statusFilter || undefined,
+        search: debouncedSearch || undefined,
         limit: 100,
       });
       setInvoices(res.invoices || []);
@@ -88,7 +90,7 @@ export const CommissionInvoicesTab: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [venueFilter, statusFilter]);
+  }, [venueFilter, statusFilter, debouncedSearch]);
 
   const fetchTheatres = async () => {
     try {
@@ -487,19 +489,14 @@ export const CommissionInvoicesTab: React.FC = () => {
               <option value="DISPUTED">DISPUTED</option>
             </select>
 
-            {/* Venue Filter */}
-            <select
+            {/* Venue Filter with Search */}
+            <SearchableTheatreSelect
               value={venueFilter}
-              onChange={(e) => setVenueFilter(e.target.value)}
-              className="h-10 rounded-xl border border-gray-200 px-3 bg-gray-50/80 hover:bg-white focus:bg-white text-xs font-semibold text-gray-700 cursor-pointer transition shadow-2xs max-w-[200px] truncate"
-            >
-              <option value="">All Theatres / Venues</option>
-              {theatres.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.city})
-                </option>
-              ))}
-            </select>
+              onChange={setVenueFilter}
+              theatres={theatres}
+              allOptionLabel="All Theatres / Venues"
+              allOptionValue=""
+            />
 
             {hasActiveFilters && (
               <Button

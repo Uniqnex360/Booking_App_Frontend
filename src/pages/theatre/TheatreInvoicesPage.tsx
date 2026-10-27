@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Printer,
   X,
+  Search,
   CreditCard,
   Building2,
   DollarSign,
@@ -57,6 +58,8 @@ import {
 import { INDIAN_STATES, getStateForCity, getCitiesForState } from "@/utils/indiaGeography";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
+import { useDebounce } from "@/hooks/useDebounce";
+import { SearchableTheatreSelect } from "@/components/common/SearchableTheatreSelect";
 
 export default function TheatreInvoicesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -74,6 +77,8 @@ export default function TheatreInvoicesPage() {
   const [selectedCity, setSelectedCity] = useState<string>("ALL");
   const [selectedVenue, setSelectedVenue] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+  const [invoiceSearchQuery, setInvoiceSearchQuery] = useState<string>("");
+  const debouncedInvoiceSearch = useDebounce(invoiceSearchQuery, 300);
 
   // Modals for invoices
   const [activeInvoiceDetail, setActiveInvoiceDetail] = useState<InvoiceDetailItem | null>(null);
@@ -148,6 +153,7 @@ export default function TheatreInvoicesPage() {
         getTheatreInvoices({
           venue_id: selectedVenue !== "ALL" ? selectedVenue : undefined,
           status: selectedStatus !== "ALL" ? selectedStatus : undefined,
+          search: debouncedInvoiceSearch || undefined,
           limit: 100,
         }),
         getTheatreVenues(),
@@ -225,7 +231,7 @@ export default function TheatreInvoicesPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedVenue, selectedStatus]);
+  }, [selectedVenue, selectedStatus, debouncedInvoiceSearch]);
 
   useEffect(() => {
     if (activeTab === "my_account") {
@@ -313,9 +319,18 @@ export default function TheatreInvoicesPage() {
       if (selectedCity !== "ALL" && matchedVenue) {
         if (matchedVenue.city.toLowerCase() !== selectedCity.toLowerCase()) return false;
       }
+      if (selectedVenue !== "ALL" && inv.venue_id !== selectedVenue) {
+        return false;
+      }
+      if (invoiceSearchQuery.trim()) {
+        const q = invoiceSearchQuery.toLowerCase();
+        const matchNum = inv.invoice_number.toLowerCase().includes(q);
+        const matchVenue = (inv.venue_name || "").toLowerCase().includes(q);
+        if (!matchNum && !matchVenue) return false;
+      }
       return true;
     });
-  }, [invoices, venues, selectedState, selectedCity]);
+  }, [invoices, venues, selectedState, selectedCity, selectedVenue, invoiceSearchQuery]);
 
   // Summary Metrics
   const summary = useMemo(() => {
@@ -613,7 +628,28 @@ export default function TheatreInvoicesPage() {
 
           {/* Filter Toolbar */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              {/* Invoice / Venue Search */}
+              <div className="relative min-w-[200px] max-w-[260px] flex-1">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3 pointer-events-none" />
+                <input
+                  type="text"
+                  value={invoiceSearchQuery}
+                  onChange={(e) => setInvoiceSearchQuery(e.target.value)}
+                  placeholder="Search invoice # or venue..."
+                  className="w-full h-10 rounded-xl border border-slate-200 pl-8 pr-7 bg-slate-50 hover:bg-white focus:bg-white text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#7B1E3D]/20 transition"
+                />
+                {invoiceSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setInvoiceSearchQuery("")}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
               {/* State Filter */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-semibold text-slate-500 hidden sm:inline">State:</span>
@@ -651,21 +687,17 @@ export default function TheatreInvoicesPage() {
                 </select>
               </div>
 
-              {/* Venue Filter */}
+              {/* Venue Filter with Search */}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Venue:</span>
-                <select
-                  className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+                <SearchableTheatreSelect
                   value={selectedVenue}
-                  onChange={(e) => setSelectedVenue(e.target.value)}
-                >
-                  <option value="ALL">All Venues ({availableVenues.length})</option>
-                  {availableVenues.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.name} ({v.city})
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedVenue}
+                  theatres={availableVenues}
+                  allOptionLabel={`All Venues (${availableVenues.length})`}
+                  allOptionValue="ALL"
+                  buttonClassName="bg-slate-50 hover:bg-white focus:bg-white text-slate-800 border-slate-200"
+                />
               </div>
 
               {/* Status Filter */}
@@ -684,6 +716,24 @@ export default function TheatreInvoicesPage() {
                   <option value="DISPUTED">DISPUTED</option>
                 </select>
               </div>
+
+              {(selectedState !== "ALL" || selectedCity !== "ALL" || selectedVenue !== "ALL" || selectedStatus !== "ALL" || invoiceSearchQuery) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedState("ALL");
+                    setSelectedCity("ALL");
+                    setSelectedVenue("ALL");
+                    setSelectedStatus("ALL");
+                    setInvoiceSearchQuery("");
+                  }}
+                  className="h-10 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Reset
+                </Button>
+              )}
             </div>
 
             <Badge variant="outline" className="text-xs font-semibold px-3 py-1 bg-slate-50 text-slate-800">
