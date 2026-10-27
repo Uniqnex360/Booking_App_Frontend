@@ -191,6 +191,11 @@ export default function AdminDashboardPage() {
     }
   }, [myPermissions, activeTab]);
 
+  const canAccessSection = (sectionKey: string): boolean => {
+    if (!myPermissions || myPermissions.is_super_admin) return true;
+    return (myPermissions.allowed_sections || []).includes(sectionKey);
+  };
+
   // -------------------------------------------------------------------------
   // OVERVIEW / STATS STATE
   // -------------------------------------------------------------------------
@@ -781,70 +786,78 @@ export default function AdminDashboardPage() {
                     Centralized platform gross volume, net commission earnings, cash realization, and gateway health.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => handleTabChange("bookings_rec")}
-                    variant="outline"
-                    size="sm"
-                    className="bg-white border-gray-200 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-2xs"
-                  >
-                    Audit Bookings
-                  </Button>
-                  <Button
-                    onClick={() => handleTabChange("theatres")}
-                    variant="outline"
-                    size="sm"
-                    className="bg-white border-gray-200 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-2xs"
-                  >
-                    Configure Theatres
-                  </Button>
-                  <Button
-                    onClick={() => handleTabChange("invoices")}
-                    variant="outline"
-                    size="sm"
-                    className="bg-white border-gray-200 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-2xs"
-                  >
-                    View Invoices
-                  </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {canAccessSection("bookings_rec") && (
+                    <Button
+                      onClick={() => handleTabChange("bookings_rec")}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white border-gray-200 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-2xs"
+                    >
+                      Audit Bookings
+                    </Button>
+                  )}
+                  {canAccessSection("theatres") && (
+                    <Button
+                      onClick={() => handleTabChange("theatres")}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white border-gray-200 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-2xs"
+                    >
+                      Configure Theatres
+                    </Button>
+                  )}
+                  {canAccessSection("invoices") && (
+                    <Button
+                      onClick={() => handleTabChange("invoices")}
+                      variant="outline"
+                      size="sm"
+                      className="bg-white border-gray-200 text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-2xs"
+                    >
+                      View Invoices
+                    </Button>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-xs uppercase font-medium text-gray-500">Gross Ticket Volume</div>
-                  <div className="text-2xl font-bold text-gray-900 mt-1">
-                    ₹{(((compStats?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              {(canAccessSection("bookings_rec") || canAccessSection("invoices")) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div className="text-xs uppercase font-medium text-gray-500">Gross Ticket Volume</div>
+                    <div className="text-2xl font-bold text-gray-900 mt-1">
+                      ₹{(((compStats?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">{compStats?.total_tickets || 0} tickets sold across {compStats?.total_bookings || 0} bookings</div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">{compStats?.total_tickets || 0} tickets sold across {compStats?.total_bookings || 0} bookings</div>
-                </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-xs uppercase font-medium text-gray-500">Commission Earned</div>
-                  <div className="text-2xl font-bold text-emerald-600 mt-1">
-                    ₹{(((compStats?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div className="text-xs uppercase font-medium text-gray-500">Commission Earned</div>
+                    <div className="text-2xl font-bold text-emerald-600 mt-1">
+                      ₹{(((compStats?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">Platform revenue base (₹30/tix default)</div>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">Platform revenue base (₹30/tix default)</div>
-                </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-xs uppercase font-medium text-gray-500">Total Billed Invoices</div>
-                  <div className="text-2xl font-bold text-blue-600 mt-1">
-                    ₹{(((compStats?.commission_invoiced_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div className="text-xs uppercase font-medium text-gray-500">Total Billed Invoices</div>
+                    <div className="text-2xl font-bold text-blue-600 mt-1">
+                      ₹{(((compStats?.commission_invoiced_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-emerald-600 mt-1">₹{(((compStats?.commission_collected_paise || 0) / 100)).toLocaleString('en-IN')} collected</div>
                   </div>
-                  <div className="text-xs text-emerald-600 mt-1">₹{(((compStats?.commission_collected_paise || 0) / 100)).toLocaleString('en-IN')} collected</div>
-                </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                  <div className="text-xs uppercase font-medium text-gray-500">Outstanding Receivables</div>
-                  <div className="text-2xl font-bold text-amber-600 mt-1">
-                    ₹{(((compStats?.commission_outstanding_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div className="text-xs uppercase font-medium text-gray-500">Outstanding Receivables</div>
+                    <div className="text-2xl font-bold text-amber-600 mt-1">
+                      ₹{(((compStats?.commission_outstanding_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </div>
+                    <div className="text-xs text-amber-600 mt-1">{compStats?.overdue_invoices_count || 0} overdue invoices</div>
                   </div>
-                  <div className="text-xs text-amber-600 mt-1">{compStats?.overdue_invoices_count || 0} overdue invoices</div>
                 </div>
-              </div>
+              )}
 
               {/* Integration Gateway Health */}
-              {healthItems.length > 0 && (
+              {canAccessSection("integrations") && healthItems.length > 0 && (
                 <div className="pt-3 border-t border-gray-200">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-xs font-semibold text-gray-500 flex items-center gap-1.5">
@@ -878,189 +891,234 @@ export default function AdminDashboardPage() {
               )}
             </div>
 
-            {/* Stat Cards Grid */}
+            {/* Stat Cards Grid - Section Adaptive */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {/* Movies Stat */}
-              <div
-                onClick={() => handleTabChange("movies")}
-                className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-orange-300 shadow-2xs transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-                    Movies Catalog
-                  </span>
-                  <div className="p-2.5 rounded-xl bg-orange-100 text-orange-600 group-hover:scale-110 transition">
-                    <Film className="h-5 w-5" />
+              {canAccessSection("movies") && (
+                <div
+                  onClick={() => handleTabChange("movies")}
+                  className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-orange-300 shadow-2xs transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                      Movies Catalog
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-orange-100 text-orange-600 group-hover:scale-110 transition">
+                      <Film className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-3xl font-extrabold text-gray-900">
+                      {stats?.movies.total ?? "—"}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-xs">
+                      <span className="text-emerald-600 font-medium flex items-center gap-1">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        {stats?.movies.published ?? 0} Published
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-amber-600 font-medium">
+                        {stats?.movies.draft ?? 0} Hidden / Draft
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3">
-                  <div className="text-3xl font-extrabold text-gray-900">
-                    {stats?.movies.total ?? "—"}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-xs">
-                    <span className="text-emerald-600 font-medium flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      {stats?.movies.published ?? 0} Published
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-amber-600 font-medium">
-                      {stats?.movies.draft ?? 0} Hidden / Draft
-                    </span>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Events Stat */}
-              <div
-                onClick={() => handleTabChange("events")}
-                className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-emerald-300 shadow-2xs transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-                    Live Events
-                  </span>
-                  <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600 group-hover:scale-110 transition">
-                    <CalendarDays className="h-5 w-5" />
+              {canAccessSection("events") && (
+                <div
+                  onClick={() => handleTabChange("events")}
+                  className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-emerald-300 shadow-2xs transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                      Live Events
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-600 group-hover:scale-110 transition">
+                      <CalendarDays className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-3xl font-extrabold text-gray-900">
+                      {stats?.events.total ?? "—"}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-xs">
+                      <span className="text-emerald-600 font-medium">
+                        {stats?.events.published ?? 0} Live
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-amber-600 font-medium">
+                        {stats?.events.pending ?? 0} Pending Approval
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3">
-                  <div className="text-3xl font-extrabold text-gray-900">
-                    {stats?.events.total ?? "—"}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-xs">
-                    <span className="text-emerald-600 font-medium">
-                      {stats?.events.published ?? 0} Live
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-amber-600 font-medium">
-                      {stats?.events.pending ?? 0} Pending Approval
-                    </span>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Dining & Restaurants Stat */}
-              <div
-                onClick={() => handleTabChange("dining")}
-                className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-amber-400 shadow-2xs transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-                    Dining & Restaurants
-                  </span>
-                  <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 group-hover:scale-110 transition">
-                    <Utensils className="h-5 w-5" />
+              {canAccessSection("dining") && (
+                <div
+                  onClick={() => handleTabChange("dining")}
+                  className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-amber-400 shadow-2xs transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                      Dining & Restaurants
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-amber-100 text-amber-700 group-hover:scale-110 transition">
+                      <Utensils className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-3xl font-extrabold text-gray-900">
+                      {stats?.dining?.total ?? 0}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-xs">
+                      <span className="text-emerald-600 font-medium">
+                        {stats?.dining?.published ?? 0} Live
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-amber-600 font-medium">
+                        {stats?.dining?.pending ?? 0} Pending
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3">
-                  <div className="text-3xl font-extrabold text-gray-900">
-                    {stats?.dining?.total ?? 0}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-xs">
-                    <span className="text-emerald-600 font-medium">
-                      {stats?.dining?.published ?? 0} Live
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-amber-600 font-medium">
-                      {stats?.dining?.pending ?? 0} Pending
-                    </span>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Users Stat */}
-              <div
-                onClick={() => handleTabChange("users")}
-                className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-blue-300 shadow-2xs transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-                    User Accounts
-                  </span>
-                  <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600 group-hover:scale-110 transition">
-                    <Users className="h-5 w-5" />
+              {canAccessSection("users") && (
+                <div
+                  onClick={() => handleTabChange("users")}
+                  className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-blue-300 shadow-2xs transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                      User Accounts
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-blue-100 text-blue-600 group-hover:scale-110 transition">
+                      <Users className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-3xl font-extrabold text-gray-900">
+                      {stats?.users.total ?? "—"}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-xs">
+                      <span className="text-emerald-600 font-medium">
+                        {stats?.users.active ?? 0} Active
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-rose-600 font-medium">
+                        {stats?.users.blocked ?? 0} Blocked
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3">
-                  <div className="text-3xl font-extrabold text-gray-900">
-                    {stats?.users.total ?? "—"}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-xs">
-                    <span className="text-emerald-600 font-medium">
-                      {stats?.users.active ?? 0} Active
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-rose-600 font-medium">
-                      {stats?.users.blocked ?? 0} Blocked
-                    </span>
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Partners Stat */}
-              <div
-                onClick={() => handleTabChange("partners")}
-                className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-purple-300 shadow-2xs transition group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
-                    Partner Businesses
-                  </span>
-                  <div className="p-2.5 rounded-xl bg-purple-100 text-purple-600 group-hover:scale-110 transition">
-                    <Building2 className="h-5 w-5" />
+              {canAccessSection("partners") && (
+                <div
+                  onClick={() => handleTabChange("partners")}
+                  className="bg-white border border-gray-200 p-5 rounded-2xl cursor-pointer hover:border-purple-300 shadow-2xs transition group"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 text-xs font-semibold uppercase tracking-wider">
+                      Partner Businesses
+                    </span>
+                    <div className="p-2.5 rounded-xl bg-purple-100 text-purple-600 group-hover:scale-110 transition">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className="text-3xl font-extrabold text-gray-900">
+                      {stats?.partners.total ?? "—"}
+                    </div>
+                    <div className="flex items-center gap-2 mt-2 text-xs">
+                      <span className="text-emerald-600 font-medium">
+                        {stats?.partners.approved ?? 0} Approved
+                      </span>
+                      <span className="text-gray-400">•</span>
+                      <span className="text-amber-600 font-medium">
+                        {stats?.partners.pending ?? 0} Awaiting Review
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="mt-3">
-                  <div className="text-3xl font-extrabold text-gray-900">
-                    {stats?.partners.total ?? "—"}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 text-xs">
-                    <span className="text-emerald-600 font-medium">
-                      {stats?.partners.approved ?? 0} Approved
-                    </span>
-                    <span className="text-gray-400">•</span>
-                    <span className="text-amber-600 font-medium">
-                      {stats?.partners.pending ?? 0} Awaiting Review
-                    </span>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* Quick Actions Panel */}
+            {/* Quick Actions Panel - Section Adaptive */}
             <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xs">
               <h3 className="text-base font-bold text-gray-900 mb-4">
                 Quick Governance Shortcuts
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Button
-                  onClick={() => handleTabChange("movies")}
-                  className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
-                >
-                  <Film className="h-4 w-4 text-orange-600" />
-                  <span>Toggle Movie Visibility</span>
-                </Button>
-                <Button
-                  onClick={() => handleTabChange("events")}
-                  className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
-                >
-                  <CalendarDays className="h-4 w-4 text-emerald-600" />
-                  <span>Review Pending Events ({stats?.events.pending || 0})</span>
-                </Button>
-                <Button
-                  onClick={() => handleTabChange("users")}
-                  className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
-                >
-                  <UserX className="h-4 w-4 text-rose-600" />
-                  <span>Block / Manage Users</span>
-                </Button>
-                <Button
-                  onClick={() => handleTabChange("partners")}
-                  className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
-                >
-                  <Building2 className="h-4 w-4 text-purple-600" />
-                  <span>Approve Partners ({stats?.partners.pending || 0})</span>
-                </Button>
+                {canAccessSection("movies") && (
+                  <Button
+                    onClick={() => handleTabChange("movies")}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
+                  >
+                    <Film className="h-4 w-4 text-orange-600" />
+                    <span>Toggle Movie Visibility</span>
+                  </Button>
+                )}
+                {canAccessSection("events") && (
+                  <Button
+                    onClick={() => handleTabChange("events")}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
+                  >
+                    <CalendarDays className="h-4 w-4 text-emerald-600" />
+                    <span>Review Pending Events ({stats?.events.pending || 0})</span>
+                  </Button>
+                )}
+                {canAccessSection("users") && (
+                  <Button
+                    onClick={() => handleTabChange("users")}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
+                  >
+                    <UserX className="h-4 w-4 text-rose-600" />
+                    <span>Block / Manage Users</span>
+                  </Button>
+                )}
+                {canAccessSection("partners") && (
+                  <Button
+                    onClick={() => handleTabChange("partners")}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
+                  >
+                    <Building2 className="h-4 w-4 text-purple-600" />
+                    <span>Approve Partners ({stats?.partners.pending || 0})</span>
+                  </Button>
+                )}
+                {canAccessSection("theatres") && (
+                  <Button
+                    onClick={() => handleTabChange("theatres")}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
+                  >
+                    <Building2 className="h-4 w-4 text-blue-600" />
+                    <span>Configure Theatres</span>
+                  </Button>
+                )}
+                {canAccessSection("invoices") && (
+                  <Button
+                    onClick={() => handleTabChange("invoices")}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
+                  >
+                    <IndianRupee className="h-4 w-4 text-emerald-600" />
+                    <span>Commission Invoices</span>
+                  </Button>
+                )}
+                {canAccessSection("exceptions") && (
+                  <Button
+                    onClick={() => handleTabChange("exceptions")}
+                    className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 justify-start h-12 px-4 gap-2.5 shadow-2xs"
+                  >
+                    <Activity className="h-4 w-4 text-rose-600" />
+                    <span>Exceptions & Disputes</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
