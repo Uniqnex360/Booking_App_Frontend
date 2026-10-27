@@ -375,9 +375,12 @@ export function QuickAuthModal() {
       } else {
         toast.success("Signed in successfully!");
         closeAuthModal();
+        const isAdminRole = ["ADMIN", "SUPER_ADMIN", "OPERATIONS_ADMIN", "FINANCE_ADMIN", "SUPPORT_ADMIN"].includes(res.user?.role);
         if (res.user?.role === "THEATRE_PARTNER") {
           navigate("/theatre/dashboard");
-        } else if (res.user?.role === "ADMIN" || res.user?.role === "SUPER_ADMIN") {
+        } else if (res.user?.role === "PARTNER") {
+          navigate("/partner/dashboard");
+        } else if (isAdminRole) {
           navigate("/admin");
         }
       }

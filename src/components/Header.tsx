@@ -160,9 +160,15 @@ export function Header({ hideLocation }: HeaderProps = {}) {
   const location = useLocation();
   const { user, signOut, openAuthModal } = useAuth() as any;
 
+  const isAnyAdminRole = (r?: string) =>
+    r === "ADMIN" ||
+    r === "SUPER_ADMIN" ||
+    r === "OPERATIONS_ADMIN" ||
+    r === "FINANCE_ADMIN" ||
+    r === "SUPPORT_ADMIN";
+
   const isAdmin =
-    user?.role === "ADMIN" ||
-    user?.role === "SUPER_ADMIN" ||
+    isAnyAdminRole(user?.role) ||
     location.pathname.startsWith("/admin");
 
   const showLocation = !hideLocation && !isAdmin;
@@ -633,7 +639,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
               <span>Portal</span>
             </Link>
           )}
-          {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
+          {isAnyAdminRole(user?.role) && (
             <Link
               to="/admin"
               className="md:hidden flex items-center gap-1 text-[11px] font-bold text-white bg-[#7B1E3D] hover:bg-[#5C0F2A] active:scale-95 px-2.5 py-1.5 rounded-full shadow-xs transition shrink-0"
@@ -708,7 +714,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Partner Dashboard</span>
             </Link>
-          ) : user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ? (
+          ) : isAnyAdminRole(user?.role) ? (
             <Link
               to="/admin"
               className="flex items-center gap-1.5 text-[13px] font-semibold text-[#7B1E3D] bg-[#7B1E3D]/5 hover:bg-[#7B1E3D]/10 px-2.5 py-1 rounded-full transition-colors"
@@ -863,8 +869,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
                   {user?.role !== "PARTNER" &&
                     user?.role !== "THEATRE_PARTNER" &&
-                    user?.role !== "ADMIN" &&
-                    user?.role !== "SUPER_ADMIN" && (
+                    !isAnyAdminRole(user?.role) && (
                       <DrawerMenuItem
                         icon={Sparkles}
                         title="Become a Partner"
@@ -873,7 +878,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
                       />
                     )}
 
-                  {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
+                  {isAnyAdminRole(user?.role) && (
                     <>
                       <DrawerMenuItem
                         icon={LayoutDashboard}

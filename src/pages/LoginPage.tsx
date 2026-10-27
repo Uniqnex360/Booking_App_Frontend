@@ -10,9 +10,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      const isAdminRole = ["ADMIN", "SUPER_ADMIN", "OPERATIONS_ADMIN", "FINANCE_ADMIN", "SUPPORT_ADMIN"].includes(user?.role);
       if (user?.role === "THEATRE_PARTNER") {
         navigate("/theatre/dashboard");
-      } else if (user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") {
+      } else if (user?.role === "PARTNER") {
+        navigate("/partner/dashboard");
+      } else if (isAdminRole) {
         navigate("/admin");
       } else {
         navigate("/");
