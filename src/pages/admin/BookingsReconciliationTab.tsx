@@ -42,6 +42,7 @@ import {
 
 export function BookingsReconciliationTab() {
   const [bookings, setBookings] = useState<AdminDetailedBooking[]>([]);
+  const [allBookings, setAllBookings] = useState<AdminDetailedBooking[]>([]);
   const [theatres, setTheatres] = useState<TheatreListItem[]>([]);
   const [moviesList, setMoviesList] = useState<AdminMovieItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -113,7 +114,11 @@ export function BookingsReconciliationTab() {
         date_to: dateToParam,
         limit: 100,
       });
-      setBookings(res.bookings || []);
+      const list = res.bookings || [];
+      setBookings(list);
+      if (!exactDate && dateRange === "ALL") {
+        setAllBookings(list);
+      }
     } catch {
       toast.error("Failed to load booking transactions");
     } finally {
@@ -207,22 +212,27 @@ export function BookingsReconciliationTab() {
 
   const dateCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    bookings.forEach((b) => {
+    const dataset = allBookings.length > 0 ? allBookings : bookings;
+    dataset.forEach((b) => {
       const dt = b.showtime_at || b.created_at;
       if (dt) {
         try {
           const k = format(parseISO(dt), "yyyy-MM-dd");
-          counts[k] = (counts[k] || 0) + 1;
+          if (k <= todayStr) {
+            counts[k] = (counts[k] || 0) + 1;
+          }
         } catch {}
       }
     });
     return counts;
-  }, [bookings]);
+  }, [allBookings, bookings, todayStr]);
 
   const recentActiveDates = useMemo(() => {
-    const dates = Object.keys(dateCounts).sort((a, b) => b.localeCompare(a));
+    const dates = Object.keys(dateCounts)
+      .filter((d) => d <= todayStr)
+      .sort((a, b) => b.localeCompare(a));
     return dates.slice(0, 6);
-  }, [dateCounts]);
+  }, [dateCounts, todayStr]);
 
   const uniqueDivisions = useMemo(() => {
     const set = new Set<string>();
@@ -281,6 +291,7 @@ export function BookingsReconciliationTab() {
 
       // 6. Exact date filter (checks showtime_at or created_at)
       if (exactDate) {
+        if (exactDate > todayStr) return false;
         try {
           const bDateStr = format(parseISO(b.showtime_at || b.created_at), "yyyy-MM-dd");
           if (bDateStr !== exactDate) return false;
@@ -599,13 +610,20 @@ export function BookingsReconciliationTab() {
                 <Calendar className="w-3.5 h-3.5 text-blue-600" />
                 <input
                   type="date"
+                  max={todayStr}
                   value={exactDate}
                   onChange={(e) => {
-                    setExactDate(e.target.value);
+                    const val = e.target.value;
+                    if (val && val > todayStr) {
+                      toast.error("Future dates cannot be selected for ticket audit");
+                      setExactDate(todayStr);
+                    } else {
+                      setExactDate(val);
+                    }
                     setDateRange("CUSTOM");
                   }}
                   className="h-6 text-xs font-semibold bg-transparent text-gray-800 focus:outline-hidden cursor-pointer"
-                  title="Pick exact date"
+                  title={`Pick date (up to today: ${todayStr})`}
                 />
                 {exactDate && (
                   <button
@@ -615,7 +633,7 @@ export function BookingsReconciliationTab() {
                       setDateRange("ALL");
                     }}
                     className="text-gray-400 hover:text-gray-600 ml-1 cursor-pointer"
-                    title="Clear date"
+                    title="Clear date (view all dates)"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -624,14 +642,24 @@ export function BookingsReconciliationTab() {
 
               <button
                 type="button"
+                disabled={!exactDate || exactDate >= todayStr}
                 onClick={() => {
-                  const current = exactDate ? parseISO(exactDate) : new Date();
+                  if (!exactDate || exactDate >= todayStr) return;
+                  const current = parseISO(exactDate);
                   const next = format(addDays(current, 1), "yyyy-MM-dd");
-                  setExactDate(next);
+                  if (next > todayStr) {
+                    setExactDate(todayStr);
+                  } else {
+                    setExactDate(next);
+                  }
                   setDateRange("CUSTOM");
                 }}
-                className="h-7 w-7 rounded-lg border border-gray-200 bg-white hover:bg-gray-100 flex items-center justify-center text-gray-600 hover:text-gray-900 transition shadow-2xs cursor-pointer"
-                title="Next Day"
+                className={`h-7 w-7 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 transition shadow-2xs ${
+                  !exactDate || exactDate >= todayStr
+                    ? "opacity-40 cursor-not-allowed text-gray-300"
+                    : "hover:bg-gray-100 hover:text-gray-900 cursor-pointer"
+                }`}
+                title={!exactDate || exactDate >= todayStr ? "Cannot navigate to future dates" : "Next Day"}
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -656,7 +684,7 @@ export function BookingsReconciliationTab() {
               <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
                 !exactDate && dateRange === "ALL" ? "bg-blue-700 text-white" : "bg-gray-100 text-gray-600"
               }`}>
-                {bookings.length}
+                {allBookings.length || bookings.length}
               </span>
             </button>
 

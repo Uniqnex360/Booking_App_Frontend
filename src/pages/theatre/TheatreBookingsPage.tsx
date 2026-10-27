@@ -43,6 +43,7 @@ export default function TheatreBookingsPage() {
   const venueIdFromUrl = searchParams.get("venue_id") || "ALL";
 
   const [bookings, setBookings] = useState<TheatreBookingItem[]>([]);
+  const [allBookings, setAllBookings] = useState<TheatreBookingItem[]>([]);
   const [venues, setVenues] = useState<TheatreVenueItem[]>([]);
   const [selectedState, setSelectedState] = useState<string>("ALL");
   const [selectedCity, setSelectedCity] = useState<string>("ALL");
@@ -95,7 +96,11 @@ export default function TheatreBookingsPage() {
           }),
           getTheatreVenues(),
         ]);
-        setBookings(b || []);
+        const list = b || [];
+        setBookings(list);
+        if (!exactDate && dateRange === "ALL") {
+          setAllBookings(list);
+        }
         setVenues(v || []);
       } catch (err) {
         console.error("Bookings error", err);
@@ -170,22 +175,27 @@ export default function TheatreBookingsPage() {
 
   const dateCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    bookings.forEach((b) => {
+    const dataset = allBookings.length > 0 ? allBookings : bookings;
+    dataset.forEach((b) => {
       const dt = b.showtime || b.created_at;
       if (dt) {
         try {
           const k = format(parseISO(dt), "yyyy-MM-dd");
-          counts[k] = (counts[k] || 0) + 1;
+          if (k <= todayStr) {
+            counts[k] = (counts[k] || 0) + 1;
+          }
         } catch {}
       }
     });
     return counts;
-  }, [bookings]);
+  }, [allBookings, bookings, todayStr]);
 
   const recentActiveDates = useMemo(() => {
-    const dates = Object.keys(dateCounts).sort((a, b) => b.localeCompare(a));
+    const dates = Object.keys(dateCounts)
+      .filter((d) => d <= todayStr)
+      .sort((a, b) => b.localeCompare(a));
     return dates.slice(0, 6);
-  }, [dateCounts]);
+  }, [dateCounts, todayStr]);
 
   // Client-side filtering by state/city/movie/date if selected
   const filteredBookings = useMemo(() => {
@@ -204,6 +214,7 @@ export default function TheatreBookingsPage() {
         if (!b.screen_name || b.screen_name.toLowerCase() !== selectedScreen.toLowerCase()) return false;
       }
       if (exactDate) {
+        if (exactDate > todayStr) return false;
         try {
           const bDateStr = format(parseISO(b.showtime || b.created_at), "yyyy-MM-dd");
           if (bDateStr !== exactDate) return false;
@@ -540,13 +551,20 @@ export default function TheatreBookingsPage() {
                 <Calendar className="w-3.5 h-3.5 text-[#7B1E3D]" />
                 <input
                   type="date"
+                  max={todayStr}
                   value={exactDate}
                   onChange={(e) => {
-                    setExactDate(e.target.value);
+                    const val = e.target.value;
+                    if (val && val > todayStr) {
+                      toast.error("Future dates cannot be selected for tickets");
+                      setExactDate(todayStr);
+                    } else {
+                      setExactDate(val);
+                    }
                     setDateRange("CUSTOM");
                   }}
                   className="h-6 text-xs font-semibold bg-transparent text-slate-800 focus:outline-hidden cursor-pointer"
-                  title="Pick exact date"
+                  title={`Pick date (up to today: ${todayStr})`}
                 />
                 {exactDate && (
                   <button
@@ -556,7 +574,7 @@ export default function TheatreBookingsPage() {
                       setDateRange("ALL");
                     }}
                     className="text-slate-400 hover:text-slate-600 ml-1 cursor-pointer"
-                    title="Clear date"
+                    title="Clear date (view all dates)"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -565,14 +583,24 @@ export default function TheatreBookingsPage() {
 
               <button
                 type="button"
+                disabled={!exactDate || exactDate >= todayStr}
                 onClick={() => {
-                  const current = exactDate ? parseISO(exactDate) : new Date();
+                  if (!exactDate || exactDate >= todayStr) return;
+                  const current = parseISO(exactDate);
                   const next = format(addDays(current, 1), "yyyy-MM-dd");
-                  setExactDate(next);
+                  if (next > todayStr) {
+                    setExactDate(todayStr);
+                  } else {
+                    setExactDate(next);
+                  }
                   setDateRange("CUSTOM");
                 }}
-                className="h-7 w-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 flex items-center justify-center text-slate-600 hover:text-slate-900 transition shadow-2xs cursor-pointer"
-                title="Next Day"
+                className={`h-7 w-7 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-600 transition shadow-2xs ${
+                  !exactDate || exactDate >= todayStr
+                    ? "opacity-40 cursor-not-allowed text-slate-300"
+                    : "hover:bg-slate-100 hover:text-slate-900 cursor-pointer"
+                }`}
+                title={!exactDate || exactDate >= todayStr ? "Cannot navigate to future dates" : "Next Day"}
               >
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -596,7 +624,7 @@ export default function TheatreBookingsPage() {
               <span className={`text-[10px] px-1.5 py-0.2 rounded-md ${
                 !exactDate && dateRange === "ALL" ? "bg-[#5c162e] text-white" : "bg-slate-100 text-slate-600"
               }`}>
-                {bookings.length}
+                {allBookings.length || bookings.length}
               </span>
             </button>
 
