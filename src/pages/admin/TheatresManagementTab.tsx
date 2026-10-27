@@ -46,6 +46,8 @@ import {
   Mail,
   Phone,
   CheckCircle2,
+  MapPin,
+  Layers,
 } from "lucide-react";
 
 export function TheatresManagementTab() {
@@ -219,6 +221,26 @@ export function TheatresManagementTab() {
     return theatres.filter((t) => getStateForCity(t.city) === selectedState);
   }, [theatres, selectedState]);
 
+  const theatreStats = useMemo(() => {
+    const statesSet = new Set<string>();
+    const citiesSet = new Set<string>();
+    let totalScreens = 0;
+
+    displayedTheatres.forEach((t) => {
+      const st = getStateForCity(t.city);
+      if (st && st !== "Other") statesSet.add(st);
+      if (t.city) citiesSet.add(t.city);
+      totalScreens += (t as any).screens_count || (t as any).screen_count || 1;
+    });
+
+    return {
+      statesCount: statesSet.size || (displayedTheatres.length > 0 ? 1 : 0),
+      screensCount: totalScreens,
+      theatresCount: displayedTheatres.length,
+      citiesCount: citiesSet.size,
+    };
+  }, [displayedTheatres]);
+
   const hasActiveFilters =
     search.trim() !== "" ||
     selectedState !== "ALL" ||
@@ -371,6 +393,49 @@ export function TheatresManagementTab() {
 
       {theatreSubTab === "locations" && (
         <>
+          {/* TOP STATS BAR ("no of state and no of screen in theatre admin") */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 flex flex-col justify-between">
+              <div className="text-[10px] uppercase font-bold text-indigo-700 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-indigo-600" /> States
+              </div>
+              <div className="text-xl font-black text-gray-900 mt-1">
+                {theatreStats.statesCount}
+              </div>
+              <div className="text-[10px] text-gray-500">Operational states</div>
+            </div>
+
+            <div className="bg-purple-50/70 p-3 rounded-xl border border-purple-100 flex flex-col justify-between">
+              <div className="text-[10px] uppercase font-bold text-purple-700 flex items-center gap-1">
+                <Layers className="w-3 h-3 text-purple-600" /> Total Screens
+              </div>
+              <div className="text-xl font-black text-gray-900 mt-1">
+                {theatreStats.screensCount}
+              </div>
+              <div className="text-[10px] text-gray-500">Multiplex auditoriums</div>
+            </div>
+
+            <div className="bg-emerald-50/70 p-3 rounded-xl border border-emerald-100 flex flex-col justify-between">
+              <div className="text-[10px] uppercase font-bold text-emerald-700 flex items-center gap-1">
+                <Building2 className="w-3 h-3 text-emerald-600" /> Theatres
+              </div>
+              <div className="text-xl font-black text-gray-900 mt-1">
+                {theatreStats.theatresCount}
+              </div>
+              <div className="text-[10px] text-gray-500">Active cinema venues</div>
+            </div>
+
+            <div className="bg-blue-50/70 p-3 rounded-xl border border-blue-100 flex flex-col justify-between">
+              <div className="text-[10px] uppercase font-bold text-blue-700 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-blue-600" /> Cities
+              </div>
+              <div className="text-xl font-black text-gray-900 mt-1">
+                {theatreStats.citiesCount}
+              </div>
+              <div className="text-[10px] text-gray-500">Urban city centres</div>
+            </div>
+          </div>
+
           {/* Filter toolbar */}
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
             <div className="flex flex-col md:flex-row gap-3">

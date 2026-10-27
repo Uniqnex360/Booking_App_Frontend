@@ -47,6 +47,7 @@ export default function TheatreBookingsPage() {
   const [selectedCity, setSelectedCity] = useState<string>("ALL");
   const [selectedVenue, setSelectedVenue] = useState(venueIdFromUrl);
   const [selectedMovie, setSelectedMovie] = useState<string>("ALL");
+  const [selectedScreen, setSelectedScreen] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [dateRange, setDateRange] = useState<string>("ALL");
   const [exactDate, setExactDate] = useState<string>("");
@@ -160,6 +161,12 @@ export default function TheatreBookingsPage() {
     return Array.from(set).sort();
   }, [bookings]);
 
+  const availableScreens = useMemo(() => {
+    const set = new Set<string>();
+    bookings.forEach((b) => b.screen_name && set.add(b.screen_name));
+    return Array.from(set).sort();
+  }, [bookings]);
+
   const dateCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     bookings.forEach((b) => {
@@ -191,6 +198,9 @@ export default function TheatreBookingsPage() {
       }
       if (selectedMovie !== "ALL") {
         if (b.movie_title.toLowerCase() !== selectedMovie.toLowerCase()) return false;
+      }
+      if (selectedScreen !== "ALL") {
+        if (!b.screen_name || b.screen_name.toLowerCase() !== selectedScreen.toLowerCase()) return false;
       }
       if (exactDate) {
         try {
@@ -289,6 +299,7 @@ export default function TheatreBookingsPage() {
     setSelectedCity("ALL");
     setSelectedVenue("ALL");
     setSelectedMovie("ALL");
+    setSelectedScreen("ALL");
     setSelectedStatus("ALL");
     setExactDate("");
     setDateRange("ALL");
@@ -302,6 +313,7 @@ export default function TheatreBookingsPage() {
     selectedCity !== "ALL" ||
     selectedVenue !== "ALL" ||
     selectedMovie !== "ALL" ||
+    selectedScreen !== "ALL" ||
     selectedStatus !== "ALL" ||
     exactDate !== "" ||
     dateRange !== "ALL";
@@ -446,6 +458,23 @@ export default function TheatreBookingsPage() {
                 {availableVenues.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Screen Filter ("22.Location movies filter,date,screen filter in theatre admin") */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-semibold text-slate-500 hidden xl:inline">Screen:</span>
+              <select
+                className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition truncate max-w-[150px]"
+                value={selectedScreen}
+                onChange={(e) => setSelectedScreen(e.target.value)}
+              >
+                <option value="ALL">All Screens ({availableScreens.length})</option>
+                {availableScreens.map((sc) => (
+                  <option key={sc} value={sc}>
+                    {sc}
                   </option>
                 ))}
               </select>

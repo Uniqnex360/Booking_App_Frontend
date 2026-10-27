@@ -82,6 +82,8 @@ export interface TheatreDashboardStats {
   commission_paid_paise: number;
   commission_outstanding_paise: number;
   screens_count: number;
+  states_count?: number;
+  venues_count?: number;
   upcoming_showtimes_count: number;
   open_exceptions_count: number;
   payment_queues?: {
@@ -214,6 +216,8 @@ export async function getTheatreVenues(): Promise<TheatreVenueItem[]> {
 export async function getTheatreShowtimes(params?: {
   venue_id?: string;
   movie_id?: string;
+  screen_id?: string;
+  date?: string;
   limit?: number;
   offset?: number;
 }): Promise<TheatreShowtimeItem[]> {
@@ -225,6 +229,8 @@ export async function getTheatreBookings(params?: {
   venue_id?: string;
   status?: string;
   movie_id?: string;
+  screen_id?: string;
+  screen_name?: string;
   city?: string;
   date_from?: string;
   date_to?: string;
@@ -508,4 +514,115 @@ export async function listAdminTheatreAccounts(chainId?: string): Promise<Theatr
   const res = await api.get('/admin/theatres/accounts', { params: { chain_id: chainId } });
   return unwrap(res.data);
 }
+
+// ---------------------------------------------------------------------------
+// Theatre My Account & Remittance Bank Credentials (Request 25)
+// ---------------------------------------------------------------------------
+
+export interface TheatreAccountData {
+  brand_name: string;
+  brand_code: string;
+  contact_email?: string;
+  contact_phone?: string;
+  access_level: string;
+  bank_account: {
+    bank_name: string;
+    bank_account_number: string;
+    bank_ifsc_code: string;
+    bank_account_holder_name: string;
+    bank_account_type: string;
+    bank_branch?: string;
+    remittance_schedule: string;
+    bank_verification_status: string;
+  };
+  kyc: {
+    gst_number?: string;
+    pan_number?: string;
+    gst_certificate_url?: string;
+    pan_card_url?: string;
+  };
+  financial_summary: {
+    gross_sales_paise: number;
+    commission_invoiced_paise: number;
+    commission_paid_paise: number;
+    commission_outstanding_paise: number;
+    net_share_paise: number;
+    total_bookings: number;
+    total_tickets: number;
+  };
+  settlement_remittances: Array<{
+    id: string;
+    payment_ref: string;
+    payment_method: string;
+    amount_paise: number;
+    collected_at: string;
+    status: string;
+    invoice_number: string;
+    venue_name: string;
+    notes?: string;
+  }>;
+}
+
+export interface TheatreLedgerItem {
+  id: string;
+  type: string;
+  entry_type: "CREDIT" | "DEBIT";
+  date: string;
+  reference: string;
+  description: string;
+  gross_amount_paise: number;
+  commission_paise: number;
+  net_amount_paise: number;
+  status: string;
+  venue_name: string;
+}
+
+export interface TheatreStatementData {
+  summary: {
+    gross_sales_paise: number;
+    commission_paise: number;
+    remitted_paise: number;
+    pending_payout_paise: number;
+    entries_count: number;
+  };
+  ledger: TheatreLedgerItem[];
+}
+
+export async function getTheatreAccountDetails(): Promise<TheatreAccountData> {
+  const res = await api.get('/theatre/account');
+  return unwrap(res.data);
+}
+
+export async function updateTheatreBankAccount(data: {
+  bank_name: string;
+  bank_account_number: string;
+  bank_ifsc_code: string;
+  bank_account_holder_name: string;
+  bank_account_type: string;
+  bank_branch?: string;
+  remittance_schedule?: string;
+}): Promise<any> {
+  const res = await api.put('/theatre/account/bank-account', data);
+  return unwrap(res.data);
+}
+
+export async function updateTheatreKyc(data: {
+  gst_number?: string;
+  pan_number?: string;
+  gst_certificate_url?: string;
+  pan_card_url?: string;
+}): Promise<any> {
+  const res = await api.put('/theatre/account/kyc', data);
+  return unwrap(res.data);
+}
+
+export async function getTheatreAccountStatement(params?: {
+  date_from?: string;
+  date_to?: string;
+  venue_id?: string;
+}): Promise<TheatreStatementData> {
+  const res = await api.get('/theatre/account/statement', { params });
+  return unwrap(res.data);
+}
+
 

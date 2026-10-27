@@ -1403,6 +1403,8 @@ export default function AdminDashboardPage() {
                                   <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-1">
                                     <span>{m.screens_count || 1} screens</span>
                                     <span>&bull;</span>
+                                    <span>{m.states_count !== undefined && m.states_count > 0 ? `${m.states_count} ${m.states_count === 1 ? 'state' : 'states'}` : '1 state'}</span>
+                                    <span>&bull;</span>
                                     <span>{m.cities_count || 1} {m.cities_count === 1 ? 'city' : 'cities'}</span>
                                   </div>
                                   {m.cities && m.cities.length > 0 && (

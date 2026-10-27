@@ -133,14 +133,20 @@ export default function TheatreDashboardPage() {
         {/* Screens & Shows */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Screens & Shows</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Screens & Network Reach</span>
             <div className="p-2 rounded-lg bg-purple-50 text-purple-600">
               <Building2 className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900">{stats?.screens_count || 0} Screens</div>
-          <div className="text-[11px] text-slate-500 mt-1">
-            {stats?.upcoming_showtimes_count || 0} scheduled upcoming shows
+          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-indigo-700">
+              {stats?.states_count || 1} {stats?.states_count === 1 ? "State" : "States"}
+            </span>
+            <span>&bull;</span>
+            <span>{stats?.venues_count || profile?.venues_count || 1} Theatres</span>
+            <span>&bull;</span>
+            <span>{stats?.upcoming_showtimes_count || 0} shows</span>
           </div>
         </div>
 

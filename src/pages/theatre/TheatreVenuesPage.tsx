@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getTheatreVenues, TheatreVenueItem } from "@/api/theatre.api";
-import { Building2, MapPin, Film, Loader2, ArrowRight, Search, X, RotateCcw } from "lucide-react";
+import { Building2, MapPin, Film, Loader2, ArrowRight, Search, X, RotateCcw, Layers } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,26 @@ export default function TheatreVenuesPage() {
 
   const hasActiveFilters = searchName.trim() !== "" || selectedState !== "ALL" || selectedCity !== "ALL";
 
+  const venueStats = useMemo(() => {
+    const statesSet = new Set<string>();
+    const citiesSet = new Set<string>();
+    let totalScreens = 0;
+
+    filteredVenues.forEach((v) => {
+      const st = getStateForCity(v.city);
+      if (st && st !== "Other") statesSet.add(st);
+      if (v.city) citiesSet.add(v.city);
+      totalScreens += v.screen_count || 0;
+    });
+
+    return {
+      statesCount: statesSet.size,
+      screensCount: totalScreens,
+      venuesCount: filteredVenues.length,
+      citiesCount: citiesSet.size,
+    };
+  }, [filteredVenues]);
+
   const handleResetFilters = () => {
     setSearchName("");
     setSelectedState("ALL");
@@ -98,6 +118,57 @@ export default function TheatreVenuesPage() {
           <Badge variant="outline" className="text-xs font-semibold px-3 py-1 bg-slate-50 text-slate-800">
             {filteredVenues.length} of {venues.length} {venues.length === 1 ? "Location" : "Locations"}
           </Badge>
+        </div>
+      </div>
+
+      {/* TOP STATS TILES ("no of state and no of screen in theatre admin") */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="bg-indigo-50/70 p-3.5 rounded-2xl border border-indigo-100 flex flex-col justify-between">
+          <div className="text-[10px] uppercase font-bold text-indigo-700 flex items-center gap-1">
+            <MapPin className="w-3 h-3 text-indigo-600" /> States
+          </div>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {venueStats.statesCount}
+          </div>
+          <div className="text-[10px] text-slate-500 mt-0.5">
+            Operational territories
+          </div>
+        </div>
+
+        <div className="bg-purple-50/70 p-3.5 rounded-2xl border border-purple-100 flex flex-col justify-between">
+          <div className="text-[10px] uppercase font-bold text-purple-700 flex items-center gap-1">
+            <Layers className="w-3 h-3 text-purple-600" /> Total Screens
+          </div>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {venueStats.screensCount}
+          </div>
+          <div className="text-[10px] text-slate-500 mt-0.5">
+            Operating screens
+          </div>
+        </div>
+
+        <div className="bg-emerald-50/70 p-3.5 rounded-2xl border border-emerald-100 flex flex-col justify-between">
+          <div className="text-[10px] uppercase font-bold text-emerald-700 flex items-center gap-1">
+            <Building2 className="w-3 h-3 text-emerald-600" /> Multiplexes
+          </div>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {venueStats.venuesCount}
+          </div>
+          <div className="text-[10px] text-slate-500 mt-0.5">
+            Theatres assigned
+          </div>
+        </div>
+
+        <div className="bg-blue-50/70 p-3.5 rounded-2xl border border-blue-100 flex flex-col justify-between">
+          <div className="text-[10px] uppercase font-bold text-blue-700 flex items-center gap-1">
+            <MapPin className="w-3 h-3 text-blue-600" /> Active Cities
+          </div>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {venueStats.citiesCount}
+          </div>
+          <div className="text-[10px] text-slate-500 mt-0.5">
+            Urban centres
+          </div>
         </div>
       </div>
 

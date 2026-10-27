@@ -36,6 +36,8 @@ export interface AdminMovieItem {
   screens_count?: number;
   cities_count?: number;
   cities?: string[];
+  states_count?: number;
+  states?: string[];
 }
 
 export interface AdminUserItem {

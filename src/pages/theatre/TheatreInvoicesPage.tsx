@@ -1,13 +1,20 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   getTheatreInvoices,
   getTheatreInvoiceDetails,
   raiseTheatreInvoiceDispute,
   submitTheatreInvoiceRemittance,
   getTheatreVenues,
+  getTheatreAccountDetails,
+  updateTheatreBankAccount,
+  updateTheatreKyc,
+  getTheatreAccountStatement,
   TheatreInvoiceItem,
   InvoiceDetailItem,
   TheatreVenueItem,
+  TheatreAccountData,
+  TheatreStatementData,
 } from "@/api/theatre.api";
 import {
   FileText,
@@ -26,6 +33,15 @@ import {
   ShieldAlert,
   ArrowRight,
   ExternalLink,
+  Copy,
+  Check,
+  Edit,
+  Download,
+  ShieldCheck,
+  Landmark,
+  TrendingUp,
+  FileCheck2,
+  BadgeCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,19 +56,26 @@ import {
 } from "@/components/ui/dialog";
 import { INDIAN_STATES, getStateForCity, getCitiesForState } from "@/utils/indiaGeography";
 import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
 
 export default function TheatreInvoicesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") === "my_account" ? "my_account" : "invoices";
+
+  const [activeTab, setActiveTab] = useState<"invoices" | "my_account" | "statement">(initialTab);
+
+  // Invoices & Venues state
   const [invoices, setInvoices] = useState<TheatreInvoiceItem[]>([]);
   const [venues, setVenues] = useState<TheatreVenueItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Filters
+  // Filters for invoices
   const [selectedState, setSelectedState] = useState<string>("ALL");
   const [selectedCity, setSelectedCity] = useState<string>("ALL");
   const [selectedVenue, setSelectedVenue] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
 
-  // Modals
+  // Modals for invoices
   const [activeInvoiceDetail, setActiveInvoiceDetail] = useState<InvoiceDetailItem | null>(null);
   const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState<boolean>(false);
@@ -76,6 +99,47 @@ export default function TheatreInvoicesPage() {
   });
   const [submittingDispute, setSubmittingDispute] = useState<boolean>(false);
 
+  // -------------------------------------------------------------------------
+  // My Account & Settlement Bank State (Request 25)
+  // -------------------------------------------------------------------------
+  const [accountData, setAccountData] = useState<TheatreAccountData | null>(null);
+  const [loadingAccount, setLoadingAccount] = useState<boolean>(false);
+  const [statementData, setStatementData] = useState<TheatreStatementData | null>(null);
+  const [loadingStatement, setLoadingStatement] = useState<boolean>(false);
+  const [statementDateFilter, setStatementDateFilter] = useState<string>("ALL");
+
+  // Bank Account Update Modal
+  const [isBankModalOpen, setIsBankModalOpen] = useState<boolean>(false);
+  const [bankForm, setBankForm] = useState({
+    bank_name: "",
+    bank_account_number: "",
+    bank_ifsc_code: "",
+    bank_account_holder_name: "",
+    bank_account_type: "CURRENT",
+    bank_branch: "",
+    remittance_schedule: "DAILY",
+  });
+  const [updatingBank, setUpdatingBank] = useState<boolean>(false);
+
+  // KYC Update Modal
+  const [isKycModalOpen, setIsKycModalOpen] = useState<boolean>(false);
+  const [kycForm, setKycForm] = useState({
+    gst_number: "",
+    pan_number: "",
+    gst_certificate_url: "",
+    pan_card_url: "",
+  });
+  const [updatingKyc, setUpdatingKyc] = useState<boolean>(false);
+
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string, fieldName: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(fieldName);
+    toast.success(`${fieldName} copied to clipboard`);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
   // Load Invoices and Venues
   const loadData = async () => {
     setLoading(true);
@@ -98,11 +162,116 @@ export default function TheatreInvoicesPage() {
     }
   };
 
+  // Load Account Details (Request 25)
+  const loadAccount = async () => {
+    setLoadingAccount(true);
+    try {
+      const acc = await getTheatreAccountDetails();
+      setAccountData(acc);
+      if (acc.bank_account) {
+        setBankForm({
+          bank_name: acc.bank_account.bank_name || "",
+          bank_account_number: acc.bank_account.bank_account_number || "",
+          bank_ifsc_code: acc.bank_account.bank_ifsc_code || "",
+          bank_account_holder_name: acc.bank_account.bank_account_holder_name || "",
+          bank_account_type: acc.bank_account.bank_account_type || "CURRENT",
+          bank_branch: acc.bank_account.bank_branch || "",
+          remittance_schedule: acc.bank_account.remittance_schedule || "DAILY",
+        });
+      }
+      if (acc.kyc) {
+        setKycForm({
+          gst_number: acc.kyc.gst_number || "",
+          pan_number: acc.kyc.pan_number || "",
+          gst_certificate_url: acc.kyc.gst_certificate_url || "",
+          pan_card_url: acc.kyc.pan_card_url || "",
+        });
+      }
+    } catch (err) {
+      console.warn("Failed to load theatre account", err);
+    } finally {
+      setLoadingAccount(false);
+    }
+  };
+
+  // Load Statement & Ledger
+  const loadStatement = async () => {
+    setLoadingStatement(true);
+    try {
+      let dateFromParam: string | undefined = undefined;
+      const now = new Date();
+      if (statementDateFilter === "THIS_MONTH") {
+        dateFromParam = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      } else if (statementDateFilter === "LAST_30_DAYS") {
+        const d = new Date();
+        d.setDate(d.getDate() - 30);
+        dateFromParam = d.toISOString();
+      } else if (statementDateFilter === "LAST_90_DAYS") {
+        const d = new Date();
+        d.setDate(d.getDate() - 90);
+        dateFromParam = d.toISOString();
+      }
+
+      const stmt = await getTheatreAccountStatement({
+        date_from: dateFromParam,
+      });
+      setStatementData(stmt);
+    } catch (err) {
+      console.warn("Failed to load statement", err);
+    } finally {
+      setLoadingStatement(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, [selectedVenue, selectedStatus]);
 
-  // Cascading Geography
+  useEffect(() => {
+    if (activeTab === "my_account") {
+      loadAccount();
+    } else if (activeTab === "statement") {
+      loadStatement();
+    }
+  }, [activeTab, statementDateFilter]);
+
+  // Handle Bank Account Save
+  const handleSaveBankAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bankForm.bank_account_number || !bankForm.bank_ifsc_code) {
+      toast.error("Account Number and IFSC Code are required");
+      return;
+    }
+    setUpdatingBank(true);
+    try {
+      await updateTheatreBankAccount(bankForm);
+      toast.success("Bank account of remittance saved successfully!");
+      setIsBankModalOpen(false);
+      loadAccount();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update bank account");
+    } finally {
+      setUpdatingBank(false);
+    }
+  };
+
+  // Handle KYC Save
+  const handleSaveKyc = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdatingKyc(true);
+    try {
+      await updateTheatreKyc(kycForm);
+      toast.success("KYC & Tax credentials updated successfully!");
+      setIsKycModalOpen(false);
+      loadAccount();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to update KYC credentials");
+    } finally {
+      setUpdatingKyc(false);
+    }
+  };
+
+  // Cascading Geography for Invoices
   const handleStateChange = (state: string) => {
     setSelectedState(state);
     setSelectedCity("ALL");
@@ -199,16 +368,16 @@ export default function TheatreInvoicesPage() {
     setSubmittingRemit(true);
     try {
       await submitTheatreInvoiceRemittance(remitModalInvoice.id, {
-        payment_ref: remitForm.payment_ref.trim(),
-        payment_method: remitForm.payment_method,
         amount_paise: paise,
+        payment_method: remitForm.payment_method,
+        payment_ref: remitForm.payment_ref.trim(),
         notes: remitForm.notes.trim() || undefined,
       });
-      toast.success("Payment remittance recorded successfully!");
+      toast.success("Payment remittance reference recorded successfully!");
       setRemitModalInvoice(null);
       loadData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to record remittance");
+      toast.error(err.response?.data?.message || "Failed to submit remittance reference");
     } finally {
       setSubmittingRemit(false);
     }
@@ -228,28 +397,75 @@ export default function TheatreInvoicesPage() {
     e.preventDefault();
     if (!disputeModalInvoice) return;
     if (!disputeForm.reason.trim()) {
-      toast.error("Please provide a dispute reason");
+      toast.error("Please enter a reason for the dispute");
       return;
     }
-    const paise = disputeForm.disputed_amount_rupees
-      ? Math.round(parseFloat(disputeForm.disputed_amount_rupees) * 100)
-      : undefined;
 
     setSubmittingDispute(true);
     try {
+      const disputedPaise = disputeForm.disputed_amount_rupees
+        ? Math.round(parseFloat(disputeForm.disputed_amount_rupees) * 100)
+        : undefined;
+
       await raiseTheatreInvoiceDispute(disputeModalInvoice.id, {
         reason: disputeForm.reason.trim(),
-        disputed_amount_paise: paise,
+        disputed_amount_paise: disputedPaise,
         notes: disputeForm.notes.trim() || undefined,
       });
-      toast.success("Dispute raised. Central Admin finance has been notified.");
+
+      toast.success("Dispute submitted successfully. Central Finance has been notified.");
       setDisputeModalInvoice(null);
       loadData();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Failed to raise dispute");
+      toast.error(err.response?.data?.message || "Failed to raise invoice dispute");
     } finally {
       setSubmittingDispute(false);
     }
+  };
+
+  // Export Settlement Statement CSV
+  const handleExportStatementCSV = () => {
+    if (!statementData || statementData.ledger.length === 0) {
+      toast.info("No statement ledger entries to export");
+      return;
+    }
+
+    const headers = [
+      "Date & Time",
+      "Type",
+      "Entry Type",
+      "Reference Code",
+      "Description",
+      "Gross (₹)",
+      "Commission Fee (₹)",
+      "Net Settled (₹)",
+      "Status",
+      "Venue",
+    ];
+
+    const rows = statementData.ledger.map((l) => [
+      `"${new Date(l.date).toLocaleString()}"`,
+      `"${l.type}"`,
+      `"${l.entry_type}"`,
+      `"${l.reference}"`,
+      `"${l.description.replace(/"/g, '""')}"`,
+      ((l.gross_amount_paise || 0) / 100).toFixed(2),
+      ((l.commission_paise || 0) / 100).toFixed(2),
+      ((l.net_amount_paise || 0) / 100).toFixed(2),
+      `"${l.status}"`,
+      `"${l.venue_name || ""}"`,
+    ]);
+
+    const csvContent =
+      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `theatre_settlement_statement_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Settlement Statement CSV exported successfully!");
   };
 
   return (
@@ -258,530 +474,1302 @@ export default function TheatreInvoicesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900">Commission Invoices & Settlements</h1>
+            <h1 className="text-xl font-bold text-slate-900">Invoices, Settlements & Remittance</h1>
             <Badge className="bg-[#7B1E3D] text-white text-[10px] font-bold uppercase tracking-wider">
-              Finance & Billing
+              Finance & Payouts
             </Badge>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Authoritative platform commission statements, GST breakdown, due dates, bank remittance, and dispute management.
+            Authoritative platform commission statements, remittance bank credentials, GST/PAN verification, and settlement ledger.
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={loadData}
-          disabled={loading}
-          className="h-9 gap-1.5 text-xs text-slate-700"
+        <div className="flex items-center gap-2">
+          {activeTab === "invoices" ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadData}
+              disabled={loading}
+              className="h-9 gap-1.5 text-xs text-slate-700"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh Statements
+            </Button>
+          ) : activeTab === "my_account" ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadAccount}
+              disabled={loadingAccount}
+              className="h-9 gap-1.5 text-xs text-slate-700"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${loadingAccount ? "animate-spin" : ""}`} />
+              Refresh Account
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportStatementCSV}
+              className="h-9 gap-1.5 text-xs text-slate-700"
+            >
+              <Download className="w-3.5 h-3.5 text-[#7B1E3D]" />
+              Export Statement CSV
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* SUB-NAVIGATION TABS (Request 25) */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("invoices")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === "invoices"
+              ? "bg-[#7B1E3D] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
         >
-          <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
-          Refresh Statements
-        </Button>
+          <FileText className="w-3.5 h-3.5" />
+          Commission Invoices & Billing ({invoices.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("my_account")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === "my_account"
+              ? "bg-[#7B1E3D] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <Building2 className="w-3.5 h-3.5" />
+          My Account & Remittance Bank
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("statement")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+            activeTab === "statement"
+              ? "bg-[#7B1E3D] text-white shadow-xs"
+              : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          Settlement Statement & Ledger
+        </button>
       </div>
 
-      {/* Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            Total Commission Invoiced
-          </span>
-          <div className="text-2xl font-black text-slate-900 mt-1">
-            ₹{(summary.totalInvoiced / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">
-            {filteredInvoices.length} Periodic Invoices
-          </span>
-        </div>
+      {/* ===================================================================== */}
+      {/* TAB 1: INVOICES & COMMISSION BILLING                                  */}
+      {/* ===================================================================== */}
+      {activeTab === "invoices" && (
+        <div className="space-y-6">
+          {/* Summary KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Total Commission Invoiced
+              </span>
+              <div className="text-2xl font-black text-slate-900 mt-1">
+                ₹{(summary.totalInvoiced / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              <span className="text-[11px] text-slate-500 mt-1 block">
+                {filteredInvoices.length} Periodic Invoices
+              </span>
+            </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            Total Remitted / Paid
-          </span>
-          <div className="text-2xl font-black text-emerald-600 mt-1">
-            ₹{(summary.totalPaid / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-          </div>
-          <span className="text-[11px] text-emerald-600/80 mt-1 block">Verified by Central Finance</span>
-        </div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Total Remitted / Paid
+              </span>
+              <div className="text-2xl font-black text-emerald-600 mt-1">
+                ₹{(summary.totalPaid / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              <span className="text-[11px] text-emerald-600/80 mt-1 block">Verified by Central Finance</span>
+            </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            Outstanding Balance Due
-          </span>
-          <div className="text-2xl font-black text-[#7B1E3D] mt-1">
-            ₹{(summary.totalBalance / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-          </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Awaiting settlement transfer</span>
-        </div>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Outstanding Balance Due
+              </span>
+              <div className="text-2xl font-black text-[#7B1E3D] mt-1">
+                ₹{(summary.totalBalance / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              <span className="text-[11px] text-slate-500 mt-1 block">Awaiting settlement transfer</span>
+            </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-            Disputed Invoices
-          </span>
-          <div className="text-2xl font-black text-amber-600 mt-1">{summary.disputedCount}</div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Under finance investigation</span>
-        </div>
-      </div>
-
-      {/* Filter Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* State Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">State:</span>
-            <select
-              value={selectedState}
-              onChange={(e) => handleStateChange(e.target.value)}
-              className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
-            >
-              <option value="ALL">All States</option>
-              {INDIAN_STATES.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Disputed Invoices
+              </span>
+              <div className="text-2xl font-black text-amber-600 mt-1">{summary.disputedCount}</div>
+              <span className="text-[11px] text-slate-500 mt-1 block">Under finance investigation</span>
+            </div>
           </div>
 
-          {/* City Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">City:</span>
-            <select
-              value={selectedCity}
-              onChange={(e) => {
-                setSelectedCity(e.target.value);
-                setSelectedVenue("ALL");
-              }}
-              className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
-            >
-              <option value="ALL">All Cities {selectedState !== "ALL" ? `in ${selectedState}` : ""}</option>
-              {availableCities.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+          {/* Filter Toolbar */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* State Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-500 hidden sm:inline">State:</span>
+                <select
+                  value={selectedState}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                  className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+                >
+                  <option value="ALL">All States</option>
+                  {INDIAN_STATES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* City Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-500 hidden sm:inline">City:</span>
+                <select
+                  value={selectedCity}
+                  onChange={(e) => {
+                    setSelectedCity(e.target.value);
+                    setSelectedVenue("ALL");
+                  }}
+                  className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+                >
+                  <option value="ALL">All Cities {selectedState !== "ALL" ? `in ${selectedState}` : ""}</option>
+                  {availableCities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Venue Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Venue:</span>
+                <select
+                  className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+                  value={selectedVenue}
+                  onChange={(e) => setSelectedVenue(e.target.value)}
+                >
+                  <option value="ALL">All Venues ({availableVenues.length})</option>
+                  {availableVenues.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.city})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Status:</span>
+                <select
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+                >
+                  <option value="ALL">All Statuses</option>
+                  <option value="ISSUED">ISSUED</option>
+                  <option value="PARTIALLY_PAID">PARTIALLY_PAID</option>
+                  <option value="PAID">PAID</option>
+                  <option value="OVERDUE">OVERDUE</option>
+                  <option value="DISPUTED">DISPUTED</option>
+                </select>
+              </div>
+            </div>
+
+            <Badge variant="outline" className="text-xs font-semibold px-3 py-1 bg-slate-50 text-slate-800">
+              Showing {filteredInvoices.length} of {invoices.length} Invoices
+            </Badge>
           </div>
 
-          {/* Venue Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Venue:</span>
-            <select
-              className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
-              value={selectedVenue}
-              onChange={(e) => setSelectedVenue(e.target.value)}
-            >
-              <option value="ALL">All Multiplexes ({availableVenues.length})</option>
-              {availableVenues.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} ({v.city})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Status:</span>
-            <select
-              className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-            >
-              <option value="ALL">All Statuses</option>
-              <option value="ISSUED">ISSUED</option>
-              <option value="PARTIALLY_PAID">PARTIALLY_PAID</option>
-              <option value="PAID">PAID</option>
-              <option value="DISPUTED">DISPUTED</option>
-              <option value="OVERDUE">OVERDUE</option>
-            </select>
-          </div>
-        </div>
-
-        <Badge variant="outline" className="text-xs font-semibold px-3 py-1 bg-slate-50 text-slate-800">
-          Showing {filteredInvoices.length} of {invoices.length} Invoices
-        </Badge>
-      </div>
-
-      {/* Invoices Table */}
-      {loading ? (
-        <div className="py-24 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />
-        </div>
-      ) : filteredInvoices.length === 0 ? (
-        <div className="py-20 bg-white rounded-2xl border border-slate-200 text-center text-sm text-slate-400">
-          No commission invoices match your filters.
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
-                  <th className="py-3.5 px-4">Invoice #</th>
-                  <th className="py-3.5 px-4">Multiplex Facility</th>
-                  <th className="py-3.5 px-4">Period</th>
-                  <th className="py-3.5 px-4">Admissions</th>
-                  <th className="py-3.5 px-4">Gross Box Office</th>
-                  <th className="py-3.5 px-4">Platform Fee</th>
-                  <th className="py-3.5 px-4">Invoice Total</th>
-                  <th className="py-3.5 px-4">Paid / Balance</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredInvoices.map((inv) => {
-                  const matchedVenue = venues.find((v) => v.id === inv.venue_id);
-                  const venueState = matchedVenue ? getStateForCity(matchedVenue.city) : "Other";
-                  const balancePaise = inv.balance_paise ?? Math.max(0, (inv.total_paise || 0) - (inv.paid_paise || 0));
-
-                  return (
-                    <tr key={inv.id} className="hover:bg-slate-50/50 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                        {inv.invoice_number}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-800">
-                        <div>{inv.venue_name}</div>
-                        {matchedVenue && (
-                          <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                            <span>{matchedVenue.city}</span>
-                            {venueState !== "Other" && (
-                              <>
-                                <span>•</span>
-                                <span className="text-[#7B1E3D] font-medium">{venueState}</span>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600">
-                        {new Date(inv.period_start).toLocaleDateString([], { month: "short", day: "numeric" })} -{" "}
-                        {new Date(inv.period_end).toLocaleDateString([], {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        {inv.tickets_count} tickets
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">
-                        ₹{((inv.gross_booking_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-700">
-                        ₹{((inv.commission_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                        <span className="text-[10px] text-slate-400 block">
-                          + ₹{((inv.tax_paise || 0) / 100).toFixed(0)} GST
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-black text-slate-900">
-                        ₹{((inv.total_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="text-emerald-700 font-semibold">
-                          ₹{((inv.paid_paise || 0) / 100).toFixed(0)} paid
-                        </div>
-                        {balancePaise > 0 ? (
-                          <div className="text-rose-600 font-bold">
-                            ₹{(balancePaise / 100).toFixed(0)} due
-                          </div>
-                        ) : (
-                          <div className="text-emerald-600 text-[11px]">Settled</div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
-                            inv.status === "PAID"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : inv.status === "DISPUTED"
-                              ? "bg-amber-100 text-amber-800 border border-amber-300"
-                              : inv.status === "PARTIALLY_PAID"
-                              ? "bg-purple-50 text-purple-700 border border-purple-200"
-                              : inv.status === "OVERDUE"
-                              ? "bg-rose-50 text-rose-700 border border-rose-200"
-                              : "bg-blue-50 text-blue-700 border border-blue-200"
-                          }`}
-                        >
-                          {inv.status}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleOpenDetailModal(inv.id)}
-                            className="h-7 px-2.5 text-[11px] gap-1 text-slate-700"
-                            title="View Statement & Print PDF"
-                          >
-                            <FileText className="w-3 h-3 text-[#7B1E3D]" />
-                            Statement
-                          </Button>
-
-                          {balancePaise > 0 && inv.status !== "DISPUTED" && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleOpenRemitModal(inv)}
-                              className="h-7 px-2 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                              title="Submit Bank Remittance / UTR"
-                            >
-                              <CreditCard className="w-3 h-3" />
-                              Pay
-                            </Button>
-                          )}
-
-                          {inv.status !== "PAID" && inv.status !== "DISPUTED" && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleOpenDisputeModal(inv)}
-                              className="h-7 px-2 text-[11px] text-amber-700 hover:bg-amber-50"
-                              title="Raise a dispute regarding this invoice"
-                            >
-                              Dispute
-                            </Button>
-                          )}
-                        </div>
-                      </td>
+          {/* Invoices Table */}
+          {loading ? (
+            <div className="py-24 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />
+            </div>
+          ) : filteredInvoices.length === 0 ? (
+            <div className="py-20 bg-white rounded-2xl border border-slate-200 text-center text-sm text-slate-400">
+              No commission invoices match your filters.
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+                      <th className="py-3.5 px-4">Invoice #</th>
+                      <th className="py-3.5 px-4">Multiplex Facility</th>
+                      <th className="py-3.5 px-4">Period</th>
+                      <th className="py-3.5 px-4">Admissions</th>
+                      <th className="py-3.5 px-4">Gross Box Office</th>
+                      <th className="py-3.5 px-4">Platform Fee</th>
+                      <th className="py-3.5 px-4">Invoice Total</th>
+                      <th className="py-3.5 px-4">Paid / Balance</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredInvoices.map((inv) => {
+                      const matchedVenue = venues.find((v) => v.id === inv.venue_id);
+                      const venueState = matchedVenue ? getStateForCity(matchedVenue.city) : "Other";
+                      const balancePaise = inv.balance_paise ?? Math.max(0, (inv.total_paise || 0) - (inv.paid_paise || 0));
+
+                      return (
+                        <tr key={inv.id} className="hover:bg-slate-50/50 transition">
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                            {inv.invoice_number}
+                          </td>
+                          <td className="py-3.5 px-4 font-medium text-slate-800">
+                            <div>{inv.venue_name}</div>
+                            {matchedVenue && (
+                              <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <span>{matchedVenue.city}</span>
+                                {venueState !== "Other" && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-[#7B1E3D] font-medium">{venueState}</span>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-600">
+                            {new Date(inv.period_start).toLocaleDateString([], { month: "short", day: "numeric" })} -{" "}
+                            {new Date(inv.period_end).toLocaleDateString([], {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-900">
+                            {inv.tickets_count} tickets
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-700 font-medium">
+                            ₹{((inv.gross_booking_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-700">
+                            ₹{((inv.commission_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                            <span className="text-[10px] text-slate-400 block">
+                              + ₹{((inv.tax_paise || 0) / 100).toFixed(0)} GST
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 font-black text-slate-900">
+                            ₹{((inv.total_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="text-emerald-700 font-semibold">
+                              ₹{((inv.paid_paise || 0) / 100).toFixed(0)} paid
+                            </div>
+                            {balancePaise > 0 ? (
+                              <div className="text-rose-600 font-bold">
+                                ₹{(balancePaise / 100).toFixed(0)} due
+                              </div>
+                            ) : (
+                              <div className="text-emerald-600 text-[11px]">Settled</div>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                                inv.status === "PAID"
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : inv.status === "DISPUTED"
+                                  ? "bg-amber-100 text-amber-800 border border-amber-300"
+                                  : inv.status === "PARTIALLY_PAID"
+                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                  : "bg-rose-50 text-rose-700 border border-rose-200"
+                              }`}
+                            >
+                              {inv.status}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenDetailModal(inv.id)}
+                                className="h-7 px-2 text-[11px] gap-1 bg-white hover:bg-slate-50 cursor-pointer"
+                              >
+                                <FileText className="w-3 h-3 text-[#7B1E3D]" />
+                                Statement
+                              </Button>
+
+                              {balancePaise > 0 && inv.status !== "PAID" && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleOpenRemitModal(inv)}
+                                  className="h-7 px-2 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white gap-1 cursor-pointer"
+                                >
+                                  <CreditCard className="w-3 h-3" />
+                                  Remit
+                                </Button>
+                              )}
+
+                              {inv.status !== "DISPUTED" && inv.status !== "PAID" && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleOpenDisputeModal(inv)}
+                                  className="h-7 px-2 text-[11px] text-amber-600 hover:text-amber-700 hover:bg-amber-50 cursor-pointer"
+                                >
+                                  <AlertTriangle className="w-3 h-3" />
+                                  Dispute
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Invoice Detailed Statement & Print Dialog */}
-      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto print:max-w-full print:m-0 print:border-none print:shadow-none">
-          {loadingDetail || !activeInvoiceDetail ? (
-            <div className="py-20 flex justify-center items-center">
+      {/* ===================================================================== */}
+      {/* TAB 2: MY ACCOUNT & REMITTANCE BANK (Request 25)                      */}
+      {/* ===================================================================== */}
+      {activeTab === "my_account" && (
+        <div className="space-y-6">
+          {loadingAccount ? (
+            <div className="py-24 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />
             </div>
           ) : (
-            <div className="space-y-6 text-slate-900" id="printable-statement">
-              {/* Header */}
-              <div className="flex items-start justify-between border-b border-slate-200 pb-5">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <img src="/logo.png" alt="Vybhz" className="h-8 w-auto object-contain" />
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-[#7B1E3D]">
-                      Commission Statement
-                    </span>
+            <>
+              {/* TOP GRID: PASSBOOK BANK CARD & BUSINESS KYC */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* 1. DESIGNATED REMITTANCE BANK CARD (Passbook Style) */}
+                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20">
+                          <Landmark className="w-6 h-6 text-emerald-400" />
+                        </div>
+                        <div>
+                          <div className="text-[11px] text-slate-300 uppercase tracking-widest font-bold">
+                            Designated Remittance Bank
+                          </div>
+                          <div className="text-xl font-black text-white">
+                            {accountData?.bank_account?.bank_name || "Official Bank Passbook"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2.5 py-0.5">
+                          <BadgeCheck className="w-3 h-3 mr-1" />
+                          {accountData?.bank_account?.bank_verification_status || "VERIFIED"}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          onClick={() => setIsBankModalOpen(true)}
+                          className="h-8 px-3 text-xs bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl cursor-pointer"
+                        >
+                          <Edit className="w-3 h-3 mr-1.5" />
+                          Update
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Account Number & IFSC */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                        <div className="text-[10px] uppercase font-bold text-slate-400">
+                          Bank Account Number
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="font-mono text-lg font-black tracking-wider text-white">
+                            {accountData?.bank_account?.bank_account_number || "Not Registered"}
+                          </span>
+                          {accountData?.bank_account?.bank_account_number && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                copyToClipboard(accountData.bank_account.bank_account_number, "Account Number")
+                              }
+                              className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition cursor-pointer"
+                              title="Copy Account Number"
+                            >
+                              {copiedField === "Account Number" ? (
+                                <Check className="w-4 h-4 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                        <div className="text-[10px] uppercase font-bold text-slate-400">
+                          IFSC Routing Code
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="font-mono text-lg font-black tracking-wider text-emerald-300">
+                            {accountData?.bank_account?.bank_ifsc_code || "Not Registered"}
+                          </span>
+                          {accountData?.bank_account?.bank_ifsc_code && (
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(accountData.bank_account.bank_ifsc_code, "IFSC Code")}
+                              className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition cursor-pointer"
+                              title="Copy IFSC Code"
+                            >
+                              {copiedField === "IFSC Code" ? (
+                                <Check className="w-4 h-4 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Holder, Branch, Type, Cycle */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase font-bold">Beneficiary Holder</div>
+                        <div className="font-bold text-white truncate mt-0.5">
+                          {accountData?.bank_account?.bank_account_holder_name || accountData?.brand_name || "Registered Entity"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase font-bold">Account Type</div>
+                        <div className="font-bold text-white mt-0.5">
+                          {accountData?.bank_account?.bank_account_type || "CURRENT"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase font-bold">Bank Branch</div>
+                        <div className="font-bold text-white truncate mt-0.5">
+                          {accountData?.bank_account?.bank_branch || "Main Branch"}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] text-slate-400 uppercase font-bold">Remittance Cycle</div>
+                        <div className="font-bold text-emerald-300 mt-0.5 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {accountData?.bank_account?.remittance_schedule || "Daily (T+1)"}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 font-medium">VYBHZ Entertainment Private Limited</p>
-                  <p className="text-[11px] text-slate-400">GSTIN: 29AAACV1234F1Z8 • Karnataka, India</p>
+
+                  <div className="pt-4 border-t border-white/10 text-[11px] text-slate-400 flex items-center justify-between mt-4">
+                    <span>Direct automated NEFT / RTGS settlement transfers into this account.</span>
+                    <span className="text-emerald-400 font-bold">PDI Authorized</span>
+                  </div>
                 </div>
 
-                <div className="text-right space-y-1">
-                  <h3 className="font-mono font-bold text-lg text-slate-900">
-                    {activeInvoiceDetail.invoice_number}
-                  </h3>
-                  <Badge
-                    className={`text-[10px] uppercase font-bold ${
-                      activeInvoiceDetail.status === "PAID"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-[#7B1E3D] text-white"
-                    }`}
+                {/* 2. BUSINESS REGISTRATION & KYC */}
+                <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-[#7B1E3D]" />
+                        <h3 className="font-bold text-slate-900 text-sm">Business Identity & KYC</h3>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setIsKycModalOpen(true)}
+                        className="h-7 text-xs text-[#7B1E3D] hover:bg-slate-50 cursor-pointer"
+                      >
+                        <Edit className="w-3 h-3 mr-1" />
+                        Edit KYC
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4 pt-4 text-xs">
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                          Registered Brand / Chain
+                        </span>
+                        <div className="font-black text-slate-900 text-sm mt-0.5">
+                          {accountData?.brand_name || "Cinema Brand"}
+                        </div>
+                        <span className="text-[11px] text-slate-500">Code: {accountData?.brand_code || "N/A"}</span>
+                      </div>
+
+                      {/* GSTIN */}
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase font-bold text-slate-500">GSTIN Number</span>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            Verified
+                          </span>
+                        </div>
+                        <div className="font-mono font-bold text-slate-900 text-sm mt-1">
+                          {accountData?.kyc?.gst_number || "29AAAAA0000A1Z5"}
+                        </div>
+                        {accountData?.kyc?.gst_certificate_url && (
+                          <a
+                            href={accountData.kyc.gst_certificate_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] text-[#7B1E3D] hover:underline flex items-center gap-1 mt-1 font-semibold"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            View Certificate
+                          </a>
+                        )}
+                      </div>
+
+                      {/* PAN */}
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] uppercase font-bold text-slate-500">Permanent Account # (PAN)</span>
+                          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            Verified
+                          </span>
+                        </div>
+                        <div className="font-mono font-bold text-slate-900 text-sm mt-1">
+                          {accountData?.kyc?.pan_number || "ABCDE1234F"}
+                        </div>
+                        {accountData?.kyc?.pan_card_url && (
+                          <a
+                            href={accountData.kyc.pan_card_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] text-[#7B1E3D] hover:underline flex items-center gap-1 mt-1 font-semibold"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            View PAN Card
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400 mt-4">
+                    Authorized for tax invoice credit & statutory GST reporting.
+                  </div>
+                </div>
+              </div>
+
+              {/* FINANCIAL SETTLEMENT SUMMARY CARDS */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3 text-emerald-600" /> Gross Sales
+                  </div>
+                  <div className="text-xl font-black text-slate-900 mt-1">
+                    ₹{(((accountData?.financial_summary?.gross_sales_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Box office volume</div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                    <DollarSign className="w-3 h-3 text-orange-600" /> Commission
+                  </div>
+                  <div className="text-xl font-black text-slate-900 mt-1">
+                    ₹{(((accountData?.financial_summary?.commission_invoiced_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Platform service fee</div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                    <Landmark className="w-3 h-3 text-blue-600" /> Cinema Share
+                  </div>
+                  <div className="text-xl font-black text-blue-900 mt-1">
+                    ₹{(((accountData?.financial_summary?.net_share_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Net earned volume</div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Remitted
+                  </div>
+                  <div className="text-xl font-black text-emerald-700 mt-1">
+                    ₹{(((accountData?.financial_summary?.commission_paid_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Settled to bank</div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-[#7B1E3D]" /> Pending Due
+                  </div>
+                  <div className="text-xl font-black text-[#7B1E3D] mt-1">
+                    ₹{(((accountData?.financial_summary?.commission_outstanding_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">Awaiting payout</div>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+                  <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                    <FileCheck2 className="w-3 h-3 text-purple-600" /> Admissions
+                  </div>
+                  <div className="text-xl font-black text-slate-900 mt-1">
+                    {accountData?.financial_summary?.total_tickets || 0}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5">
+                    in {accountData?.financial_summary?.total_bookings || 0} orders
+                  </div>
+                </div>
+              </div>
+
+              {/* RECENT SETTLEMENT REMITTANCES PAYOUTS TABLE */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-xs p-6 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-[#7B1E3D]" />
+                      Settlement & Remittance Payouts History
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Direct bank transfers, UTR tracking references, and reconciled settlement payments.
+                    </p>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setActiveTab("statement")}
+                    className="h-8 text-xs text-slate-700 bg-white hover:bg-slate-50 cursor-pointer"
                   >
-                    {activeInvoiceDetail.status}
-                  </Badge>
-                  <p className="text-[11px] text-slate-500">
-                    Due Date: {new Date(activeInvoiceDetail.due_date).toLocaleDateString()}
-                  </p>
+                    View Complete Ledger
+                    <ArrowRight className="w-3 h-3 ml-1" />
+                  </Button>
                 </div>
+
+                {!accountData?.settlement_remittances || accountData.settlement_remittances.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-slate-400">
+                    No bank payout remittance collections logged yet for this partner.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+                          <th className="py-3 px-4">UTR Reference</th>
+                          <th className="py-3 px-4">Payout Method</th>
+                          <th className="py-3 px-4">Settlement Date</th>
+                          <th className="py-3 px-4">Multiplex Venue</th>
+                          <th className="py-3 px-4">Invoice #</th>
+                          <th className="py-3 px-4">Net Remitted (₹)</th>
+                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {accountData.settlement_remittances.map((remit) => (
+                          <tr key={remit.id} className="hover:bg-slate-50/50 transition">
+                            <td className="py-3 px-4 font-mono font-bold text-slate-900">
+                              {remit.payment_ref}
+                            </td>
+                            <td className="py-3 px-4 font-semibold text-slate-700">
+                              <Badge variant="outline" className="text-[10px] font-bold bg-white">
+                                {remit.payment_method}
+                              </Badge>
+                            </td>
+                            <td className="py-3 px-4 text-slate-600">
+                              {new Date(remit.collected_at).toLocaleDateString([], {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </td>
+                            <td className="py-3 px-4 font-medium text-slate-800">
+                              {remit.venue_name}
+                            </td>
+                            <td className="py-3 px-4 font-mono text-slate-600">
+                              {remit.invoice_number}
+                            </td>
+                            <td className="py-3 px-4 font-black text-emerald-700 text-sm">
+                              ₹{((remit.amount_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3" />
+                                {remit.status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-slate-500 truncate max-w-xs">
+                              {remit.notes || "Automatic Net Payout"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB 3: SETTLEMENT STATEMENT & CHRONOLOGICAL LEDGER (Request 25)       */}
+      {/* ===================================================================== */}
+      {activeTab === "statement" && (
+        <div className="space-y-6">
+          {/* Controls Bar: Date Ranges & Export */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 mr-1">Time Horizon:</span>
+              {[
+                { label: "All Statements", value: "ALL" },
+                { label: "This Month", value: "THIS_MONTH" },
+                { label: "Last 30 Days", value: "LAST_30_DAYS" },
+                { label: "Last 90 Days", value: "LAST_90_DAYS" },
+              ].map((pill) => (
+                <button
+                  key={pill.value}
+                  type="button"
+                  onClick={() => setStatementDateFilter(pill.value)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    statementDateFilter === pill.value
+                      ? "bg-[#7B1E3D] text-white shadow-2xs"
+                      : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              size="sm"
+              onClick={handleExportStatementCSV}
+              className="bg-[#7B1E3D] hover:bg-[#601730] text-white text-xs gap-1.5 rounded-xl cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download Statement CSV
+            </Button>
+          </div>
+
+          {/* Statement Overview Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Total Ticket Sales</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">
+                ₹{(((statementData?.summary?.gross_sales_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Gross admissions ledger</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Platform Commission</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">
+                ₹{(((statementData?.summary?.commission_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Fee deductions</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Remitted Payouts</div>
+              <div className="text-2xl font-black text-emerald-700 mt-1">
+                ₹{(((statementData?.summary?.remitted_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Transferred to bank</div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="text-[10px] uppercase font-bold text-slate-400">Pending Settlement</div>
+              <div className="text-2xl font-black text-[#7B1E3D] mt-1">
+                ₹{(((statementData?.summary?.pending_payout_paise || 0) / 100)).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Net balance payable</div>
+            </div>
+          </div>
+
+          {/* Chronological Ledger Table */}
+          {loadingStatement ? (
+            <div className="py-24 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D]" />
+            </div>
+          ) : !statementData || statementData.ledger.length === 0 ? (
+            <div className="py-20 bg-white rounded-2xl border border-slate-200 text-center text-sm text-slate-400">
+              No statement ledger entries found for this date range.
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+                      <th className="py-3 px-4">Date & Time</th>
+                      <th className="py-3 px-4">Type</th>
+                      <th className="py-3 px-4">Reference</th>
+                      <th className="py-3 px-4">Description</th>
+                      <th className="py-3 px-4">Multiplex Venue</th>
+                      <th className="py-3 px-4">Gross (₹)</th>
+                      <th className="py-3 px-4">Platform Fee (₹)</th>
+                      <th className="py-3 px-4">Net Settled (₹)</th>
+                      <th className="py-3 px-4">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {statementData.ledger.map((entry) => (
+                      <tr key={entry.id} className="hover:bg-slate-50/50 transition">
+                        <td className="py-3.5 px-4 text-slate-600">
+                          {new Date(entry.date).toLocaleString([], {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="py-3.5 px-4 font-semibold">
+                          <Badge
+                            className={`text-[10px] font-bold ${
+                              entry.entry_type === "CREDIT"
+                                ? "bg-blue-50 text-blue-800 border-blue-200"
+                                : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            }`}
+                          >
+                            {entry.entry_type === "CREDIT" ? "Ticket Credit" : "Bank Payout"}
+                          </Badge>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                          {entry.reference}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-700 font-medium max-w-xs truncate">
+                          {entry.description}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-600">
+                          {entry.venue_name || "All Locations"}
+                        </td>
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          ₹{((entry.gross_amount_paise || 0) / 100).toFixed(2)}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500">
+                          {entry.commission_paise > 0
+                            ? `₹${((entry.commission_paise || 0) / 100).toFixed(2)}`
+                            : "—"}
+                        </td>
+                        <td
+                          className={`py-3.5 px-4 font-black ${
+                            entry.entry_type === "DEBIT" ? "text-emerald-700" : "text-blue-900"
+                          }`}
+                        >
+                          {entry.entry_type === "DEBIT" ? "- " : "+ "}₹
+                          {((entry.net_amount_paise || 0) / 100).toFixed(2)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {entry.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL: UPDATE BANK ACCOUNT OF REMITTANCE (Request 25)                 */}
+      {/* ===================================================================== */}
+      <Dialog open={isBankModalOpen} onOpenChange={setIsBankModalOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Landmark className="w-5 h-5 text-emerald-600" />
+              Update Remittance Bank Account
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Registered bank account designated to receive automated box office settlements & remittance transfers.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveBankAccount} className="space-y-4 pt-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Bank Name *</label>
+                <Input
+                  required
+                  placeholder="e.g. HDFC Bank, ICICI Bank, SBI"
+                  value={bankForm.bank_name}
+                  onChange={(e) => setBankForm({ ...bankForm, bank_name: e.target.value })}
+                  className="h-9 text-xs"
+                />
               </div>
 
-              {/* Billed To / Facility Info */}
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl text-xs">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Account Holder Name *</label>
+                <Input
+                  required
+                  placeholder="Exact entity name as per bank records"
+                  value={bankForm.bank_account_holder_name}
+                  onChange={(e) => setBankForm({ ...bankForm, bank_account_holder_name: e.target.value })}
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Account Number *</label>
+                <Input
+                  required
+                  placeholder="e.g. 50200088992211"
+                  value={bankForm.bank_account_number}
+                  onChange={(e) => setBankForm({ ...bankForm, bank_account_number: e.target.value })}
+                  className="h-9 text-xs font-mono font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">IFSC Routing Code *</label>
+                <Input
+                  required
+                  placeholder="e.g. HDFC0001234"
+                  value={bankForm.bank_ifsc_code}
+                  onChange={(e) => setBankForm({ ...bankForm, bank_ifsc_code: e.target.value.toUpperCase() })}
+                  className="h-9 text-xs font-mono font-bold uppercase"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Account Type</label>
+                <select
+                  value={bankForm.bank_account_type}
+                  onChange={(e) => setBankForm({ ...bankForm, bank_account_type: e.target.value })}
+                  className="w-full h-9 rounded-md border border-slate-200 px-3 bg-white text-xs"
+                >
+                  <option value="CURRENT">CURRENT</option>
+                  <option value="SAVINGS">SAVINGS</option>
+                  <option value="OVERDRAFT">OVERDRAFT</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Branch Name</label>
+                <Input
+                  placeholder="e.g. Indiranagar Branch"
+                  value={bankForm.bank_branch}
+                  onChange={(e) => setBankForm({ ...bankForm, bank_branch: e.target.value })}
+                  className="h-9 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="font-semibold text-slate-700 block mb-1">Settlement Cycle</label>
+                <select
+                  value={bankForm.remittance_schedule}
+                  onChange={(e) => setBankForm({ ...bankForm, remittance_schedule: e.target.value })}
+                  className="w-full h-9 rounded-md border border-slate-200 px-3 bg-white text-xs"
+                >
+                  <option value="DAILY">Daily (T+1)</option>
+                  <option value="WEEKLY">Weekly</option>
+                  <option value="BI_WEEKLY">Bi-Weekly</option>
+                </select>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsBankModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={updatingBank}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+              >
+                {updatingBank && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Save Remittance Bank Account
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===================================================================== */}
+      {/* MODAL: UPDATE THEATRE KYC & TAX CREDENTIALS (Request 25)              */}
+      {/* ===================================================================== */}
+      <Dialog open={isKycModalOpen} onOpenChange={setIsKycModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-[#7B1E3D]" />
+              Update Tax & KYC Credentials
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Tax identification details for statutory reporting and invoice credit.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleSaveKyc} className="space-y-3 pt-2 text-xs">
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">GSTIN Number</label>
+              <Input
+                placeholder="e.g. 29AAAAA0000A1Z5"
+                value={kycForm.gst_number}
+                onChange={(e) => setKycForm({ ...kycForm, gst_number: e.target.value.toUpperCase() })}
+                className="h-9 text-xs font-mono uppercase"
+              />
+            </div>
+
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">PAN Card Number</label>
+              <Input
+                placeholder="e.g. ABCDE1234F"
+                value={kycForm.pan_number}
+                onChange={(e) => setKycForm({ ...kycForm, pan_number: e.target.value.toUpperCase() })}
+                className="h-9 text-xs font-mono uppercase"
+              />
+            </div>
+
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">GST Certificate Document URL</label>
+              <Input
+                placeholder="https://..."
+                value={kycForm.gst_certificate_url}
+                onChange={(e) => setKycForm({ ...kycForm, gst_certificate_url: e.target.value })}
+                className="h-9 text-xs"
+              />
+            </div>
+
+            <div>
+              <label className="font-semibold text-slate-700 block mb-1">PAN Card Document URL</label>
+              <Input
+                placeholder="https://..."
+                value={kycForm.pan_card_url}
+                onChange={(e) => setKycForm({ ...kycForm, pan_card_url: e.target.value })}
+                className="h-9 text-xs"
+              />
+            </div>
+
+            <DialogFooter className="pt-3">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsKycModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                disabled={updatingKyc}
+                className="bg-[#7B1E3D] hover:bg-[#601730] text-white gap-1.5"
+              >
+                {updatingKyc && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Save KYC Credentials
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===================================================================== */}
+      {/* MODAL: INVOICE STATEMENT DETAIL MODAL                                 */}
+      {/* ===================================================================== */}
+      <Dialog open={isDetailModalOpen} onOpenChange={setIsDetailModalOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold text-slate-900 flex items-center justify-between">
+              <span>Commission Invoice Statement: {activeInvoiceDetail?.invoice_number}</span>
+              {activeInvoiceDetail && (
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    activeInvoiceDetail.status === "PAID"
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      : activeInvoiceDetail.status === "DISPUTED"
+                      ? "bg-amber-100 text-amber-800 border border-amber-300"
+                      : "bg-rose-50 text-rose-700 border border-rose-200"
+                  }`}
+                >
+                  {activeInvoiceDetail.status}
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500">
+              Billing Period: {activeInvoiceDetail?.period_start ? format(parseISO(activeInvoiceDetail.period_start), "dd MMM yyyy") : ""} -{" "}
+              {activeInvoiceDetail?.period_end ? format(parseISO(activeInvoiceDetail.period_end), "dd MMM yyyy") : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingDetail ? (
+            <div className="py-20 text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-[#7B1E3D] mx-auto mb-2" />
+              <p className="text-xs text-slate-500">Loading invoice statement line items...</p>
+            </div>
+          ) : activeInvoiceDetail ? (
+            <div className="space-y-4 pt-2 text-xs">
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Cinema Partner:</span>
-                  <div className="font-bold text-sm text-slate-900 mt-0.5">
-                    {activeInvoiceDetail.venue_name}
-                  </div>
-                  <div className="text-slate-500">{activeInvoiceDetail.venue_city}</div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Venue Facility</span>
+                  <span className="font-bold text-slate-900">{activeInvoiceDetail.venue_name}</span>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block">Billing Period:</span>
-                  <div className="font-semibold text-slate-800 mt-0.5">
-                    {new Date(activeInvoiceDetail.period_start).toLocaleDateString()} to{" "}
-                    {new Date(activeInvoiceDetail.period_end).toLocaleDateString()}
-                  </div>
-                  <div className="text-slate-500">{activeInvoiceDetail.ticket_count} tickets admitted</div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Total Admissions</span>
+                  <span className="font-bold text-slate-900">{activeInvoiceDetail.ticket_count} tickets</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Gross Sales</span>
+                  <span className="font-bold text-slate-900">
+                    ₹{((activeInvoiceDetail.gross_sales_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Balance Outstanding</span>
+                  <span className="font-black text-rose-600">
+                    ₹{((activeInvoiceDetail.balance_paise || 0) / 100).toFixed(0)}
+                  </span>
                 </div>
               </div>
 
-              {/* Breakdown Table */}
+              {/* Statement Line Items */}
               <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold">
+                  <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
                     <tr>
-                      <th className="py-2.5 px-3">Description</th>
-                      <th className="py-2.5 px-3">Category</th>
+                      <th className="py-2.5 px-3">Item Description</th>
+                      <th className="py-2.5 px-3">Type</th>
                       <th className="py-2.5 px-3 text-right">Amount (₹)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {activeInvoiceDetail.items && activeInvoiceDetail.items.length > 0 ? (
-                      activeInvoiceDetail.items.map((item) => (
-                        <tr key={item.id}>
-                          <td className="py-2 px-3 text-slate-800">{item.description}</td>
-                          <td className="py-2 px-3 text-slate-500 font-mono text-[10px]">{item.item_type}</td>
-                          <td className="py-2 px-3 text-right font-medium">
-                            ₹{(item.amount_paise / 100).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td className="py-2 px-3 text-slate-800">
-                          Platform Service Commission ({activeInvoiceDetail.ticket_count} tickets)
+                    {activeInvoiceDetail.items?.map((item) => (
+                      <tr key={item.id}>
+                        <td className="py-2.5 px-3 text-slate-800">{item.description}</td>
+                        <td className="py-2.5 px-3">
+                          <Badge variant="outline" className="text-[10px] font-medium">
+                            {item.item_type}
+                          </Badge>
                         </td>
-                        <td className="py-2 px-3 text-slate-500 font-mono text-[10px]">COMMISSION</td>
-                        <td className="py-2 px-3 text-right font-medium">
-                          ₹{(activeInvoiceDetail.commission_paise / 100).toFixed(2)}
+                        <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                          ₹{((item.amount_paise || 0) / 100).toFixed(2)}
                         </td>
                       </tr>
-                    )}
-                    <tr className="bg-slate-50/50">
-                      <td colSpan={2} className="py-2 px-3 font-semibold text-slate-700">
-                        Applicable Goods & Services Tax (GST @ 18%)
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50 font-bold text-slate-900 border-t border-slate-200">
+                    <tr>
+                      <td colSpan={2} className="py-2.5 px-3 text-right uppercase text-[10px]">
+                        Platform Commission Fee
                       </td>
-                      <td className="py-2 px-3 text-right font-medium text-slate-700">
-                        ₹{(activeInvoiceDetail.tax_paise / 100).toFixed(2)}
-                      </td>
-                    </tr>
-                    <tr className="bg-slate-100 font-bold text-slate-900 border-t border-slate-200">
-                      <td colSpan={2} className="py-2.5 px-3">
-                        Total Invoice Payable
-                      </td>
-                      <td className="py-2.5 px-3 text-right text-sm text-[#7B1E3D]">
-                        ₹{(activeInvoiceDetail.total_paise / 100).toFixed(2)}
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        ₹{((activeInvoiceDetail.commission_paise || 0) / 100).toFixed(2)}
                       </td>
                     </tr>
                     <tr>
-                      <td colSpan={2} className="py-2 px-3 text-emerald-700 font-semibold">
-                        Allocated / Received Payments
+                      <td colSpan={2} className="py-2.5 px-3 text-right uppercase text-[10px]">
+                        Applicable GST (18%)
                       </td>
-                      <td className="py-2 px-3 text-right text-emerald-700 font-semibold">
-                        - ₹{(activeInvoiceDetail.paid_paise / 100).toFixed(2)}
-                      </td>
-                    </tr>
-                    <tr className="bg-slate-50 font-black text-slate-900 border-t border-slate-200">
-                      <td colSpan={2} className="py-2.5 px-3">
-                        Closing Balance Due
-                      </td>
-                      <td className="py-2.5 px-3 text-right text-sm">
-                        ₹{(activeInvoiceDetail.balance_paise / 100).toFixed(2)}
+                      <td className="py-2.5 px-3 text-right font-mono text-slate-600">
+                        ₹{((activeInvoiceDetail.tax_paise || 0) / 100).toFixed(2)}
                       </td>
                     </tr>
-                  </tbody>
+                    <tr className="text-sm bg-slate-100">
+                      <td colSpan={2} className="py-2.5 px-3 text-right uppercase text-xs font-black">
+                        Net Invoiced Total
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-black text-[#7B1E3D]">
+                        ₹{((activeInvoiceDetail.total_paise || 0) / 100).toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
 
-              {/* Bank Remittance Instructions */}
-              <div className="bg-orange-50/60 border border-orange-200 rounded-xl p-4 text-xs space-y-2">
-                <div className="font-bold text-orange-950 flex items-center gap-1.5">
-                  <Building2 className="w-4 h-4 text-orange-700" />
-                  Bank Remittance Payment Details
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-700 pt-1">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Beneficiary</span>
-                    <strong className="text-slate-900">
-                      {activeInvoiceDetail.remittance_instructions?.beneficiary_name}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Bank Name</span>
-                    <strong className="text-slate-900">
-                      {activeInvoiceDetail.remittance_instructions?.bank_name}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">Account Number</span>
-                    <strong className="font-mono text-slate-900">
-                      {activeInvoiceDetail.remittance_instructions?.account_number}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold">IFSC Code</span>
-                    <strong className="font-mono text-slate-900">
-                      {activeInvoiceDetail.remittance_instructions?.ifsc_code}
-                    </strong>
-                  </div>
-                </div>
-                <p className="text-[11px] text-orange-800 pt-1 border-t border-orange-200/60">
-                  Please specify your invoice number{" "}
-                  <strong>{activeInvoiceDetail.invoice_number}</strong> in the transfer remarks/reference.
-                </p>
-              </div>
-
-              {/* Collections History */}
+              {/* Collections Applied */}
               {activeInvoiceDetail.collections && activeInvoiceDetail.collections.length > 0 && (
-                <div className="space-y-2">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                    Recorded Payment Remittances
-                  </span>
-                  <div className="space-y-1.5">
-                    {activeInvoiceDetail.collections.map((c) => (
-                      <div
-                        key={c.id}
-                        className="flex items-center justify-between text-xs p-2.5 rounded-lg bg-slate-50 border border-slate-200"
-                      >
-                        <div>
-                          <span className="font-mono font-bold text-slate-900">{c.payment_ref}</span>
-                          <span className="text-slate-400 ml-2">({c.payment_method})</span>
-                          {c.notes && <div className="text-[10px] text-slate-500">{c.notes}</div>}
-                        </div>
-                        <div className="text-right font-bold text-emerald-700">
-                          ₹{(c.amount_paise / 100).toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
+                <div className="space-y-2 pt-2">
+                  <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Remittance Payments Applied
+                  </h4>
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                        <tr>
+                          <th className="py-2 px-3">Date</th>
+                          <th className="py-2 px-3">Method</th>
+                          <th className="py-2 px-3">Bank Reference / UTR</th>
+                          <th className="py-2 px-3 text-right">Amount (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {activeInvoiceDetail.collections.map((c) => (
+                          <tr key={c.id}>
+                            <td className="py-2 px-3 text-slate-600">
+                              {new Date(c.collected_at).toLocaleDateString()}
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-800">{c.payment_method}</td>
+                            <td className="py-2 px-3 font-mono font-bold text-slate-900">{c.payment_ref}</td>
+                            <td className="py-2 px-3 text-right font-bold text-emerald-700">
+                              ₹{((c.amount_paise || 0) / 100).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
-
-              {/* Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-slate-200 print:hidden">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsDetailModalOpen(false)}
-                  className="text-xs"
-                >
-                  Close
-                </Button>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => window.print()}
-                    className="gap-1.5 text-xs bg-[#7B1E3D] hover:bg-[#631831] text-white"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    Print / Save PDF
-                  </Button>
-                </div>
-              </div>
             </div>
-          )}
+          ) : null}
+
+          <DialogFooter className="pt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDetailModalOpen(false)}
+            >
+              Close Statement
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Remittance Recording Dialog */}
-      <Dialog open={!!remitModalInvoice} onOpenChange={(open) => !open && setRemitModalInvoice(null)}>
+      {/* ===================================================================== */}
+      {/* MODAL: RECORD REMITTANCE PAYMENT                                      */}
+      {/* ===================================================================== */}
+      <Dialog
+        open={!!remitModalInvoice}
+        onOpenChange={(open) => !open && setRemitModalInvoice(null)}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-slate-900">
-              Submit Bank Remittance Reference
+              Submit Payment Remittance
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Record bank transfer details for invoice {remitModalInvoice?.invoice_number}.
+              Log bank transfer reference for Invoice {remitModalInvoice?.invoice_number}
             </DialogDescription>
           </DialogHeader>
 
@@ -793,10 +1781,10 @@ export default function TheatreInvoicesPage() {
                 </label>
                 <Input
                   required
-                  placeholder="e.g. HDFC000123998811 or UTR123456"
+                  placeholder="e.g. UTR1234567890 or NEFT REF"
                   value={remitForm.payment_ref}
                   onChange={(e) => setRemitForm({ ...remitForm, payment_ref: e.target.value })}
-                  className="h-9 text-xs"
+                  className="h-9 text-xs font-mono"
                 />
               </div>
 
@@ -865,7 +1853,9 @@ export default function TheatreInvoicesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dispute Dialog */}
+      {/* ===================================================================== */}
+      {/* MODAL: RAISE DISPUTE                                                 */}
+      {/* ===================================================================== */}
       <Dialog
         open={!!disputeModalInvoice}
         onOpenChange={(open) => !open && setDisputeModalInvoice(null)}
