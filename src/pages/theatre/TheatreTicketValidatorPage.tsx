@@ -23,12 +23,22 @@ import {
   Loader2,
   ShieldAlert,
   Ticket,
+  WifiOff,
+  ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Html5Qrcode } from "html5-qrcode";
+import {
+  parseSignedTicketCode,
+  savePendingAdmission,
+  getPendingAdmissions,
+  removePendingAdmission,
+  PendingAdmission,
+} from "@/utils/offlinePassStorage";
 
 export default function TheatreTicketValidatorPage() {
   const [venues, setVenues] = useState<TheatreVenueItem[]>([]);
@@ -39,6 +49,8 @@ export default function TheatreTicketValidatorPage() {
   const [result, setResult] = useState<TicketValidationResult | null>(null);
   const [recentAdmissions, setRecentAdmissions] = useState<TicketAdmissionItem[]>([]);
   const [loadingAdmissions, setLoadingAdmissions] = useState<boolean>(false);
+  const [pendingQueue, setPendingQueue] = useState<PendingAdmission[]>([]);
+  const [syncingOffline, setSyncingOffline] = useState<boolean>(false);
 
   // Camera scanner state
   const [cameraActive, setCameraActive] = useState<boolean>(false);
@@ -84,7 +96,41 @@ export default function TheatreTicketValidatorPage() {
   // Focus input on load
   useEffect(() => {
     inputRef.current?.focus();
+    setPendingQueue(getPendingAdmissions());
+
+    const handleOnline = () => {
+      syncOfflineQueue();
+    };
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
   }, []);
+
+  const syncOfflineQueue = async () => {
+    const queue = getPendingAdmissions();
+    if (queue.length === 0) return;
+    setSyncingOffline(true);
+    let synced = 0;
+    for (const item of queue) {
+      try {
+        await validateTheatreTicket({
+          code: item.code,
+          venue_id: item.venue_id,
+          gate_device: item.gate_device,
+          admit_now: true,
+        });
+        removePendingAdmission(item.id);
+        synced++;
+      } catch (err) {
+        console.warn("Failed to sync offline item", item.id, err);
+      }
+    }
+    setPendingQueue(getPendingAdmissions());
+    setSyncingOffline(false);
+    if (synced > 0) {
+      toast.success(`Synced ${synced} offline admission${synced > 1 ? "s" : ""} to cloud!`);
+      fetchAdmissions();
+    }
+  };
 
   // Cleanup camera scanner on unmount
   useEffect(() => {
@@ -182,10 +228,40 @@ export default function TheatreTicketValidatorPage() {
         fetchAdmissions();
       } else if (res.status === "ALREADY_USED") {
         toast.error("DUPLICATE SCAN: Ticket has already been admitted!");
+      } else if (res.status === "TAMPERED_TICKET") {
+        toast.error("FORGED TICKET: Cryptographic signature mismatch!");
       } else {
         toast.error(res.message);
       }
     } catch (err: any) {
+      // Offline fallback: If offline or network dropped, parse signed ticket
+      const parsed = parseSignedTicketCode(ticketCode);
+      if (parsed.isSigned && (!navigator.onLine || !err.response)) {
+        savePendingAdmission({
+          code: ticketCode,
+          venue_id: selectedVenueId !== "ALL" ? selectedVenueId : undefined,
+          gate_device: gateDevice,
+          ref_code: parsed.refCode,
+        });
+        setPendingQueue(getPendingAdmissions());
+        setResult({
+          valid: true,
+          status: "OFFLINE_VALID",
+          message: `OFFLINE ADMISSION GRANTED: Signed ticket verified locally (${parsed.refCode} • Seats: ${parsed.seatCodes?.join(", ") || "General"}). Queued to sync.`,
+          booking: {
+            ref_code: parsed.refCode,
+            seats: parsed.seatCodes?.join(", "),
+            quantity: parsed.seatCodes?.length || 1,
+            movie_title: "Screening Admission",
+            venue_name: "Local Gate Check",
+            screen_name: "Auditorium",
+          } as any,
+          cryptographically_verified: true,
+        } as any);
+        toast.warning("OFFLINE SCAN: Ticket verified locally and saved to sync queue");
+        return;
+      }
+
       const errMsg = err.response?.data?.message || err.message || "Failed to validate ticket";
       toast.error(errMsg);
       setResult({
@@ -211,6 +287,26 @@ export default function TheatreTicketValidatorPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      {pendingQueue.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-amber-900 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <WifiOff className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>{pendingQueue.length} Offline Admission{pendingQueue.length > 1 ? "s" : ""}</strong> recorded locally during network dropout.
+            </span>
+          </div>
+          <Button
+            size="sm"
+            onClick={syncOfflineQueue}
+            disabled={syncingOffline}
+            className="bg-amber-600 hover:bg-amber-700 text-white text-xs h-8 px-4 rounded-xl flex items-center gap-1.5 shadow-2xs shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncingOffline ? "animate-spin" : ""}`} />
+            {syncingOffline ? "Syncing to Cloud..." : "Sync to Cloud Now"}
+          </Button>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
@@ -408,6 +504,12 @@ export default function TheatreTicketValidatorPage() {
                       <div className="font-mono font-bold text-sm text-[#7B1E3D]">
                         {result.booking.ref_code}
                       </div>
+                      {(result as any).cryptographically_verified && (
+                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-[10px] border border-emerald-300">
+                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                          Offline Signed QR
+                        </span>
+                      )}
                     </div>
                   </div>
 

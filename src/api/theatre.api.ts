@@ -455,11 +455,14 @@ export interface TicketValidationResult {
     | "NOT_FOUND"
     | "WRONG_VENUE"
     | "UNAUTHORIZED_VENUE"
-    | "INVALID_INPUT";
+    | "INVALID_INPUT"
+    | "TAMPERED_TICKET"
+    | "OFFLINE_VALID";
   message: string;
   admitted_at?: string;
   admitted_by?: string;
   gate_device?: string;
+  cryptographically_verified?: boolean;
   booking?: {
     id?: string;
     ref_code?: string;

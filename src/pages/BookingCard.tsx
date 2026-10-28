@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
+import { saveOfflinePass } from "@/utils/offlinePassStorage";
 import { MapPin, Users, Ticket, Loader2, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/currencyFormatter";
@@ -55,6 +56,12 @@ export function BookingCard({
       detectAspectRatio(posterImgRef.current);
     }
   }, [poster]);
+
+  useEffect(() => {
+    if (booking && (currentStatus === "CONFIRMED" || b.status === "CONFIRMED")) {
+      saveOfflinePass(booking);
+    }
+  }, [booking, currentStatus]);
   const totalRupees =
     typeof b.paid_paise === "number"
       ? b.paid_paise / 100

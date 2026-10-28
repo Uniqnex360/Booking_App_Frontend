@@ -9,8 +9,9 @@ import { getBookingById, cancelBooking } from '@/api/booking.api';
 import type { BookingDetail } from '@/types/booking.types';
 import { formatRupees } from '@/utils/currencyFormatter';
 import { toast } from 'sonner';
-import { ArrowLeft, Clock, MapPin, Ticket, AlertCircle, Calendar } from 'lucide-react';
+import { ArrowLeft, Clock, MapPin, Ticket, AlertCircle, Calendar, WifiOff, ShieldCheck } from 'lucide-react';
 import { LoadingPage } from './LoadingPage';
+import { saveOfflinePass, getOfflinePass } from '@/utils/offlinePassStorage';
 
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +19,7 @@ export default function BookingDetailPage() {
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [isOfflinePass, setIsOfflinePass] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<"portrait" | "square" | "landscape">("portrait");
   const eventImgRef = useRef<HTMLImageElement>(null);
 
@@ -45,8 +47,16 @@ export default function BookingDetailPage() {
       try {
         const data = await getBookingById(id);
         setBooking(data);
+        saveOfflinePass(data);
       } catch {
-        toast.error('Could not load booking');
+        const offlineData = getOfflinePass(id);
+        if (offlineData) {
+          setBooking(offlineData);
+          setIsOfflinePass(true);
+          toast.info("Offline Pass Loaded: Saved copy ready for gate admission");
+        } else {
+          toast.error('Could not load booking');
+        }
       } finally {
         setLoading(false);
       }
@@ -125,6 +135,13 @@ export default function BookingDetailPage() {
             </div>
             <Ticket className="h-8 w-8 text-white/80" />
           </div>
+
+          {isOfflinePass && (
+            <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-2.5 flex items-center gap-2 text-amber-800 text-xs font-medium">
+              <WifiOff className="h-4 w-4 shrink-0 text-amber-600" />
+              <span>Offline Gate Pass: Cached on this device. Present this QR code directly at the cinema entrance.</span>
+            </div>
+          )}
 
           <div className="p-6">
             {/* ── MOVIE ── */}
