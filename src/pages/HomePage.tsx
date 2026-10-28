@@ -25,6 +25,7 @@ interface MovieCard {
   certificate: string;
   poster_url: string | null;
   genre?: string;
+  is_trending?: boolean;
 }
 
 interface EventCard {
@@ -339,6 +340,12 @@ export default function HomePage() {
                   className="snap-start shrink-0 w-[140px] sm:w-[180px] md:w-[220px] group"
                 >
                   <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-slate-200 shadow-sm">
+                    {m.is_trending && (
+                      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-[#7B1E3D] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded shadow-md">
+                        <span>🔥</span>
+                        <span>Trending</span>
+                      </div>
+                    )}
                     {m.poster_url ? (
                       <img
                         src={m.poster_url}

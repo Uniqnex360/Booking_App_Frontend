@@ -40,6 +40,9 @@ interface ShowtimeSlot {
   starts_at: string;
   language: string;
   format: string;
+  availability_status?: "AVAILABLE" | "FAST_FILLING" | "ALMOST_FULL" | "SOLD_OUT";
+  available_seats?: number;
+  total_seats?: number;
 }
 
 interface VenueGroup {
@@ -1439,7 +1442,25 @@ export default function BuyTicketsPage() {
                   </div>
                 </div>
               ) : (
-                venuesForDate.map((venue) => {
+                <>
+                  <div className="bg-gray-50/80 border-b border-gray-100 px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between text-[10px] sm:text-[11px] text-gray-500 font-medium">
+                    <div className="flex items-center gap-3 sm:gap-5">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#34A853]" />
+                        <span>Available</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span>Fast Filling</span>
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-rose-500" />
+                        <span>Almost Full</span>
+                      </span>
+                    </div>
+                    <span className="hidden sm:inline text-gray-400">Live Seat Availability</span>
+                  </div>
+                  {venuesForDate.map((venue) => {
                   const isFav = Boolean(favorites[venue.venue_id]);
 
                   return (
@@ -1514,6 +1535,22 @@ export default function BuyTicketsPage() {
                           const isCouple =
                             slot.screen_name.toLowerCase().includes("couple") ||
                             slot.format.toLowerCase().includes("couple");
+                          const availStatus = slot.availability_status || "AVAILABLE";
+                          const isSoldOut = availStatus === "SOLD_OUT";
+                          const isAlmostFull = availStatus === "ALMOST_FULL";
+                          const isFastFilling = availStatus === "FAST_FILLING";
+                          const isDisabled = isPast || isSoldOut;
+
+                          let buttonStyle = "border border-[#34A853] border-l-[3px] sm:border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs";
+                          if (isDisabled) {
+                            buttonStyle = "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50";
+                          } else if (isCouple) {
+                            buttonStyle = "border border-[#f472b6] border-l-[3px] sm:border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs";
+                          } else if (isAlmostFull) {
+                            buttonStyle = "border border-rose-300 border-l-[3px] sm:border-l-[4px] border-l-rose-500 bg-rose-50/40 hover:bg-rose-50 shadow-2xs";
+                          } else if (isFastFilling) {
+                            buttonStyle = "border border-amber-300 border-l-[3px] sm:border-l-[4px] border-l-amber-500 bg-amber-50/40 hover:bg-amber-50 shadow-2xs";
+                          }
 
                           const fallbackPricing = isCouple
                             ? [
@@ -1529,8 +1566,8 @@ export default function BuyTicketsPage() {
                                   {
                                     price: "₹ 650.00",
                                     tier: "LUXE PRIME",
-                                    status: "Filling Fast",
-                                    statusColor: "text-[#FFB000]",
+                                    status: isFastFilling ? "Filling Fast" : "Available",
+                                    statusColor: isFastFilling ? "text-amber-500" : "text-[#34A853]",
                                   },
                                   {
                                     price: "₹ 500.00",
@@ -1543,8 +1580,8 @@ export default function BuyTicketsPage() {
                                   {
                                     price: "₹ 390.00",
                                     tier: "RECLINER",
-                                    status: "Available",
-                                    statusColor: "text-[#34A853]",
+                                    status: isAlmostFull ? "Almost Full" : isFastFilling ? "Filling Fast" : "Available",
+                                    statusColor: isAlmostFull ? "text-rose-500" : isFastFilling ? "text-amber-500" : "text-[#34A853]",
                                   },
                                   {
                                     price: "₹ 290.00",
@@ -1572,12 +1609,19 @@ export default function BuyTicketsPage() {
                             >
                               {!isPast && (
                                 <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-                                  {isCouple && (
-                                    <div className="text-[10px] font-bold text-[#be185d] text-center mb-1 pb-1 border-b border-pink-100">
-                                      💑 Screen 4 (Couple Recliners) • ₹900 /
-                                      pair
-                                    </div>
-                                  )}
+                                  <div className="text-[10px] font-bold text-center mb-1 pb-1 border-b border-gray-100 flex items-center justify-center gap-1.5">
+                                    {isCouple ? (
+                                      <span className="text-[#be185d]">💑 Screen 4 (Couple Recliners) • ₹900 / pair</span>
+                                    ) : isAlmostFull ? (
+                                      <span className="text-rose-600">🔴 Almost Full ({slot.available_seats || 0} seats left)</span>
+                                    ) : isFastFilling ? (
+                                      <span className="text-amber-600">🟠 Fast Filling</span>
+                                    ) : isSoldOut ? (
+                                      <span className="text-gray-400">⚪ Housefull</span>
+                                    ) : (
+                                      <span className="text-emerald-600">🟢 Available</span>
+                                    )}
+                                  </div>
                                   <div className="flex items-center justify-around gap-4 text-center">
                                     {pricingTiers.map((tierItem, idx) => (
                                       <div
@@ -1604,25 +1648,23 @@ export default function BuyTicketsPage() {
 
                               <button
                                 onClick={() => {
-                                  if (!isPast) handleShowtimeClick(slot.id);
+                                  if (!isDisabled) handleShowtimeClick(slot.id);
                                 }}
-                                disabled={isPast}
-                                className={`relative rounded px-2.5 sm:px-3 py-1 min-w-[78px] sm:min-w-[102px] h-[34px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${
-                                  isPast
-                                    ? "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50"
-                                    : isCouple
-                                      ? "border border-[#f472b6] border-l-[3px] sm:border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs"
-                                      : "border border-[#34A853] border-l-[3px] sm:border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs"
-                                }`}
+                                disabled={isDisabled}
+                                className={`relative rounded px-2.5 sm:px-3 py-1 min-w-[78px] sm:min-w-[102px] h-[34px] sm:h-[40px] text-center transition cursor-pointer flex flex-col items-center justify-center leading-none ${buttonStyle}`}
                               >
                                 <div className="flex items-center justify-center gap-1 leading-none">
                                   <span
                                     className={`text-[11px] sm:text-[13px] font-bold leading-none ${
-                                      isPast
+                                      isDisabled
                                         ? "text-gray-300"
                                         : isCouple
                                           ? "text-[#831843]"
-                                          : "text-gray-800"
+                                          : isAlmostFull
+                                            ? "text-rose-900"
+                                            : isFastFilling
+                                              ? "text-amber-950"
+                                              : "text-gray-800"
                                     }`}
                                   >
                                     {istTimeLabel(slot.starts_at)}
@@ -1631,7 +1673,11 @@ export default function BuyTicketsPage() {
                                     className={`text-[7px] sm:text-[8px] font-semibold border px-0.5 sm:px-1 rounded-xs leading-none font-sans ${
                                       isCouple
                                         ? "border-[#f472b6] text-[#be185d]"
-                                        : "border-gray-400 text-gray-600"
+                                        : isAlmostFull
+                                          ? "border-rose-300 text-rose-700"
+                                          : isFastFilling
+                                            ? "border-amber-300 text-amber-700"
+                                            : "border-gray-400 text-gray-600"
                                     }`}
                                   >
                                     {slot.language
@@ -1643,12 +1689,28 @@ export default function BuyTicketsPage() {
                                 </div>
                                 <div
                                   className={`text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider leading-none mt-0.5 sm:mt-1 flex items-center justify-center gap-0.5 ${
-                                    isCouple
-                                      ? "text-[#be185d]"
-                                      : "text-gray-400"
+                                    isDisabled
+                                      ? "text-gray-300"
+                                      : isCouple
+                                        ? "text-[#be185d]"
+                                        : isAlmostFull
+                                          ? "text-rose-600 font-extrabold"
+                                          : isFastFilling
+                                            ? "text-amber-600 font-extrabold"
+                                            : "text-gray-400"
                                   }`}
                                 >
-                                  {isCouple ? "💑 COUPLE" : slot.format || "2D"}
+                                  {isSoldOut
+                                    ? "Housefull"
+                                    : isAlmostFull
+                                      ? slot.available_seats !== undefined
+                                        ? `${slot.available_seats} Left`
+                                        : "Almost Full"
+                                      : isFastFilling
+                                        ? "Fast Filling"
+                                        : isCouple
+                                          ? "💑 COUPLE"
+                                          : slot.format || "2D"}
                                 </div>
                               </button>
                             </div>
@@ -1657,8 +1719,9 @@ export default function BuyTicketsPage() {
                       </div>
                     </div>
                   );
-                })
-              )}
+                })}
+              </>
+            )}
             </div>
           </div>
 

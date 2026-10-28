@@ -32,6 +32,8 @@ interface MovieItem {
   rating?: number;
   external_rating?: number;
   votes_count?: number;
+  is_trending?: boolean;
+  booking_velocity_score?: number;
 }
 
 const splitLangs = (s?: string) =>
@@ -73,6 +75,7 @@ export default function MoviesPage() {
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedCertificates, setSelectedCertificates] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"popularity" | "rating" | "latest">("popularity");
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -120,7 +123,7 @@ export default function MoviesPage() {
         setLoading(true);
         // Fetch movies and dynamic database facets in parallel
         const [moviesData, filtersRes] = await Promise.allSettled([
-          unwrap<MovieItem[]>(api.get(`/movies`, { params: { city, limit: 100 } })),
+          unwrap<MovieItem[]>(api.get(`/movies`, { params: { city, limit: 100, sort_by: sortBy } })),
           api.get(`/movies/filters`, { params: { city } }),
         ]);
 
@@ -140,7 +143,7 @@ export default function MoviesPage() {
       }
     };
     fetchMoviesAndFilters();
-  }, [city]);
+  }, [city, sortBy]);
 
   // Matcher helpers for each filter dimension
   const matchesSearch = useCallback((m: MovieItem) => {
@@ -655,6 +658,46 @@ export default function MoviesPage() {
                 </button>
               </div>
 
+              {/* Discovery Sort By (BookMyShow Style) */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
+                  Sort:
+                </span>
+                <button
+                  onClick={() => setSortBy("popularity")}
+                  className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
+                    sortBy === "popularity"
+                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <span>🔥</span>
+                  <span>Popular in {city}</span>
+                </button>
+                <button
+                  onClick={() => setSortBy("rating")}
+                  className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
+                    sortBy === "rating"
+                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <span>⭐</span>
+                  <span>Top Rated</span>
+                </button>
+                <button
+                  onClick={() => setSortBy("latest")}
+                  className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
+                    sortBy === "latest"
+                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
+                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <span>🕒</span>
+                  <span>Release Date</span>
+                </button>
+              </div>
+
               {/* Languages Bar */}
               {dynamicLanguages.length > 0 && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -806,6 +849,12 @@ export default function MoviesPage() {
                   >
                     {/* Poster Card */}
                     <div className="aspect-[2/3] w-full bg-gray-200 rounded-lg overflow-hidden relative shadow-sm group-hover:shadow-md transition duration-200">
+                      {movie.is_trending && (
+                        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-[#7B1E3D] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded shadow-md backdrop-blur-xs">
+                          <span>🔥</span>
+                          <span>Trending</span>
+                        </div>
+                      )}
                       {movie.poster_url ? (
                         <img
                           src={movie.poster_url}
