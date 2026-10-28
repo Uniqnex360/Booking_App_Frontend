@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -18,7 +18,26 @@ export default function BookingDetailPage() {
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
-  const [isEventPosterLandscape, setIsEventPosterLandscape] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<"portrait" | "square" | "landscape">("portrait");
+  const eventImgRef = useRef<HTMLImageElement>(null);
+
+  const detectAspectRatio = (img: HTMLImageElement) => {
+    if (!img.naturalWidth || !img.naturalHeight) return;
+    const ratio = img.naturalWidth / img.naturalHeight;
+    if (ratio >= 1.25) {
+      setAspectRatio("landscape");
+    } else if (ratio >= 0.82) {
+      setAspectRatio("square");
+    } else {
+      setAspectRatio("portrait");
+    }
+  };
+
+  useEffect(() => {
+    if (eventImgRef.current && eventImgRef.current.complete) {
+      detectAspectRatio(eventImgRef.current);
+    }
+  }, [booking?.poster_url]);
 
   useEffect(() => {
     if (!id) return;
@@ -168,12 +187,20 @@ export default function BookingDetailPage() {
                 {booking.poster_url && (
                   <div
                     className={`${
-                      isEventPosterLandscape ? "w-44 sm:w-56" : "w-32"
+                      aspectRatio === "landscape"
+                        ? "w-44 sm:w-56"
+                        : aspectRatio === "square"
+                          ? "w-36 sm:w-44"
+                          : "w-28 sm:w-32"
                     } shrink-0 transition-all duration-150`}
                   >
                     <div
                       className={`relative ${
-                        isEventPosterLandscape ? "aspect-[16/10]" : "aspect-[2/3]"
+                        aspectRatio === "landscape"
+                          ? "aspect-[16/10]"
+                          : aspectRatio === "square"
+                            ? "aspect-square"
+                            : "aspect-[2/3]"
                       } rounded-xl overflow-hidden bg-slate-900 shadow-sm flex items-center justify-center`}
                     >
                       <img
@@ -183,17 +210,11 @@ export default function BookingDetailPage() {
                         className="absolute inset-0 w-full h-full object-cover blur-sm opacity-40 scale-110"
                       />
                       <img
+                        ref={eventImgRef}
                         src={booking.poster_url}
                         alt={booking.title}
-                        onLoad={(e) => {
-                          const img = e.currentTarget;
-                          if (img.naturalWidth > img.naturalHeight * 1.1) {
-                            setIsEventPosterLandscape(true);
-                          }
-                        }}
-                        className={`relative z-10 w-full h-full ${
-                          isEventPosterLandscape ? "object-contain" : "object-cover"
-                        }`}
+                        onLoad={(e) => detectAspectRatio(e.currentTarget)}
+                        className="relative z-10 w-full h-full object-contain"
                       />
                     </div>
                   </div>

@@ -892,17 +892,17 @@ export default function BuyTicketsPage() {
         <>
           <div className="sticky top-[72px] sm:top-[88px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs lg:h-[74px]">
             <div className="max-w-[1400px] mx-auto px-3 sm:px-4 flex flex-col lg:flex-row lg:items-center lg:justify-between h-full">
-              <div className="flex items-center lg:h-full lg:border-r border-gray-200 lg:pr-10 lg:mr-8 min-w-0 w-full lg:flex-1 py-1 sm:py-1.5 gap-1.5 sm:gap-2">
+              <div className="flex items-stretch h-[56px] sm:h-[64px] lg:h-full lg:border-r border-gray-200 lg:pr-8 lg:mr-6 min-w-0 w-full lg:flex-1 gap-1.5 sm:gap-2">
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="h-[44px] sm:h-[52px] px-2 sm:px-2.5 flex items-center justify-center rounded-lg text-gray-700 hover:text-[#7B1E3D] hover:bg-gray-100 active:scale-95 transition cursor-pointer shrink-0 border border-gray-200 bg-white shadow-2xs"
+                  className="self-center h-[38px] sm:h-[46px] px-2 sm:px-2.5 flex items-center justify-center rounded-lg text-gray-700 hover:text-[#7B1E3D] hover:bg-gray-100 active:scale-95 transition cursor-pointer shrink-0 border border-gray-200 bg-white shadow-2xs"
                   title="Back to Movie Details"
                   aria-label="Back to Movie Details"
                 >
                   <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
-                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex items-stretch h-full gap-1 sm:gap-1.5 min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                   {dateKeys.map((dk) => {
                     const { weekday, day, month } = dateTabParts(dk);
                     const isActive = activeDate === dk;
@@ -910,7 +910,7 @@ export default function BuyTicketsPage() {
                       <button
                         key={dk}
                         onClick={() => setSelectedDate(dk)}
-                        className={`w-[44px] sm:w-[58px] h-[44px] sm:h-[56px] py-0.5 sm:py-1 flex flex-col items-center justify-center rounded-md transition cursor-pointer shrink-0 ${
+                        className={`w-[48px] sm:w-[62px] h-full py-1 sm:py-2 flex flex-col items-center justify-center rounded-none transition cursor-pointer shrink-0 ${
                           isActive
                             ? "bg-[#7B1E3D] text-white shadow-xs"
                             : "text-gray-700 hover:bg-gray-100"
@@ -918,13 +918,13 @@ export default function BuyTicketsPage() {
                       >
                         <span
                           className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider ${
-                            isActive ? "text-white" : "text-gray-500"
+                            isActive ? "text-white/90" : "text-gray-500"
                           }`}
                         >
                           {weekday}
                         </span>
                         <span
-                          className={`text-xs sm:text-base font-bold leading-none my-0.5 ${
+                          className={`text-xs sm:text-base font-bold leading-none my-0.5 sm:my-1 ${
                             isActive ? "text-white" : "text-gray-900"
                           }`}
                         >
@@ -932,7 +932,7 @@ export default function BuyTicketsPage() {
                         </span>
                         <span
                           className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${
-                            isActive ? "text-white" : "text-gray-500"
+                            isActive ? "text-white/90" : "text-gray-500"
                           }`}
                         >
                           {month}

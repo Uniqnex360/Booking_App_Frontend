@@ -239,6 +239,35 @@ export const CommissionInvoicesTab: React.FC = () => {
     setVenueFilter('');
   };
 
+  const formatDateOnly = (dateStr?: string | null): string => {
+    if (!dateStr) return '';
+    try {
+      const datePart = dateStr.split('T')[0];
+      const parts = datePart.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        return d.toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+      }
+      const d = new Date(dateStr);
+      return isNaN(d.getTime())
+        ? dateStr
+        : d.toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          });
+    } catch {
+      return dateStr;
+    }
+  };
+
   // Calculate summary metrics
   const totalInvoicedPaise = invoices.reduce((acc, i) => acc + (i.total_paise || 0), 0);
   const totalCollectedPaise = invoices.reduce((acc, i) => acc + (i.paid_paise || 0), 0);
@@ -578,9 +607,19 @@ export const CommissionInvoicesTab: React.FC = () => {
                       <div className="font-semibold text-gray-900">{inv.venue_name || 'All-Chain'}</div>
                       <div className="text-[11px] text-gray-400 font-mono truncate max-w-[150px]">{inv.venue_id}</div>
                     </td>
-                    <td className="py-3.5 px-4 text-xs text-gray-600">
-                      <div>{inv.period_start} <span className="text-gray-400">to</span></div>
-                      <div>{inv.period_end}</div>
+                    <td className="py-3.5 px-4 text-xs">
+                      {formatDateOnly(inv.period_start) === formatDateOnly(inv.period_end) ? (
+                        <div>
+                          <span className="font-semibold text-gray-900">{formatDateOnly(inv.period_start)}</span>
+                          <span className="block text-[10px] text-gray-400">Single-day cycle</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="font-semibold text-gray-900">{formatDateOnly(inv.period_start)}</span>
+                          <span className="text-gray-400 mx-1">to</span>
+                          <span className="font-semibold text-gray-900">{formatDateOnly(inv.period_end)}</span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       <span className="px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-700 font-mono font-semibold">
@@ -1215,8 +1254,10 @@ export const CommissionInvoicesTab: React.FC = () => {
                           </td>
 
                           <td className="py-3 px-4">
-                            <div className="text-gray-900">
-                              {inv.period_start} &rarr; {inv.period_end}
+                            <div className="text-gray-900 font-medium">
+                              {formatDateOnly(inv.period_start) === formatDateOnly(inv.period_end)
+                                ? formatDateOnly(inv.period_start)
+                                : `${formatDateOnly(inv.period_start)} → ${formatDateOnly(inv.period_end)}`}
                             </div>
                             <div className="text-[11px] text-gray-400 mt-0.5">
                               {inv.booking_count} bookings ({inv.ticket_count} tickets)
@@ -1224,7 +1265,7 @@ export const CommissionInvoicesTab: React.FC = () => {
                           </td>
 
                           <td className="py-3 px-4">
-                            <div className="font-mono text-gray-900">{inv.due_date}</div>
+                            <div className="font-mono text-gray-900">{formatDateOnly(inv.due_date)}</div>
                             {urgency && (
                               <div
                                 className={`text-[10px] font-semibold mt-0.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${

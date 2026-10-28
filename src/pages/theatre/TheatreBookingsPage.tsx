@@ -394,128 +394,136 @@ export default function TheatreBookingsPage() {
 
       {/* Filter toolbar (Unified Filter, Location, Movies, By Date) */}
       <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-        {/* Row 1: Search & Dropdowns */}
-        <div className="flex flex-col lg:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search bookings by reference, movie, customer phone, or email..."
-              className="pl-10 h-10 rounded-xl bg-slate-50 border-slate-200 focus:bg-white text-xs font-medium"
+        {/* Row 1: Search Input */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search bookings by reference, movie, customer phone, or email..."
+            className="pl-9 pr-9 h-10 rounded-xl bg-slate-50 border-slate-200 focus:bg-white text-xs font-medium"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              title="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Row 2: Filter Selectors */}
+        <div className="flex flex-wrap items-center gap-2.5 pt-1">
+          {/* Movie Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Movie:</span>
+            <select
+              className="h-9 sm:h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition truncate max-w-[180px]"
+              value={selectedMovie}
+              onChange={(e) => setSelectedMovie(e.target.value)}
+            >
+              <option value="ALL">All Movies ({availableMovies.length})</option>
+              {availableMovies.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* State Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">State:</span>
+            <select
+              value={selectedState}
+              onChange={(e) => handleStateChange(e.target.value)}
+              className="h-9 sm:h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+            >
+              <option value="ALL">All States</option>
+              {INDIAN_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* City Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">City:</span>
+            <select
+              value={selectedCity}
+              onChange={(e) => handleCityChange(e.target.value)}
+              className="h-9 sm:h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+            >
+              <option value="ALL">All Cities {selectedState !== "ALL" ? `in ${selectedState}` : ""}</option>
+              {availableCities.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Venue Filter with Search */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Venue:</span>
+            <SearchableTheatreSelect
+              value={selectedVenue}
+              onChange={handleVenueChange}
+              theatres={availableVenues}
+              allOptionLabel={`All Venues (${availableVenues.length})`}
+              allOptionValue="ALL"
+              buttonClassName="bg-slate-50 hover:bg-white focus:bg-white text-slate-800 border-slate-200 h-9 sm:h-10"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Movie Filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-500 hidden xl:inline">Movie:</span>
-              <select
-                className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition truncate max-w-[180px]"
-                value={selectedMovie}
-                onChange={(e) => setSelectedMovie(e.target.value)}
-              >
-                <option value="ALL">All Movies ({availableMovies.length})</option>
-                {availableMovies.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* State Filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-500 hidden xl:inline">State:</span>
-              <select
-                value={selectedState}
-                onChange={(e) => handleStateChange(e.target.value)}
-                className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
-              >
-                <option value="ALL">All States</option>
-                {INDIAN_STATES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* City Filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-500 hidden xl:inline">City:</span>
-              <select
-                value={selectedCity}
-                onChange={(e) => handleCityChange(e.target.value)}
-                className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
-              >
-                <option value="ALL">All Cities {selectedState !== "ALL" ? `in ${selectedState}` : ""}</option>
-                {availableCities.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Venue Filter */}
-            {/* Venue Filter with Search */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-500 hidden xl:inline">Venue:</span>
-              <SearchableTheatreSelect
-                value={selectedVenue}
-                onChange={handleVenueChange}
-                theatres={availableVenues}
-                allOptionLabel={`All Venues (${availableVenues.length})`}
-                allOptionValue="ALL"
-                buttonClassName="bg-slate-50 hover:bg-white focus:bg-white text-slate-800 border-slate-200"
-              />
-            </div>
-
-            {/* Screen Filter ("22.Location movies filter,date,screen filter in theatre admin") */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-500 hidden xl:inline">Screen:</span>
-              <select
-                className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition truncate max-w-[150px]"
-                value={selectedScreen}
-                onChange={(e) => setSelectedScreen(e.target.value)}
-              >
-                <option value="ALL">All Screens ({availableScreens.length})</option>
-                {availableScreens.map((sc) => (
-                  <option key={sc} value={sc}>
-                    {sc}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Status Filter */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-semibold text-slate-500 hidden xl:inline">Status:</span>
-              <select
-                className="h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-              >
-                <option value="ALL">All Statuses</option>
-                <option value="CONFIRMED">CONFIRMED</option>
-                <option value="CANCELLED">CANCELLED</option>
-                <option value="REFUNDED">REFUNDED</option>
-              </select>
-            </div>
-
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleResetFilters}
-                className="h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Reset
-              </Button>
-            )}
+          {/* Screen Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Screen:</span>
+            <select
+              className="h-9 sm:h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition truncate max-w-[150px]"
+              value={selectedScreen}
+              onChange={(e) => setSelectedScreen(e.target.value)}
+            >
+              <option value="ALL">All Screens ({availableScreens.length})</option>
+              {availableScreens.map((sc) => (
+                <option key={sc} value={sc}>
+                  {sc}
+                </option>
+              ))}
+            </select>
           </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden sm:inline">Status:</span>
+            <select
+              className="h-9 sm:h-10 rounded-xl border border-slate-200 px-3 bg-slate-50 hover:bg-white focus:bg-white text-xs font-semibold text-slate-800 cursor-pointer transition"
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="CONFIRMED">CONFIRMED</option>
+              <option value="CANCELLED">CANCELLED</option>
+              <option value="REFUNDED">REFUNDED</option>
+            </select>
+          </div>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-9 sm:h-10 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 gap-1 rounded-xl"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              Reset
+            </Button>
+          )}
         </div>
 
         {/* Row 2: 📅 Date Filter Toolbar */}

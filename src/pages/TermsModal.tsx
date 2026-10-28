@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Loader2, ListOrdered } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 import { normalizeTermsToBullets } from "@/lib/eventTerms";
 
 export const DEFAULT_TERMS = [
@@ -38,19 +38,11 @@ export function TermsModal({
       onClick={isLoading ? undefined : onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-[480px] max-h-[90vh] flex flex-col overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-[460px] max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-700 flex items-center justify-center font-bold">
-              <ListOrdered className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-gray-900">Terms &amp; Conditions</h3>
-              <p className="text-[11px] text-gray-500">{list.length} Bullet Points</p>
-            </div>
-          </div>
+          <h3 className="text-base font-bold text-gray-900">Terms &amp; Conditions</h3>
           <button
             type="button"
             disabled={isLoading}
@@ -62,17 +54,14 @@ export function TermsModal({
           </button>
         </div>
 
-        <div className="px-5 py-4 overflow-y-auto space-y-2">
-          {list.map((t, i) => (
-            <div key={i} className="flex items-start gap-2.5 p-2 rounded-xl bg-gray-50/70 border border-gray-100">
-              <span className="w-5 h-5 rounded-full bg-orange-100 text-orange-700 font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                {i + 1}
-              </span>
-              <p className="text-xs text-gray-700 leading-relaxed font-normal">
+        <div className="px-5 py-4 overflow-y-auto">
+          <ul className="list-disc list-outside pl-4 space-y-2 text-xs text-gray-600 leading-relaxed">
+            {list.map((t, i) => (
+              <li key={i} className="marker:text-[#7B1E3D]">
                 {t}
-              </p>
-            </div>
-          ))}
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="border-t border-gray-100 p-4 bg-white">

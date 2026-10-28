@@ -72,6 +72,29 @@ export default function TheatreInvoicesPage() {
 
   const [activeTab, setActiveTab] = useState<"invoices" | "my_account" | "statement">(initialTab);
 
+  const formatDateOnly = (dateStr?: string | null): string => {
+    if (!dateStr) return '';
+    try {
+      const datePart = dateStr.split('T')[0];
+      const parts = datePart.split('-');
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const day = parseInt(parts[2], 10);
+        const d = new Date(year, month, day);
+        return d.toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        });
+      }
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    } catch {
+      return dateStr;
+    }
+  };
+
   // Invoices & Venues state
   const [invoices, setInvoices] = useState<TheatreInvoiceItem[]>([]);
   const [venues, setVenues] = useState<TheatreVenueItem[]>([]);
@@ -878,13 +901,10 @@ export default function TheatreInvoicesPage() {
                               </div>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-600">
-                            {new Date(inv.period_start).toLocaleDateString([], { month: "short", day: "numeric" })} -{" "}
-                            {new Date(inv.period_end).toLocaleDateString([], {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
+                          <td className="py-3.5 px-4 text-slate-600 font-medium text-xs">
+                            {formatDateOnly(inv.period_start) === formatDateOnly(inv.period_end)
+                              ? formatDateOnly(inv.period_start)
+                              : `${formatDateOnly(inv.period_start)} – ${formatDateOnly(inv.period_end)}`}
                           </td>
                           <td className="py-3.5 px-4 font-bold text-slate-900">
                             {inv.tickets_count} tickets
@@ -1981,8 +2001,10 @@ export default function TheatreInvoicesPage() {
               )}
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Billing Period: {activeInvoiceDetail?.period_start ? format(parseISO(activeInvoiceDetail.period_start), "dd MMM yyyy") : ""} -{" "}
-              {activeInvoiceDetail?.period_end ? format(parseISO(activeInvoiceDetail.period_end), "dd MMM yyyy") : ""}
+              Billing Period:{" "}
+              {formatDateOnly(activeInvoiceDetail?.period_start) === formatDateOnly(activeInvoiceDetail?.period_end)
+                ? formatDateOnly(activeInvoiceDetail?.period_start)
+                : `${formatDateOnly(activeInvoiceDetail?.period_start)} – ${formatDateOnly(activeInvoiceDetail?.period_end)}`}
             </DialogDescription>
           </DialogHeader>
 

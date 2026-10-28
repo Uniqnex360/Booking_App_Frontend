@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { MapPin, Users, Ticket, Loader2, AlertCircle } from "lucide-react";
@@ -31,11 +31,30 @@ export function BookingCard({
   const [currentStatus, setCurrentStatus] = useState<string>(booking.status);
   const [cancelling, setCancelling] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isLandscape, setIsLandscape] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState<"portrait" | "square" | "landscape">("portrait");
+  const posterImgRef = useRef<HTMLImageElement>(null);
+
+  const detectAspectRatio = (img: HTMLImageElement) => {
+    if (!img.naturalWidth || !img.naturalHeight) return;
+    const ratio = img.naturalWidth / img.naturalHeight;
+    if (ratio >= 1.25) {
+      setAspectRatio("landscape");
+    } else if (ratio >= 0.82) {
+      setAspectRatio("square");
+    } else {
+      setAspectRatio("portrait");
+    }
+  };
 
   // --- adapter: support both the list shape and the confirmation DTO ---
   const b = booking as any;
   const poster = b.image_url ?? b.poster_url ?? null;
+
+  useEffect(() => {
+    if (posterImgRef.current && posterImgRef.current.complete) {
+      detectAspectRatio(posterImgRef.current);
+    }
+  }, [poster]);
   const totalRupees =
     typeof b.paid_paise === "number"
       ? b.paid_paise / 100
@@ -182,31 +201,27 @@ export function BookingCard({
       <div className="flex gap-3 sm:gap-4 p-3.5 sm:p-4 pb-4 sm:pb-5">
         <div
           className={`${
-            isLandscape
-              ? "w-[96px] sm:w-[108px] h-[68px] sm:h-[74px]"
-              : "w-[70px] sm:w-[76px] h-[102px] sm:h-[110px]"
+            aspectRatio === "landscape"
+              ? "w-[104px] sm:w-[118px] h-[70px] sm:h-[78px]"
+              : aspectRatio === "square"
+                ? "w-[84px] sm:w-[92px] h-[84px] sm:h-[92px]"
+                : "w-[70px] sm:w-[76px] h-[102px] sm:h-[110px]"
           } shrink-0 rounded-md overflow-hidden bg-slate-900 shadow-2xs relative transition-all duration-150`}
         >
           {poster ? (
-            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+            <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-slate-950">
               <img
                 src={poster}
                 alt=""
                 aria-hidden="true"
-                className="absolute inset-0 w-full h-full object-cover blur-sm opacity-40 scale-125"
+                className="absolute inset-0 w-full h-full object-cover blur-md opacity-40 scale-125"
               />
               <img
+                ref={posterImgRef}
                 src={poster}
                 alt={title}
-                onLoad={(e) => {
-                  const img = e.currentTarget;
-                  if (img.naturalWidth > img.naturalHeight * 1.1) {
-                    setIsLandscape(true);
-                  }
-                }}
-                className={`relative z-10 w-full h-full ${
-                  isLandscape ? "object-contain" : "object-cover"
-                }`}
+                onLoad={(e) => detectAspectRatio(e.currentTarget)}
+                className="relative z-10 w-full h-full object-contain"
               />
             </div>
           ) : (

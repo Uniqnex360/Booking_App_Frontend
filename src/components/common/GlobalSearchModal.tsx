@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X, Loader2, Film, Calendar, ClipboardList, ChevronRight, TrendingUp } from "lucide-react";
+import { Search, X, Loader2, Film, Calendar, ClipboardList, ChevronRight, TrendingUp, Utensils } from "lucide-react";
 import api, { unwrap } from "@/api/client";
 import { withCity } from "@/lib/cityLink";
 
@@ -9,12 +9,14 @@ const RECENT_SEARCHES_STORAGE_KEY = "vyhbz_recent_searches";
 export type SearchCategoryTab =
   | "All"
   | "Movies"
-  | "Events";
+  | "Events"
+  | "Dining";
 
 const TABS: SearchCategoryTab[] = [
   "All",
   "Movies",
   "Events",
+  "Dining",
 ];
 
 export interface GlobalSearchModalProps {
@@ -26,7 +28,7 @@ export interface GlobalSearchModalProps {
 
 interface UnifiedItem {
   id: string;
-  type: "movie" | "event";
+  type: "movie" | "event" | "dining";
   tabCategory: SearchCategoryTab;
   title: string;
   subtitle: string;
@@ -48,11 +50,12 @@ export function GlobalSearchModal({
   const [loading, setLoading] = useState(false);
   const [allItems, setAllItems] = useState<UnifiedItem[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
-  const [exploreFilter, setExploreFilter] = useState<"All" | "Movies" | "Events">("All");
+  const [exploreFilter, setExploreFilter] = useState<"All" | "Movies" | "Events" | "Dining">("All");
 
   const exploreItems = useMemo(() => {
     if (exploreFilter === "Movies") return allItems.filter((i) => i.type === "movie");
     if (exploreFilter === "Events") return allItems.filter((i) => i.type === "event");
+    if (exploreFilter === "Dining") return allItems.filter((i) => i.type === "dining");
     return allItems;
   }, [allItems, exploreFilter]);
 
@@ -129,11 +132,14 @@ export function GlobalSearchModal({
     const fetchData = async () => {
       try {
         const today = new Date().toISOString().split("T")[0];
-        const [moviesRes, eventsRes] = await Promise.all([
+        const [moviesRes, eventsRes, diningRes] = await Promise.all([
           unwrap<any[]>(
             api.get("/movies", { params: { city, date: today } })
           ).catch(() => []),
           unwrap<any>(api.get("/events")).catch(() => []),
+          unwrap<any>(
+            api.get("/events", { params: { category: "dining", limit: 100 } })
+          ).catch(() => []),
         ]);
 
         if (!isMounted) return;
@@ -141,6 +147,9 @@ export function GlobalSearchModal({
         const rawEvents = Array.isArray(eventsRes)
           ? eventsRes
           : eventsRes.items || [];
+        const rawDining = Array.isArray(diningRes)
+          ? diningRes
+          : diningRes.items || [];
         const unified: UnifiedItem[] = [];
 
         // Map Movies
@@ -159,7 +168,7 @@ export function GlobalSearchModal({
           });
         });
 
-        // Map Events
+        // Map Events (Concerts, Comedy, Shows)
         rawEvents.forEach((e: any) => {
           const venue = e.venue_name ? `${e.venue_name}` : e.city || city;
           unified.push({
@@ -170,6 +179,21 @@ export function GlobalSearchModal({
             subtitle: `In ${e.category || "Events"} | ${venue}`,
             image: e.poster_image_url,
             link: withCity(`/booking/event/${e.id}`, city),
+          });
+        });
+
+        // Map Dining & Restaurants
+        rawDining.forEach((d: any) => {
+          const venue = d.venue_name ? `${d.venue_name}` : d.city || city;
+          const cuisineStr = Array.isArray(d.cuisine) ? d.cuisine.join(", ") : d.cuisine || "";
+          unified.push({
+            id: d.id,
+            type: "dining",
+            tabCategory: "Dining",
+            title: d.title,
+            subtitle: `In Dining | ${venue}${cuisineStr ? " | " + cuisineStr : ""}`,
+            image: d.poster_image_url,
+            link: withCity(`/events/${d.id}`, city),
           });
         });
 
@@ -238,6 +262,8 @@ export function GlobalSearchModal({
       navigate(withCity("/movies", city));
     } else if (activeTab === "Events") {
       navigate(withCity("/events", city));
+    } else if (activeTab === "Dining") {
+      navigate(withCity("/dining", city));
     } else {
       navigate(withCity("/movies", city));
     }
@@ -258,7 +284,7 @@ export function GlobalSearchModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleInputKeyDown}
-              placeholder="Search for movies, events, shows..."
+              placeholder="Search for movies, events, dining, restaurants..."
               className="w-full text-sm sm:text-base text-gray-900 placeholder:text-gray-400 outline-none bg-transparent"
             />
             {query && (
@@ -329,13 +355,13 @@ export function GlobalSearchModal({
                 </div>
 
                 {/* Filter Pills */}
-                <div className="flex items-center gap-1.5 bg-gray-200/70 p-1 rounded-lg self-start sm:self-auto">
-                  {(["All", "Movies", "Events"] as const).map((filter) => (
+                <div className="flex items-center gap-1.5 bg-gray-200/70 p-1 rounded-lg self-start sm:self-auto overflow-x-auto scrollbar-none">
+                  {(["All", "Movies", "Events", "Dining"] as const).map((filter) => (
                     <button
                       key={filter}
                       type="button"
                       onClick={() => setExploreFilter(filter)}
-                      className={`px-3 py-1 rounded-md text-xs font-semibold transition cursor-pointer ${
+                      className={`px-3 py-1 rounded-md text-xs font-semibold transition cursor-pointer whitespace-nowrap ${
                         exploreFilter === filter
                           ? "bg-white text-[#7B1E3D] shadow-xs"
                           : "text-gray-600 hover:text-gray-900"
@@ -372,6 +398,8 @@ export function GlobalSearchModal({
                           <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
                             {item.type === "movie" ? (
                               <Film className="w-5 h-5 text-gray-400" />
+                            ) : item.type === "dining" ? (
+                              <Utensils className="w-5 h-5 text-gray-400" />
                             ) : (
                               <Calendar className="w-5 h-5 text-gray-400" />
                             )}
@@ -386,10 +414,12 @@ export function GlobalSearchModal({
                             className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
                               item.type === "movie"
                                 ? "bg-amber-100/80 text-amber-800"
+                                : item.type === "dining"
+                                ? "bg-rose-100/80 text-rose-800"
                                 : "bg-purple-100/80 text-purple-800"
                             }`}
                           >
-                            {item.type === "movie" ? "Movie" : "Event"}
+                            {item.type === "movie" ? "Movie" : item.type === "dining" ? "Dining" : "Event"}
                           </span>
                         </div>
                         <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#7B1E3D] transition-colors truncate">
@@ -472,6 +502,8 @@ export function GlobalSearchModal({
                         <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-50">
                           {item.type === "movie" ? (
                             <Film className="w-5 h-5 text-gray-400" />
+                          ) : item.type === "dining" ? (
+                            <Utensils className="w-5 h-5 text-gray-400" />
                           ) : (
                             <Calendar className="w-5 h-5 text-gray-400" />
                           )}
@@ -481,10 +513,23 @@ export function GlobalSearchModal({
 
                     {/* Details */}
                     <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                            item.type === "movie"
+                              ? "bg-amber-100/80 text-amber-800"
+                              : item.type === "dining"
+                              ? "bg-rose-100/80 text-rose-800"
+                              : "bg-purple-100/80 text-purple-800"
+                          }`}
+                        >
+                          {item.type === "movie" ? "Movie" : item.type === "dining" ? "Dining" : "Event"}
+                        </span>
+                      </div>
                       <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#7B1E3D] transition-colors truncate">
                         {item.title}
                       </h4>
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
                         {item.subtitle}
                       </p>
                     </div>
