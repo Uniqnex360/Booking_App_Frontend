@@ -218,6 +218,8 @@ export async function getTheatreShowtimes(params?: {
   movie_id?: string;
   screen_id?: string;
   date?: string;
+  upcoming_only?: boolean;
+  order?: "asc" | "desc";
   limit?: number;
   offset?: number;
 }): Promise<TheatreShowtimeItem[]> {

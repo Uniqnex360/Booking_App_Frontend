@@ -41,7 +41,7 @@ export default function TheatreDashboardPage() {
         const [s, b, sh] = await Promise.all([
           getTheatreDashboardStats(),
           getTheatreBookings({ limit: 5 }),
-          getTheatreShowtimes({ limit: 5 }),
+          getTheatreShowtimes({ upcoming_only: true, limit: 5 }),
         ]);
         setStats(s);
         setRecentBookings(b || []);
@@ -405,7 +405,11 @@ export default function TheatreDashboardPage() {
                       {new Date(sh.starts_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      {new Date(sh.starts_at).toLocaleDateString([], { month: "short", day: "numeric" })}
+                      {new Date(sh.starts_at).toDateString() === new Date().toDateString() ? (
+                        <span className="text-[#7B1E3D] font-bold">Today</span>
+                      ) : (
+                        new Date(sh.starts_at).toLocaleDateString([], { month: "short", day: "numeric" })
+                      )}
                     </div>
                   </div>
                 </div>
