@@ -55,14 +55,19 @@ export function TheatreLayout() {
       try {
         const pData = await getTheatreProfile();
         setProfile(pData);
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Failed to load theatre partner profile", err);
+        const status = err?.statusCode ?? err?.response?.status;
+        if (status === 401 || status === 403) {
+          toast.error("Access denied. Theatre Partner account required.");
+          navigate("/", { replace: true });
+        }
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, []);
+  }, [navigate]);
 
   // Real-time Live Notifications Polling & Delta Alert (Spec Section 12)
   const syncNotifications = async (isManual = false) => {

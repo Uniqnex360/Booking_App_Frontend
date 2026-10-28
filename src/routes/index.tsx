@@ -1,7 +1,7 @@
 import SupportPage from "@/pages/SupportPage";
 import SeatMapPage from "@/pages/SeatMapPage";
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { PrivateRoute } from '@/components/PrivateRoute';
+import { PrivateRoute, ADMIN_ROLES, THEATRE_ROLES, PARTNER_ROLES } from '@/components/PrivateRoute';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -47,18 +47,18 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/admin" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/dashboard" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/movies" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/events" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/events/:eventId" element={<PrivateRoute><AdminEventDetailPage /></PrivateRoute>} />
-      <Route path="/admin/users" element={<PrivateRoute><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/movies" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/events" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
+      <Route path="/admin/events/:eventId" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminEventDetailPage /></PrivateRoute>} />
+      <Route path="/admin/users" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
       
       {/* Theatre Partner Scoped Portal */}
       <Route
         path="/theatre"
         element={
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={THEATRE_ROLES}>
             <TheatreLayout />
           </PrivateRoute>
         }
@@ -142,7 +142,7 @@ export function AppRoutes() {
       <Route
         path="/partner/dashboard"
         element={
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={PARTNER_ROLES}>
             <PartnerDashboard />
           </PrivateRoute>
         }
@@ -150,7 +150,7 @@ export function AppRoutes() {
       <Route
         path="/partner/coupons"
         element={
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={PARTNER_ROLES}>
             <PartnerCouponsPage />
           </PrivateRoute>
         }
@@ -158,7 +158,7 @@ export function AppRoutes() {
       <Route
         path="/admin/partners"
         element={
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
             <AdminPartnersPage />
           </PrivateRoute>
         }
@@ -166,7 +166,7 @@ export function AppRoutes() {
       <Route
         path="/partner/events/new"
         element={
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={PARTNER_ROLES}>
             <PartnerEventCreatePage />
           </PrivateRoute>
         }
@@ -174,7 +174,7 @@ export function AppRoutes() {
       <Route
         path="/partner/dining/new"
         element={
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={PARTNER_ROLES}>
             <PartnerDiningCreatePage />
           </PrivateRoute>
         }
@@ -182,7 +182,7 @@ export function AppRoutes() {
       <Route
         path="/admin/moderation"
         element={
-          <PrivateRoute>
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
             <AdminModerationPage />
           </PrivateRoute>
         }
