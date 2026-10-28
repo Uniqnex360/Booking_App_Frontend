@@ -183,12 +183,30 @@ export default function OrderSummaryPage() {
               </div>
             ))}
 
-            {b.convenience_fee_paise > 0 && (
-              <div className="flex justify-between">
-                <span className="text-gray-600">Convenience fees</span>
-                <span className="font-semibold">{formatRupees(b.convenience_fee_paise)}</span>
-              </div>
-            )}
+            {b.convenience_fee_paise > 0 && (() => {
+              const baseFee = Math.round(b.convenience_fee_paise / 1.18);
+              const gst = b.convenience_fee_paise - baseFee;
+              const cgst = Math.round(gst / 2);
+              const sgst = gst - cgst;
+              return (
+                <div className="space-y-1 pt-1 border-t border-gray-100">
+                  <div className="flex justify-between text-gray-700">
+                    <span>Convenience Fees</span>
+                    <span className="font-semibold">{formatRupees(b.convenience_fee_paise)}</span>
+                  </div>
+                  <div className="pl-2.5 space-y-0.5 text-[11px] text-gray-500">
+                    <div className="flex justify-between">
+                      <span>• Base Handling Fee</span>
+                      <span>{formatRupees(baseFee)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>• Integrated GST (9% CGST + 9% SGST)</span>
+                      <span>{formatRupees(gst)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="border-t border-dashed border-gray-200 pt-3 flex justify-between text-sm">
               <span className="font-bold">Amount payable</span>

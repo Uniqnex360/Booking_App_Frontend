@@ -52,6 +52,11 @@ export interface Booking {
   discount_paise?: number | null;
   coupon_code?: string | null;
   paid_paise?: number | null;
+
+  // Commercial & Fee Breakdown
+  ticket_paise?: number | null;
+  fnb_paise?: number | null;
+  convenience_fee_paise?: number | null;
 }
 
 export interface BookingDetail extends Booking {

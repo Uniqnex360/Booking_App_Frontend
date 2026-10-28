@@ -323,14 +323,41 @@ export default function BookingDetailPage() {
                 Payment summary
               </p>
               <div className="space-y-2 text-sm">
-                {(booking.unit_price_paise || booking.tier_price_paise) && qty > 0 && (
+                {(booking.ticket_paise || booking.unit_price_paise || booking.tier_price_paise) && qty > 0 && (
                   <div className="flex justify-between text-slate-600">
-                    <span>
-                      {qty} × {formatRupees(booking.unit_price_paise ?? booking.tier_price_paise ?? 0)}
-                    </span>
-                    <span>{formatRupees(booking.total_paise)}</span>
+                    <span>Tickets ({qty})</span>
+                    <span>{formatRupees(booking.ticket_paise ?? ((booking.unit_price_paise ?? booking.tier_price_paise ?? 0) * qty))}</span>
                   </div>
                 )}
+                {Boolean(booking.fnb_paise) && (
+                  <div className="flex justify-between text-slate-600">
+                    <span>Food & Beverage</span>
+                    <span>{formatRupees(booking.fnb_paise || 0)}</span>
+                  </div>
+                )}
+                {Boolean(booking.convenience_fee_paise) && (() => {
+                  const fee = booking.convenience_fee_paise || 0;
+                  const baseFee = Math.round(fee / 1.18);
+                  const gst = fee - baseFee;
+                  return (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-slate-600">
+                        <span>Convenience fee</span>
+                        <span>{formatRupees(fee)}</span>
+                      </div>
+                      <div className="pl-2.5 text-[11px] text-slate-400 space-y-0.5">
+                        <div className="flex justify-between">
+                          <span>• Base handling fee</span>
+                          <span>{formatRupees(baseFee)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>• Integrated GST (9% CGST + 9% SGST)</span>
+                          <span>{formatRupees(gst)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
                 <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-2 mt-2">
                   <span>Total paid</span>
                   <span>{formatRupees(booking.total_paise)}</span>
