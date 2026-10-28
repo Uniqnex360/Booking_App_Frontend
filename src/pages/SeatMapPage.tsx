@@ -29,6 +29,7 @@ import {
   ZoomOut,
   Info,
   X,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -84,6 +85,51 @@ export default function SeatMapPage() {
   const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
   const [isRetrying, setIsRetrying] = useState(false);
   const autoRetryCountRef = useRef(0);
+
+  // Virtual Waiting Room State (BookMyShow Flash Sale Protection)
+  const [waitingRoom, setWaitingRoom] = useState<{
+    inQueue: boolean;
+    position: number;
+    estimatedWaitSeconds: number;
+    sessionId?: string;
+    admissionToken?: string;
+  }>({
+    inQueue: false,
+    position: 0,
+    estimatedWaitSeconds: 0,
+  });
+  const pollTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const startWaitingRoomPolling = (showtimeId: string, sessId: string) => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const pollRes: any = await unwrap(
+          api.get(`/showtimes/${showtimeId}/waiting-room/status`, {
+            params: { session_id: sessId },
+          }),
+        );
+        if (pollRes?.status === "ADMITTED") {
+          if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+          if (pollRes.token) {
+            sessionStorage.setItem(`wr_token_${showtimeId}`, pollRes.token);
+          }
+          setWaitingRoom({ inQueue: false, position: 0, estimatedWaitSeconds: 0, admissionToken: pollRes.token });
+          fetchSeatMap();
+        } else if (pollRes?.status === "QUEUED") {
+          setWaitingRoom((prev) => ({
+            ...prev,
+            position: pollRes.position || prev.position,
+            estimatedWaitSeconds: pollRes.estimated_wait_seconds || prev.estimatedWaitSeconds,
+          }));
+        }
+      } catch (e) {
+        console.warn("Error polling waiting room", e);
+      }
+    }, 2500);
+  };
+
   const venueShowtimes = useMemo<VenueShowtimeItem[]>(() => {
     try {
       const cached = sessionStorage.getItem("vyhbz_venue_showtimes");
@@ -122,14 +168,47 @@ export default function SeatMapPage() {
     );
   }, [venueShowtimes, mapData, id]);
   const fetchSeatMap = async (isManual = false) => {
+    if (!id) return;
+
+    // Check waiting room admission first
+    const storedToken = sessionStorage.getItem(`wr_token_${id}`);
+    const storedSess = sessionStorage.getItem(`wr_sess_${id}`) || crypto.randomUUID();
+    sessionStorage.setItem(`wr_sess_${id}`, storedSess);
+
+    if (!storedToken) {
+      try {
+        const wrRes: any = await unwrap(
+          api.post(`/showtimes/${id}/waiting-room/join`, { session_id: storedSess }),
+        );
+        if (wrRes?.status === "QUEUED") {
+          setLoading(false);
+          setWaitingRoom({
+            inQueue: true,
+            position: wrRes.position || 1,
+            estimatedWaitSeconds: wrRes.estimated_wait_seconds || 10,
+            sessionId: wrRes.session_id || storedSess,
+          });
+          startWaitingRoomPolling(id, wrRes.session_id || storedSess);
+          return;
+        } else if (wrRes?.token) {
+          sessionStorage.setItem(`wr_token_${id}`, wrRes.token);
+          setWaitingRoom({ inQueue: false, position: 0, estimatedWaitSeconds: 0, admissionToken: wrRes.token });
+        }
+      } catch (wrErr) {
+        console.warn("Waiting room bypassed due to error", wrErr);
+      }
+    }
+
     if (isManual) {
       setIsRetrying(true);
     } else {
       setLoading(true);
     }
     try {
+      const token = sessionStorage.getItem(`wr_token_${id}`);
+      const headers = token ? { "X-Waiting-Room-Token": token } : undefined;
       const data = await unwrap<SeatMapDetail>(
-        api.get(`/showtimes/${id}/seat-map`),
+        api.get(`/showtimes/${id}/seat-map`, { headers }),
       );
       setMapData(data);
       setSelectedSeats([]);
@@ -182,6 +261,109 @@ export default function SeatMapPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, [heldUntil]);
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+    };
+  }, []);
+
+  if (waitingRoom.inQueue) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#7B1E3D] selection:text-white">
+        {/* Top Header */}
+        <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+                navigate(-1);
+              }}
+              className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+              title="Go Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <span>Virtual Waiting Room</span>
+                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-1.5 py-0.5 rounded font-semibold">
+                  Flash Sale
+                </span>
+              </h1>
+              <p className="text-[11px] text-slate-400">High-concurrency traffic protection</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+              navigate(-1);
+            }}
+            className="text-xs text-slate-400 hover:text-white transition cursor-pointer"
+          >
+            Leave Queue
+          </button>
+        </header>
+
+        {/* Center Card */}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center shadow-2xl backdrop-blur-lg">
+            {/* Animated Radar Pulse */}
+            <div className="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-2 border-[#7B1E3D]/50 animate-ping opacity-75" />
+              <div className="absolute inset-2 rounded-full border-2 border-amber-500/50 animate-pulse" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#7B1E3D] to-amber-600 flex items-center justify-center text-white shadow-xl shadow-[#7B1E3D]/30">
+                <Users className="h-7 w-7" />
+              </div>
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              You are in line
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-xs mx-auto leading-relaxed">
+              This show is currently experiencing peak demand. We’ve saved your spot to ensure guaranteed fast seat selection.
+            </p>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 gap-3 mt-6">
+              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 text-center shadow-inner">
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Queue Position
+                </p>
+                <p className="text-2xl sm:text-3xl font-black text-amber-400 mt-1 tracking-tight">
+                  #{waitingRoom.position}
+                </p>
+              </div>
+
+              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 text-center shadow-inner">
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Est. Wait Time
+                </p>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 tracking-tight">
+                  ~{waitingRoom.estimatedWaitSeconds}s
+                </p>
+              </div>
+            </div>
+
+            {/* Polling Activity */}
+            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
+              <span>Advancing queue in real-time...</span>
+            </div>
+
+            {/* Helpful Notice */}
+            <div className="mt-5 p-3.5 rounded-2xl bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400 leading-normal">
+              💡 <span className="font-semibold text-slate-300">Tip:</span> Please do not refresh or close this tab. You will be automatically admitted to select your seats the moment your turn arrives.
+            </div>
+          </div>
+        </main>
+
+        <footer className="text-center py-4 text-[11px] text-slate-500 border-t border-slate-900">
+          Vybhz Scalability Engine • Powered by Redis Flash Queue
+        </footer>
+      </div>
+    );
+  }
+
   if (loading) {
     return <LoadingPage showFooter={false} />;
   }
@@ -428,6 +610,10 @@ export default function SeatMapPage() {
     };
     if (!user) {
       headers["X-Hold-Token"] = ensureHoldToken();
+    }
+    const wrToken = sessionStorage.getItem(`wr_token_${id}`);
+    if (wrToken) {
+      headers["X-Waiting-Room-Token"] = wrToken;
     }
     setIsCommitLoading(true);
     try {
