@@ -18,6 +18,7 @@ export default function BookingDetailPage() {
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
+  const [isEventPosterLandscape, setIsEventPosterLandscape] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -165,12 +166,34 @@ export default function BookingDetailPage() {
             {isEvent && (
               <div className="flex flex-col sm:flex-row gap-5">
                 {booking.poster_url && (
-                  <div className="w-32 shrink-0">
-                    <div className="aspect-[2/3] rounded-xl overflow-hidden bg-neutral-100">
+                  <div
+                    className={`${
+                      isEventPosterLandscape ? "w-44 sm:w-56" : "w-32"
+                    } shrink-0 transition-all duration-150`}
+                  >
+                    <div
+                      className={`relative ${
+                        isEventPosterLandscape ? "aspect-[16/10]" : "aspect-[2/3]"
+                      } rounded-xl overflow-hidden bg-slate-900 shadow-sm flex items-center justify-center`}
+                    >
+                      <img
+                        src={booking.poster_url}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-sm opacity-40 scale-110"
+                      />
                       <img
                         src={booking.poster_url}
                         alt={booking.title}
-                        className="w-full h-full object-cover"
+                        onLoad={(e) => {
+                          const img = e.currentTarget;
+                          if (img.naturalWidth > img.naturalHeight * 1.1) {
+                            setIsEventPosterLandscape(true);
+                          }
+                        }}
+                        className={`relative z-10 w-full h-full ${
+                          isEventPosterLandscape ? "object-contain" : "object-cover"
+                        }`}
                       />
                     </div>
                   </div>

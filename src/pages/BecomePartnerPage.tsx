@@ -67,7 +67,13 @@ const partnerSchema = z.object({
     .max(15, 'Phone number is too long'),
   city: z.string().min(2, 'City is required'),
   gst_number: z.string().optional().or(z.literal('')),
-  pan_number: z.string().optional().or(z.literal('')),
+  pan_number: z
+    .string()
+    .min(1, 'PAN Number is required')
+    .transform((val) => val.trim().toUpperCase())
+    .refine((val) => /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val), {
+      message: 'Valid 10-character PAN is required (e.g. ABCDE1234F)',
+    }),
   gst_certificate_url: z.string().optional().or(z.literal('')),
   pan_card_url: z.string().optional().or(z.literal('')),
 });
@@ -222,7 +228,7 @@ export default function BecomePartnerPage() {
         contact_phone: data.contact_phone,
         city: data.city,
         gst_number: data.gst_number || undefined,
-        pan_number: data.pan_number || undefined,
+        pan_number: data.pan_number.toUpperCase().trim(),
         gst_certificate_url: data.gst_certificate_url || undefined,
         pan_card_url: data.pan_card_url || undefined,
       });
@@ -647,19 +653,25 @@ export default function BecomePartnerPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="pan_number" className="text-sm font-medium">
-                  PAN Number{' '}
-                  <span className="text-slate-500">(optional)</span>
+                <Label htmlFor="pan_number" className="text-sm font-medium flex items-center gap-1">
+                  <span>Permanent Account Number (PAN)</span>
+                  <span className="text-rose-500 font-bold">*</span>
                 </Label>
                 <div className="relative">
                   <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="pan_number"
-                    placeholder="AAAAA0000A"
-                    className="h-11 rounded-xl pl-10"
+                    placeholder="ABCDE1234F"
+                    maxLength={10}
+                    className="h-11 rounded-xl pl-10 uppercase font-mono"
                     {...register('pan_number')}
                   />
                 </div>
+                {errors.pan_number && (
+                  <p className="text-xs text-rose-500 font-medium mt-1">
+                    {errors.pan_number.message}
+                  </p>
+                )}
               </div>
             </div>
 

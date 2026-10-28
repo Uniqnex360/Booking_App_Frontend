@@ -59,7 +59,7 @@ const CITY_STORAGE_KEY = "vyhbz_selected_city";
 const navLinks = [
   { href: "/movies", label: "Movies" },
   { href: "/events", label: "Events" },
-  { href: "/restaurants", label: "Restaurants & Dining" },
+  { href: "/restaurants", label: "Dining" },
 ];
 
 interface SearchResults {

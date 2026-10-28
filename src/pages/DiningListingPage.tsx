@@ -300,7 +300,7 @@ export default function DiningListingPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4 mb-4 border-b border-gray-200">
           <div>
             <h1 className="text-2xl font-bold text-[#1A1A2E] tracking-tight">
-              Restaurants & Dining in {cityParam}
+              Dining in {cityParam}
             </h1>
             <p className="text-xs text-gray-500 mt-0.5">
               Explore curated fine dining restaurants, buffets, Sunday brunches & chef tastings in your city

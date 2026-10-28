@@ -607,9 +607,24 @@ export async function updateTheatreBankAccount(data: {
   return unwrap(res.data);
 }
 
+export async function uploadTheatreDocument(
+  file: File,
+  docType: string = 'gst_certificate'
+): Promise<{ url: string; filename: string; size: number }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('doc_type', docType);
+  const res = await api.post('/theatre/account/upload-document', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return unwrap(res.data);
+}
+
 export async function updateTheatreKyc(data: {
+  pan_number: string;
   gst_number?: string;
-  pan_number?: string;
   gst_certificate_url?: string;
   pan_card_url?: string;
 }): Promise<any> {

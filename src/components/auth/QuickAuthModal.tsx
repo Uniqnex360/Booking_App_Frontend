@@ -422,7 +422,7 @@ export function QuickAuthModal() {
         }
       `}</style>
       <div
-        className={`relative w-full max-w-[420px] bg-white rounded-2xl shadow-2xl ${
+        className={`relative w-full max-w-[430px] bg-white rounded-2xl shadow-2xl ${
           showInAppPhoneAuth ? "p-4 sm:p-5" : "p-6 sm:p-8"
         } animate-in zoom-in-95 duration-200`}
       >
@@ -808,7 +808,7 @@ export function QuickAuthModal() {
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-2 sm:gap-2.5 my-6">
+            <div className="grid grid-cols-6 gap-2 sm:gap-2.5 my-6 mx-auto w-full max-w-[320px]">
               {otpDigits.map((digit, idx) => (
                 <input
                   key={idx}
@@ -822,12 +822,12 @@ export function QuickAuthModal() {
                   onKeyDown={(e) => handleOtpKeyDown(e, idx)}
                   onPaste={handleOtpPaste}
                   onFocus={() => setActiveOtpIndex(idx)}
-                  className={`w-11 h-12 sm:w-12 sm:h-12 border rounded-lg text-center font-bold text-lg text-gray-900 transition outline-none ${
+                  className={`w-full h-12 border rounded-xl text-center font-bold text-lg text-gray-900 transition-all outline-none ${
                     activeOtpIndex === idx
-                      ? "border-red-500 ring-1 ring-red-500/20"
+                      ? "border-[#7B1E3D] ring-2 ring-[#7B1E3D]/20 bg-white shadow-xs"
                       : digit
-                        ? "border-gray-800"
-                        : "border-gray-300"
+                        ? "border-gray-800 bg-white"
+                        : "border-gray-300 bg-gray-50/50 hover:bg-white"
                   }`}
                 />
               ))}

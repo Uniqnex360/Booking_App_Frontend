@@ -103,6 +103,8 @@ import {
   Utensils,
   Filter,
   RotateCcw,
+  Layers,
+  BarChart3,
 } from "lucide-react";
 
 type ActiveTab =
@@ -205,13 +207,15 @@ export default function AdminDashboardPage() {
   const [compStats, setCompStats] = useState<AdminComprehensiveStats | null>(null);
   const [healthItems, setHealthItems] = useState<IntegrationHealthItem[]>([]);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [overviewVertical, setOverviewVertical] = useState<"ALL" | "MOVIES" | "EVENTS" | "DINING">("ALL");
 
-  const fetchStats = async () => {
+  const fetchStats = async (overrideVertical?: "ALL" | "MOVIES" | "EVENTS" | "DINING") => {
     setStatsLoading(true);
     try {
+      const v = overrideVertical !== undefined ? overrideVertical : overviewVertical;
       const [data, cData, hData] = await Promise.allSettled([
         getAdminStats(),
-        getAdminComprehensiveStats(),
+        getAdminComprehensiveStats(v),
         getIntegrationsHealth(),
       ]);
       if (data.status === "fulfilled") setStats(data.value);
@@ -222,6 +226,11 @@ export default function AdminDashboardPage() {
     } finally {
       setStatsLoading(false);
     }
+  };
+
+  const handleVerticalFilterChange = (v: "ALL" | "MOVIES" | "EVENTS" | "DINING") => {
+    setOverviewVertical(v);
+    fetchStats(v);
   };
 
   useEffect(() => {
@@ -778,17 +787,58 @@ export default function AdminDashboardPage() {
           <div className="py-6 space-y-6">
             {/* Business Performance & Revenue Operations (Central Admin Portal) */}
             <div className="bg-white border border-gray-200 p-6 rounded-2xl space-y-4 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-200 pb-4">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-gray-200 pb-4">
                 <div>
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
-                    <IndianRupee className="w-5 h-5 text-orange-600" />
-                    Business Performance & Revenue Operations
-                  </h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center gap-2">
+                      <IndianRupee className="w-5 h-5 text-orange-600" />
+                      Business Performance &amp; Revenue Operations
+                    </h3>
+                    {overviewVertical !== "ALL" && (
+                      <Badge className="bg-orange-100 text-orange-800 text-[11px] font-bold uppercase tracking-wider">
+                        {overviewVertical} Filtered
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Centralized platform gross volume, net commission earnings, cash realization, and gateway health.
+                    {overviewVertical === "ALL" && "Centralized platform gross volume across Movies, Events, and Dining."}
+                    {overviewVertical === "MOVIES" && "Box office ticket proceeds, admissions, and commission earnings from Movies."}
+                    {overviewVertical === "EVENTS" && "Live event ticket sales, passes, and organizer commission from Events."}
+                    {overviewVertical === "DINING" && "Dining reservations, covers, and dining revenue from Dining & Restaurants."}
                   </p>
                 </div>
+
                 <div className="flex items-center gap-2 flex-wrap">
+                  {/* Vertical Filter Pills: All / Movies / Events / Dining */}
+                  <div className="flex items-center gap-1 p-1 bg-gray-100 rounded-xl border border-gray-200 shadow-2xs">
+                    {[
+                      { key: "ALL", label: "All", icon: Layers },
+                      { key: "MOVIES", label: "Movies", icon: Film },
+                      { key: "EVENTS", label: "Events", icon: CalendarDays },
+                      { key: "DINING", label: "Dining", icon: Utensils },
+                    ].map((tab) => {
+                      const Icon = tab.icon;
+                      const isSelected = overviewVertical === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => handleVerticalFilterChange(tab.key as any)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-white text-orange-600 shadow-xs border border-gray-200 font-bold"
+                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-200/60"
+                          }`}
+                        >
+                          <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-orange-600" : "text-gray-400"}`} />
+                          <span>{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="h-5 w-px bg-gray-200 hidden sm:block" />
+
                   {canAccessSection("bookings_rec") && (
                     <Button
                       onClick={() => handleTabChange("bookings_rec")}
@@ -823,51 +873,178 @@ export default function AdminDashboardPage() {
               </div>
 
               {(canAccessSection("bookings_rec") || canAccessSection("invoices")) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <div className="text-xs uppercase font-medium text-gray-500">Gross Ticket Volume</div>
-                    <div className="text-2xl font-bold text-gray-900 mt-1">
-                      ₹{(((compStats?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <div className="text-xs uppercase font-medium text-gray-500">
+                        {overviewVertical === "ALL" && "Gross Ticket Volume"}
+                        {overviewVertical === "MOVIES" && "Movie Box Office Volume"}
+                        {overviewVertical === "EVENTS" && "Event Ticket Volume"}
+                        {overviewVertical === "DINING" && "Dining Revenue Volume"}
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900 mt-1">
+                        ₹{(((compStats?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {compStats?.total_tickets || 0} {overviewVertical === "DINING" ? "covers" : "tickets"} across {compStats?.total_bookings || 0} bookings
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">{compStats?.total_tickets || 0} tickets sold across {compStats?.total_bookings || 0} bookings</div>
+
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <div className="text-xs uppercase font-medium text-gray-500">Commission Earned</div>
+                      <div className="text-2xl font-bold text-emerald-600 mt-1">
+                        ₹{(((compStats?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {overviewVertical === "ALL" ? "Platform revenue base across all verticals" : `Platform share from ${overviewVertical.toLowerCase()}`}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                      <div className="text-xs uppercase font-medium text-gray-500">Total Billed Invoices</div>
+                      <div className="text-2xl font-bold text-blue-600 mt-1">
+                        ₹{(((compStats?.commission_invoiced_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-xs text-emerald-600 mt-1">₹{(((compStats?.commission_collected_paise || 0) / 100)).toLocaleString('en-IN')} collected</div>
+                    </div>
+
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleTabChange("invoices")}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleTabChange("invoices");
+                        }
+                      }}
+                      className="bg-gray-50 hover:bg-amber-50/40 p-4 rounded-xl border border-gray-200 hover:border-amber-300 transition cursor-pointer group"
+                      title="Click to view Commission Invoices"
+                    >
+                      <div className="text-xs uppercase font-medium text-gray-500">Outstanding Receivables</div>
+                      <div className="text-2xl font-bold text-amber-600 mt-1">
+                        ₹{(((compStats?.commission_outstanding_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-xs text-amber-600 mt-1">{compStats?.overdue_invoices_count || 0} overdue invoices</div>
+                    </div>
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <div className="text-xs uppercase font-medium text-gray-500">Commission Earned</div>
-                    <div className="text-2xl font-bold text-emerald-600 mt-1">
-                      ₹{(((compStats?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">Platform revenue base (₹30/tix default)</div>
-                  </div>
+                  {/* Vertical Revenue Comparison Row */}
+                  {compStats?.vertical_breakdown && (
+                    <div className="pt-2">
+                      <div className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <BarChart3 className="w-3.5 h-3.5 text-orange-600" />
+                          Vertical Amount &amp; Revenue Breakdown
+                        </span>
+                        <span className="text-[11px] font-normal text-gray-400">
+                          Click any card to filter by vertical
+                        </span>
+                      </div>
 
-                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <div className="text-xs uppercase font-medium text-gray-500">Total Billed Invoices</div>
-                    <div className="text-2xl font-bold text-blue-600 mt-1">
-                      ₹{(((compStats?.commission_invoiced_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                    </div>
-                    <div className="text-xs text-emerald-600 mt-1">₹{(((compStats?.commission_collected_paise || 0) / 100)).toLocaleString('en-IN')} collected</div>
-                  </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* Movies */}
+                        <div
+                          onClick={() => handleVerticalFilterChange(overviewVertical === "MOVIES" ? "ALL" : "MOVIES")}
+                          className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                            overviewVertical === "MOVIES"
+                              ? "bg-orange-50/80 border-orange-400 ring-1 ring-orange-400/30 shadow-xs"
+                              : "bg-gray-50/70 hover:bg-white border-gray-200 hover:border-orange-200"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 rounded-lg bg-orange-100 text-orange-600">
+                                <Film className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-xs font-bold text-gray-800">Movies</span>
+                            </div>
+                            <Badge className="text-[10px] bg-orange-100 text-orange-800 font-mono">
+                              {compStats.vertical_breakdown.movies?.total_bookings || 0} Bookings
+                            </Badge>
+                          </div>
+                          <div className="mt-2.5 flex items-baseline justify-between">
+                            <div className="text-lg font-extrabold text-gray-900">
+                              ₹{(((compStats.vertical_breakdown.movies?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[11px] font-semibold text-emerald-600">
+                              ₹{(((compStats.vertical_breakdown.movies?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN')} comm.
+                            </div>
+                          </div>
+                          <div className="mt-1 text-[11px] text-gray-500">
+                            {compStats.vertical_breakdown.movies?.total_tickets || 0} tickets sold
+                          </div>
+                        </div>
 
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleTabChange("invoices")}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleTabChange("invoices");
-                      }
-                    }}
-                    className="bg-gray-50 hover:bg-amber-50/40 p-4 rounded-xl border border-gray-200 hover:border-amber-300 transition cursor-pointer group"
-                    title="Click to view Commission Invoices"
-                  >
-                    <div className="text-xs uppercase font-medium text-gray-500">Outstanding Receivables</div>
-                    <div className="text-2xl font-bold text-amber-600 mt-1">
-                      ₹{(((compStats?.commission_outstanding_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        {/* Events */}
+                        <div
+                          onClick={() => handleVerticalFilterChange(overviewVertical === "EVENTS" ? "ALL" : "EVENTS")}
+                          className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                            overviewVertical === "EVENTS"
+                              ? "bg-emerald-50/80 border-emerald-400 ring-1 ring-emerald-400/30 shadow-xs"
+                              : "bg-gray-50/70 hover:bg-white border-gray-200 hover:border-emerald-200"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 rounded-lg bg-emerald-100 text-emerald-600">
+                                <CalendarDays className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-xs font-bold text-gray-800">Live Events</span>
+                            </div>
+                            <Badge className="text-[10px] bg-emerald-100 text-emerald-800 font-mono">
+                              {compStats.vertical_breakdown.events?.total_bookings || 0} Bookings
+                            </Badge>
+                          </div>
+                          <div className="mt-2.5 flex items-baseline justify-between">
+                            <div className="text-lg font-extrabold text-gray-900">
+                              ₹{(((compStats.vertical_breakdown.events?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[11px] font-semibold text-emerald-600">
+                              ₹{(((compStats.vertical_breakdown.events?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN')} comm.
+                            </div>
+                          </div>
+                          <div className="mt-1 text-[11px] text-gray-500">
+                            {compStats.vertical_breakdown.events?.total_tickets || 0} passes sold
+                          </div>
+                        </div>
+
+                        {/* Dining */}
+                        <div
+                          onClick={() => handleVerticalFilterChange(overviewVertical === "DINING" ? "ALL" : "DINING")}
+                          className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                            overviewVertical === "DINING"
+                              ? "bg-amber-50/80 border-amber-400 ring-1 ring-amber-400/30 shadow-xs"
+                              : "bg-gray-50/70 hover:bg-white border-gray-200 hover:border-amber-200"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="p-1.5 rounded-lg bg-amber-100 text-amber-700">
+                                <Utensils className="w-3.5 h-3.5" />
+                              </div>
+                              <span className="text-xs font-bold text-gray-800">Dining &amp; Restaurants</span>
+                            </div>
+                            <Badge className="text-[10px] bg-amber-100 text-amber-800 font-mono">
+                              {compStats.vertical_breakdown.dining?.total_bookings || 0} Bookings
+                            </Badge>
+                          </div>
+                          <div className="mt-2.5 flex items-baseline justify-between">
+                            <div className="text-lg font-extrabold text-gray-900">
+                              ₹{(((compStats.vertical_breakdown.dining?.gross_booking_paise || 0) / 100)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </div>
+                            <div className="text-[11px] font-semibold text-emerald-600">
+                              ₹{(((compStats.vertical_breakdown.dining?.commission_earned_paise || 0) / 100)).toLocaleString('en-IN')} comm.
+                            </div>
+                          </div>
+                          <div className="mt-1 text-[11px] text-gray-500">
+                            {compStats.vertical_breakdown.dining?.total_tickets || 0} covers reserved
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-amber-600 mt-1">{compStats?.overdue_invoices_count || 0} overdue invoices</div>
-                  </div>
-                </div>
+                  )}
+                </>
               )}
 
               {/* Integration Gateway Health */}

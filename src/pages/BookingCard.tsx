@@ -31,6 +31,7 @@ export function BookingCard({
   const [currentStatus, setCurrentStatus] = useState<string>(booking.status);
   const [cancelling, setCancelling] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLandscape, setIsLandscape] = useState(false);
 
   // --- adapter: support both the list shape and the confirmation DTO ---
   const b = booking as any;
@@ -179,15 +180,37 @@ export function BookingCard({
     >
       {/* Top: poster + info */}
       <div className="flex gap-3 sm:gap-4 p-3.5 sm:p-4 pb-4 sm:pb-5">
-        <div className="w-[70px] h-[102px] sm:w-[76px] sm:h-[110px] shrink-0 rounded-md overflow-hidden bg-gray-100 shadow-2xs">
+        <div
+          className={`${
+            isLandscape
+              ? "w-[96px] sm:w-[108px] h-[68px] sm:h-[74px]"
+              : "w-[70px] sm:w-[76px] h-[102px] sm:h-[110px]"
+          } shrink-0 rounded-md overflow-hidden bg-slate-900 shadow-2xs relative transition-all duration-150`}
+        >
           {poster ? (
-            <img
-              src={poster}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
+            <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
+              <img
+                src={poster}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover blur-sm opacity-40 scale-125"
+              />
+              <img
+                src={poster}
+                alt={title}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalWidth > img.naturalHeight * 1.1) {
+                    setIsLandscape(true);
+                  }
+                }}
+                className={`relative z-10 w-full h-full ${
+                  isLandscape ? "object-contain" : "object-cover"
+                }`}
+              />
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center bg-gray-100">
               <Ticket className="h-6 w-6 text-gray-400" />
             </div>
           )}

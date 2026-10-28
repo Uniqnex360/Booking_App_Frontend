@@ -295,7 +295,7 @@ export default function AdminModerationPage() {
               }`}
             >
               <Utensils className="h-3.5 w-3.5" />
-              Restaurants & Dining ({events.filter((e) => e.category?.toLowerCase() === 'dining').length})
+              Dining ({events.filter((e) => e.category?.toLowerCase() === 'dining').length})
             </button>
           </div>
 

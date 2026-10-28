@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { format, parseISO } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { updateAdminEventTerms } from '@/api/admin.api';
+import { updateAdminEventTerms, getAdminEventById } from '@/api/admin.api';
 import { STANDARD_EVENT_TERMS, normalizeTermsToBullets } from '@/lib/eventTerms';
 import {
   Dialog,
@@ -79,6 +79,20 @@ export function AdminEventDetailModal({
       setBulletTerms(normalizeTermsToBullets(event.terms_and_conditions));
       setIsEditingTerms(false);
       setNewBulletInput('');
+
+      // Hydrate full event payload asynchronously to ensure fresh terms and nested arrays
+      getAdminEventById(event.id)
+        .then((fresh) => {
+          if (fresh && fresh.id === event.id) {
+            setLocalEvent(fresh);
+            if (fresh.terms_and_conditions && fresh.terms_and_conditions.length > 0) {
+              setBulletTerms(normalizeTermsToBullets(fresh.terms_and_conditions));
+            }
+          }
+        })
+        .catch(() => {
+          // Ignore background hydration failures; local event is already set
+        });
     }
   }, [event]);
 

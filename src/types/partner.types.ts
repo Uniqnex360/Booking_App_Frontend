@@ -118,7 +118,7 @@ export interface PartnerRegisterPayload {
   contact_phone: string;
   city: string;
   gst_number?: string;
-  pan_number?: string;
+  pan_number: string;
   gst_certificate_url?: string;
   pan_card_url?: string;
 }

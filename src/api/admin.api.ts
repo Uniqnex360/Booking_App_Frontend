@@ -475,6 +475,27 @@ export interface AdminComprehensiveStats {
   total_refunds_paise: number;
   active_theatres_count: number;
   open_exceptions_count: number;
+  selected_vertical?: "all" | "movies" | "events" | "dining";
+  vertical_breakdown?: {
+    movies: {
+      total_bookings: number;
+      total_tickets: number;
+      gross_booking_paise: number;
+      commission_earned_paise: number;
+    };
+    events: {
+      total_bookings: number;
+      total_tickets: number;
+      gross_booking_paise: number;
+      commission_earned_paise: number;
+    };
+    dining: {
+      total_bookings: number;
+      total_tickets: number;
+      gross_booking_paise: number;
+      commission_earned_paise: number;
+    };
+  };
 }
 
 export interface IntegrationHealthItem {
@@ -494,8 +515,10 @@ export interface IntegrationHealthItem {
   details?: Record<string, any>;
 }
 
-export async function getAdminComprehensiveStats(): Promise<AdminComprehensiveStats> {
-  const res = await api.get('/admin/stats/comprehensive');
+export async function getAdminComprehensiveStats(vertical?: string): Promise<AdminComprehensiveStats> {
+  const res = await api.get('/admin/stats/comprehensive', {
+    params: vertical && vertical !== "ALL" ? { vertical: vertical.toLowerCase() } : undefined
+  });
   return res.data?.data || res.data;
 }
 

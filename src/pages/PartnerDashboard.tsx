@@ -48,6 +48,9 @@ import {
   Building2,
   RefreshCw,
   X,
+  Globe,
+  Image as ImageIcon,
+  Sparkles,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -777,10 +780,13 @@ export default function PartnerDashboard() {
   const [editForm, setEditForm] = useState({
     title: "",
     description: "",
+    terms_text: "",
     venue_name: "",
+    venue_address: "",
     city: "",
     poster_image_url: "",
     language: "",
+    age_restriction: "",
     tags: [] as string[],
     is_online: false,
     is_outdoor: false,
@@ -815,13 +821,20 @@ export default function PartnerDashboard() {
 
   const openEditModal = (event: EventItem) => {
     setEditingEvent(event);
+    const initialTerms = Array.isArray(event.terms_and_conditions)
+      ? event.terms_and_conditions.join("\n")
+      : (typeof event.terms_and_conditions === "string" ? event.terms_and_conditions : "");
+
     setEditForm({
       title: event.title,
       description: event.description || "",
+      terms_text: initialTerms,
       venue_name: event.venue_name,
+      venue_address: (event as any).venue_address || "",
       city: event.city,
       poster_image_url: event.poster_image_url || "",
       language: event.language || "",
+      age_restriction: (event as any).age_restriction || "",
       tags: event.tags || [],
       is_online: Boolean(event.is_online),
       is_outdoor: Boolean(event.is_outdoor),
@@ -844,7 +857,17 @@ export default function PartnerDashboard() {
     if (!editingEvent) return;
     setSavingEdit(true);
     try {
-      await updateEvent(editingEvent.id, editForm);
+      const payload: any = {
+        ...editForm,
+        terms_and_conditions: editForm.terms_text
+          ? editForm.terms_text
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean)
+          : [],
+      };
+      delete payload.terms_text;
+      await updateEvent(editingEvent.id, payload);
       toast.success("Event updated successfully");
       setEditingEvent(null);
       fetchData();
@@ -1292,207 +1315,388 @@ export default function PartnerDashboard() {
           open={!!editingEvent}
           onOpenChange={(open) => !open && setEditingEvent(null)}
         >
-          <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-lg rounded-3xl shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold">
-                Edit Event Details
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
-              <div>
-                <Label className="text-xs font-semibold text-slate-600">
-                  Event Title
-                </Label>
-                <Input
-                  id="edit-title"
-                  value={editForm.title}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, title: e.target.value })
-                  }
-                  className="bg-slate-50 border-slate-200 mt-1 rounded-xl"
-                  required
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-slate-600">
-                  Description
-                </Label>
-                <Textarea
-                  id="edit-desc"
-                  value={editForm.description}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, description: e.target.value })
-                  }
-                  className="bg-slate-50 border-slate-200 mt-1 min-h-[80px] rounded-xl"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold text-slate-600">
-                    Venue
-                  </Label>
-                  <Input
-                    id="edit-venue"
-                    value={editForm.venue_name}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, venue_name: e.target.value })
-                    }
-                    className="bg-slate-50 border-slate-200 mt-1 rounded-xl"
-                    required
-                  />
+          <DialogContent className="bg-white border-slate-200 text-slate-900 max-w-3xl w-full max-h-[90vh] flex flex-col p-0 rounded-3xl shadow-2xl overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#7B1E3D]/10 text-[#7B1E3D] flex items-center justify-center font-bold shrink-0">
+                  <Edit3 className="w-5 h-5" />
                 </div>
                 <div>
-                  <Label className="text-xs font-semibold text-slate-600">
-                    City
-                  </Label>
-                  <Input
-                    id="edit-city"
-                    value={editForm.city}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, city: e.target.value })
-                    }
-                    className="bg-slate-50 border-slate-200 mt-1 rounded-xl"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-slate-600">
-                  Poster URL
-                </Label>
-                <Input
-                  id="edit-image"
-                  value={editForm.poster_image_url}
-                  onChange={(e) =>
-                    setEditForm({
-                      ...editForm,
-                      poster_image_url: e.target.value,
-                    })
-                  }
-                  className="bg-slate-50 border-slate-200 mt-1 rounded-xl"
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs font-semibold text-slate-600">
-                  Language
-                </Label>
-                <select
-                  value={editForm.language}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, language: e.target.value })
-                  }
-                  className="w-full h-10 px-3 mt-1 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#7B1E3D]"
-                >
-                  <option value="">None / Not Specified</option>
-                  <option value="english">English</option>
-                  <option value="malayalam">Malayalam</option>
-                  <option value="hindi">Hindi</option>
-                  <option value="tamil">Tamil</option>
-                  <option value="telugu">Telugu</option>
-                  <option value="kannada">Kannada</option>
-                  <option value="multi">Multilingual</option>
-                </select>
-              </div>
-
-              <div>
-                <Label className="text-xs font-semibold text-slate-600">Tags</Label>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {[
-                    { key: "outdoor", label: "Outdoor" },
-                    { key: "fast_filling", label: "Fast Filling" },
-                    { key: "must_attend", label: "Must Attend" },
-                    { key: "unmissable", label: "Unmissable" },
-                    { key: "kids_allowed", label: "Kids Allowed" },
-                    { key: "masterclass", label: "Masterclass" },
-                    { key: "new_year_party", label: "New Year Party" },
-                  ].map((t) => {
-                    const isSelected = editForm.tags.includes(t.key);
-                    return (
-                      <button
-                        key={t.key}
-                        type="button"
-                        onClick={() => {
-                          const nextTags = isSelected
-                            ? editForm.tags.filter((x) => x !== t.key)
-                            : [...editForm.tags, t.key];
-                          setEditForm({ ...editForm, tags: nextTags });
-                        }}
-                        className={`px-2.5 py-1 text-xs rounded-full border transition-all ${
-                          isSelected
-                            ? "bg-[#7B1E3D] text-white border-[#7B1E3D] font-medium"
-                            : "bg-white text-slate-700 border-slate-200 hover:border-[#7B1E3D]"
+                  <DialogTitle className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <span>Edit Event Details</span>
+                    {editingEvent && (
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          editingEvent.status === "PUBLISHED"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : editingEvent.status === "PENDING_APPROVAL"
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-slate-100 text-slate-700 border-slate-200"
                         }`}
                       >
-                        {isSelected ? "✓ " : "+ "}{t.label}
-                      </button>
-                    );
-                  })}
+                        {editingEvent.status}
+                      </span>
+                    )}
+                  </DialogTitle>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Update event information, venue location, promotional tags, and display flags.
+                  </p>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <Label className="text-xs font-semibold text-slate-600">Attributes & Flags</Label>
-                <div className="grid grid-cols-2 gap-2 mt-1">
-                  {[
-                    { key: "is_online", label: "Online Event" },
-                    { key: "is_outdoor", label: "Outdoor Event" },
-                    { key: "is_fast_filling", label: "Fast Filling" },
-                    { key: "is_must_attend", label: "Must Attend" },
-                    { key: "is_unmissable", label: "Unmissable" },
-                    { key: "kids_allowed", label: "Kids Allowed" },
-                    { key: "masterclass", label: "Masterclass" },
-                    { key: "new_year_party", label: "New Year Party" },
-                  ].map((flag) => {
-                    const checked = Boolean((editForm as any)[flag.key]);
-                    return (
-                      <label
-                        key={flag.key}
-                        className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer text-xs transition-colors ${
-                          checked
-                            ? "bg-[#FDF2F4] border-[#7B1E3D] text-[#7B1E3D] font-medium"
-                            : "bg-white border-slate-200 text-slate-700"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) =>
-                            setEditForm({
-                              ...editForm,
-                              [flag.key]: e.target.checked,
-                            })
-                          }
-                          className="rounded border-slate-300 text-[#7B1E3D] focus:ring-[#7B1E3D]"
+            {/* Scrollable Form Body */}
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5 text-xs">
+                {/* 1. General Event Info */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3.5 shadow-2xs">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                    <FileText className="w-3.5 h-3.5 text-[#7B1E3D]" />
+                    <span>General Information</span>
+                  </h4>
+
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                      Event Title <span className="text-rose-500 font-bold">*</span>
+                    </Label>
+                    <Input
+                      id="edit-title"
+                      placeholder="e.g. Arijit Singh Live In Concert"
+                      value={editForm.title}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, title: e.target.value })
+                      }
+                      className="bg-slate-50/60 border-slate-200 rounded-xl text-xs h-10 font-medium focus:bg-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                      Event Description
+                    </Label>
+                    <Textarea
+                      id="edit-desc"
+                      placeholder="Share a compelling overview of what attendees can expect..."
+                      value={editForm.description}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, description: e.target.value })
+                      }
+                      className="bg-slate-50/60 border-slate-200 rounded-xl min-h-[90px] text-xs leading-relaxed focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Terms & Conditions Section */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3.5 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#7B1E3D]" />
+                      <span>Terms &amp; Conditions (Bullet-wise)</span>
+                    </h4>
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                      {editForm.terms_text.split("\n").filter((l) => l.trim().length > 0).length} Points
+                    </span>
+                  </div>
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                      Rules, Guidelines &amp; Policies (One per line)
+                    </Label>
+                    <Textarea
+                      id="edit-terms"
+                      rows={4}
+                      placeholder="Enter each rule or condition on a new line:&#10;• Carry a valid Government Photo ID for age verification&#10;• Gates open 30 minutes before showtime&#10;• Outside food & beverages strictly prohibited&#10;• Tickets once booked cannot be cancelled or exchanged"
+                      value={editForm.terms_text}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, terms_text: e.target.value })
+                      }
+                      className="bg-slate-50/60 border-slate-200 rounded-xl text-xs leading-relaxed font-mono focus:bg-white"
+                    />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Each line appears as an indexed bullet point in admin inspection and customer-facing event details.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 2. Venue & Location */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3.5 shadow-2xs">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                    <MapPin className="w-3.5 h-3.5 text-[#7B1E3D]" />
+                    <span>Venue & Geography</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Venue Name <span className="text-rose-500 font-bold">*</span>
+                      </Label>
+                      <Input
+                        id="edit-venue"
+                        placeholder="e.g. City Amphitheatre"
+                        value={editForm.venue_name}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, venue_name: e.target.value })
+                        }
+                        className="bg-slate-50/60 border-slate-200 rounded-xl text-xs h-10 focus:bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                        City <span className="text-rose-500 font-bold">*</span>
+                      </Label>
+                      <Input
+                        id="edit-city"
+                        placeholder="e.g. Bengaluru"
+                        value={editForm.city}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, city: e.target.value })
+                        }
+                        className="bg-slate-50/60 border-slate-200 rounded-xl text-xs h-10 focus:bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                      Full Venue Address
+                    </Label>
+                    <Input
+                      id="edit-address"
+                      placeholder="e.g. Gate 4, Outer Ring Road, Bellandur, Bengaluru"
+                      value={editForm.venue_address}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, venue_address: e.target.value })
+                      }
+                      className="bg-slate-50/60 border-slate-200 rounded-xl text-xs h-10 focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Event Poster & Visual Preview */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3.5 shadow-2xs">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#7B1E3D]" />
+                    <span>Event Poster & Visuals</span>
+                  </h4>
+
+                  <div className="flex flex-col sm:flex-row gap-4 items-start">
+                    <div className="flex-1 w-full">
+                      <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Poster Image URL
+                      </Label>
+                      <Input
+                        id="edit-image"
+                        value={editForm.poster_image_url}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            poster_image_url: e.target.value,
+                          })
+                        }
+                        className="bg-slate-50/60 border-slate-200 rounded-xl text-xs h-10 focus:bg-white"
+                        placeholder="https://images.unsplash.com/..."
+                      />
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        Recommended aspect ratio 3:4 or 4:5 (minimum 600x800px).
+                      </p>
+                    </div>
+
+                    {/* Live Thumbnail Preview */}
+                    <div className="w-24 h-32 rounded-xl border border-slate-200 bg-slate-100 shrink-0 overflow-hidden flex items-center justify-center shadow-inner self-center sm:self-auto">
+                      {editForm.poster_image_url ? (
+                        <img
+                          src={editForm.poster_image_url}
+                          alt="Poster Preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = "none";
+                          }}
                         />
-                        <span>{flag.label}</span>
-                      </label>
-                    );
-                  })}
+                      ) : (
+                        <div className="text-center p-2 text-slate-400">
+                          <ImageOff className="w-5 h-5 mx-auto mb-1 opacity-50" />
+                          <span className="text-[10px] block leading-tight font-medium">No Poster</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Language & Age Classification */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3.5 shadow-2xs">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-100">
+                    <Globe className="w-3.5 h-3.5 text-[#7B1E3D]" />
+                    <span>Language & Audience Classification</span>
+                  </h4>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Primary Language
+                      </Label>
+                      <select
+                        value={editForm.language}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, language: e.target.value })
+                        }
+                        className="w-full h-10 px-3 text-xs bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#7B1E3D] font-medium"
+                      >
+                        <option value="">None / Not Specified</option>
+                        <option value="english">English</option>
+                        <option value="malayalam">Malayalam</option>
+                        <option value="hindi">Hindi</option>
+                        <option value="tamil">Tamil</option>
+                        <option value="telugu">Telugu</option>
+                        <option value="kannada">Kannada</option>
+                        <option value="multi">Multilingual</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700 block mb-1">
+                        Age Restriction
+                      </Label>
+                      <select
+                        value={editForm.age_restriction}
+                        onChange={(e) =>
+                          setEditForm({ ...editForm, age_restriction: e.target.value })
+                        }
+                        className="w-full h-10 px-3 text-xs bg-slate-50/60 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#7B1E3D] font-medium"
+                      >
+                        <option value="">All Ages (Family Friendly)</option>
+                        <option value="3+">3+ Years</option>
+                        <option value="7+">7+ Years</option>
+                        <option value="12+">12+ Years</option>
+                        <option value="16+">16+ Years</option>
+                        <option value="18+">18+ (Adults Only)</option>
+                        <option value="21+">21+ (Alcohol Permitted)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Promotional Discovery Tags */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-[#7B1E3D]" />
+                      <span>Discovery Tags</span>
+                    </h4>
+                    <span className="text-[11px] text-slate-400">Click to toggle</span>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {[
+                      { key: "outdoor", label: "Outdoor" },
+                      { key: "fast_filling", label: "Fast Filling" },
+                      { key: "must_attend", label: "Must Attend" },
+                      { key: "unmissable", label: "Unmissable" },
+                      { key: "kids_allowed", label: "Kids Allowed" },
+                      { key: "masterclass", label: "Masterclass" },
+                      { key: "new_year_party", label: "New Year Party" },
+                    ].map((t) => {
+                      const isSelected = editForm.tags.includes(t.key);
+                      return (
+                        <button
+                          key={t.key}
+                          type="button"
+                          onClick={() => {
+                            const nextTags = isSelected
+                              ? editForm.tags.filter((x) => x !== t.key)
+                              : [...editForm.tags, t.key];
+                            setEditForm({ ...editForm, tags: nextTags });
+                          }}
+                          className={`px-3 py-1.5 text-xs rounded-xl border transition-all cursor-pointer font-medium flex items-center gap-1.5 ${
+                            isSelected
+                              ? "bg-[#7B1E3D] text-white border-[#7B1E3D] shadow-xs"
+                              : "bg-slate-50 hover:bg-white text-slate-700 border-slate-200 hover:border-[#7B1E3D]"
+                          }`}
+                        >
+                          <span>{isSelected ? "✓" : "+"}</span>
+                          <span>{t.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* 6. Event Attributes & Badges */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white p-4 space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#7B1E3D]" />
+                      <span>Event Attributes & Highlights</span>
+                    </h4>
+                    <span className="text-[11px] text-slate-400">Controls filters & display badges</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                    {[
+                      { key: "is_online", label: "Online Event" },
+                      { key: "is_outdoor", label: "Outdoor Event" },
+                      { key: "is_fast_filling", label: "Fast Filling" },
+                      { key: "is_must_attend", label: "Must Attend" },
+                      { key: "is_unmissable", label: "Unmissable" },
+                      { key: "kids_allowed", label: "Kids Allowed" },
+                      { key: "is_masterclass", label: "Masterclass" },
+                      { key: "new_year_party", label: "New Year Party" },
+                    ].map((flag) => {
+                      const checked = Boolean((editForm as any)[flag.key]);
+                      return (
+                        <label
+                          key={flag.key}
+                          className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer text-xs transition-all select-none ${
+                            checked
+                              ? "bg-[#FDF2F4] border-[#7B1E3D] text-[#7B1E3D] font-semibold shadow-xs"
+                              : "bg-slate-50/60 hover:bg-white border-slate-200 text-slate-700"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                [flag.key]: e.target.checked,
+                              })
+                            }
+                            className="rounded border-slate-300 text-[#7B1E3D] focus:ring-[#7B1E3D] h-4 w-4 shrink-0"
+                          />
+                          <span className="truncate">{flag.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-              <DialogFooter className="gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setEditingEvent(null)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={savingEdit}
-                  className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-xl"
-                >
-                  {savingEdit ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                  ) : (
-                    "Save Changes"
-                  )}
-                </Button>
-              </DialogFooter>
+
+              {/* Fixed Modal Footer */}
+              <div className="px-6 py-3.5 border-t border-slate-100 bg-white flex items-center justify-between shrink-0">
+                <div className="text-[11px] text-slate-400 font-mono hidden sm:block">
+                  Event ID: {editingEvent?.id?.slice(0, 12)}...
+                </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingEvent(null)}
+                    className="border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl h-10 px-4 text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={savingEdit}
+                    className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-xl h-10 px-5 text-xs gap-1.5 shadow-sm shadow-[#7B1E3D]/20 cursor-pointer"
+                  >
+                    {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />}
+                    <span>Save Changes</span>
+                  </Button>
+                </div>
+              </div>
             </form>
           </DialogContent>
         </Dialog>

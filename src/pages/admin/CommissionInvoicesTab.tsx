@@ -162,7 +162,7 @@ export const CommissionInvoicesTab: React.FC = () => {
       setGenNotes('');
       await fetchInvoices();
     } catch (err: any) {
-      alert(err.response?.data?.message || err.message || 'Failed to generate invoice');
+      alert(err.response?.data?.detail || err.response?.data?.message || err.message || 'Failed to generate invoice');
     } finally {
       setGenerating(false);
     }
