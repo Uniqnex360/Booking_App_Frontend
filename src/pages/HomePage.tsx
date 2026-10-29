@@ -196,12 +196,12 @@ export default function HomePage() {
       try {
         const [moviesData, eventsData] = await Promise.all([
           unwrap<MovieCard[]>(
-            api.get(`/movies`, { params: { city, limit: 100 } })
+            api.get(`/movies`, { params: { city, limit: 20 } })
           ).catch(() => []),
-          unwrap<any>(api.get(`/events`, { params: { limit: 100 } })).catch(() => ({ items: [] })),
+          unwrap<any>(api.get(`/events`, { params: { limit: 20 } })).catch(() => ({ items: [] })),
         ]);
         if (cancelled) return;
-        setMovies(moviesData.slice(0, 50));
+        setMovies(moviesData.slice(0, 20));
         const items = Array.isArray(eventsData)
           ? eventsData
           : eventsData.items || [];
@@ -344,6 +344,8 @@ export default function HomePage() {
                       <img
                         src={m.poster_url}
                         alt={m.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (

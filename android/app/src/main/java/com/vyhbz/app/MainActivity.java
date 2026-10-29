@@ -42,6 +42,14 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public void onPermissionRequest(final PermissionRequest request) {
                     runOnUiThread(() -> {
+                        if (androidx.core.content.ContextCompat.checkSelfPermission(MainActivity.this, android.Manifest.permission.CAMERA)
+                                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                            androidx.core.app.ActivityCompat.requestPermissions(
+                                MainActivity.this,
+                                new String[]{android.Manifest.permission.CAMERA},
+                                101
+                            );
+                        }
                         request.grant(request.getResources());
                     });
                 }

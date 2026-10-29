@@ -1,59 +1,118 @@
-import SupportPage from "@/pages/SupportPage";
-import SeatMapPage from "@/pages/SeatMapPage";
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { PrivateRoute, ADMIN_ROLES, THEATRE_ROLES, PARTNER_ROLES } from '@/components/PrivateRoute';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
-import MoviesPage from '@/pages/MoviesPage';
-import MovieDetailPage from '@/pages/MovieDetailPage';
-import EventsPage from '@/pages/EventsPage';
-import DiningListingPage from '@/pages/DiningListingPage';
-import RestaurantsPage from '@/pages/RestaurantsPage';
-import BookingPage from '@/pages/BookingPage';
-import ProfilePage from '@/pages/ProfilePage';
-import EditProfilePage from '@/pages/EditProfilePage';
-import BecomePartnerPage from '@/pages/BecomePartnerPage';
-import PartnerDashboard from '@/pages/PartnerDashboard';
-import AdminPartnersPage from '@/pages/AdminPartnersPage';
-import PartnerEventCreatePage from '@/pages/PartnerEventCreatePage';
-import PartnerDiningCreatePage from '@/pages/PartnerDiningCreatePage';
-import PartnerCouponsPage from '@/pages/PartnerCouponsPage';
-import AdminModerationPage from '@/pages/AdminModerationPage';
-import BookingDetailPage from "@/pages/BookingDetailPage";
-import VerifyOtpPage from "@/pages/VerifyOtpPage";
-import BuyTicketsPage from "@/pages/BuyTicketsPage";
-import TermsAndConditionsPage from "@/components/TermsAndConditionsPage";
-import ConfirmationPage from "@/pages/ConfirmationPage";
-import MovieReviewsPage from "@/pages/MovieReviewsPage";
-import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
-import ResetPasswordPage from "@/pages/ResetPasswordPage";
-import VenuesPage from "@/pages/VenuesPage";
-import FoodPage from "@/pages/FoodPage";
-import AdminDashboardPage from "@/pages/AdminDashboardPage";
-import AdminEventDetailPage from "@/pages/admin/AdminEventDetailPage";
-import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
-import DeleteAccountPage from "@/pages/DeleteAccountPage";
+import { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  PrivateRoute,
+  ADMIN_ROLES,
+  THEATRE_ROLES,
+  PARTNER_ROLES,
+} from "@/components/PrivateRoute";
+import { PageLoader } from "@/pages/PageLoader";
+
+// Core eager customer routes (instant first load)
+import HomePage from "@/pages/HomePage";
+import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+import MoviesPage from "@/pages/MoviesPage";
+
+// On-demand lazy routes (loaded only when visited)
+const MovieDetailPage = lazy(() => import("@/pages/MovieDetailPage"));
+const SeatMapPage = lazy(() => import("@/pages/SeatMapPage"));
+const BuyTicketsPage = lazy(() => import("@/pages/BuyTicketsPage"));
+const BookingPage = lazy(() => import("@/pages/BookingPage"));
+const BookingDetailPage = lazy(() => import("@/pages/BookingDetailPage"));
+const ConfirmationPage = lazy(() => import("@/pages/ConfirmationPage"));
+const EventsPage = lazy(() => import("@/pages/EventsPage"));
+const DiningListingPage = lazy(() => import("@/pages/DiningListingPage"));
+const FoodPage = lazy(() => import("@/pages/FoodPage"));
+const VenuesPage = lazy(() => import("@/pages/VenuesPage"));
+const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const EditProfilePage = lazy(() => import("@/pages/EditProfilePage"));
+const VerifyOtpPage = lazy(() => import("@/pages/VerifyOtpPage"));
+const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
+const MovieReviewsPage = lazy(() => import("@/pages/MovieReviewsPage"));
+const SupportPage = lazy(() => import("@/pages/SupportPage"));
+const TermsAndConditionsPage = lazy(() => import("@/components/TermsAndConditionsPage"));
+const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
+const DeleteAccountPage = lazy(() => import("@/pages/DeleteAccountPage"));
+const BecomePartnerPage = lazy(() => import("@/pages/BecomePartnerPage"));
+
+// Backoffice: Admin Portal (Lazy)
+const AdminDashboardPage = lazy(() => import("@/pages/AdminDashboardPage"));
+const AdminEventDetailPage = lazy(() => import("@/pages/admin/AdminEventDetailPage"));
+const AdminPartnersPage = lazy(() => import("@/pages/AdminPartnersPage"));
+const AdminModerationPage = lazy(() => import("@/pages/AdminModerationPage"));
+
+// Backoffice: Partner Portal (Lazy)
+const PartnerDashboard = lazy(() => import("@/pages/PartnerDashboard"));
+const PartnerEventCreatePage = lazy(() => import("@/pages/PartnerEventCreatePage"));
+const PartnerDiningCreatePage = lazy(() => import("@/pages/PartnerDiningCreatePage"));
+const PartnerCouponsPage = lazy(() => import("@/pages/PartnerCouponsPage"));
+
+// Backoffice: Theatre Scoped Portal (Lazy)
 import { TheatreLayout } from "@/pages/theatre/TheatreLayout";
-import TheatreDashboardPage from "@/pages/theatre/TheatreDashboardPage";
-import TheatreVenuesPage from "@/pages/theatre/TheatreVenuesPage";
-import TheatreShowtimesPage from "@/pages/theatre/TheatreShowtimesPage";
-import TheatreBookingsPage from "@/pages/theatre/TheatreBookingsPage";
-import TheatreInvoicesPage from "@/pages/theatre/TheatreInvoicesPage";
-import TheatreExceptionsPage from "@/pages/theatre/TheatreExceptionsPage";
-import TheatreTicketValidatorPage from "@/pages/theatre/TheatreTicketValidatorPage";
+const TheatreDashboardPage = lazy(() => import("@/pages/theatre/TheatreDashboardPage"));
+const TheatreVenuesPage = lazy(() => import("@/pages/theatre/TheatreVenuesPage"));
+const TheatreShowtimesPage = lazy(() => import("@/pages/theatre/TheatreShowtimesPage"));
+const TheatreBookingsPage = lazy(() => import("@/pages/theatre/TheatreBookingsPage"));
+const TheatreInvoicesPage = lazy(() => import("@/pages/theatre/TheatreInvoicesPage"));
+const TheatreExceptionsPage = lazy(() => import("@/pages/theatre/TheatreExceptionsPage"));
+const TheatreTicketValidatorPage = lazy(() => import("@/pages/theatre/TheatreTicketValidatorPage"));
 
 export function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/admin" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/movies" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/events" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
-      <Route path="/admin/events/:eventId" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminEventDetailPage /></PrivateRoute>} />
-      <Route path="/admin/users" element={<PrivateRoute allowedRoles={ADMIN_ROLES}><AdminDashboardPage /></PrivateRoute>} />
-      
+      <Route
+        path="/admin"
+        element={
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
+            <AdminDashboardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
+            <AdminDashboardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/movies"
+        element={
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
+            <AdminDashboardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/events"
+        element={
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
+            <AdminDashboardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/events/:eventId"
+        element={
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
+            <AdminEventDetailPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/admin/users"
+        element={
+          <PrivateRoute allowedRoles={ADMIN_ROLES}>
+            <AdminDashboardPage />
+          </PrivateRoute>
+        }
+      />
+
       {/* Theatre Partner Scoped Portal */}
       <Route
         path="/theatre"
@@ -74,10 +133,38 @@ export function AppRoutes() {
       </Route>
       <Route path="/confirmation" element={<ConfirmationPage />} />
       <Route path="/movies/:id/reviews" element={<MovieReviewsPage />} />
-      <Route path="/forgot-password" element={<PrivateRoute guest><ForgotPasswordPage /></PrivateRoute>} />
-      <Route path="/reset-password" element={<PrivateRoute guest><ResetPasswordPage /></PrivateRoute>} />
-      <Route path="/login" element={<PrivateRoute guest><LoginPage /></PrivateRoute>} />
-      <Route path="/register" element={<PrivateRoute guest><RegisterPage /></PrivateRoute>} />
+      <Route
+        path="/forgot-password"
+        element={
+          <PrivateRoute guest>
+            <ForgotPasswordPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PrivateRoute guest>
+            <ResetPasswordPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/login"
+        element={
+          <PrivateRoute guest>
+            <LoginPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          <PrivateRoute guest>
+            <RegisterPage />
+          </PrivateRoute>
+        }
+      />
       <Route path="/movies" element={<MoviesPage />} />
       <Route path="/movies/:id" element={<MovieDetailPage />} />
       <Route path="/support" element={<SupportPage />} />
@@ -96,7 +183,7 @@ export function AppRoutes() {
       <Route path="/restaurants" element={<DiningListingPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
       <Route path="/buytickets/:id" element={<BuyTicketsPage />} />
-    <Route path="/venues" element={<VenuesPage />} />
+      <Route path="/venues" element={<VenuesPage />} />
       <Route path="/booking/:type/:id" element={<BookingPage />} />
       <Route path="/bookings/:bookingId/food" element={<FoodPage />} />
       <Route
@@ -189,5 +276,6 @@ export function AppRoutes() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   );
 }
