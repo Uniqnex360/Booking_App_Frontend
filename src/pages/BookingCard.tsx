@@ -99,17 +99,22 @@ export function BookingCard({
         : "Confirmed";
 
   // Detailed price breakdown calculations
-  const feePaise = b.convenience_fee_paise || 0;
-  const fnbPaise = b.fnb_paise || 0;
   const discountPaise = b.discount_paise || 0;
+  const fnbPaise = b.fnb_paise || 0;
 
+  // If convenience_fee_paise is recorded in DB, use it; otherwise provide standard split (₹35.40 incl 18% GST per ticket)
+  const defaultFeePerTicketPaise = 3540; // ₹30 base + 18% GST = ₹35.40
+  const totalAvailablePaise = (b.total_paise ?? Math.round(totalRupees * 100)) - fnbPaise;
+  const rawFeePaise =
+    b.convenience_fee_paise && b.convenience_fee_paise > 0
+      ? b.convenience_fee_paise
+      : Math.min(Math.round(totalAvailablePaise * 0.15), seatCount * defaultFeePerTicketPaise);
+
+  const feePaise = Math.max(0, rawFeePaise);
   const rawTicketPaise =
-    b.ticket_paise ??
-    (b.unit_price_paise ? b.unit_price_paise * (seatCount || 1) : null) ??
-    (b.tier_price_paise ? b.tier_price_paise * (seatCount || 1) : null) ??
-    (b.total_paise
-      ? Math.max(0, b.total_paise - feePaise - fnbPaise + discountPaise)
-      : Math.round(totalRupees * 100));
+    b.ticket_paise && b.ticket_paise < (b.total_paise ?? totalRupees * 100)
+      ? b.ticket_paise
+      : Math.max(0, totalAvailablePaise - feePaise);
 
   const ticketAmount = rawTicketPaise / 100;
   const fnbAmount = fnbPaise / 100;
@@ -427,13 +432,17 @@ export function BookingCard({
         <div className="border-t border-dashed border-gray-200 bg-white px-4 py-3.5 space-y-2 text-xs transition-all">
           <div className="flex justify-between text-gray-600">
             <span>Ticket Price ({seatCount} {seatCount === 1 ? "ticket" : "tickets"})</span>
-            <span className="font-medium text-gray-800">{formatCurrency(ticketAmount)}</span>
+            <span className="font-medium text-gray-800">
+              ₹{ticketAmount % 1 !== 0 ? ticketAmount.toFixed(2) : ticketAmount.toLocaleString("en-IN")}
+            </span>
           </div>
 
           {fnbAmount > 0 && (
             <div className="flex justify-between text-gray-600">
               <span>Food & Beverage</span>
-              <span className="font-medium text-gray-800">{formatCurrency(fnbAmount)}</span>
+              <span className="font-medium text-gray-800">
+                ₹{fnbAmount % 1 !== 0 ? fnbAmount.toFixed(2) : fnbAmount.toLocaleString("en-IN")}
+              </span>
             </div>
           )}
 
@@ -441,16 +450,18 @@ export function BookingCard({
             <div className="space-y-1">
               <div className="flex justify-between text-gray-600">
                 <span>Convenience Fee</span>
-                <span className="font-medium text-gray-800">{formatCurrency(feeAmount)}</span>
+                <span className="font-medium text-gray-800">
+                  ₹{feeAmount % 1 !== 0 ? feeAmount.toFixed(2) : feeAmount.toLocaleString("en-IN")}
+                </span>
               </div>
               <div className="pl-2.5 text-[11px] text-gray-500 space-y-0.5">
                 <div className="flex justify-between">
                   <span>• Base Handling Fee</span>
-                  <span>{formatCurrency(baseFee)}</span>
+                  <span>₹{baseFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>• Integrated GST (9% CGST + 9% SGST)</span>
-                  <span>{formatCurrency(totalGst)}</span>
+                  <span>₹{totalGst.toFixed(2)}</span>
                 </div>
               </div>
             </div>

@@ -323,39 +323,57 @@ export default function BookingDetailPage() {
                 Payment summary
               </p>
               <div className="space-y-2 text-sm">
-                {(booking.ticket_paise || booking.unit_price_paise || booking.tier_price_paise) && qty > 0 && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Tickets ({qty})</span>
-                    <span>{formatRupees(booking.ticket_paise ?? ((booking.unit_price_paise ?? booking.tier_price_paise ?? 0) * qty))}</span>
-                  </div>
-                )}
-                {Boolean(booking.fnb_paise) && (
-                  <div className="flex justify-between text-slate-600">
-                    <span>Food & Beverage</span>
-                    <span>{formatRupees(booking.fnb_paise || 0)}</span>
-                  </div>
-                )}
-                {Boolean(booking.convenience_fee_paise) && (() => {
-                  const fee = booking.convenience_fee_paise || 0;
-                  const baseFee = Math.round(fee / 1.18);
-                  const gst = fee - baseFee;
+                {(() => {
+                  const defaultFeePerTicketPaise = 3540;
+                  const totalPaise = booking.total_paise || 0;
+                  const fnbPaise = booking.fnb_paise || 0;
+                  const feePaise =
+                    booking.convenience_fee_paise && booking.convenience_fee_paise > 0
+                      ? booking.convenience_fee_paise
+                      : Math.min(Math.round((totalPaise - fnbPaise) * 0.15), (qty || 1) * defaultFeePerTicketPaise);
+
+                  const ticketPaise =
+                    booking.ticket_paise && booking.ticket_paise < totalPaise
+                      ? booking.ticket_paise
+                      : Math.max(0, totalPaise - fnbPaise - feePaise);
+
+                  const fee = feePaise / 100;
+                  const baseFee = Math.round((fee / 1.18) * 100) / 100;
+                  const gst = Math.max(0, Math.round((fee - baseFee) * 100) / 100);
+
                   return (
-                    <div className="space-y-1">
+                    <>
                       <div className="flex justify-between text-slate-600">
-                        <span>Convenience fee</span>
-                        <span>{formatRupees(fee)}</span>
+                        <span>Tickets ({qty})</span>
+                        <span>{formatRupees(ticketPaise)}</span>
                       </div>
-                      <div className="pl-2.5 text-[11px] text-slate-400 space-y-0.5">
-                        <div className="flex justify-between">
-                          <span>• Base handling fee</span>
-                          <span>{formatRupees(baseFee)}</span>
+
+                      {fnbPaise > 0 && (
+                        <div className="flex justify-between text-slate-600">
+                          <span>Food & Beverage</span>
+                          <span>{formatRupees(fnbPaise)}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span>• Integrated GST (9% CGST + 9% SGST)</span>
-                          <span>{formatRupees(gst)}</span>
+                      )}
+
+                      {fee > 0 && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-slate-600">
+                            <span>Convenience fee</span>
+                            <span>₹{fee.toFixed(2)}</span>
+                          </div>
+                          <div className="pl-2.5 text-[11px] text-slate-400 space-y-0.5">
+                            <div className="flex justify-between">
+                              <span>• Base handling fee</span>
+                              <span>₹{baseFee.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>• Integrated GST (9% CGST + 9% SGST)</span>
+                              <span>₹{gst.toFixed(2)}</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      )}
+                    </>
                   );
                 })()}
                 <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-2 mt-2">
