@@ -26,6 +26,7 @@ import api, { clearTokens, getAccessToken, setAuthFailureHandler } from '@/api/c
 import { OAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { signInWithGoogleNative } from '@/lib/googleAuth';
+import { signInWithAppleNative } from '@/lib/appleAuth';
 
 
 interface AuthContextValue {
@@ -178,48 +179,12 @@ const verifySignUp = async (userId: string, code: string) => {
 
   const continueWithApple = async () => {
     try {
-      const provider = new OAuthProvider("apple.com");
-      provider.addScope("email");
-      provider.addScope("name");
-      const result = await signInWithPopup(auth, provider);
-      const token = await result.user.getIdToken();
-      return await signInWithFirebase({ token });
+      const res = await signInWithAppleNative();
+      if (res?.user) {
+        setUser(res.user);
+      }
+      return res;
     } catch (err: any) {
-      if (
-        err?.code === "auth/popup-closed-by-user" || 
-        err?.code === "auth/cancelled-popup-request" ||
-        err?.message?.includes("closed-by-user")
-      ) {
-        return { error: null, cancelled: true };
-      }
-      if (
-        err?.code === "auth/operation-not-allowed" ||
-        err?.code === "auth/configuration-not-found" ||
-        err?.code === "auth/invalid-provider-id"
-      ) {
-        console.warn("Apple Provider not yet enabled in Firebase Console. Using Apple demo sign-in.");
-        try {
-          const demoApplePayload: RegisterPayload = {
-            full_name: "Apple User",
-            email: "apple.user@icloud.com",
-            password: "AppleUser@123",
-          };
-          const loginRes = await signIn({
-            email: demoApplePayload.email,
-            password: demoApplePayload.password,
-          });
-          if (!loginRes.error) {
-            return { error: null };
-          }
-          await signUp(demoApplePayload);
-          return await signIn({
-            email: demoApplePayload.email,
-            password: demoApplePayload.password,
-          });
-        } catch {
-          return { error: "Apple Sign-In: Configure Apple Services ID in Firebase Console." };
-        }
-      }
       return { error: getErrorMessage(err) };
     }
   };

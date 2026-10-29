@@ -30,6 +30,11 @@ export function QuickAuthModal() {
     import.meta.env.VITE_PHONE_WITH_EMAIL_CLIENT_ID || "16879666373804430168";
 
   const [view, setView] = useState<AuthModalView>("get-started");
+  const isIos = Capacitor.getPlatform() === "ios";
+  const isAndroid = Capacitor.getPlatform() === "android" || /Android/i.test(navigator?.userAgent || "");
+  // Apple Sign-In is required on iOS devices for Apple Review Guideline 4.8.
+  // On Android devices, it is hidden to prevent confusion and errors.
+  const showAppleSignIn = isIos || (!isAndroid && /Mac|iPhone|iPad|iPod/i.test(navigator?.userAgent || ""));
   const [showInAppPhoneAuth, setShowInAppPhoneAuth] = useState(false);
   const [emailStep, setEmailStep] = useState<"enter-email" | "password">("enter-email");
   const [loading, setLoading] = useState(false);
@@ -258,6 +263,29 @@ export function QuickAuthModal() {
       }
     } catch (err: any) {
       setError(err?.message || "Google sign-in failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const res: any = await continueWithApple();
+      if (res?.cancelled) {
+        setLoading(false);
+        return;
+      }
+      if (res?.error) {
+        setError(res.error);
+        toast.error(res.error);
+      } else {
+        toast.success("Signed in successfully with Apple!");
+        closeAuthModal();
+      }
+    } catch (err: any) {
+      setError(err?.message || "Apple sign-in failed.");
     } finally {
       setLoading(false);
     }
@@ -497,6 +525,20 @@ export function QuickAuthModal() {
             )}
 
             <div className="space-y-3">
+              {showAppleSignIn && (
+                <button
+                  type="button"
+                  onClick={handleAppleSignIn}
+                  disabled={loading}
+                  className="w-full h-12 flex items-center justify-center rounded-xl bg-black hover:bg-neutral-900 text-sm font-semibold text-white transition shadow-sm relative group cursor-pointer border border-black"
+                >
+                  <svg className="w-5 h-5 absolute left-5 fill-current text-white group-hover:scale-105 transition-transform" viewBox="0 0 170 170">
+                    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.58-7.71-11.65-14-5.99-9.13-10.83-19.99-14.54-32.58-3.71-12.6-5.57-24.3-5.57-35.1 0-14.35 3.7-26.36 11.11-36.03 7.41-9.68 16.73-14.62 27.95-14.83 4.58 0 9.8 1.19 15.66 3.58 5.86 2.39 9.8 3.59 11.83 3.59 1.85 0 5.76-1.14 11.74-3.43 5.98-2.28 11.09-3.32 15.33-3.12 11.1.54 20.31 4.58 27.63 12.12-9.78 5.87-14.57 14.24-14.37 25.11.22 8.48 3.48 15.65 9.78 21.52 6.3 5.87 13.91 9.24 22.82 10.11-2.07 6.3-4.57 12.6-7.5 18.91zM119.22 31.84c0-7.72 2.72-14.88 8.15-21.49 5.43-6.61 12.17-10.35 20.21-11.22.11.98.16 1.85.16 2.61 0 7.72-2.82 14.99-8.47 21.82-5.65 6.83-12.49 10.64-20.52 11.43-.1-.98-.16-1.85-.16-2.61z"/>
+                  </svg>
+                  <span>Sign in with Apple</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
