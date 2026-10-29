@@ -849,12 +849,6 @@ export default function MoviesPage() {
                   >
                     {/* Poster Card */}
                     <div className="aspect-[2/3] w-full bg-gray-200 rounded-lg overflow-hidden relative shadow-sm group-hover:shadow-md transition duration-200">
-                      {movie.is_trending && (
-                        <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-[#7B1E3D] text-white text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded shadow-md backdrop-blur-xs">
-                          <span>🔥</span>
-                          <span>Trending</span>
-                        </div>
-                      )}
                       {movie.poster_url ? (
                         <img
                           src={movie.poster_url}

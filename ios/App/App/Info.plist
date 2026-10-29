@@ -45,6 +45,8 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required to scan ticket QR codes for admission verification.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

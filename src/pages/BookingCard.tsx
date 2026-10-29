@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { saveOfflinePass } from "@/utils/offlinePassStorage";
-import { MapPin, Users, Ticket, Loader2, AlertCircle } from "lucide-react";
+import { MapPin, Users, Ticket, Loader2, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/utils/currencyFormatter";
 import { formatDate } from "@/utils/dateFormatter";
@@ -32,6 +32,7 @@ export function BookingCard({
   const [currentStatus, setCurrentStatus] = useState<string>(booking.status);
   const [cancelling, setCancelling] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showBreakdown, setShowBreakdown] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<"portrait" | "square" | "landscape">("portrait");
   const posterImgRef = useRef<HTMLImageElement>(null);
 
@@ -96,6 +97,26 @@ export function BookingCard({
       : past || isPastShowtime
         ? "Completed"
         : "Confirmed";
+
+  // Detailed price breakdown calculations
+  const feePaise = b.convenience_fee_paise || 0;
+  const fnbPaise = b.fnb_paise || 0;
+  const discountPaise = b.discount_paise || 0;
+
+  const rawTicketPaise =
+    b.ticket_paise ??
+    (b.unit_price_paise ? b.unit_price_paise * (seatCount || 1) : null) ??
+    (b.tier_price_paise ? b.tier_price_paise * (seatCount || 1) : null) ??
+    (b.total_paise
+      ? Math.max(0, b.total_paise - feePaise - fnbPaise + discountPaise)
+      : Math.round(totalRupees * 100));
+
+  const ticketAmount = rawTicketPaise / 100;
+  const fnbAmount = fnbPaise / 100;
+  const feeAmount = feePaise / 100;
+  const baseFee = Math.round((feeAmount / 1.18) * 100) / 100;
+  const totalGst = Math.max(0, Math.round((feeAmount - baseFee) * 100) / 100);
+  const discountAmount = discountPaise / 100;
 
   const handleCancel = async () => {
     setCancelling(true);
@@ -366,9 +387,24 @@ export function BookingCard({
         </div>
       )}
 
-      {/* Footer: total */}
-      <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3 text-sm">
-        <span className="text-gray-600">Total Paid</span>
+      {/* Footer: total (Clickable for clean breakdown) */}
+      <button
+        type="button"
+        onClick={() => setShowBreakdown((prev) => !prev)}
+        className="w-full flex items-center justify-between border-t border-gray-200 bg-gray-50 hover:bg-gray-100/90 active:bg-gray-200/70 transition-colors px-4 py-3 text-sm text-left group cursor-pointer select-none"
+        aria-expanded={showBreakdown}
+      >
+        <div className="flex items-center gap-1.5 text-gray-700">
+          <span className="font-semibold text-gray-800">Total Paid</span>
+          <span className="text-[11px] text-gray-400 group-hover:text-[#7B1E3D] transition-colors">
+            {showBreakdown ? "(Hide breakdown)" : "(Tap for breakdown)"}
+          </span>
+          {showBreakdown ? (
+            <ChevronUp className="w-4 h-4 text-gray-500 group-hover:text-[#7B1E3D] transition-transform" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-500 group-hover:text-[#7B1E3D] transition-transform" />
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {isCancelled && (
             <Badge className="bg-red-100 text-red-700 hover:bg-red-100 text-[10px] font-bold uppercase">
@@ -380,11 +416,59 @@ export function BookingCard({
               {formatCurrency(b.subtotal_paise / 100)}
             </span>
           )}
-          <span className="font-semibold text-gray-900">
+          <span className="font-bold text-gray-900">
             {formatCurrency(totalRupees)}
           </span>
         </div>
-      </div>
+      </button>
+
+      {/* Expandable Breakdown Drawer */}
+      {showBreakdown && (
+        <div className="border-t border-dashed border-gray-200 bg-white px-4 py-3.5 space-y-2 text-xs transition-all">
+          <div className="flex justify-between text-gray-600">
+            <span>Ticket Price ({seatCount} {seatCount === 1 ? "ticket" : "tickets"})</span>
+            <span className="font-medium text-gray-800">{formatCurrency(ticketAmount)}</span>
+          </div>
+
+          {fnbAmount > 0 && (
+            <div className="flex justify-between text-gray-600">
+              <span>Food & Beverage</span>
+              <span className="font-medium text-gray-800">{formatCurrency(fnbAmount)}</span>
+            </div>
+          )}
+
+          {feeAmount > 0 && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-gray-600">
+                <span>Convenience Fee</span>
+                <span className="font-medium text-gray-800">{formatCurrency(feeAmount)}</span>
+              </div>
+              <div className="pl-2.5 text-[11px] text-gray-500 space-y-0.5">
+                <div className="flex justify-between">
+                  <span>• Base Handling Fee</span>
+                  <span>{formatCurrency(baseFee)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Integrated GST (9% CGST + 9% SGST)</span>
+                  <span>{formatCurrency(totalGst)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {discountAmount > 0 && (
+            <div className="flex justify-between text-emerald-600 font-medium pt-1 border-t border-gray-100">
+              <span>Coupon Discount</span>
+              <span>-{formatCurrency(discountAmount)}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between font-bold text-gray-900 pt-2 border-t border-gray-200 text-sm">
+            <span>Total Paid</span>
+            <span>{formatCurrency(totalRupees)}</span>
+          </div>
+        </div>
+      )}
 
       <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
         <AlertDialogContent className="sm:max-w-md">

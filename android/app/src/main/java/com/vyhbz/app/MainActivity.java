@@ -9,6 +9,7 @@ import android.view.Window;
 import android.os.Message;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
+import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -38,6 +39,13 @@ public class MainActivity extends BridgeActivity {
             cookieManager.setAcceptThirdPartyCookies(mainWebView, true);
 
             mainWebView.setWebChromeClient(new WebChromeClient() {
+                @Override
+                public void onPermissionRequest(final PermissionRequest request) {
+                    runOnUiThread(() -> {
+                        request.grant(request.getResources());
+                    });
+                }
+
                 @Override
                 public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
                     if (paymentPopupDialog != null && paymentPopupDialog.isShowing()) {

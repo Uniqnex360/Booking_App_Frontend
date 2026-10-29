@@ -164,21 +164,54 @@ export default function TheatreTicketValidatorPage() {
         try {
           const scanner = new Html5Qrcode("reader");
           scannerRef.current = scanner;
-          await scanner.start(
-            { facingMode: "environment" },
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-            },
-            (decodedText) => {
-              handleScanSuccess(decodedText);
-            },
-            () => {
-              // ignore frame read errors
+
+          let cameraConfig: string | { facingMode: string } = { facingMode: "environment" };
+
+          try {
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+              const backCam = cameras.find((c) =>
+                c.label.toLowerCase().includes("back") ||
+                c.label.toLowerCase().includes("environment") ||
+                c.label.toLowerCase().includes("rear")
+              );
+              cameraConfig = backCam ? backCam.id : cameras[0].id;
             }
-          );
+          } catch (camListErr) {
+            console.warn("Could not list cameras, falling back to facingMode", camListErr);
+          }
+
+          try {
+            await scanner.start(
+              cameraConfig,
+              {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+              },
+              (decodedText) => {
+                handleScanSuccess(decodedText);
+              },
+              () => {}
+            );
+          } catch (startErr) {
+            console.warn("Primary camera start failed, trying fallback camera...", startErr);
+            // Fallback to front/user camera or first available
+            await scanner.start(
+              { facingMode: "user" },
+              {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+              },
+              (decodedText) => {
+                handleScanSuccess(decodedText);
+              },
+              () => {}
+            );
+          }
         } catch (err: any) {
-          toast.error("Failed to start camera. Please ensure camera permissions are granted.");
+          console.error("Camera start error:", err);
+          const msg = err?.message || err?.toString() || "Camera initialization failed";
+          toast.error(`Failed to start camera: ${msg}. Please ensure camera permissions are granted.`);
           setCameraActive(false);
         }
       }, 200);
