@@ -1,21 +1,7 @@
 import { useEffect, useState, useRef, useMemo, lazy, Suspense } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
-const SeatView360 = lazy(() => import("./SeatView360"));
+const SeatPerspective3D = lazy(() => import("./SeatPerspective3D"));
 import type { SeatPerspectiveItem } from "./SeatView360";
-// Real equirectangular cinema auditorium panoramas (2:1 ratio, 3840x1920)
-// Distinct physical viewpoints across the multiplex auditorium
-const THEATRE_PANOS = {
-  hall: "/panoramas/theatre-overview.jpg",
-  overview: "/panoramas/theatre-overview.jpg",
-  silver: "/panoramas/theatre-overview.jpg",
-  prime: "/panoramas/theatre-overview.jpg",
-  recliner: "/panoramas/theatre-overview.jpg",
-  left: "/panoramas/theatre-overview.jpg",
-  right: "/panoramas/theatre-overview.jpg",
-  front: "/panoramas/theatre-overview.jpg",
-  mid: "/panoramas/theatre-overview.jpg",
-  back: "/panoramas/theatre-overview.jpg",
-};
 import { api, unwrap } from "@/api/client";
 import { formatRupees } from "@/utils/currencyFormatter";
 import {
@@ -30,6 +16,7 @@ import {
   Info,
   X,
   Users,
+  Compass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -68,10 +55,10 @@ export default function SeatMapPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSeats, setSelectedSeats] = useState<SeatItem[]>([]);
   const [isCommitLoading, setIsCommitLoading] = useState(false);
-  const [viewSrc, setViewSrc] = useState<string | null>(null);
-  const [viewOpts, setViewOpts] = useState({ yaw: 0, pitch: 0, zoom: 40 });
-  const [activeSeatPerspective, setActiveSeatPerspective] = useState<SeatPerspectiveItem | null>(null);
-  const [isInspectMode, setIsInspectMode] = useState<boolean>(false);
+  const [view3DSeat, setView3DSeat] = useState<SeatPerspectiveItem | null>(null);
+  const [view3DInitialMode, setView3DInitialMode] = useState<"seat" | "overview">("seat");
+  const [moviePoster, setMoviePoster] = useState<string | null>(null);
+  const [movieBanner, setMovieBanner] = useState<string | null>(null);
   const [holdId, setHoldId] = useState<string | null>(null);
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
   const [countdown, setCountdown] = useState<number>(0);
@@ -212,6 +199,15 @@ export default function SeatMapPage() {
       );
       setMapData(data);
       setSelectedSeats([]);
+
+      if ((data as any)?.movie_id) {
+        unwrap<any>(api.get(`/movies/${(data as any).movie_id}`))
+          .then((m) => {
+            if (m?.poster_url) setMoviePoster(m.poster_url);
+            if (m?.banner_url || m?.backdrop_url) setMovieBanner(m.banner_url || m.backdrop_url);
+          })
+          .catch(() => {});
+      }
 
       // If source unavailable on initial load, auto-retry once after 3.5s for Render cold-starts
       if (data?.code === "SOURCE_UNAVAILABLE" && autoRetryCountRef.current < 2) {
@@ -396,13 +392,6 @@ export default function SeatMapPage() {
     });
   }
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
-    if (isInspectMode) {
-      const p = getSeatPerspective(clickedSeat);
-      setActiveSeatPerspective(p);
-      setViewOpts({ yaw: p.yaw, pitch: p.pitch, zoom: p.zoom });
-      setViewSrc(p.panoUrl || THEATRE_PANOS.prime);
-      return;
-    }
     if (!clickedSeat.is_available || holdId) return;
     if (isCoupleSeat(clickedSeat)) {
       const partnerNum =
@@ -720,6 +709,22 @@ export default function SeatMapPage() {
   const backDist = distVals.length ? Math.max(...distVals) : null;
   const selRow = selectedSeats[0]?.row_label;
   const selDist = selRow ? rowDistances[selRow] : undefined;
+  const splitIntoBlocks = (seats: SeatItem[]) => {
+    const len = seats.length;
+    if (len <= 8) return [seats];
+    if (len <= 14) {
+      const left = Math.ceil(len / 2);
+      return [seats.slice(0, left), seats.slice(left)];
+    }
+    const edge = Math.min(8, Math.floor(len / 4));
+    const rightStart = len - edge;
+    return [
+      seats.slice(0, edge),
+      seats.slice(edge, rightStart),
+      seats.slice(rightStart),
+    ];
+  };
+
   // Calculate exact angle and perspective for any given seat
   const getSeatPerspective = (seat: SeatItem): SeatPerspectiveItem => {
     const row = seat.row_label;
@@ -747,8 +752,7 @@ export default function SeatMapPage() {
       else tierName = "SILVER";
     }
 
-    // All seats use the same hall panorama — only camera angle/zoom changes
-    const panoUrl = THEATRE_PANOS.hall;
+    const panoUrl = undefined;
 
     // Determine position type for camera calibration
     let positionType: "silver" | "prime" | "recliner" | "left" | "right" = "prime";
@@ -809,6 +813,15 @@ export default function SeatMapPage() {
       rowDistances[row] ??
       Number((FRONT_M + (rowIdx >= 0 ? rowIdx : 0) * PITCH_M).toFixed(1));
 
+    // Determine walkway block index
+    const blocks = splitIntoBlocks(rowSeats);
+    let blockIndex = 0;
+    blocks.forEach((blk, bIdx) => {
+      if (blk.some((s) => s.seat_ref === seat.seat_ref || s.number === seat.number)) {
+        blockIndex = bIdx;
+      }
+    });
+
     return {
       id: seat.seat_ref,
       label: seat.code || `${seat.row_label}${seat.number}`,
@@ -817,6 +830,9 @@ export default function SeatMapPage() {
       tierName,
       distanceM: distM,
       positionType,
+      isCouple: isCoupleSeat(seat),
+      blockIndex,
+      totalBlocks: blocks.length,
       panoUrl,
       yaw,
       pitch,
@@ -831,21 +847,6 @@ export default function SeatMapPage() {
     (s) => getSeatPerspective(s),
   );
   const canProceed = selectedSeats.length === requiredSeatCount;
-  const splitIntoBlocks = (seats: SeatItem[]) => {
-    const len = seats.length;
-    if (len <= 8) return [seats];
-    if (len <= 14) {
-      const left = Math.ceil(len / 2);
-      return [seats.slice(0, left), seats.slice(left)];
-    }
-    const edge = Math.min(8, Math.floor(len / 4));
-    const rightStart = len - edge;
-    return [
-      seats.slice(0, edge),
-      seats.slice(edge, rightStart),
-      seats.slice(rightStart),
-    ];
-  };
   const formattedDate = mapData?.starts_at
     ? new Date(mapData.starts_at).toLocaleDateString("en-US", {
         weekday: "short",
@@ -902,35 +903,44 @@ export default function SeatMapPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
               {allSeats.length} seats
             </div>
+            {/* 3D Seat View Button */}
             <button
               onClick={() => {
-                setActiveSeatPerspective(null);
-                setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
-                setViewSrc(THEATRE_PANOS.hall);
+                const target =
+                  selectedSeats.length > 0
+                    ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
+                    : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
+                      allAuditoriumPerspectives[0];
+                if (target) {
+                  setView3DInitialMode("seat");
+                  setView3DSeat(target);
+                }
               }}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-2.5 sm:px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border border-gray-300 shadow-2xs"
-              title="View theatre in 360°"
+              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 active:scale-95 text-white px-2.5 sm:px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-sm"
+              title="Preview selected seat in 3D perspective"
             >
-              <Eye className="h-3.5 w-3.5 text-[#7B1E3D]" />
-              <span className="hidden sm:inline">360° Hall View</span>
-              <span className="sm:hidden">360°</span>
+              <Compass className="h-3.5 w-3.5 text-amber-100" />
+              <span className="hidden sm:inline">3D Seat View</span>
+              <span className="sm:hidden">3D Seat</span>
             </button>
+
+            {/* 3D Hall Overview Button (Replaces 360 Hall View) */}
             <button
-              onClick={() => setIsInspectMode(!isInspectMode)}
-              className={`px-2.5 sm:px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer border shadow-2xs ${
-                isInspectMode
-                  ? "bg-purple-600 text-white border-purple-700 shadow-md ring-2 ring-purple-300"
-                  : "bg-white hover:bg-purple-50 text-purple-700 border-purple-300"
-              }`}
-              title="Click any seat to preview its exact 360° view"
+              onClick={() => {
+                const centerSeat =
+                  allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
+                  allAuditoriumPerspectives[0];
+                if (centerSeat) {
+                  setView3DInitialMode("overview");
+                  setView3DSeat(centerSeat);
+                }
+              }}
+              className="bg-white hover:bg-amber-50 text-amber-900 border border-amber-300 px-2.5 sm:px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="Explore full auditorium in 3D"
             >
-              <Eye className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">
-                {isInspectMode ? "Exit 360° Mode" : "360° Any Seat"}
-              </span>
-              <span className="sm:hidden">
-                {isInspectMode ? "Exit" : "Seat 360°"}
-              </span>
+              <Eye className="h-3.5 w-3.5 text-amber-600" />
+              <span className="hidden sm:inline">3D Hall View</span>
+              <span className="sm:hidden">3D Hall</span>
             </button>
             <button
               onClick={() => setShowTicketModal(true)}
@@ -946,24 +956,6 @@ export default function SeatMapPage() {
           </div>
         </div>
       </header>
-      {isInspectMode && (
-        <div className="bg-purple-700 text-white px-4 py-2 sticky top-[53px] z-20 shadow-md border-b border-purple-800 animate-in fade-in duration-200">
-          <div className="max-w-[1280px] mx-auto flex items-center justify-between text-xs sm:text-sm">
-            <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 rounded-full bg-white animate-ping" />
-              <span>
-                <strong>360° Seat Perspective Mode Active:</strong> Tap any seat on the auditorium map to view the cinema directly from that seat!
-              </span>
-            </div>
-            <button
-              onClick={() => setIsInspectMode(false)}
-              className="bg-white/20 hover:bg-white/30 text-white font-bold px-2.5 py-1 rounded text-xs transition cursor-pointer ml-3 shrink-0"
-            >
-              Done
-            </button>
-          </div>
-        </div>
-      )}
       {allShowtimes.length > 1 && (
         <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
@@ -1200,11 +1192,9 @@ export default function SeatMapPage() {
                                               <button
                                                 key={seat.seat_ref}
                                                 disabled={
-                                                  !isInspectMode && (
-                                                    !seat.is_available ||
-                                                    isPairSold ||
-                                                    Boolean(holdId)
-                                                  )
+                                                  !seat.is_available ||
+                                                  isPairSold ||
+                                                  Boolean(holdId)
                                                 }
                                                 onClick={() =>
                                                   handleSeatClick(
@@ -1213,20 +1203,14 @@ export default function SeatMapPage() {
                                                   )
                                                 }
                                                 title={
-                                                  isInspectMode
-                                                    ? `View 360° from Seat ${seat.code || `${seat.row_label}${seat.number}`}`
-                                                    : seat.is_available &&
-                                                    !isPairSold
+                                                  seat.is_available &&
+                                                  !isPairSold
                                                     ? `Couple Seat ${seat.code || `${seat.row_label}${seat.number}`} • ${formatRupees(
                                                         seat.price_paise,
                                                       )} (Booked in pairs of 2)`
                                                     : `Couple Seat ${seat.code || `${seat.row_label}${seat.number}`} (Sold)`
                                                 }
-                                                className={`w-7 h-7 sm:w-8 sm:h-8 text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all focus:outline-none focus:ring-0 touch-manipulation select-none active:scale-95 ${rounding} ${seatStyle} ${
-                                                  isInspectMode
-                                                    ? "!cursor-pointer hover:ring-2 hover:ring-purple-500 hover:scale-110 !text-gray-900 font-bold"
-                                                    : ""
-                                                }`}
+                                                className={`w-7 h-7 sm:w-8 sm:h-8 text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all focus:outline-none focus:ring-0 touch-manipulation select-none active:scale-95 ${rounding} ${seatStyle}`}
                                               >
                                                 {String(seat.number).padStart(
                                                   2,
@@ -1269,28 +1253,20 @@ export default function SeatMapPage() {
                                           <button
                                             key={seat.seat_ref}
                                             disabled={
-                                              !isInspectMode && (
-                                                !seat.is_available ||
-                                                Boolean(holdId)
-                                              )
+                                              !seat.is_available ||
+                                              Boolean(holdId)
                                             }
                                             onClick={() =>
                                               handleSeatClick(seat, seatList)
                                             }
                                             title={
-                                              isInspectMode
-                                                ? `View 360° from Seat ${seat.code || `${seat.row_label}${seat.number}`}`
-                                                : seat.is_available
+                                              seat.is_available
                                                 ? `Seat ${seat.code || `${seat.row_label}${seat.number}`} • ${formatRupees(
                                                     seat.price_paise,
                                                   )}`
                                                 : `Seat ${seat.code || `${seat.row_label}${seat.number}`} (Sold)`
                                             }
-                                            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-[3px] text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all focus:outline-none focus:ring-0 touch-manipulation select-none active:scale-95 ${seatStyle} ${
-                                              isInspectMode
-                                                ? "!cursor-pointer hover:ring-2 hover:ring-purple-500 hover:scale-110 !text-gray-900 font-bold"
-                                                : ""
-                                            }`}
+                                            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-[3px] text-[9px] sm:text-[10px] font-medium flex items-center justify-center transition-all focus:outline-none focus:ring-0 touch-manipulation select-none active:scale-95 ${seatStyle}`}
                                           >
                                             {String(seat.number).padStart(
                                               2,
@@ -1364,17 +1340,21 @@ export default function SeatMapPage() {
             </div>
           </div>
         )}
-        {!isSourceUnavailable && (
+        {!isSourceUnavailable && allAuditoriumPerspectives.length > 0 && (
           <button
             onClick={() => {
-              setActiveSeatPerspective(null);
-              setViewOpts({ yaw: 0, pitch: 0.05, zoom: 40 });
-              setViewSrc(THEATRE_PANOS.hall);
+              const centerSeat =
+                allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
+                allAuditoriumPerspectives[0];
+              if (centerSeat) {
+                setView3DInitialMode("overview");
+                setView3DSeat(centerSeat);
+              }
             }}
-            className="mt-3 text-xs font-semibold text-[#7B1E3D] border border-[#7B1E3D]/30 px-3.5 py-1.5 rounded-full hover:bg-[#7B1E3D]/5 cursor-pointer flex items-center gap-1.5"
+            className="mt-3 text-xs font-semibold text-amber-800 border border-amber-300 px-3.5 py-1.5 rounded-full hover:bg-amber-50 cursor-pointer flex items-center gap-1.5 shadow-2xs"
           >
-            <Eye className="h-3.5 w-3.5" />
-            <span>Explore theatre in 360°</span>
+            <Eye className="h-3.5 w-3.5 text-amber-600" />
+            <span>Explore Cinema in 3D (Hall Overview)</span>
           </button>
         )}
       </main>
@@ -1448,20 +1428,17 @@ export default function SeatMapPage() {
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-600 mb-2 flex-wrap justify-center">
             <span className="font-semibold text-gray-800 flex items-center gap-1">
-              <Eye className="h-3.5 w-3.5 text-[#7B1E3D]" />
-              <span>360° View from:</span>
+              <Compass className="h-3.5 w-3.5 text-amber-600" />
+              <span>3D View from:</span>
             </span>
             {selectedSeatPerspectives.map((sp) => (
               <button
                 key={sp.id}
-                onClick={() => {
-                  setActiveSeatPerspective(sp);
-                  setViewOpts({ yaw: sp.yaw, pitch: sp.pitch, zoom: sp.zoom });
-                  setViewSrc(sp.panoUrl || THEATRE_PANOS.prime);
-                }}
-                className="bg-[#7B1E3D]/10 hover:bg-[#7B1E3D] hover:text-white text-[#7B1E3D] border border-[#7B1E3D]/30 px-2.5 py-0.5 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95"
-                title={`View 360° from Seat ${sp.label}`}
+                onClick={() => setView3DSeat(sp)}
+                className="bg-amber-500/10 hover:bg-amber-500 hover:text-white text-amber-800 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-xs font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs hover:scale-105 active:scale-95"
+                title={`Interactive 3D View from Seat ${sp.label}`}
               >
+                <Compass className="w-3 h-3" />
                 <span>Seat {sp.label}</span>
                 {sp.distanceM && (
                   <span className="text-[10px] opacity-75 font-normal">
@@ -1623,27 +1600,33 @@ export default function SeatMapPage() {
           </div>
         </div>
       )}
-      {viewSrc && (
+      {view3DSeat && (
         <Suspense fallback={null}>
-          <SeatView360
-            src={activeSeatPerspective?.panoUrl || viewSrc}
-            title={
-              viewSrc === THEATRE_PANOS.overview
-                ? `${mapData?.cinema_name || mapData?.screen_name || "Cinema"} • 360° Auditorium View`
-                : activeSeatPerspective
-                  ? `Seat ${activeSeatPerspective.label} • Row ${activeSeatPerspective.rowLabel}`
-                  : `${mapData?.cinema_name || "Cinema"} • View from your seat`
-            }
-            yaw={activeSeatPerspective?.yaw ?? viewOpts.yaw}
-            pitch={activeSeatPerspective?.pitch ?? viewOpts.pitch}
-            zoom={activeSeatPerspective?.zoom ?? viewOpts.zoom}
-            seats={viewSrc !== THEATRE_PANOS.overview ? selectedSeatPerspectives : []}
-            allAuditoriumSeats={allAuditoriumPerspectives}
-            activeSeatId={activeSeatPerspective?.id}
-            onClose={() => {
-              setViewSrc(null);
-              setActiveSeatPerspective(null);
+          <SeatPerspective3D
+            movieTitle={mapData?.movie_title || "Movie"}
+            posterUrl={moviePoster}
+            bannerUrl={movieBanner}
+            cinemaName={mapData?.cinema_name || mapData?.venue_name || "Multiplex Cinema"}
+            screenName={mapData?.screen_name || "Screen 1"}
+            activeSeat={view3DSeat}
+            allSeats={allAuditoriumPerspectives}
+            selectedSeatIds={selectedSeats.map((s) => s.seat_ref)}
+            onSelectSeat={(seatId) => {
+              const seat = allSeats.find((s) => s.seat_ref === seatId);
+              if (seat) {
+                const rSeats = (rawRows[seat.row_label]?.seats || []) as SeatItem[];
+                handleSeatClick(seat, rSeats);
+              }
             }}
+            onDeselectSeat={(seatId) => {
+              const seat = allSeats.find((s) => s.seat_ref === seatId);
+              if (seat) {
+                const rSeats = (rawRows[seat.row_label]?.seats || []) as SeatItem[];
+                handleSeatClick(seat, rSeats);
+              }
+            }}
+            initialMode={view3DInitialMode}
+            onClose={() => setView3DSeat(null)}
           />
         </Suspense>
       )}

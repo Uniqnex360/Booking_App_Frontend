@@ -765,21 +765,6 @@ export default function BuyTicketsPage() {
     window.dispatchEvent(new CustomEvent("open-city-modal"));
   };
 
-  if (loading) {
-    return <LoadingPage showFooter={false} />;
-  }
-
-  if (!movie) {
-    return (
-      <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
-        <Header />
-        <div className="flex-grow flex justify-center items-center py-20 text-gray-500">
-          Shows not found.
-        </div>
-      </div>
-    );
-  }
-
   const activeFormatDisplay = useMemo(() => {
     if (!langFormatFilter || langFormatFilter === "all") {
       return "All Languages";
@@ -794,6 +779,21 @@ export default function BuyTicketsPage() {
     if (matchedLang) return `${matchedLang} (All Formats)`;
     return langFormatFilter;
   }, [langFormatFilter, langFormatOptions, distinctLanguages]);
+
+  if (loading) {
+    return <LoadingPage showFooter={false} />;
+  }
+
+  if (!movie) {
+    return (
+      <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
+        <Header />
+        <div className="flex-grow flex justify-center items-center py-20 text-gray-500">
+          Shows not found.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">

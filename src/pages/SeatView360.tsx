@@ -13,6 +13,9 @@ export interface SeatPerspectiveItem {
   tierName?: string;
   distanceM?: number;
   positionType?: "silver" | "prime" | "recliner" | "left" | "right";
+  isCouple?: boolean;
+  blockIndex?: number;
+  totalBlocks?: number;
   panoUrl?: string;
   yaw: number;
   pitch: number;
