@@ -446,8 +446,8 @@ export default function SeatPerspective3D({
 
     // 2. Scene Atmosphere
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0b0c10");
-    scene.fog = new THREE.FogExp2("#0e1017", 0.007);
+    scene.background = new THREE.Color("#ffffff");
+    scene.fog = new THREE.FogExp2("#f8fafc", 0.003);
 
     // 3. Perspective Camera
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.15, 160);
@@ -456,7 +456,7 @@ export default function SeatPerspective3D({
     camera.quaternion.copy(initialQuat);
 
     // 4. Balanced Cinema Auditorium Lighting
-    const ambientLight = new THREE.AmbientLight("#fff3e0", 0.95);
+    const ambientLight = new THREE.AmbientLight("#ffffff", 1.25);
     scene.add(ambientLight);
 
     // Downlights
@@ -1122,27 +1122,27 @@ export default function SeatPerspective3D({
       ref={containerRef}
       className={`relative w-full ${
         isEmbedded
-          ? "h-full min-h-[600px] overflow-hidden bg-[#0b0c10] flex flex-col"
-          : "fixed inset-0 z-50 flex flex-col bg-[#0b0c10] text-white"
+          ? "h-full min-h-[600px] overflow-hidden bg-white flex flex-col"
+          : "fixed inset-0 z-50 flex flex-col bg-white text-gray-900"
       } font-sans select-none`}
     >
       {/* Top Header Bar (When in fullscreen or modal overlay mode) */}
       {!isEmbedded && (
-        <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 sm:pb-4 bg-gradient-to-b from-black/90 via-black/60 to-transparent pointer-events-none">
+        <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 sm:pb-4 bg-gradient-to-b from-white/95 via-white/80 to-transparent pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             {onSwitchTo2D && (
-              <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-xl p-0.5 shadow-lg backdrop-blur-md">
+              <div className="flex items-center bg-white/95 border border-gray-200 rounded-xl p-0.5 shadow-md backdrop-blur-md">
                 <button
                   type="button"
                   onClick={onSwitchTo2D}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer flex items-center gap-1.5"
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 hover:text-gray-900 transition cursor-pointer flex items-center gap-1.5"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                   <span>Seat Overview</span>
                 </button>
                 <button
                   type="button"
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 shadow-xs flex items-center gap-1.5 cursor-default"
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#7B1E3D] text-white shadow-xs flex items-center gap-1.5 cursor-default"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>3D Model</span>
@@ -1152,13 +1152,13 @@ export default function SeatPerspective3D({
 
             {!onSwitchTo2D && (
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-white leading-tight flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-gray-900 leading-tight flex items-center gap-2">
                   <span>{movieTitle}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#7B1E3D]/10 text-[#7B1E3D] border border-[#7B1E3D]/20">
                     3D Auditorium
                   </span>
                 </h2>
-                <p className="text-[11px] text-white/60">
+                <p className="text-[11px] text-gray-500">
                   {cinemaName} • {screenName}
                 </p>
               </div>
@@ -1170,7 +1170,7 @@ export default function SeatPerspective3D({
             <button
               type="button"
               onClick={handleResetView}
-              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+              className="p-2 rounded-xl bg-white/90 hover:bg-gray-100 text-gray-700 hover:text-black border border-gray-200 transition shadow-sm cursor-pointer"
               title="Reset View"
             >
               <RotateCcw className="w-4 h-4" />
@@ -1178,7 +1178,7 @@ export default function SeatPerspective3D({
             <button
               type="button"
               onClick={handleToggleFullscreen}
-              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+              className="p-2 rounded-xl bg-white/90 hover:bg-gray-100 text-gray-700 hover:text-black border border-gray-200 transition shadow-sm cursor-pointer"
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1187,7 +1187,7 @@ export default function SeatPerspective3D({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl bg-slate-900/80 hover:bg-rose-900/50 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer ml-1"
+                className="p-2 rounded-xl bg-white/90 hover:bg-rose-50 text-gray-700 hover:text-rose-600 border border-gray-200 transition shadow-sm cursor-pointer ml-1"
                 title="Close 3D View"
               >
                 <X className="w-4 h-4" />
@@ -1203,7 +1203,7 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={handleResetView}
-            className="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+            className="p-1.5 rounded-lg bg-white/95 hover:bg-gray-100 text-gray-700 hover:text-black border border-gray-200 transition shadow-sm cursor-pointer"
             title="Reset View"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -1211,7 +1211,7 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={handleToggleFullscreen}
-            className="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+            className="p-1.5 rounded-lg bg-white/95 hover:bg-gray-100 text-gray-700 hover:text-black border border-gray-200 transition shadow-sm cursor-pointer"
             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -1221,15 +1221,15 @@ export default function SeatPerspective3D({
 
       {/* 1. View Selector: Horizontal 5-Perspective Bar directly above the auditorium visual */}
       <div className={`absolute ${isEmbedded ? "top-3 sm:top-4" : "top-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))]"} inset-x-0 z-30 flex justify-center px-2 pointer-events-none`}>
-        <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-950/85 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-white/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-gray-200 shadow-md pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
           {/* Overview */}
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("overview")}
             className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "overview"
-                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
-                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                ? "bg-[#7B1E3D] text-white shadow-xs font-extrabold"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
@@ -1242,8 +1242,8 @@ export default function SeatPerspective3D({
             onClick={() => handlePerspectiveSelect("from_seat")}
             className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "from_seat"
-                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
-                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                ? "bg-[#7B1E3D] text-white shadow-xs font-extrabold"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
@@ -1256,8 +1256,8 @@ export default function SeatPerspective3D({
             onClick={() => handlePerspectiveSelect("from_stage")}
             className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "from_stage"
-                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
-                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                ? "bg-[#7B1E3D] text-white shadow-xs font-extrabold"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             }`}
           >
             <Airplay className="w-3.5 h-3.5" />
@@ -1270,8 +1270,8 @@ export default function SeatPerspective3D({
             onClick={() => handlePerspectiveSelect("balcony")}
             className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "balcony"
-                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
-                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                ? "bg-[#7B1E3D] text-white shadow-xs font-extrabold"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -1284,8 +1284,8 @@ export default function SeatPerspective3D({
             onClick={() => handlePerspectiveSelect("birds_eye")}
             className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "birds_eye"
-                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
-                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                ? "bg-[#7B1E3D] text-white shadow-xs font-extrabold"
+                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -1297,20 +1297,20 @@ export default function SeatPerspective3D({
       {/* Floating Sightline Badge (When in "From my seat" view) */}
       {viewMode === "from_seat" && currentSeat && (
         <div className="absolute top-28 left-4 z-20 pointer-events-none hidden sm:block animate-in fade-in duration-200">
-          <div className="bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-2xl p-3 shadow-xl text-white space-y-1.5 pointer-events-auto max-w-[240px]">
+          <div className="bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl p-3 shadow-md text-gray-900 space-y-1.5 pointer-events-auto max-w-[240px]">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+              <span className="text-[10px] text-[#7B1E3D] font-bold uppercase tracking-wider flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> Sightline View
               </span>
-              <span className="text-xs font-black text-amber-400">{viewMetrics.score}%</span>
+              <span className="text-xs font-black text-[#7B1E3D]">{viewMetrics.score}%</span>
             </div>
-            <div className="text-sm font-black text-white">
+            <div className="text-sm font-black text-gray-900">
               Seat {currentSeat.label}
-              {currentSeat.tierName && <span className="text-white/60 font-medium text-xs ml-1.5">({currentSeat.tierName})</span>}
+              {currentSeat.tierName && <span className="text-gray-500 font-medium text-xs ml-1.5">({currentSeat.tierName})</span>}
             </div>
-            <div className="flex items-center justify-between text-[11px] text-white/70 pt-1 border-t border-slate-800">
+            <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1 border-t border-gray-100">
               <span>Distance to screen</span>
-              <span className="font-mono font-bold text-white">~{viewMetrics.distanceM}m</span>
+              <span className="font-mono font-bold text-gray-900">~{viewMetrics.distanceM}m</span>
             </div>
           </div>
         </div>
@@ -1319,11 +1319,11 @@ export default function SeatPerspective3D({
       {/* Floating Hover Tooltip */}
       {hoveredSeat && (
         <div className="absolute top-[calc(7rem+env(safe-area-inset-top,0px))] right-4 z-20 pointer-events-none animate-in fade-in duration-150">
-          <div className="bg-slate-950/90 backdrop-blur-md border border-slate-700/80 rounded-xl px-3 py-1.5 shadow-xl text-white text-xs">
-            <span className="font-bold text-amber-400">Seat {hoveredSeat.label}</span>
-            {hoveredSeat.tierName && <span className="text-white/70 ml-1">({hoveredSeat.tierName})</span>}
+          <div className="bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl px-3 py-1.5 shadow-md text-gray-900 text-xs">
+            <span className="font-bold text-[#7B1E3D]">Seat {hoveredSeat.label}</span>
+            {hoveredSeat.tierName && <span className="text-gray-500 ml-1">({hoveredSeat.tierName})</span>}
             {hoveredSeat.price && hoveredSeat.price > 0 && (
-              <span className="text-emerald-400 font-mono font-bold ml-1.5">• ₹{hoveredSeat.price}</span>
+              <span className="text-emerald-700 font-mono font-bold ml-1.5">• ₹{hoveredSeat.price}</span>
             )}
           </div>
         </div>
@@ -1334,7 +1334,7 @@ export default function SeatPerspective3D({
         <canvas ref={canvasRef} className="w-full h-full block outline-none" />
 
         {/* Hint Pill */}
-        <div className="absolute left-4 bottom-24 z-20 pointer-events-none hidden sm:flex items-center gap-2 text-[11px] text-white/50 bg-black/50 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/10">
+        <div className="absolute left-4 bottom-24 z-20 pointer-events-none hidden sm:flex items-center gap-2 text-[11px] text-gray-600 bg-white/85 backdrop-blur-xs px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
           <span>Click any seat to select/deselect • Drag to look around</span>
         </div>
       </div>
@@ -1342,8 +1342,8 @@ export default function SeatPerspective3D({
       {/* Multi-seat switcher in "From my seat" mode */}
       {viewMode === "from_seat" && selectedSeats.length > 1 && (
         <div className="absolute bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
-          <div className="flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-800 shadow-xl pointer-events-auto max-w-full overflow-x-auto">
-            <span className="text-[10px] text-white/50 uppercase font-bold mr-1 shrink-0">Viewing from:</span>
+          <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-gray-200 shadow-md pointer-events-auto max-w-full overflow-x-auto">
+            <span className="text-[10px] text-gray-500 uppercase font-bold mr-1 shrink-0">Viewing from:</span>
             {selectedSeats.map((s) => (
               <button
                 key={s.id}
@@ -1351,8 +1351,8 @@ export default function SeatPerspective3D({
                 onClick={() => handleSelectSeatPreview(s)}
                 className={`px-2.5 py-1 rounded-full text-xs font-bold transition cursor-pointer shrink-0 ${
                   currentSeat?.id === s.id
-                    ? "bg-amber-400 text-slate-950 shadow-xs"
-                    : "bg-slate-800 hover:bg-slate-700 text-slate-200"
+                    ? "bg-[#7B1E3D] text-white shadow-xs"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                 }`}
               >
                 Seat {s.label}
@@ -1365,8 +1365,8 @@ export default function SeatPerspective3D({
       {/* "From my seat" Empty Prompt if no seat is selected */}
       {viewMode === "from_seat" && selectedSeats.length === 0 && (
         <div className="absolute bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
-          <div className="bg-slate-950/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-500/40 text-center shadow-xl pointer-events-auto">
-            <p className="text-xs text-amber-300 font-medium">
+          <div className="bg-white/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-300 text-center shadow-md pointer-events-auto">
+            <p className="text-xs text-amber-800 font-medium">
               Click any seat in 3D to preview your view from that seat
             </p>
           </div>
@@ -1374,10 +1374,10 @@ export default function SeatPerspective3D({
       )}
 
       {/* 2. Bottom Interactive Navigation, Legend & Booking Summary Bar */}
-      <div className="absolute bottom-0 inset-x-0 z-30 p-2.5 sm:p-4 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-auto bg-slate-900/90 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl border border-slate-800 shadow-2xl">
+      <div className="absolute bottom-0 inset-x-0 z-30 p-2.5 sm:p-4 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-auto bg-white/95 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl border border-gray-200 shadow-lg">
           {/* Legend */}
-          <div className="flex items-center gap-3 sm:gap-4 text-xs font-semibold text-slate-300">
+          <div className="flex items-center gap-3 sm:gap-4 text-xs font-semibold text-gray-700">
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md bg-[#10b981]" />
               <span>Available</span>
@@ -1391,7 +1391,7 @@ export default function SeatPerspective3D({
               <span>Selected</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#475569]" />
+              <span className="w-3 h-3 rounded-md bg-[#94a3b8]" />
               <span>Unavailable</span>
             </div>
           </div>
@@ -1401,15 +1401,15 @@ export default function SeatPerspective3D({
             <div className="text-left sm:text-right">
               {selectedSeats.length > 0 ? (
                 <>
-                  <div className="text-sm font-extrabold text-white">
+                  <div className="text-sm font-extrabold text-gray-900">
                     ₹{totalAmount > 0 ? totalAmount.toLocaleString("en-IN") : "0"}
                   </div>
-                  <div className="text-[11px] text-white/60">
+                  <div className="text-[11px] text-gray-500">
                     {selectedSeats.length} {selectedSeats.length === 1 ? "seat" : "seats"} selected
                   </div>
                 </>
               ) : (
-                <div className="text-xs text-white/60">
+                <div className="text-xs text-gray-500">
                   Select {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"}
                 </div>
               )}
@@ -1419,10 +1419,10 @@ export default function SeatPerspective3D({
               type="button"
               disabled={selectedSeats.length === 0}
               onClick={onProceed}
-              className={`px-6 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg active:scale-95 ${
+              className={`px-6 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md active:scale-95 ${
                 selectedSeats.length > 0
-                  ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-black cursor-pointer shadow-amber-500/20"
-                  : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                  ? "bg-[#7B1E3D] hover:bg-[#60162f] text-white font-extrabold cursor-pointer"
+                  : "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
               }`}
             >
               <span>Proceed</span>

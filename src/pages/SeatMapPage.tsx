@@ -268,6 +268,15 @@ export default function SeatMapPage() {
     };
   }, []);
 
+  // Return to 2D seat overview if all seats are deselected while viewing 3D model
+  useEffect(() => {
+    if (displayMode === "3d" && selectedSeats.length === 0) {
+      setDisplayMode("2d");
+      setView3DSeat(null);
+      toast.info("Please select a seat to view the 3D model.");
+    }
+  }, [displayMode, selectedSeats.length]);
+
   if (waitingRoom.inQueue) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#7B1E3D] selection:text-white">
@@ -938,22 +947,25 @@ export default function SeatMapPage() {
               <button
                 type="button"
                 onClick={() => {
+                  if (selectedSeats.length === 0) {
+                    toast.warning("Please select a seat first to view the 3D model and your seat view.");
+                    return;
+                  }
                   setDisplayMode("3d");
-                  setView3DInitialMode("overview");
-                  const target =
-                    selectedSeats.length > 0
-                      ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
-                      : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
-                        allAuditoriumPerspectives[0];
+                  setView3DInitialMode("from_seat");
+                  const target = getSeatPerspective(selectedSeats[selectedSeats.length - 1]);
                   if (target) setView3DSeat(target);
                 }}
                 className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                   displayMode === "3d"
-                    ? "bg-amber-500 text-slate-950 shadow-xs font-black"
-                    : "text-gray-500 hover:text-gray-900"
+                    ? "bg-[#7B1E3D] text-white shadow-xs font-black"
+                    : selectedSeats.length === 0
+                    ? "text-gray-400 hover:text-gray-600"
+                    : "text-gray-700 hover:text-gray-900"
                 }`}
+                title={selectedSeats.length === 0 ? "Select a seat first to view 3D" : "View in 3D"}
               >
-                <Compass className="w-3.5 h-3.5 text-amber-950" />
+                <Compass className={`w-3.5 h-3.5 ${displayMode === "3d" ? "text-white" : "text-amber-700"}`} />
                 <span>3D Model</span>
               </button>
             </div>
@@ -1051,7 +1063,7 @@ export default function SeatMapPage() {
         </div>
       )}
       {displayMode === "3d" ? (
-        <div className="flex-grow w-full h-[calc(100vh-105px)] min-h-[580px] relative bg-[#0b0c10] overflow-hidden">
+        <div className="flex-grow w-full h-[calc(100vh-105px)] min-h-[580px] relative bg-white overflow-hidden">
           <Suspense fallback={<LoadingPage />}>
             <SeatPerspective3D
               movieTitle={mapData?.movie_title || "Movie"}
