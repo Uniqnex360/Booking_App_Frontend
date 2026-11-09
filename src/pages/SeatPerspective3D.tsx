@@ -41,6 +41,7 @@ export interface SeatPerspective3DProps {
   isEmbedded?: boolean;
   onSelectSeat?: (seatId: string) => void;
   onDeselectSeat?: (seatId: string) => void;
+  onActiveSeatChange?: (seat: SeatPerspectiveItem) => void;
   onProceed?: () => void;
   onClose?: () => void;
   onSwitchTo2D?: () => void;
@@ -70,6 +71,7 @@ export default function SeatPerspective3D({
   isEmbedded = false,
   onSelectSeat,
   onDeselectSeat,
+  onActiveSeatChange,
   onProceed,
   onClose,
   onSwitchTo2D,
@@ -120,9 +122,16 @@ export default function SeatPerspective3D({
     return allSeats[Math.floor(allSeats.length / 2)] || allSeats[0];
   });
 
-  // Keep currentSeat updated when activeSeat prop changes
+  // Track the ID of the seat we last synced from activeSeat prop to avoid bouncing
+  const lastActiveSeatIdRef = useRef<string | undefined>(
+    activeSeat?.id || activeSeat?.seatRef
+  );
+
+  // Keep currentSeat updated only when activeSeat prop genuinely changes externally
   useEffect(() => {
-    if (activeSeat) {
+    const nextPropId = activeSeat?.id || activeSeat?.seatRef;
+    if (activeSeat && nextPropId && nextPropId !== lastActiveSeatIdRef.current) {
+      lastActiveSeatIdRef.current = nextPropId;
       setCurrentSeat(activeSeat);
     }
   }, [activeSeat]);
@@ -130,9 +139,15 @@ export default function SeatPerspective3D({
   // If current seat is deselected and other selected seats exist, pick one
   useEffect(() => {
     if (selectedSeats.length > 0) {
-      const stillSelected = selectedSeats.some((s) => s.id === currentSeat?.id);
+      const stillSelected = selectedSeats.some(
+        (s) =>
+          (currentSeat?.id && (s.id === currentSeat.id || s.seatRef === currentSeat.id)) ||
+          (currentSeat?.seatRef && (s.seatRef === currentSeat.seatRef || s.id === currentSeat.seatRef))
+      );
       if (!stillSelected) {
-        setCurrentSeat(selectedSeats[0]);
+        const fallback = selectedSeats[0];
+        lastActiveSeatIdRef.current = fallback.id || fallback.seatRef;
+        setCurrentSeat(fallback);
       }
     }
   }, [selectedSeats, currentSeat]);
@@ -200,6 +215,9 @@ export default function SeatPerspective3D({
 
   const onDeselectSeatRef = useRef(onDeselectSeat);
   onDeselectSeatRef.current = onDeselectSeat;
+
+  const onActiveSeatChangeRef = useRef(onActiveSeatChange);
+  onActiveSeatChangeRef.current = onActiveSeatChange;
 
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
 
@@ -406,9 +424,14 @@ export default function SeatPerspective3D({
   );
 
   // When currentSeat changes and we are in "from_seat" view, smoothly fly to new viewpoint
+  const prevFlightSeatIdRef = useRef<string | undefined>(currentSeat?.id || currentSeat?.seatRef);
   useEffect(() => {
-    if (viewMode === "from_seat" && currentSeat) {
-      triggerCameraFlight("from_seat", currentSeat, 500);
+    const seatId = currentSeat?.id || currentSeat?.seatRef;
+    if (viewMode === "from_seat" && currentSeat && seatId !== prevFlightSeatIdRef.current) {
+      prevFlightSeatIdRef.current = seatId;
+      triggerCameraFlight("from_seat", currentSeat, 650);
+    } else {
+      prevFlightSeatIdRef.current = seatId;
     }
   }, [currentSeat, viewMode, triggerCameraFlight]);
 
@@ -442,9 +465,11 @@ export default function SeatPerspective3D({
 
   // Switch selected seat preview in "From my seat"
   const handleSelectSeatPreview = (seat: SeatPerspectiveItem) => {
+    const seatId = seat.id || seat.seatRef;
+    lastActiveSeatIdRef.current = seatId;
     setCurrentSeat(seat);
-    if (viewMode === "from_seat") {
-      triggerCameraFlight("from_seat", seat, 600);
+    if (onActiveSeatChangeRef.current) {
+      onActiveSeatChangeRef.current(seat);
     }
   };
 
@@ -1146,15 +1171,22 @@ export default function SeatPerspective3D({
               selectedSeatIdsRef.current.includes(hitSeat.id) ||
               (hitSeat.seatRef && selectedSeatIdsRef.current.includes(hitSeat.seatRef));
 
+            // In "from_seat" view mode, click previews/anchors camera to that seat without accidentally deselecting it
+            if (cameraModeRef.current === "from_seat") {
+              if (isAlreadySelected) {
+                handleSelectSeatPreview(hitSeat);
+                return;
+              }
+              if (onSelectSeatRef.current) onSelectSeatRef.current(hitSeat.id);
+              handleSelectSeatPreview(hitSeat);
+              return;
+            }
+
+            // In other modes, toggle selection normally
             if (isAlreadySelected) {
               if (onDeselectSeatRef.current) onDeselectSeatRef.current(hitSeat.id);
             } else {
               if (onSelectSeatRef.current) onSelectSeatRef.current(hitSeat.id);
-            }
-
-            // In "from_seat" view mode, click anchors camera to that seat
-            if (cameraModeRef.current === "from_seat") {
-              setCurrentSeat(hitSeat);
             }
           }
         }
@@ -1454,20 +1486,25 @@ export default function SeatPerspective3D({
         <div className="absolute bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
           <div className="flex items-center gap-1.5 bg-[#1a0407]/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-rose-900/40 shadow-xl pointer-events-auto max-w-full overflow-x-auto">
             <span className="text-[10px] text-rose-200/60 uppercase font-bold mr-1 shrink-0">Viewing from:</span>
-            {selectedSeats.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => handleSelectSeatPreview(s)}
-                className={`px-2.5 py-1 rounded-full text-xs font-bold transition cursor-pointer shrink-0 ${
-                  currentSeat?.id === s.id
-                    ? "bg-rose-600 text-white shadow-xs"
-                    : "bg-rose-950/60 hover:bg-rose-900/60 text-rose-200"
-                }`}
-              >
-                Seat {s.label}
-              </button>
-            ))}
+            {selectedSeats.map((s) => {
+              const isCurrent =
+                (currentSeat?.id && (currentSeat.id === s.id || currentSeat.id === s.seatRef)) ||
+                (currentSeat?.seatRef && (currentSeat.seatRef === s.seatRef || currentSeat.seatRef === s.id));
+              return (
+                <button
+                  key={s.id || s.seatRef}
+                  type="button"
+                  onClick={() => handleSelectSeatPreview(s)}
+                  className={`px-2.5 py-1 rounded-full text-xs font-bold transition cursor-pointer shrink-0 ${
+                    isCurrent
+                      ? "bg-rose-600 text-white shadow-xs ring-1 ring-white/30"
+                      : "bg-rose-950/60 hover:bg-rose-900/60 text-rose-200"
+                  }`}
+                >
+                  Seat {s.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

@@ -396,29 +396,32 @@ export default function SeatMapPage() {
   const isStale =
     mapData?.fetched_at &&
     Date.now() - new Date(mapData.fetched_at).getTime() > 60000;
-  const allSeats: SeatItem[] = [];
-  if (
-    mapData?.seats &&
-    Array.isArray(mapData.seats) &&
-    mapData.seats.length > 0
-  ) {
-    allSeats.push(...mapData.seats);
-  } else if (mapData?.rows && Array.isArray(mapData.rows)) {
-    mapData.rows.forEach((r: any) => {
-      if (r.seats && Array.isArray(r.seats)) {
-        r.seats.forEach((s: any) => {
-          allSeats.push({
-            seat_ref: s.seat_id || s.id,
-            row_label: r.label,
-            number: s.number,
-            code: s.code,
-            price_paise: s.price_paise || r.price_paise || 25000,
-            is_available: s.status === "AVAILABLE",
+  const allSeats: SeatItem[] = useMemo(() => {
+    const list: SeatItem[] = [];
+    if (
+      mapData?.seats &&
+      Array.isArray(mapData.seats) &&
+      mapData.seats.length > 0
+    ) {
+      list.push(...mapData.seats);
+    } else if (mapData?.rows && Array.isArray(mapData.rows)) {
+      mapData.rows.forEach((r: any) => {
+        if (r.seats && Array.isArray(r.seats)) {
+          r.seats.forEach((s: any) => {
+            list.push({
+              seat_ref: s.seat_id || s.id,
+              row_label: r.label,
+              number: s.number,
+              code: s.code,
+              price_paise: s.price_paise || r.price_paise || 25000,
+              is_available: s.status === "AVAILABLE",
+            });
           });
-        });
-      }
-    });
-  }
+        }
+      });
+    }
+    return list;
+  }, [mapData]);
   const handleSeatClick = (clickedSeat: SeatItem, rowSeats: SeatItem[]) => {
     if (!clickedSeat.is_available || holdId) return;
     if (isCoupleSeat(clickedSeat)) {
@@ -878,11 +881,13 @@ export default function SeatMapPage() {
     };
   };
 
-  const selectedSeatPerspectives: SeatPerspectiveItem[] = selectedSeats.map(
-    (s) => getSeatPerspective(s),
+  const selectedSeatPerspectives: SeatPerspectiveItem[] = useMemo(
+    () => selectedSeats.map((s) => getSeatPerspective(s)),
+    [selectedSeats, rawRows, rowOrder, isCoupleScreen]
   );
-  const allAuditoriumPerspectives: SeatPerspectiveItem[] = allSeats.map(
-    (s) => getSeatPerspective(s),
+  const allAuditoriumPerspectives: SeatPerspectiveItem[] = useMemo(
+    () => allSeats.map((s) => getSeatPerspective(s)),
+    [allSeats, rawRows, rowOrder, isCoupleScreen]
   );
   const canProceed = selectedSeats.length === requiredSeatCount;
   const formattedDate = mapData?.starts_at
@@ -1120,8 +1125,8 @@ export default function SeatMapPage() {
               screenName={mapData?.screen_name || "Screen 1"}
               activeSeat={
                 view3DSeat ||
-                (selectedSeats.length > 0
-                  ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
+                (selectedSeatPerspectives.length > 0
+                  ? selectedSeatPerspectives[selectedSeatPerspectives.length - 1]
                   : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
                     allAuditoriumPerspectives[0])
               }
@@ -1131,6 +1136,9 @@ export default function SeatMapPage() {
               totalAmount={totalPricePaise / 100}
               initialMode={view3DInitialMode}
               isEmbedded={true}
+              onActiveSeatChange={(seat) => {
+                setView3DSeat(seat);
+              }}
               onSelectSeat={(seatId) => {
                 const seat = allSeats.find((s) => s.seat_ref === seatId);
                 if (seat) {
