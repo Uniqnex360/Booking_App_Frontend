@@ -4,7 +4,10 @@ export type PartnerType =
   | 'experience_partner'
   | 'restaurant'
   | 'event_organiser'
-  | 'cinema';
+  | 'cinema'
+  | 'retail_chain'
+  | 'boutique'
+  | 'independent_showroom';
 export type PartnerStatus =
   | 'PENDING_APPROVAL'
   | 'APPROVED'

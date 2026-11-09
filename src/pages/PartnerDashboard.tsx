@@ -51,6 +51,7 @@ import {
   Globe,
   Image as ImageIcon,
   Sparkles,
+  QrCode,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -805,6 +806,11 @@ export default function PartnerDashboard() {
       const p = await getMyPartnerProfile();
       setPartner(p);
       if (p && p.status === "APPROVED") {
+        const pType = String(p.partner_type || "").toLowerCase();
+        if (["retail_chain", "boutique", "independent_showroom"].includes(pType)) {
+          navigate("/partner/retail/dashboard", { replace: true });
+          return;
+        }
         const evs = await getMyEvents();
         setEvents(evs);
       }
@@ -969,25 +975,63 @@ export default function PartnerDashboard() {
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/partner/coupons")}
-                className="border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
-              >
-                <Tag className="h-4 w-4 text-[#7B1E3D]" /> Manage Coupons
-              </Button>
-              <Button
-                onClick={() => navigate("/partner/dining/new")}
-                className="bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
-              >
-                <Utensils className="h-4 w-4" /> Host Dining
-              </Button>
-              <Button
-                onClick={() => navigate("/partner/events/new")}
-                className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
-              >
-                <Plus className="h-4 w-4" /> Host Event
-              </Button>
+              {/* Retail / Fashion Showroom Partners */}
+              {["retail_chain", "boutique", "independent_showroom"].includes(String(partner?.partner_type).toLowerCase()) && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/partner/retail/dashboard")}
+                    className="border-pink-200 bg-pink-50/50 hover:bg-pink-100 text-pink-900 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
+                  >
+                    <Store className="h-4 w-4 text-pink-700" /> Retail Showrooms
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/partner/retail/scanner")}
+                    className="border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
+                  >
+                    <QrCode className="h-4 w-4 text-[#7B1E3D]" /> Staff Scanner
+                  </Button>
+                </>
+              )}
+
+              {/* Dining & Culinary Experience Partners */}
+              {["restaurant", "experience_partner"].includes(String(partner?.partner_type).toLowerCase()) && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/partner/coupons")}
+                    className="border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
+                  >
+                    <Tag className="h-4 w-4 text-[#7B1E3D]" /> Manage Coupons
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/partner/dining/new")}
+                    className="bg-amber-800 hover:bg-amber-900 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
+                  >
+                    <Utensils className="h-4 w-4" /> Host Dining
+                  </Button>
+                </>
+              )}
+
+              {/* Live Events & Festivals Organiser Partners */}
+              {["event_organiser", "event_organizer"].includes(String(partner?.partner_type).toLowerCase()) && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate("/partner/coupons")}
+                    className="border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
+                  >
+                    <Tag className="h-4 w-4 text-[#7B1E3D]" /> Manage Coupons
+                  </Button>
+                  <Button
+                    onClick={() => navigate("/partner/events/new")}
+                    className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-xs py-2 px-3 sm:px-4 cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" /> Host Event
+                  </Button>
+                </>
+              )}
             </div>
           )}
         </div>

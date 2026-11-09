@@ -48,6 +48,10 @@ export function PrivateRoute({
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    // If the route allows PARTNER, permit authenticated users to proceed so the dashboard can load their partner profile
+    if (allowedRoles.includes('PARTNER')) {
+      return <>{children}</>;
+    }
     return <Navigate to="/" replace />;
   }
 

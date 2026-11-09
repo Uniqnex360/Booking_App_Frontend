@@ -60,6 +60,7 @@ const navLinks = [
   { href: "/movies", label: "Movies" },
   { href: "/events", label: "Events" },
   { href: "/restaurants", label: "Dining" },
+  { href: "/fashion", label: "Fashion & Offers" },
 ];
 
 interface SearchResults {
@@ -265,10 +266,9 @@ export function Header({ hideLocation }: HeaderProps = {}) {
     const token = getAccessToken();
     if (!token || typeof EventSource === "undefined") return;
 
-    const baseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:9001/v1").replace(
-      /\/$/,
-      ""
-    );
+    const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    const rawApi = isLocal ? "http://localhost:9001/v1" : (import.meta.env.VITE_API_BASE_URL || "http://localhost:9001/v1");
+    const baseUrl = rawApi.replace(/\/$/, "");
     const streamUrl = `${baseUrl}/notifications/stream?token=${encodeURIComponent(token)}`;
     const es = new EventSource(streamUrl);
 
@@ -803,6 +803,13 @@ export function Header({ hideLocation }: HeaderProps = {}) {
                     title="Your Orders"
                     subtitle="View all your bookings & purchases"
                     onClick={() => handleProfileNavigation(withCity("/profile?tab=orders", city))}
+                  />
+
+                  <DrawerMenuItem
+                    icon={Sparkles}
+                    title="My Fashion Coupons"
+                    subtitle="In-store retail & showroom discounts"
+                    onClick={() => handleProfileNavigation("/my-coupons")}
                   />
 
                   <DrawerMenuItem

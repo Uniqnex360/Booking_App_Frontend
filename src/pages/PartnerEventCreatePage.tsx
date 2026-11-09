@@ -19,6 +19,7 @@
     SelectValue,
   } from "@/components/ui/select";
   import { createEvent, getActiveEventCategories } from "@/api/event.api";
+  import { getMyPartnerProfile } from "@/api/partner.api";
   import type { EventCategory, EventCategoryRecord } from "@/types/event.types";
   import { ICON_MAP } from "@/pages/admin/EventCategoriesTab";
   import { LocationPicker } from "./LocationPicker";
@@ -239,6 +240,20 @@
     };
 
     useEffect(() => {
+      getMyPartnerProfile()
+        .then((p) => {
+          if (p) {
+            const pType = String(p.partner_type || "").toLowerCase();
+            if (["retail_chain", "boutique", "independent_showroom"].includes(pType)) {
+              toast.error("Access Restricted", {
+                description: "Fashion Showroom partner accounts cannot host live events.",
+              });
+              navigate("/partner/retail/dashboard", { replace: true });
+            }
+          }
+        })
+        .catch(() => {});
+
       getActiveEventCategories()
         .then((cats) => {
           const nonDining = (cats || []).filter(

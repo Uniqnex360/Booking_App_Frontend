@@ -14,6 +14,10 @@ export interface SeatPerspectiveItem {
   distanceM?: number;
   positionType?: "silver" | "prime" | "recliner" | "left" | "right";
   isCouple?: boolean;
+  isBalcony?: boolean;
+  status?: "AVAILABLE" | "BOOKED" | "HOLD" | "UNAVAILABLE" | string;
+  price?: number;
+  seatRef?: string;
   blockIndex?: number;
   totalBlocks?: number;
   panoUrl?: string;

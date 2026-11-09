@@ -24,7 +24,7 @@ export async function signInWithAppleNative(): Promise<AppleAuthResult> {
   if (isIos) {
     try {
       const options: SignInWithAppleOptions = {
-        clientId: 'com.vybhz.app',
+        clientId: 'com.vyhbz.app',
         redirectURI: 'https://vybhz.com',
         scopes: 'email name',
       };

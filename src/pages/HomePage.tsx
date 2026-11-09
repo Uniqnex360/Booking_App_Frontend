@@ -11,6 +11,7 @@ import {
   Film,
   Music,
   Utensils,
+  Sparkles,
   ChevronLeft,
   ChevronRight,
   Star,
@@ -99,6 +100,7 @@ const DEFAULT_BANNERS = [
 const CATEGORIES = [
   { icon: Film, title: 'Movies', link: '/movies' },
   { icon: Music, title: 'Events', link: '/events' },
+  { icon: Sparkles, title: 'Fashion & Offers', link: '/fashion' },
   { icon: Utensils, title: 'Restaurants', link: '/restaurants' },
 ];
 

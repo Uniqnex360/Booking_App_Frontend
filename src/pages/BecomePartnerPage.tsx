@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 
 import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,8 +25,10 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { getMyPartnerProfile, registerPartner, uploadPartnerDocument } from '@/api/partner.api';
+import { getAccessToken } from '@/api/client';
 import { submitTheatreEnquiry } from '@/api/theatre.api';
 import type { Partner, PartnerType } from '@/types/partner.types';
+import { formatApiErrorMessage } from '@/lib/utils';
 
 import {
   ArrowLeft,
@@ -56,7 +59,7 @@ const partnerSchema = z.object({
     .string()
     .min(2, 'Business name must be at least 2 characters'),
   partner_type: z
-    .enum(['experience_partner', 'restaurant', 'event_organiser', 'cinema'])
+    .enum(['experience_partner', 'restaurant', 'event_organiser', 'cinema', 'retail_chain', 'boutique', 'independent_showroom'])
     .default('experience_partner'),
   contact_name: z
     .string()
@@ -66,7 +69,13 @@ const partnerSchema = z.object({
     .min(10, 'Please enter a valid phone number')
     .max(15, 'Phone number is too long'),
   city: z.string().min(2, 'City is required'),
-  gst_number: z.string().optional().or(z.literal('')),
+  gst_number: z
+    .string()
+    .min(1, 'GST Number is required')
+    .transform((val) => val.trim().toUpperCase())
+    .refine((val) => /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(val), {
+      message: 'Valid 15-character GSTIN is required (e.g. 29AAAAA0000A1Z5)',
+    }),
   pan_number: z
     .string()
     .min(1, 'PAN Number is required')
@@ -74,8 +83,12 @@ const partnerSchema = z.object({
     .refine((val) => /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(val), {
       message: 'Valid 10-character PAN is required (e.g. ABCDE1234F)',
     }),
-  gst_certificate_url: z.string().optional().or(z.literal('')),
-  pan_card_url: z.string().optional().or(z.literal('')),
+  gst_certificate_url: z
+    .string({ required_error: 'GST Registration Certificate is required' })
+    .min(1, 'GST Registration Certificate document must be uploaded'),
+  pan_card_url: z
+    .string({ required_error: 'PAN Card document is required' })
+    .min(1, 'PAN Card document must be uploaded'),
 });
 
 type PartnerFormData = z.infer<typeof partnerSchema>;
@@ -219,6 +232,18 @@ export default function BecomePartnerPage() {
   };
   
   const onSubmit = async (data: PartnerFormData) => {
+    if (!data.gst_certificate_url || !data.gst_certificate_url.trim()) {
+      toast.error('GST Registration Certificate is required', {
+        description: 'Please upload a PDF or image copy of your GST registration certificate.',
+      });
+      return;
+    }
+    if (!data.pan_card_url || !data.pan_card_url.trim()) {
+      toast.error('PAN Card document is required', {
+        description: 'Please upload a PDF or image copy of your business PAN card.',
+      });
+      return;
+    }
     setSubmitting(true);
     try {
       await registerPartner({
@@ -227,17 +252,17 @@ export default function BecomePartnerPage() {
         contact_name: data.contact_name,
         contact_phone: data.contact_phone,
         city: data.city,
-        gst_number: data.gst_number || undefined,
+        gst_number: data.gst_number.toUpperCase().trim(),
         pan_number: data.pan_number.toUpperCase().trim(),
-        gst_certificate_url: data.gst_certificate_url || undefined,
-        pan_card_url: data.pan_card_url || undefined,
+        gst_certificate_url: data.gst_certificate_url,
+        pan_card_url: data.pan_card_url,
       });
       toast.success('Application submitted!', {
         description: 'We will review your documents and get back to you soon.',
       });
       navigate('/partner/dashboard');
   } catch (error: any) {
-    const errorMessage = error.response?.data?.detail || 'Failed to submit application';
+    const errorMessage = formatApiErrorMessage(error, 'Failed to submit application');
     
     toast.error('Registration Error', {
       description: errorMessage,
@@ -248,17 +273,30 @@ export default function BecomePartnerPage() {
     setSubmitting(false);
   }
   };
+
+  const onInvalid = (formErrors: any) => {
+    if (formErrors.gst_certificate_url || formErrors.pan_card_url) {
+      toast.error('Verification Documents Required', {
+        description: 'Please upload both your GST Certificate and PAN Card documents.',
+      });
+    } else {
+      toast.error('Incomplete Application', {
+        description: 'Please fill in all mandatory fields marked with an asterisk (*).',
+      });
+    }
+  };
  
 
   useEffect(() => {
     async function checkStatus() {
+      const token = getAccessToken();
+      if (!token) {
+        setChecking(false);
+        return;
+      }
       try {
         const partner = await getMyPartnerProfile();
         setExistingPartner(partner);
-        
-        if (partner.status === 'APPROVED') {
-          navigate('/partner/dashboard', { replace: true });
-        }
         
         // If they exist (Pending or Rejected), pre-fill the form with their old data
         reset({
@@ -288,10 +326,61 @@ export default function BecomePartnerPage() {
       }
     }
     checkStatus();
-  }, [navigate, reset]);
+  }, [reset]);
+
   if (checking) {
-  return <LoadingPage />;  
-}
+    return <LoadingPage />;  
+  }
+
+  if (existingPartner?.status === 'APPROVED') {
+    const isRetail = ['retail_chain', 'boutique', 'independent_showroom'].includes(
+      String(existingPartner.partner_type).toLowerCase()
+    );
+    const targetDashboard = isRetail ? '/partner/retail/dashboard' : '/partner/dashboard';
+
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <Header />
+        <div className="flex-1 max-w-xl mx-auto px-4 pt-36 pb-20 text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">Partner Account Active</h1>
+          <p className="text-sm text-slate-600">
+            You are already registered and approved as a verified partner for <strong>{existingPartner.business_name}</strong>.
+          </p>
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button asChild className="bg-[#7B1E3D] hover:bg-[#5C0F2A] text-white font-bold px-6 py-2.5 rounded-xl shadow-md cursor-pointer">
+              <Link to={targetDashboard}>Go to Partner Portal</Link>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setExistingPartner(null);
+                reset({
+                  business_name: '',
+                  partner_type: 'retail_chain',
+                  contact_name: '',
+                  contact_phone: '',
+                  city: 'Kochi',
+                  gst_number: '',
+                  pan_number: '',
+                  gst_certificate_url: '',
+                  pan_card_url: '',
+                });
+                setGstDoc(null);
+                setPanDoc(null);
+              }}
+              className="text-xs font-semibold rounded-xl cursor-pointer"
+            >
+              Register Another Brand
+            </Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (existingPartner?.status === 'PENDING_APPROVAL') {
     return (
@@ -531,21 +620,24 @@ export default function BecomePartnerPage() {
                 required.
               </p>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
+              <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-6">
             {/* Partner Category */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Partner Category</Label>
-              <div className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="w-10 h-10 rounded-xl bg-[#7B1E3D]/10 text-[#7B1E3D] flex items-center justify-center shrink-0">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Experience & Dining Partner</p>
-                  <p className="text-xs text-slate-500">
-                    Host live events, festivals, Sunday brunches, buffets, and dining passes
-                  </p>
-                </div>
-              </div>
+              <Label className="text-sm font-medium">Partner Category *</Label>
+              <select
+                {...register('partner_type')}
+                className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none focus:border-[#7B1E3D]"
+              >
+                <option value="experience_partner">Dining & Culinary Experience Partner</option>
+                <option value="retail_chain">Fashion & Retail Chain (Multi-Branch Showrooms)</option>
+                <option value="boutique">Designer Boutique & Bridal Studio</option>
+                <option value="independent_showroom">Independent Fashion Showroom</option>
+                <option value="event_organiser">Live Events & Festivals Organiser</option>
+                <option value="cinema">Cinema & Theatre Exhibitor</option>
+              </select>
+              <p className="text-xs text-slate-500">
+                Choose the category that best matches your retail, hospitality, or entertainment business.
+              </p>
             </div>
 
             {/* Business Name */}
@@ -637,19 +729,25 @@ export default function BecomePartnerPage() {
             {/* GST + PAN */}
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="gst_number" className="text-sm font-medium">
-                  GST Number{' '}
-                  <span className="text-slate-500">(optional)</span>
+                <Label htmlFor="gst_number" className="text-sm font-medium flex items-center gap-1">
+                  <span>GST Number (GSTIN)</span>
+                  <span className="text-rose-500 font-bold">*</span>
                 </Label>
                 <div className="relative">
                   <FileText className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                   <Input
                     id="gst_number"
                     placeholder="22AAAAA0000A1Z5"
-                    className="h-11 rounded-xl pl-10"
+                    maxLength={15}
+                    className="h-11 rounded-xl pl-10 uppercase font-mono"
                     {...register('gst_number')}
                   />
                 </div>
+                {errors.gst_number && (
+                  <p className="text-xs text-rose-500 font-medium mt-1">
+                    {errors.gst_number.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -691,7 +789,10 @@ export default function BecomePartnerPage() {
                 {/* GST Certificate Upload Box */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
-                    <span>GST Registration Certificate</span>
+                    <span className="flex items-center gap-1">
+                      <span>GST Registration Certificate</span>
+                      <span className="text-rose-500 font-bold">*</span>
+                    </span>
                     {gstDoc && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
                         <CheckCircle2 className="h-3.5 w-3.5" />
@@ -789,12 +890,21 @@ export default function BecomePartnerPage() {
                       </label>
                     </div>
                   )}
+                  {errors.gst_certificate_url && (
+                    <p className="text-xs text-rose-500 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {errors.gst_certificate_url.message}
+                    </p>
+                  )}
                 </div>
 
                 {/* PAN Card Upload Box */}
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
-                    <span>PAN Card</span>
+                    <span className="flex items-center gap-1">
+                      <span>PAN Card Document</span>
+                      <span className="text-rose-500 font-bold">*</span>
+                    </span>
                     {panDoc && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600">
                         <CheckCircle2 className="h-3.5 w-3.5" />
@@ -891,6 +1001,12 @@ export default function BecomePartnerPage() {
                         )}
                       </label>
                     </div>
+                  )}
+                  {errors.pan_card_url && (
+                    <p className="text-xs text-rose-500 font-medium mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                      {errors.pan_card_url.message}
+                    </p>
                   )}
                 </div>
               </div>

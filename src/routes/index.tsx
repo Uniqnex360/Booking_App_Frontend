@@ -14,50 +14,82 @@ import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import MoviesPage from "@/pages/MoviesPage";
 
+// Resilient lazy helper with auto-recovery for stale deployment chunks
+function lazyRetry<T extends React.ComponentType<any>>(
+  componentImport: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error: any) {
+      console.warn("Failed to load route chunk. Retrying via reload...", error);
+      if (typeof window !== "undefined") {
+        const key = "chunk_reload_" + window.location.pathname;
+        const lastReload = sessionStorage.getItem(key);
+        const now = Date.now();
+        if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+          sessionStorage.setItem(key, String(now));
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+      }
+      throw error;
+    }
+  });
+}
+
 // On-demand lazy routes (loaded only when visited)
-const MovieDetailPage = lazy(() => import("@/pages/MovieDetailPage"));
-const SeatMapPage = lazy(() => import("@/pages/SeatMapPage"));
-const BuyTicketsPage = lazy(() => import("@/pages/BuyTicketsPage"));
-const BookingPage = lazy(() => import("@/pages/BookingPage"));
-const BookingDetailPage = lazy(() => import("@/pages/BookingDetailPage"));
-const ConfirmationPage = lazy(() => import("@/pages/ConfirmationPage"));
-const EventsPage = lazy(() => import("@/pages/EventsPage"));
-const DiningListingPage = lazy(() => import("@/pages/DiningListingPage"));
-const FoodPage = lazy(() => import("@/pages/FoodPage"));
-const VenuesPage = lazy(() => import("@/pages/VenuesPage"));
-const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
-const EditProfilePage = lazy(() => import("@/pages/EditProfilePage"));
-const VerifyOtpPage = lazy(() => import("@/pages/VerifyOtpPage"));
-const ForgotPasswordPage = lazy(() => import("@/pages/ForgotPasswordPage"));
-const ResetPasswordPage = lazy(() => import("@/pages/ResetPasswordPage"));
-const MovieReviewsPage = lazy(() => import("@/pages/MovieReviewsPage"));
-const SupportPage = lazy(() => import("@/pages/SupportPage"));
-const TermsAndConditionsPage = lazy(() => import("@/components/TermsAndConditionsPage"));
-const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
-const DeleteAccountPage = lazy(() => import("@/pages/DeleteAccountPage"));
-const BecomePartnerPage = lazy(() => import("@/pages/BecomePartnerPage"));
+const MovieDetailPage = lazyRetry(() => import("@/pages/MovieDetailPage"));
+const SeatMapPage = lazyRetry(() => import("@/pages/SeatMapPage"));
+const BuyTicketsPage = lazyRetry(() => import("@/pages/BuyTicketsPage"));
+const BookingPage = lazyRetry(() => import("@/pages/BookingPage"));
+const BookingDetailPage = lazyRetry(() => import("@/pages/BookingDetailPage"));
+const ConfirmationPage = lazyRetry(() => import("@/pages/ConfirmationPage"));
+const EventsPage = lazyRetry(() => import("@/pages/EventsPage"));
+const DiningListingPage = lazyRetry(() => import("@/pages/DiningListingPage"));
+const FoodPage = lazyRetry(() => import("@/pages/FoodPage"));
+const VenuesPage = lazyRetry(() => import("@/pages/VenuesPage"));
+const ProfilePage = lazyRetry(() => import("@/pages/ProfilePage"));
+const EditProfilePage = lazyRetry(() => import("@/pages/EditProfilePage"));
+const VerifyOtpPage = lazyRetry(() => import("@/pages/VerifyOtpPage"));
+const ForgotPasswordPage = lazyRetry(() => import("@/pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazyRetry(() => import("@/pages/ResetPasswordPage"));
+const MovieReviewsPage = lazyRetry(() => import("@/pages/MovieReviewsPage"));
+const SupportPage = lazyRetry(() => import("@/pages/SupportPage"));
+const TermsAndConditionsPage = lazyRetry(() => import("@/components/TermsAndConditionsPage"));
+const PrivacyPolicyPage = lazyRetry(() => import("@/pages/PrivacyPolicyPage"));
+const DeleteAccountPage = lazyRetry(() => import("@/pages/DeleteAccountPage"));
+const BecomePartnerPage = lazyRetry(() => import("@/pages/BecomePartnerPage"));
+
+// Fashion, Retail Showrooms & Coupons Module (Lazy)
+const FashionLandingPage = lazyRetry(() => import("@/pages/FashionLandingPage"));
+const FashionOfferDetailPage = lazyRetry(() => import("@/pages/FashionOfferDetailPage"));
+const FashionBrandDetailPage = lazyRetry(() => import("@/pages/FashionBrandDetailPage"));
+const MyCouponsPage = lazyRetry(() => import("@/pages/MyCouponsPage"));
+const RetailStaffScannerPage = lazyRetry(() => import("@/pages/retail/RetailStaffScannerPage"));
+const RetailPartnerDashboard = lazyRetry(() => import("@/pages/retail/RetailPartnerDashboard"));
 
 // Backoffice: Admin Portal (Lazy)
-const AdminDashboardPage = lazy(() => import("@/pages/AdminDashboardPage"));
-const AdminEventDetailPage = lazy(() => import("@/pages/admin/AdminEventDetailPage"));
-const AdminPartnersPage = lazy(() => import("@/pages/AdminPartnersPage"));
-const AdminModerationPage = lazy(() => import("@/pages/AdminModerationPage"));
+const AdminDashboardPage = lazyRetry(() => import("@/pages/AdminDashboardPage"));
+const AdminEventDetailPage = lazyRetry(() => import("@/pages/admin/AdminEventDetailPage"));
+const AdminPartnersPage = lazyRetry(() => import("@/pages/AdminPartnersPage"));
+const AdminModerationPage = lazyRetry(() => import("@/pages/AdminModerationPage"));
 
 // Backoffice: Partner Portal (Lazy)
-const PartnerDashboard = lazy(() => import("@/pages/PartnerDashboard"));
-const PartnerEventCreatePage = lazy(() => import("@/pages/PartnerEventCreatePage"));
-const PartnerDiningCreatePage = lazy(() => import("@/pages/PartnerDiningCreatePage"));
-const PartnerCouponsPage = lazy(() => import("@/pages/PartnerCouponsPage"));
+const PartnerDashboard = lazyRetry(() => import("@/pages/PartnerDashboard"));
+const PartnerEventCreatePage = lazyRetry(() => import("@/pages/PartnerEventCreatePage"));
+const PartnerDiningCreatePage = lazyRetry(() => import("@/pages/PartnerDiningCreatePage"));
+const PartnerCouponsPage = lazyRetry(() => import("@/pages/PartnerCouponsPage"));
 
 // Backoffice: Theatre Scoped Portal (Lazy)
 import { TheatreLayout } from "@/pages/theatre/TheatreLayout";
-const TheatreDashboardPage = lazy(() => import("@/pages/theatre/TheatreDashboardPage"));
-const TheatreVenuesPage = lazy(() => import("@/pages/theatre/TheatreVenuesPage"));
-const TheatreShowtimesPage = lazy(() => import("@/pages/theatre/TheatreShowtimesPage"));
-const TheatreBookingsPage = lazy(() => import("@/pages/theatre/TheatreBookingsPage"));
-const TheatreInvoicesPage = lazy(() => import("@/pages/theatre/TheatreInvoicesPage"));
-const TheatreExceptionsPage = lazy(() => import("@/pages/theatre/TheatreExceptionsPage"));
-const TheatreTicketValidatorPage = lazy(() => import("@/pages/theatre/TheatreTicketValidatorPage"));
+const TheatreDashboardPage = lazyRetry(() => import("@/pages/theatre/TheatreDashboardPage"));
+const TheatreVenuesPage = lazyRetry(() => import("@/pages/theatre/TheatreVenuesPage"));
+const TheatreShowtimesPage = lazyRetry(() => import("@/pages/theatre/TheatreShowtimesPage"));
+const TheatreBookingsPage = lazyRetry(() => import("@/pages/theatre/TheatreBookingsPage"));
+const TheatreInvoicesPage = lazyRetry(() => import("@/pages/theatre/TheatreInvoicesPage"));
+const TheatreExceptionsPage = lazyRetry(() => import("@/pages/theatre/TheatreExceptionsPage"));
+const TheatreTicketValidatorPage = lazyRetry(() => import("@/pages/theatre/TheatreTicketValidatorPage"));
 
 export function AppRoutes() {
   return (
@@ -179,6 +211,26 @@ export function AppRoutes() {
       <Route path="/showtimes/:id/seat-map" element={<SeatMapPage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:id" element={<BookingPage />} />
+      <Route path="/fashion" element={<FashionLandingPage />} />
+      <Route path="/fashion/offers/:id" element={<FashionOfferDetailPage />} />
+      <Route path="/fashion/brands/:id" element={<FashionBrandDetailPage />} />
+      <Route
+        path="/my-coupons"
+        element={
+          <PrivateRoute>
+            <MyCouponsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route path="/partner/retail/scanner" element={<RetailStaffScannerPage />} />
+      <Route
+        path="/partner/retail/dashboard"
+        element={
+          <PrivateRoute allowedRoles={PARTNER_ROLES}>
+            <RetailPartnerDashboard />
+          </PrivateRoute>
+        }
+      />
       <Route path="/dining" element={<DiningListingPage />} />
       <Route path="/restaurants" element={<DiningListingPage />} />
       <Route path="/verify-otp" element={<VerifyOtpPage />} />
@@ -212,19 +264,11 @@ export function AppRoutes() {
       />
       <Route
         path="/partner/become"
-        element={
-          <PrivateRoute>
-            <BecomePartnerPage />
-          </PrivateRoute>
-        }
+        element={<BecomePartnerPage />}
       />
       <Route
         path="/partner/register"
-        element={
-          <PrivateRoute>
-            <BecomePartnerPage />
-          </PrivateRoute>
-        }
+        element={<BecomePartnerPage />}
       />
       <Route
         path="/partner/dashboard"

@@ -209,6 +209,14 @@ export default function PartnerDiningCreatePage() {
       try {
         const partner = await getMyPartnerProfile();
         if (partner) {
+          const pType = String(partner.partner_type || "").toLowerCase();
+          if (["retail_chain", "boutique", "independent_showroom"].includes(pType)) {
+            toast.error("Access Restricted", {
+              description: "Fashion Showroom accounts cannot host dining experiences.",
+            });
+            navigate("/partner/retail/dashboard", { replace: true });
+            return;
+          }
           if (partner.business_name) {
             setValue("venue_name", partner.business_name);
           }

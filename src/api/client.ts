@@ -1,6 +1,14 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9001/v1';
+const isNative = typeof window !== 'undefined' && (
+  Boolean((window as any).Capacitor?.isNativePlatform?.()) ||
+  window.location.protocol === 'capacitor:' ||
+  window.location.protocol === 'ionic:'
+);
+const isLocalDev = typeof window !== 'undefined' && !isNative && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (window.location.port === '5173' || window.location.port === '3000');
+const API_BASE_URL = isNative
+  ? (import.meta.env.VITE_API_BASE_URL || 'https://booking-app-backend-rwim.onrender.com/v1')
+  : (isLocalDev ? 'http://localhost:9001/v1' : (import.meta.env.VITE_API_BASE_URL || 'https://booking-app-backend-rwim.onrender.com/v1'));
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -36,9 +44,6 @@ export function clearTokens() {
   refreshToken = null;
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
-   if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
 }
 
 export function setAuthFailureHandler(handler: () => void) {

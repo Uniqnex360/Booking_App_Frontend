@@ -35,6 +35,24 @@ export const partnerTypeMeta: Record<
     desc: "Dining, culinary workshops & culinary experiences",
     badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
   },
+  retail_chain: {
+    label: "Fashion Retail Chain",
+    icon: Store,
+    desc: "Multi-branch retail apparel, footwear & lifestyle chains",
+    badgeClass: "bg-pink-50 text-pink-700 border-pink-200",
+  },
+  boutique: {
+    label: "Designer Boutique & Studio",
+    icon: Sparkles,
+    desc: "Independent designer labels, bridal couture & studios",
+    badgeClass: "bg-rose-50 text-rose-700 border-rose-200",
+  },
+  independent_showroom: {
+    label: "Independent Fashion Showroom",
+    icon: Store,
+    desc: "Standalone jewellery, clothing & accessories showrooms",
+    badgeClass: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
+  },
 };
 
 export function getPartnerTypeMeta(type: string | undefined | null) {

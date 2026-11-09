@@ -32,9 +32,10 @@ export function QuickAuthModal() {
   const [view, setView] = useState<AuthModalView>("get-started");
   const isIos = Capacitor.getPlatform() === "ios";
   const isAndroid = Capacitor.getPlatform() === "android" || /Android/i.test(navigator?.userAgent || "");
+  const isLocalDev = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
   // Apple Sign-In is required on iOS devices for Apple Review Guideline 4.8.
-  // On Android devices, it is hidden to prevent confusion and errors.
-  const showAppleSignIn = isIos || (!isAndroid && /Mac|iPhone|iPad|iPod/i.test(navigator?.userAgent || ""));
+  // Visible on iOS, Mac/Apple devices, and local development for testing.
+  const showAppleSignIn = isIos || isLocalDev || (!isAndroid && /Mac|iPhone|iPad|iPod/i.test(navigator?.userAgent || ""));
   const [showInAppPhoneAuth, setShowInAppPhoneAuth] = useState(false);
   const [emailStep, setEmailStep] = useState<"enter-email" | "password">("enter-email");
   const [loading, setLoading] = useState(false);

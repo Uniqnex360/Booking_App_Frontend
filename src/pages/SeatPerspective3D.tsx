@@ -16,25 +16,37 @@ import {
   Moon,
   ChevronUp,
   ChevronDown,
+  Layers,
+  ZoomIn,
+  ZoomOut,
+  Airplay,
+  LayoutGrid,
 } from "lucide-react";
 import type { SeatPerspectiveItem } from "./SeatView360";
 
-interface SeatPerspective3DProps {
+export type PerspectiveMode = "overview" | "from_seat" | "from_stage" | "balcony" | "birds_eye";
+
+export interface SeatPerspective3DProps {
   movieTitle: string;
   posterUrl?: string | null;
   bannerUrl?: string | null;
   cinemaName?: string;
   screenName?: string;
-  activeSeat: SeatPerspectiveItem;
+  activeSeat?: SeatPerspectiveItem | null;
   allSeats: SeatPerspectiveItem[];
   selectedSeatIds?: string[];
-  initialMode?: "seat" | "overview";
+  initialMode?: "overview" | "from_seat" | "from_stage" | "balcony" | "birds_eye" | "seat";
+  requiredSeatCount?: number;
+  totalAmount?: number;
+  isEmbedded?: boolean;
   onSelectSeat?: (seatId: string) => void;
   onDeselectSeat?: (seatId: string) => void;
-  onClose: () => void;
+  onProceed?: () => void;
+  onClose?: () => void;
+  onSwitchTo2D?: () => void;
 }
 
-// Spatial dimensions for realistic Vantage multiplex auditorium
+// Spatial dimensions for realistic Vantage auditorium
 const SEAT_SPACING_X = 1.05;
 const SEAT_SPACING_Z = 1.38;
 const ROW_RISE = 0.34;
@@ -52,28 +64,29 @@ export default function SeatPerspective3D({
   activeSeat,
   allSeats,
   selectedSeatIds = [],
-  initialMode = "seat",
+  initialMode = "overview",
+  requiredSeatCount = 1,
+  totalAmount = 0,
+  isEmbedded = false,
   onSelectSeat,
   onDeselectSeat,
+  onProceed,
   onClose,
+  onSwitchTo2D,
 }: SeatPerspective3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const [currentSeat, setCurrentSeat] = useState<SeatPerspectiveItem>(activeSeat);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showInfo, setShowInfo] = useState(true);
-  const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"seat" | "overview">(initialMode);
-  const [curtainsOpen, setCurtainsOpen] = useState(initialMode !== "overview");
-  const [houseLights, setHouseLights] = useState(false);
-
-  // Group all seats by row label for navigation
-  const { rowLabels, seatsByRow, maxCols } = useMemo(() => {
+  // Group all seats by row label for navigation & spatial indexing
+  const { rowLabels, seatsByRow, maxCols, seatMapById } = useMemo(() => {
     const rowsMap = new Map<string, SeatPerspectiveItem[]>();
+    const byId = new Map<string, SeatPerspectiveItem>();
     let maxC = 1;
 
     allSeats.forEach((s) => {
+      byId.set(s.id, s);
+      if (s.seatRef) byId.set(s.seatRef, s);
+
       if (!rowsMap.has(s.rowLabel)) rowsMap.set(s.rowLabel, []);
       rowsMap.get(s.rowLabel)!.push(s);
       if (s.seatNumber > maxC) maxC = s.seatNumber;
@@ -88,27 +101,83 @@ export default function SeatPerspective3D({
       rowLabels: sortedRows,
       seatsByRow: rowsMap,
       maxCols: Math.max(maxC, 12),
+      seatMapById: byId,
     };
   }, [allSeats]);
 
   const totalRows = Math.max(rowLabels.length, 6);
   const totalCols = maxCols;
 
-  const currentRowIndex = rowLabels.indexOf(currentSeat.rowLabel);
-  const currentColIndex = currentSeat.seatNumber - 1;
+  // Selected seats objects
+  const selectedSeats = useMemo(() => {
+    return allSeats.filter((s) => selectedSeatIds.includes(s.id) || (s.seatRef && selectedSeatIds.includes(s.seatRef)));
+  }, [allSeats, selectedSeatIds]);
 
-  // Real-time camera target and head rotation refs
-  const mouseRef = useRef({ x: 0, y: 0, isDragging: false, lastX: 0, lastY: 0 });
+  // Current anchor seat for "From my seat" view
+  const [currentSeat, setCurrentSeat] = useState<SeatPerspectiveItem>(() => {
+    if (activeSeat) return activeSeat;
+    if (selectedSeats.length > 0) return selectedSeats[0];
+    return allSeats[Math.floor(allSeats.length / 2)] || allSeats[0];
+  });
+
+  // Keep currentSeat updated when activeSeat prop changes
+  useEffect(() => {
+    if (activeSeat) {
+      setCurrentSeat(activeSeat);
+    }
+  }, [activeSeat]);
+
+  // If current seat is deselected and other selected seats exist, pick one
+  useEffect(() => {
+    if (selectedSeats.length > 0) {
+      const stillSelected = selectedSeats.some((s) => s.id === currentSeat?.id);
+      if (!stillSelected) {
+        setCurrentSeat(selectedSeats[0]);
+      }
+    }
+  }, [selectedSeats, currentSeat]);
+
+  // Map initialMode prop
+  const normalizedInitialMode: PerspectiveMode = useMemo(() => {
+    if (initialMode === "seat") return "from_seat";
+    if (["overview", "from_seat", "from_stage", "balcony", "birds_eye"].includes(initialMode)) {
+      return initialMode as PerspectiveMode;
+    }
+    return "overview";
+  }, [initialMode]);
+
+  const [viewMode, setViewMode] = useState<PerspectiveMode>(normalizedInitialMode);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [curtainsOpen, setCurtainsOpen] = useState(true);
+  const [houseLights, setHouseLights] = useState(false);
+  const [hoveredSeat, setHoveredSeat] = useState<SeatPerspectiveItem | null>(null);
+
+  const currentRowIndex = currentSeat ? rowLabels.indexOf(currentSeat.rowLabel) : 0;
+  const currentColIndex = currentSeat ? currentSeat.seatNumber - 1 : 0;
+
+  // Interaction refs
+  const mouseRef = useRef({
+    x: 0,
+    y: 0,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastY: 0,
+    isDragging: false,
+    hasMoved: false,
+  });
+
   const lookTargetRef = useRef({ yaw: 0, pitch: 0 });
   const lookCurrentRef = useRef({ yaw: 0, pitch: 0 });
+  const zoomLevelRef = useRef(1.0); // 1 = default, clamped 0.65 to 1.6
 
   // Curtain & lights animated values refs
-  const curtainCurRef = useRef(1.0); // 1 = open, 0 = closed
+  const curtainCurRef = useRef(1.0);
   const curtainOpenRef = useRef(1.0);
-  const lightsIntensityRef = useRef(0.2); // ambient light multiplier
+  const lightsIntensityRef = useRef(0.25);
 
   // Camera flight state
-  const cameraModeRef = useRef<"seat" | "overview" | "flight">("seat");
+  const cameraModeRef = useRef<PerspectiveMode | "flight">(normalizedInitialMode);
   const flightRef = useRef<{
     startTime: number;
     duration: number;
@@ -119,20 +188,27 @@ export default function SeatPerspective3D({
     onComplete?: () => void;
   } | null>(null);
 
-  // Calculate chair X position including block corridor aisle shifts
+  // Calculate chair X position including central aisle gap and block corridor aisle shifts
   const getSeatChairX = useCallback(
     (colIdx: number, seat?: SeatPerspectiveItem) => {
       let x = (colIdx - (totalCols - 1) / 2) * SEAT_SPACING_X;
+      // Dedicated central aisle corridor separating left and right seating banks
+      const midCol = (totalCols - 1) / 2;
+      if (colIdx < midCol) {
+        x -= 0.75;
+      } else {
+        x += 0.75;
+      }
       if (seat && typeof seat.blockIndex === "number" && seat.totalBlocks && seat.totalBlocks > 1) {
         const centerBlock = (seat.totalBlocks - 1) / 2;
-        x += (seat.blockIndex - centerBlock) * 1.3;
+        x += (seat.blockIndex - centerBlock) * 1.35;
       }
       return x;
     },
     [totalCols]
   );
 
-  // Calculate natural seated eye position (sitting forward on cushion, in front of backrest)
+  // Calculate natural seated eye position (seated forward on cushion, in front of backrest)
   const getSeatEyePosition = useCallback(
     (rowIdx: number, colIdx: number, seat?: SeatPerspectiveItem) => {
       const x = getSeatChairX(colIdx, seat);
@@ -140,7 +216,7 @@ export default function SeatPerspective3D({
       const tierFloorY = safeRow * ROW_RISE - 0.5;
       const tierZ = safeRow * SEAT_SPACING_Z;
 
-      // Eye is seated naturally on the cushion (z = tierZ - 0.08), eye level y = tierFloorY + 1.18m
+      // Eye is seated naturally on the cushion, eye level y = tierFloorY + 1.18m
       const z = tierZ - 0.08;
       const y = tierFloorY + 1.18;
       return new THREE.Vector3(x, y, z);
@@ -148,28 +224,71 @@ export default function SeatPerspective3D({
     [getSeatChairX]
   );
 
-  // Vantage Overview viewpoint: sweeping elevated panorama behind auditorium
-  const getOverviewPosition = useCallback(() => {
-    const z = totalRows * SEAT_SPACING_Z + 3.8;
-    const y = totalRows * ROW_RISE + 3.2;
-    return new THREE.Vector3(0, y, z);
-  }, [totalRows]);
+  // Camera target calculators for all 5 perspectives
+  const getPerspectiveConfig = useCallback(
+    (mode: PerspectiveMode, seat?: SeatPerspectiveItem) => {
+      const activeS = seat || currentSeat;
+      const rIdx = activeS ? rowLabels.indexOf(activeS.rowLabel) : 0;
+      const cIdx = activeS ? activeS.seatNumber - 1 : 0;
 
-  // Vantage View Scoring Formula
+      let pos = new THREE.Vector3();
+      let lookAt = new THREE.Vector3();
+
+      switch (mode) {
+        case "overview":
+          // Default wide view of full auditorium, screen, seating tiers & aisles
+          pos.set(0, totalRows * ROW_RISE + 4.2, totalRows * SEAT_SPACING_Z + 5.2);
+          lookAt.set(0, SCREEN_Y * 0.65, SCREEN_Z + 2.0);
+          break;
+
+        case "from_seat":
+          // Approximate on-screen view from currently selected seat without showing a person
+          pos = getSeatEyePosition(rIdx, cIdx, activeS);
+          lookAt.set(0, SCREEN_Y, SCREEN_Z);
+          break;
+
+        case "from_stage":
+          // Looking outward from the stage toward the audience and seating arrangement
+          pos.set(0, 2.2, SCREEN_Z + 2.6);
+          lookAt.set(0, totalRows * ROW_RISE * 0.45 + 1.4, (totalRows * SEAT_SPACING_Z) * 0.48);
+          break;
+
+        case "balcony":
+          // Elevated balcony-level perspective communicating steep viewing angle
+          pos.set(0, totalRows * ROW_RISE + 8.8, totalRows * SEAT_SPACING_Z + 9.5);
+          lookAt.set(0, SCREEN_Y * 0.48, SCREEN_Z + 1.0);
+          break;
+
+        case "birds_eye":
+          // Top-down view of complete seating plan, rows, aisles, and blocks
+          pos.set(0, 23.5, (totalRows * SEAT_SPACING_Z) * 0.46);
+          lookAt.set(0, 0, (totalRows * SEAT_SPACING_Z) * 0.46);
+          break;
+      }
+
+      const rotMatrix = new THREE.Matrix4().lookAt(pos, lookAt, mode === "birds_eye" ? new THREE.Vector3(0, 0, -1) : new THREE.Vector3(0, 1, 0));
+      const quat = new THREE.Quaternion().setFromRotationMatrix(rotMatrix);
+
+      return { pos, quat, lookAt };
+    },
+    [currentSeat, rowLabels, totalRows, getSeatEyePosition]
+  );
+
+  // Sightline metrics formula for "From my seat"
   const viewMetrics = useMemo(() => {
+    if (!currentSeat) {
+      return { distanceM: 0, hAngle: 0, vAngle: 0, score: 0, label: "Select a seat", badgeColor: "bg-gray-500/20 text-gray-300" };
+    }
     const eye = getSeatEyePosition(currentRowIndex, currentColIndex, currentSeat);
     const screenCenter = new THREE.Vector3(0, SCREEN_Y, SCREEN_Z);
     const dist = eye.distanceTo(screenCenter);
 
-    // Horizontal angle off-center in degrees
     const hAngleRad = Math.atan2(Math.abs(eye.x), Math.max(0.1, eye.z - SCREEN_Z));
     const hAngleDeg = (hAngleRad * 180) / Math.PI;
 
-    // Vertical elevation gaze in degrees
     const vAngleRad = Math.atan2(SCREEN_Y - eye.y, Math.max(0.1, eye.z - SCREEN_Z));
     const vAngleDeg = (vAngleRad * 180) / Math.PI;
 
-    // Vantage scoring: ideal distance is ~0.95x screen width
     const idealDist = SCREEN_W * 0.95;
     const distScore = 1 - Math.min(1, Math.max(0, Math.abs(dist - idealDist) / idealDist));
     const hScore = 1 - Math.min(1, Math.max(0, hAngleRad / 0.65));
@@ -177,20 +296,17 @@ export default function SeatPerspective3D({
 
     const totalScore = Math.round(100 * (0.42 * hScore + 0.32 * distScore + 0.26 * vScore));
 
-    let label = "Average";
+    let label = "Standard Sightline";
     let badgeColor = "bg-amber-500/20 text-amber-300 border-amber-500/30";
-    if (totalScore >= 94) {
-      label = "Perfect Sweet Spot";
+    if (totalScore >= 92) {
+      label = "Sweet Spot";
       badgeColor = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-    } else if (totalScore >= 87) {
+    } else if (totalScore >= 84) {
       label = "Excellent View";
       badgeColor = "bg-teal-500/20 text-teal-300 border-teal-500/30";
-    } else if (totalScore >= 78) {
-      label = "Very Good View";
+    } else if (totalScore >= 75) {
+      label = "Prime Sightline";
       badgeColor = "bg-blue-500/20 text-blue-300 border-blue-500/30";
-    } else if (totalScore >= 68) {
-      label = "Good Sightline";
-      badgeColor = "bg-amber-500/20 text-amber-300 border-amber-500/30";
     }
 
     return {
@@ -201,106 +317,112 @@ export default function SeatPerspective3D({
       label,
       badgeColor,
     };
-  }, [currentRowIndex, currentColIndex, currentSeat, getSeatEyePosition]);
+  }, [currentSeat, currentRowIndex, currentColIndex, getSeatEyePosition]);
 
-  // Sync curtains state to ref
+  // Sync state refs
   useEffect(() => {
     curtainOpenRef.current = curtainsOpen ? 1.0 : 0.0;
   }, [curtainsOpen]);
 
-  // Sync house lights to ref
   useEffect(() => {
     lightsIntensityRef.current = houseLights ? 1.0 : 0.25;
   }, [houseLights]);
 
-  // Seat switching trigger: start smooth camera flight
-  useEffect(() => {
-    if (viewMode === "seat") {
-      const targetPos = getSeatEyePosition(currentRowIndex, currentColIndex, currentSeat);
-      const screenCenter = new THREE.Vector3(0, SCREEN_Y, SCREEN_Z);
-      const targetRotMatrix = new THREE.Matrix4().lookAt(targetPos, screenCenter, new THREE.Vector3(0, 1, 0));
-      const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetRotMatrix);
+  // Smooth camera flight transition helper
+  const triggerCameraFlight = useCallback(
+    (targetMode: PerspectiveMode, seat?: SeatPerspectiveItem, duration = 750) => {
+      const { pos: endPos, quat: endQuat } = getPerspectiveConfig(targetMode, seat);
 
-      if (canvasRef.current) {
-        flightRef.current = {
-          startTime: performance.now(),
-          duration: 650,
-          startPos: flightRef.current ? flightRef.current.endPos.clone() : targetPos.clone(),
-          endPos: targetPos,
-          startQuat: targetQuat.clone(),
-          endQuat: targetQuat,
-          onComplete: () => {
-            cameraModeRef.current = "seat";
-            flightRef.current = null;
-          },
-        };
-        cameraModeRef.current = "flight";
-      }
+      // Start position from current flight or from previous mode
+      const startPos = flightRef.current ? flightRef.current.endPos.clone() : getPerspectiveConfig(viewMode, currentSeat).pos;
+      const startQuat = flightRef.current ? flightRef.current.endQuat.clone() : getPerspectiveConfig(viewMode, currentSeat).quat;
+
+      flightRef.current = {
+        startTime: performance.now(),
+        duration,
+        startPos,
+        endPos,
+        startQuat,
+        endQuat,
+        onComplete: () => {
+          cameraModeRef.current = targetMode;
+          flightRef.current = null;
+        },
+      };
+
+      cameraModeRef.current = "flight";
       lookTargetRef.current = { yaw: 0, pitch: 0 };
-    }
-  }, [currentSeat, viewMode, currentRowIndex, currentColIndex, getSeatEyePosition]);
+      lookCurrentRef.current = { yaw: 0, pitch: 0 };
+      setViewMode(targetMode);
+    },
+    [getPerspectiveConfig, viewMode, currentSeat]
+  );
 
-  // View Mode switching handler
-  const handleToggleViewMode = () => {
-    if (viewMode === "seat") {
-      // Transition from Seat to Overview
-      const overviewPos = getOverviewPosition();
-      const screenCenter = new THREE.Vector3(0, SCREEN_Y * 0.7, SCREEN_Z + 2);
-      const targetRotMatrix = new THREE.Matrix4().lookAt(overviewPos, screenCenter, new THREE.Vector3(0, 1, 0));
-      const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetRotMatrix);
+  // Switch perspective mode
+  const handlePerspectiveSelect = (newMode: PerspectiveMode) => {
+    if (newMode === viewMode && cameraModeRef.current === newMode) return;
+    triggerCameraFlight(newMode, currentSeat);
+  };
 
-      flightRef.current = {
-        startTime: performance.now(),
-        duration: 850,
-        startPos: getSeatEyePosition(currentRowIndex, currentColIndex, currentSeat),
-        endPos: overviewPos,
-        startQuat: targetQuat.clone(),
-        endQuat: targetQuat,
-        onComplete: () => {
-          cameraModeRef.current = "overview";
-          flightRef.current = null;
-        },
-      };
-      cameraModeRef.current = "flight";
-      setViewMode("overview");
-      setCurtainsOpen(false); // Curtains close in overview
-    } else {
-      // Transition from Overview to Seat
-      const seatPos = getSeatEyePosition(currentRowIndex, currentColIndex, currentSeat);
-      const screenCenter = new THREE.Vector3(0, SCREEN_Y, SCREEN_Z);
-      const targetRotMatrix = new THREE.Matrix4().lookAt(seatPos, screenCenter, new THREE.Vector3(0, 1, 0));
-      const targetQuat = new THREE.Quaternion().setFromRotationMatrix(targetRotMatrix);
-
-      flightRef.current = {
-        startTime: performance.now(),
-        duration: 900,
-        startPos: getOverviewPosition(),
-        endPos: seatPos,
-        startQuat: targetQuat.clone(),
-        endQuat: targetQuat,
-        onComplete: () => {
-          cameraModeRef.current = "seat";
-          flightRef.current = null;
-        },
-      };
-      cameraModeRef.current = "flight";
-      setViewMode("seat");
-      setCurtainsOpen(true); // Curtains open automatically when seated
+  // Switch selected seat preview in "From my seat"
+  const handleSelectSeatPreview = (seat: SeatPerspectiveItem) => {
+    setCurrentSeat(seat);
+    if (viewMode === "from_seat") {
+      triggerCameraFlight("from_seat", seat, 600);
     }
   };
 
-  // Reset head gaze back to screen center
-  const handleResetHead = () => {
+  // Reset View Control
+  const handleResetView = () => {
     lookTargetRef.current = { yaw: 0, pitch: 0 };
+    zoomLevelRef.current = 1.0;
+    triggerCameraFlight(viewMode, currentSeat, 500);
   };
 
-  // Pan gaze incrementally using D-Pad
-  const handleNudgeGaze = (dYaw: number, dPitch: number) => {
-    lookTargetRef.current = {
-      yaw: THREE.MathUtils.clamp(lookTargetRef.current.yaw + dYaw, -Math.PI / 2.5, Math.PI / 2.5),
-      pitch: THREE.MathUtils.clamp(lookTargetRef.current.pitch + dPitch, -Math.PI / 4, Math.PI / 4),
-    };
+  // Fullscreen toggle
+  const handleToggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
   };
+
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (isFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (onClose) {
+          onClose();
+        }
+      } else if (e.key === "1") {
+        handlePerspectiveSelect("overview");
+      } else if (e.key === "2") {
+        handlePerspectiveSelect("from_seat");
+      } else if (e.key === "3") {
+        handlePerspectiveSelect("from_stage");
+      } else if (e.key === "4") {
+        handlePerspectiveSelect("balcony");
+      } else if (e.key === "5") {
+        handlePerspectiveSelect("birds_eye");
+      } else if (e.key === "r" || e.key === "R") {
+        handleResetView();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFullscreen, onClose, viewMode, currentSeat]);
 
   // Main Three.js Scene Setup & Render Loop
   useEffect(() => {
@@ -308,8 +430,8 @@ export default function SeatPerspective3D({
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
 
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    let width = container.clientWidth || 800;
+    let height = container.clientHeight || 550;
 
     // 1. WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
@@ -320,49 +442,45 @@ export default function SeatPerspective3D({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.35;
 
-    // 2. Scene & Subtle Depth Fog (Vantage Cinema Atmosphere)
+    // 2. Scene Atmosphere
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0c0a0e");
-    scene.fog = new THREE.FogExp2("#0e0a12", 0.008);
+    scene.background = new THREE.Color("#0b0c10");
+    scene.fog = new THREE.FogExp2("#0e1017", 0.007);
 
     // 3. Perspective Camera
-    const camera = new THREE.PerspectiveCamera(80, width / height, 0.15, 140);
-    const initPos = viewMode === "overview" ? getOverviewPosition() : getSeatEyePosition(currentRowIndex, currentColIndex, currentSeat);
-    camera.position.copy(initPos);
-    if (viewMode === "overview") {
-      const screenTarget = new THREE.Vector3(0, SCREEN_Y * 0.65, SCREEN_Z + 1.5);
-      const rotM = new THREE.Matrix4().lookAt(initPos, screenTarget, new THREE.Vector3(0, 1, 0));
-      camera.quaternion.setFromRotationMatrix(rotM);
-    }
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.15, 160);
+    const { pos: initialPos, quat: initialQuat } = getPerspectiveConfig(viewMode, currentSeat);
+    camera.position.copy(initialPos);
+    camera.quaternion.copy(initialQuat);
 
-    // 4. Vantage Balanced Cinema Lighting
-    const ambientLight = new THREE.AmbientLight("#ffeacc", 0.85);
+    // 4. Balanced Cinema Auditorium Lighting
+    const ambientLight = new THREE.AmbientLight("#fff3e0", 0.95);
     scene.add(ambientLight);
 
-    // Overhead cinema downlights (dimmable with house lights button)
-    const downLight1 = new THREE.PointLight("#ffe0b2", 12, 32, 1.2);
-    downLight1.position.set(0, 10, 3);
-    scene.add(downLight1);
+    // Downlights
+    const downLightFront = new THREE.PointLight("#ffedd5", 14, 35, 1.2);
+    downLightFront.position.set(0, 10.5, 2.5);
+    scene.add(downLightFront);
 
-    const downLight2 = new THREE.PointLight("#ffe0b2", 10, 32, 1.2);
-    downLight2.position.set(0, 11, totalRows * SEAT_SPACING_Z);
-    scene.add(downLight2);
+    const downLightBack = new THREE.PointLight("#ffedd5", 12, 35, 1.2);
+    downLightBack.position.set(0, 11.5, totalRows * SEAT_SPACING_Z + 1.0);
+    scene.add(downLightBack);
 
-    // Screen projector glow bouncing back
-    const screenGlowLight = new THREE.PointLight("#ffd1a4", 15, 45, 1.3);
+    // Screen glow bouncing into hall
+    const screenGlowLight = new THREE.PointLight("#fed7aa", 16, 48, 1.3);
     screenGlowLight.position.set(0, SCREEN_Y, SCREEN_Z + 1.8);
     scene.add(screenGlowLight);
 
-    // Projection beam from rear booth
-    const projectorBeam = new THREE.SpotLight("#d8e6ff", 10, 70, 0.38, 0.3, 1.1);
-    projectorBeam.position.set(0, 11, totalRows * SEAT_SPACING_Z + 6);
+    // Projector beam from booth
+    const projectorBeam = new THREE.SpotLight("#dbeafe", 12, 80, 0.38, 0.35, 1.1);
+    projectorBeam.position.set(0, 12, totalRows * SEAT_SPACING_Z + 7);
     projectorBeam.target.position.set(0, SCREEN_Y, SCREEN_Z);
     scene.add(projectorBeam);
     scene.add(projectorBeam.target);
 
-    // 5. Build Vantage Curved Cinema Screen (Cylindrical bow formula)
+    // 5. Curved Cinema Screen
     const screenGroup = new THREE.Group();
     screenGroup.position.set(0, SCREEN_Y, SCREEN_Z);
 
@@ -380,7 +498,6 @@ export default function SeatPerspective3D({
       screenAngle
     );
 
-    // Screen Material (with movie banner or poster projection)
     let screenMat: THREE.Material;
     const textureUrl = bannerUrl || posterUrl;
     if (textureUrl) {
@@ -391,18 +508,17 @@ export default function SeatPerspective3D({
         map: texture,
         emissiveMap: texture,
         emissive: new THREE.Color("#ffffff"),
-        emissiveIntensity: 0.7,
+        emissiveIntensity: 0.75,
         roughness: 0.25,
         metalness: 0.0,
         side: THREE.BackSide,
       });
     } else {
       screenMat = new THREE.MeshStandardMaterial({
-        color: "#f8f9fa",
+        color: "#ffffff",
         emissive: "#3b82f6",
-        emissiveIntensity: 0.45,
-        roughness: 0.3,
-        metalness: 0.0,
+        emissiveIntensity: 0.5,
+        roughness: 0.25,
         side: THREE.BackSide,
       });
     }
@@ -415,27 +531,33 @@ export default function SeatPerspective3D({
     const frameGeo = new THREE.BoxGeometry(SCREEN_W + 0.8, SCREEN_H + 0.8, 0.12);
     const frameMat = new THREE.MeshStandardMaterial({
       color: "#d4af37",
-      metalness: 0.72,
-      roughness: 0.28,
+      metalness: 0.75,
+      roughness: 0.25,
     });
     const frameMesh = new THREE.Mesh(frameGeo, frameMat);
     frameMesh.position.set(0, 0, -0.15);
     screenGroup.add(frameMesh);
 
-    // Vantage Proscenium: Animated Pleated Velvet Stage Curtains
+    // Stage Platform in front of screen
+    const stageGeo = new THREE.BoxGeometry(SCREEN_W + 6, 0.8, 3.8);
+    const stageMat = new THREE.MeshStandardMaterial({ color: "#171720", roughness: 0.7 });
+    const stageMesh = new THREE.Mesh(stageGeo, stageMat);
+    stageMesh.position.set(0, -SCREEN_Y + 0.4, 1.8);
+    screenGroup.add(stageMesh);
+
+    // Pleated Velvet Proscenium Stage Curtains
     const curtainMat = new THREE.MeshStandardMaterial({
-      color: "#7f1d1d", // Deep crimson velvet
-      roughness: 0.9,
+      color: "#991b1b", // Rich theatre crimson
+      roughness: 0.85,
       metalness: 0.05,
     });
 
-    // Left Curtain Group (pivoted on left)
-    const curtainLGroup = new THREE.Group();
-    curtainLGroup.position.set(-SCREEN_W / 2 - 0.2, 0, 0.32);
-
-    const curtainFoldGeo = new THREE.CylinderGeometry(0.35, 0.44, SCREEN_H + 2.2, 14);
-    const foldCount = 10;
+    const curtainFoldGeo = new THREE.CylinderGeometry(0.35, 0.44, SCREEN_H + 2.4, 14);
+    const foldCount = 9;
     const foldSpacing = (SCREEN_W / 2 + 0.6) / foldCount;
+
+    const curtainLGroup = new THREE.Group();
+    curtainLGroup.position.set(-SCREEN_W / 2 - 0.2, 0, 0.35);
     for (let c = 0; c < foldCount; c++) {
       const cMesh = new THREE.Mesh(curtainFoldGeo, curtainMat);
       cMesh.position.set(c * foldSpacing, 0, 0);
@@ -443,9 +565,8 @@ export default function SeatPerspective3D({
     }
     screenGroup.add(curtainLGroup);
 
-    // Right Curtain Group (pivoted on right)
     const curtainRGroup = new THREE.Group();
-    curtainRGroup.position.set(SCREEN_W / 2 + 0.2, 0, 0.32);
+    curtainRGroup.position.set(SCREEN_W / 2 + 0.2, 0, 0.35);
     for (let c = 0; c < foldCount; c++) {
       const cMesh = new THREE.Mesh(curtainFoldGeo, curtainMat);
       cMesh.position.set(-c * foldSpacing, 0, 0);
@@ -453,26 +574,15 @@ export default function SeatPerspective3D({
     }
     screenGroup.add(curtainRGroup);
 
-    // Top velvet valance across proscenium
-    const valanceGeo = new THREE.BoxGeometry(SCREEN_W + 4, 1.2, 0.5);
+    // Top velvet valance
+    const valanceGeo = new THREE.BoxGeometry(SCREEN_W + 4.5, 1.3, 0.5);
     const valanceMesh = new THREE.Mesh(valanceGeo, curtainMat);
-    valanceMesh.position.set(0, SCREEN_H / 2 + 0.6, 0.35);
+    valanceMesh.position.set(0, SCREEN_H / 2 + 0.65, 0.38);
     screenGroup.add(valanceMesh);
-
-    // Gold Proscenium Arch Trim
-    const goldTrimGeo = new THREE.BoxGeometry(SCREEN_W + 4.2, 0.16, 0.55);
-    const goldTrimMat = new THREE.MeshStandardMaterial({
-      color: "#f59e0b",
-      metalness: 0.78,
-      roughness: 0.22,
-    });
-    const goldTrim = new THREE.Mesh(goldTrimGeo, goldTrimMat);
-    goldTrim.position.set(0, SCREEN_H / 2 + 1.26, 0.38);
-    screenGroup.add(goldTrim);
 
     scene.add(screenGroup);
 
-    // 6. Build Stadium Risers (Floors & LED Steps)
+    // 6. Tiered Stadium Floors with Central Illuminated Aisle Stairs
     const hallWidth = Math.max(totalCols * SEAT_SPACING_X + 6, 22);
     const floorGroup = new THREE.Group();
 
@@ -480,24 +590,44 @@ export default function SeatPerspective3D({
       const y = r * ROW_RISE - 0.5;
       const z = r * SEAT_SPACING_Z;
 
-      // Tier floor slab
-      const slabGeo = new THREE.BoxGeometry(hallWidth, 0.24, SEAT_SPACING_Z + 0.05);
+      const slabGeo = new THREE.BoxGeometry(hallWidth, 0.26, SEAT_SPACING_Z + 0.06);
       const slabMat = new THREE.MeshStandardMaterial({
-        color: r % 2 === 0 ? "#121218" : "#0e0e14",
+        color: r % 2 === 0 ? "#111827" : "#0f172a",
         roughness: 0.85,
       });
       const slab = new THREE.Mesh(slabGeo, slabMat);
-      slab.position.set(0, y - 0.12, z);
+      slab.position.set(0, y - 0.13, z);
       floorGroup.add(slab);
 
-      // Glowing LED step runner on stair edge (Vantage signature amber)
-      const ledGeo = new THREE.PlaneGeometry(hallWidth * 0.88, 0.04);
+      // Central illuminated aisle staircase (wide center walkway matching reference photos)
+      const aisleStepGeo = new THREE.BoxGeometry(1.5, 0.04, SEAT_SPACING_Z * 0.88);
+      const aisleStepMat = new THREE.MeshStandardMaterial({
+        color: "#1c1917",
+        roughness: 0.75,
+      });
+      const aisleStep = new THREE.Mesh(aisleStepGeo, aisleStepMat);
+      aisleStep.position.set(0, y + 0.01, z);
+      floorGroup.add(aisleStep);
+
+      // Radiant Warm Amber LED step edge strip in the center aisle
+      const centerAisleLedGeo = new THREE.BoxGeometry(1.5, 0.04, 0.08);
+      const centerAisleLedMat = new THREE.MeshStandardMaterial({
+        color: "#fbbf24",
+        emissive: "#f59e0b",
+        emissiveIntensity: 3.2,
+      });
+      const centerLed = new THREE.Mesh(centerAisleLedGeo, centerAisleLedMat);
+      centerLed.position.set(0, y + 0.03, z - SEAT_SPACING_Z / 2 + 0.06);
+      floorGroup.add(centerLed);
+
+      // Ambient low-intensity step outline across tiers
+      const ledGeo = new THREE.PlaneGeometry(hallWidth * 0.92, 0.03);
       const ledMat = new THREE.MeshStandardMaterial({
-        color: "#ff6600",
-        emissive: "#ff5500",
-        emissiveIntensity: 2.8,
+        color: "#f59e0b",
+        emissive: "#d97706",
+        emissiveIntensity: 1.2,
         transparent: true,
-        opacity: 0.9,
+        opacity: 0.6,
       });
       const led = new THREE.Mesh(ledGeo, ledMat);
       led.rotation.x = -Math.PI / 2;
@@ -506,49 +636,65 @@ export default function SeatPerspective3D({
     }
     scene.add(floorGroup);
 
-    // 7. Chair Geometries & Materials
-    const baseMat = new THREE.MeshStandardMaterial({ color: "#242430", metalness: 0.5, roughness: 0.3 });
-    const armMat = new THREE.MeshStandardMaterial({ color: "#323240", roughness: 0.5 });
-
-    // Standard Velvet Seat Material
-    const standardCushionMat = new THREE.MeshStandardMaterial({
-      color: "#991b1b", // Rich crimson
-      emissive: "#450a0a",
+    // 7. Seat Materials Specification
+    // Available: Vibrant Cinema Teal (#0d9488 / #14b8a6) matching reference photos
+    const availableCushionMat = new THREE.MeshStandardMaterial({
+      color: "#0f766e",
+      emissive: "#0d9488",
       emissiveIntensity: 0.25,
-      roughness: 0.55,
+      roughness: 0.42,
     });
-    const standardBackMat = new THREE.MeshStandardMaterial({
-      color: "#831818",
-      roughness: 0.6,
+    const availableBackMat = new THREE.MeshStandardMaterial({
+      color: "#14b8a6",
+      emissive: "#0f766e",
+      emissiveIntensity: 0.18,
+      roughness: 0.48,
     });
 
-    // Active User Seat Highlight Material (Glowing Gold)
-    const viewerCushionMat = new THREE.MeshStandardMaterial({
+    // Balcony Category: Amber / Orange (#f59e0b)
+    const balconyCushionMat = new THREE.MeshStandardMaterial({
+      color: "#d97706",
+      emissive: "#b45309",
+      emissiveIntensity: 0.32,
+      roughness: 0.42,
+    });
+    const balconyBackMat = new THREE.MeshStandardMaterial({
+      color: "#f59e0b",
+      emissive: "#d97706",
+      emissiveIntensity: 0.25,
+      roughness: 0.45,
+    });
+
+    // Selected: Highlighted Yellow (#facc15)
+    const selectedCushionMat = new THREE.MeshStandardMaterial({
       color: "#facc15",
       emissive: "#eab308",
-      emissiveIntensity: 0.65,
-      roughness: 0.35,
-    });
-    const viewerBackMat = new THREE.MeshStandardMaterial({
-      color: "#eab308",
-      emissive: "#ca8a04",
-      emissiveIntensity: 0.5,
-      roughness: 0.4,
-    });
-
-    // Selected Seats Highlight Material (Emerald / Cyan)
-    const selectedCushionMat = new THREE.MeshStandardMaterial({
-      color: "#10b981",
-      emissive: "#059669",
-      emissiveIntensity: 0.55,
-      roughness: 0.4,
+      emissiveIntensity: 0.85,
+      roughness: 0.25,
     });
     const selectedBackMat = new THREE.MeshStandardMaterial({
-      color: "#059669",
-      roughness: 0.5,
+      color: "#fde047",
+      emissive: "#eab308",
+      emissiveIntensity: 0.7,
+      roughness: 0.3,
     });
 
-    // Couple Lounger Geometry (Double-Wide Plush Recliner)
+    // Unavailable / Disabled: Grey (#475569)
+    const unavailableCushionMat = new THREE.MeshStandardMaterial({
+      color: "#334155",
+      roughness: 0.95,
+      metalness: 0.1,
+    });
+    const unavailableBackMat = new THREE.MeshStandardMaterial({
+      color: "#475569",
+      roughness: 0.95,
+      metalness: 0.1,
+    });
+
+    const armMat = new THREE.MeshStandardMaterial({ color: "#1f2937", roughness: 0.6 });
+    const baseMat = new THREE.MeshStandardMaterial({ color: "#111827", metalness: 0.6, roughness: 0.3 });
+
+    // Chair Geometries
     const coupleBackGeo = new THREE.BoxGeometry(1.65, 0.88, 0.16);
     const coupleCushionGeo = new THREE.BoxGeometry(1.60, 0.18, 0.56);
     const standardBackGeo = new THREE.BoxGeometry(0.74, 0.88, 0.14);
@@ -556,8 +702,9 @@ export default function SeatPerspective3D({
     const armGeo = new THREE.BoxGeometry(0.12, 0.35, 0.5);
     const baseGeo = new THREE.CylinderGeometry(0.04, 0.05, 0.45, 8);
 
-    // Build Chairs across Auditorium without any duplicate overlapping meshes
+    // 8. Build Seats Group with Raycastable Interactivity
     const seatsGroup = new THREE.Group();
+    const raycastMeshes: THREE.Mesh[] = [];
     const processedCouplePairs = new Set<string>();
 
     allSeats.forEach((seat) => {
@@ -566,8 +713,25 @@ export default function SeatPerspective3D({
       const tierFloorY = safeRow * ROW_RISE - 0.5;
       const tierZ = safeRow * SEAT_SPACING_Z;
 
+      const isSelected = selectedSeatIds.includes(seat.id) || (seat.seatRef && selectedSeatIds.includes(seat.seatRef));
+      const isUnavailable = seat.status === "BOOKED" || seat.status === "UNAVAILABLE";
+      const isBalcony = Boolean(seat.isBalcony);
+
+      let cMat = availableCushionMat;
+      let bMat = availableBackMat;
+
+      if (isUnavailable) {
+        cMat = unavailableCushionMat;
+        bMat = unavailableBackMat;
+      } else if (isSelected) {
+        cMat = selectedCushionMat;
+        bMat = selectedBackMat;
+      } else if (isBalcony) {
+        cMat = balconyCushionMat;
+        bMat = balconyBackMat;
+      }
+
       if (seat.isCouple) {
-        // Find couple pair (e.g. seats 1-2, 3-4, 5-6, 7-8, 9-10)
         const pairId = Math.floor((seat.seatNumber - 1) / 2);
         const pairKey = `${seat.rowLabel}-pair-${pairId}`;
         if (processedCouplePairs.has(pairKey)) return;
@@ -576,32 +740,26 @@ export default function SeatPerspective3D({
         const partnerNumber = seat.seatNumber % 2 === 1 ? seat.seatNumber + 1 : seat.seatNumber - 1;
         const partner = allSeats.find((s) => s.rowLabel === seat.rowLabel && s.seatNumber === partnerNumber);
 
-        const isViewerPair =
-          (seat.id === currentSeat.id || (seat.seatNumber === currentSeat.seatNumber && seat.rowLabel === currentSeat.rowLabel)) ||
-          (partner && (partner.id === currentSeat.id || (partner.seatNumber === currentSeat.seatNumber && partner.rowLabel === currentSeat.rowLabel)));
-
-        const isSelectedPair = selectedSeatIds.includes(seat.id) || (partner ? selectedSeatIds.includes(partner.id) : false);
-
-        const cMat = isViewerPair ? viewerCushionMat : isSelectedPair ? selectedCushionMat : standardCushionMat;
-        const bMat = isViewerPair ? viewerBackMat : isSelectedPair ? selectedBackMat : standardBackMat;
-
         const x1 = getSeatChairX(seat.seatNumber - 1, seat);
         const x2 = partner ? getSeatChairX(partner.seatNumber - 1, partner) : x1;
         const midX = (x1 + x2) / 2;
 
         const coupleChair = new THREE.Group();
         coupleChair.position.set(midX, tierFloorY, tierZ);
+        coupleChair.userData = { seat, isAvailable: !isUnavailable };
 
-        // Backrest is BEHIND the cushion at +0.22z
         const back = new THREE.Mesh(coupleBackGeo, bMat);
         back.position.set(0, 0.68, 0.22);
         back.rotation.x = -0.08;
+        back.userData = { seat, isAvailable: !isUnavailable };
         coupleChair.add(back);
+        raycastMeshes.push(back);
 
-        // Cushion is FORWARD at -0.06z
         const cushion = new THREE.Mesh(coupleCushionGeo, cMat);
         cushion.position.set(0, 0.36, -0.06);
+        cushion.userData = { seat, isAvailable: !isUnavailable };
         coupleChair.add(cushion);
+        raycastMeshes.push(cushion);
 
         const leftArm = new THREE.Mesh(armGeo, armMat);
         leftArm.position.set(-0.82, 0.46, -0.06);
@@ -621,26 +779,23 @@ export default function SeatPerspective3D({
 
         seatsGroup.add(coupleChair);
       } else {
-        const isViewerSeat = seat.id === currentSeat.id || (seat.seatNumber === currentSeat.seatNumber && seat.rowLabel === currentSeat.rowLabel);
-        const isSelected = selectedSeatIds.includes(seat.id);
-
-        const cMat = isViewerSeat ? viewerCushionMat : isSelected ? selectedCushionMat : standardCushionMat;
-        const bMat = isViewerSeat ? viewerBackMat : isSelected ? selectedBackMat : standardBackMat;
-
-        const seatX = getSeatChairX(seat.seatNumber - 1, seat);
+        const chairX = getSeatChairX(seat.seatNumber - 1, seat);
         const chair = new THREE.Group();
-        chair.position.set(seatX, tierFloorY, tierZ);
+        chair.position.set(chairX, tierFloorY, tierZ);
+        chair.userData = { seat, isAvailable: !isUnavailable };
 
-        // Backrest is BEHIND the cushion at +0.22z
         const back = new THREE.Mesh(standardBackGeo, bMat);
         back.position.set(0, 0.68, 0.22);
         back.rotation.x = -0.08;
+        back.userData = { seat, isAvailable: !isUnavailable };
         chair.add(back);
+        raycastMeshes.push(back);
 
-        // Cushion is FORWARD at -0.06z
         const cushion = new THREE.Mesh(standardCushionGeo, cMat);
         cushion.position.set(0, 0.36, -0.06);
+        cushion.userData = { seat, isAvailable: !isUnavailable };
         chair.add(cushion);
+        raycastMeshes.push(cushion);
 
         const leftArm = new THREE.Mesh(armGeo, armMat);
         leftArm.position.set(-0.4, 0.46, -0.06);
@@ -657,44 +812,16 @@ export default function SeatPerspective3D({
         seatsGroup.add(chair);
       }
     });
+
     scene.add(seatsGroup);
 
-    // 8. Audience Spectators (Front rows for depth perspective)
-    const audienceMat = new THREE.MeshStandardMaterial({ color: "#181822", roughness: 0.85 });
-    const headGeo = new THREE.SphereGeometry(0.12, 12, 12);
-    const bodyGeo = new THREE.CylinderGeometry(0.16, 0.22, 0.55, 10);
-    const audienceGroup = new THREE.Group();
-
-    allSeats.forEach((s) => {
-      const rIdx = rowLabels.indexOf(s.rowLabel);
-      if (rIdx < currentRowIndex && (s.seatNumber * 7) % 5 === 0) {
-        const x = getSeatChairX(s.seatNumber - 1, s);
-        const y = rIdx * ROW_RISE - 0.5;
-        const z = rIdx * SEAT_SPACING_Z;
-
-        const spectator = new THREE.Group();
-        spectator.position.set(x, y, z - 0.06);
-
-        const body = new THREE.Mesh(bodyGeo, audienceMat);
-        body.position.set(0, 0.5, 0);
-        spectator.add(body);
-
-        const head = new THREE.Mesh(headGeo, audienceMat);
-        head.position.set(0, 0.95, 0);
-        spectator.add(head);
-
-        audienceGroup.add(spectator);
-      }
-    });
-    scene.add(audienceGroup);
-
-    // 9. Side Walls & Architectural Acoustic Treatment
+    // 9. Side Walls with Pleated Red Theatre Velvet Curtains & Architectural Downlights
     const wallHalfW = hallWidth / 2;
-    const wallDepth = totalRows * SEAT_SPACING_Z + 12;
-    const wallGeo = new THREE.BoxGeometry(0.3, 14, wallDepth);
+    const wallDepth = totalRows * SEAT_SPACING_Z + 14;
+    const wallGeo = new THREE.BoxGeometry(0.3, 16, wallDepth);
     const wallMat = new THREE.MeshStandardMaterial({
-      color: "#1a1218",
-      roughness: 0.85,
+      color: "#450a0a", // Deep theatre maroon base
+      roughness: 0.9,
     });
 
     const leftWall = new THREE.Mesh(wallGeo, wallMat);
@@ -705,98 +832,88 @@ export default function SeatPerspective3D({
     rightWall.position.set(wallHalfW, 6, wallDepth / 2 - 8);
     scene.add(rightWall);
 
-    // Vantage Luxury Acoustic Wall Slats & Gold Moldings
-    const panelMat = new THREE.MeshStandardMaterial({
-      color: "#3b1e28",
-      roughness: 0.6,
+    // Pleated vertical crimson curtains along side walls (matching cinema reference photograph)
+    const sideCurtainMat = new THREE.MeshStandardMaterial({
+      color: "#881337", // Rich cinema crimson
+      roughness: 0.82,
+      metalness: 0.04,
     });
-    const goldMoldingMat = new THREE.MeshStandardMaterial({
-      color: "#f59e0b",
-      metalness: 0.72,
-      roughness: 0.28,
-    });
+    const sideFoldGeo = new THREE.CylinderGeometry(0.24, 0.32, 15, 10);
+    const sideFoldSpacing = 0.92;
+    const sideFoldCount = Math.floor(wallDepth / sideFoldSpacing);
 
-    const panelCount = Math.max(4, Math.floor(totalRows / 1.5));
-    for (let i = 0; i < panelCount; i++) {
-      const zP = (i / (panelCount - 1 || 1)) * (wallDepth - 6) - 4;
+    for (let f = 0; f < sideFoldCount; f++) {
+      const zF = -7 + f * sideFoldSpacing;
+      const foldL = new THREE.Mesh(sideFoldGeo, sideCurtainMat);
+      foldL.position.set(-wallHalfW + 0.22, 6, zF);
+      scene.add(foldL);
 
-      const panL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 5.2, 1.4), panelMat);
-      panL.position.set(-wallHalfW + 0.16, 4.0, zP);
-      scene.add(panL);
-
-      const panR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 5.2, 1.4), panelMat);
-      panR.position.set(wallHalfW - 0.16, 4.0, zP);
-      scene.add(panR);
-
-      const goldL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 1.45), goldMoldingMat);
-      goldL.position.set(-wallHalfW + 0.18, 6.6, zP);
-      scene.add(goldL);
-
-      const goldR = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 1.45), goldMoldingMat);
-      goldR.position.set(wallHalfW - 0.18, 6.6, zP);
-      scene.add(goldR);
+      const foldR = new THREE.Mesh(sideFoldGeo, sideCurtainMat);
+      foldR.position.set(wallHalfW - 0.22, 6, zF);
+      scene.add(foldR);
     }
 
-    // Wall Sconces - warm ambient decorative lights along the sides
-    const sconceCount = Math.max(3, Math.floor(totalRows / 2));
-    for (let i = 0; i < sconceCount; i++) {
-      const zSconce = (i / (sconceCount - 1 || 1)) * (totalRows * SEAT_SPACING_Z) - 2;
+    // Warm Architectural Sconces along upper walls casting light down the red drapery
+    const sconceGeo = new THREE.BoxGeometry(0.22, 0.65, 0.28);
+    const sconceMat = new THREE.MeshStandardMaterial({
+      color: "#fbbf24",
+      emissive: "#d97706",
+      emissiveIntensity: 2.5,
+    });
+    for (let i = 0; i < totalRows; i += 2) {
+      const zSconce = i * SEAT_SPACING_Z;
+      const ySconce = i * ROW_RISE + 3.2;
 
-      const sLightL = new THREE.PointLight("#ffdd99", 1.8, 12, 1.5);
-      sLightL.position.set(-wallHalfW + 0.4, 4.2, zSconce);
-      scene.add(sLightL);
+      const sL = new THREE.Mesh(sconceGeo, sconceMat);
+      sL.position.set(-wallHalfW + 0.28, ySconce, zSconce);
+      scene.add(sL);
 
-      const sLightR = new THREE.PointLight("#ffdd99", 1.8, 12, 1.5);
-      sLightR.position.set(wallHalfW - 0.4, 4.2, zSconce);
-      scene.add(sLightR);
+      const sR = new THREE.Mesh(sconceGeo, sconceMat);
+      sR.position.set(wallHalfW - 0.28, ySconce, zSconce);
+      scene.add(sR);
     }
 
     // 10. Animation & Render Loop
     let animationFrameId: number;
+    const raycaster = new THREE.Raycaster();
+    const mouseVec = new THREE.Vector2();
+
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Animate curtains opening / closing smoothly
-      curtainCurRef.current += (curtainOpenRef.current - curtainCurRef.current) * 0.06;
-      const curtainScaleX = 1.0 - 0.9 * curtainCurRef.current;
-      curtainLGroup.scale.x = curtainScaleX;
-      curtainRGroup.scale.x = curtainScaleX;
+      // Smooth curtain opening / closing
+      const curtainDiff = curtainOpenRef.current - curtainCurRef.current;
+      curtainCurRef.current += curtainDiff * 0.08;
+      const scaleX = Math.max(0.12, 1.0 - curtainCurRef.current * 0.82);
+      curtainLGroup.scale.set(scaleX, 1, 1);
+      curtainRGroup.scale.set(scaleX, 1, 1);
 
-      // Animate house lights
-      const targetLight = lightsIntensityRef.current;
-      ambientLight.intensity = THREE.MathUtils.lerp(ambientLight.intensity, targetLight, 0.05);
-      downLight1.intensity = THREE.MathUtils.lerp(downLight1.intensity, targetLight * 14, 0.05);
-      downLight2.intensity = THREE.MathUtils.lerp(downLight2.intensity, targetLight * 12, 0.05);
+      // Dimmable house lights
+      const targetIntensity = lightsIntensityRef.current;
+      downLightFront.intensity = THREE.MathUtils.lerp(downLightFront.intensity, targetIntensity * 14, 0.08);
+      downLightBack.intensity = THREE.MathUtils.lerp(downLightBack.intensity, targetIntensity * 12, 0.08);
 
-      // Screen glow scales with curtains parting
-      screenGlowLight.intensity = 15 * curtainCurRef.current;
+      // Camera flight interpolation
+      if (flightRef.current) {
+        const flight = flightRef.current;
+        const elapsed = performance.now() - flight.startTime;
+        const progress = Math.min(1, Math.max(0, elapsed / flight.duration));
+        // Ease-out cubic
+        const t = 1 - Math.pow(1 - progress, 3);
 
-      // Handle Camera State Machine
-      if (cameraModeRef.current === "flight" && flightRef.current) {
-        const now = performance.now();
-        const progress = THREE.MathUtils.clamp((now - flightRef.current.startTime) / flightRef.current.duration, 0, 1);
-        const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-        camera.position.lerpVectors(flightRef.current.startPos, flightRef.current.endPos, ease);
-        camera.quaternion.slerpQuaternions(flightRef.current.startQuat, flightRef.current.endQuat, ease);
+        camera.position.lerpVectors(flight.startPos, flight.endPos, t);
+        camera.quaternion.slerpQuaternions(flight.startQuat, flight.endQuat, t);
 
         if (progress >= 1) {
-          if (flightRef.current.onComplete) flightRef.current.onComplete();
+          if (flight.onComplete) flight.onComplete();
+          flightRef.current = null;
         }
-      } else if (cameraModeRef.current === "overview") {
-        // Subtle overview breathing motion
-        const time = performance.now() * 0.0004;
-        const baseOverview = getOverviewPosition();
-        camera.position.x = baseOverview.x + Math.sin(time) * 0.35;
-        camera.position.y = baseOverview.y + Math.cos(time * 0.8) * 0.15;
-        camera.position.z = baseOverview.z;
-
-        const screenTarget = new THREE.Vector3(0, SCREEN_Y * 0.65, SCREEN_Z + 1.5);
-        const rotM = new THREE.Matrix4().lookAt(camera.position, screenTarget, new THREE.Vector3(0, 1, 0));
-        camera.quaternion.setFromRotationMatrix(rotM);
-      } else {
-        // First-Person Seated Mode with Neck Inertia Damping
-        const seatEye = getSeatEyePosition(currentRowIndex, currentColIndex, currentSeat);
+      } else if (cameraModeRef.current === "from_seat") {
+        // Seated head gaze pan
+        const activeS = currentSeat;
+        const rIdx = activeS ? rowLabels.indexOf(activeS.rowLabel) : 0;
+        const cIdx = activeS ? activeS.seatNumber - 1 : 0;
+        const seatEye = getSeatEyePosition(rIdx, cIdx, activeS);
         camera.position.copy(seatEye);
 
         lookCurrentRef.current.yaw = THREE.MathUtils.lerp(lookCurrentRef.current.yaw, lookTargetRef.current.yaw, 0.18);
@@ -810,6 +927,24 @@ export default function SeatPerspective3D({
         const pitchQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), lookCurrentRef.current.pitch);
 
         camera.quaternion.copy(baseQuat).multiply(yawQuat).multiply(pitchQuat);
+      } else if (cameraModeRef.current === "overview" || cameraModeRef.current === "from_stage" || cameraModeRef.current === "balcony") {
+        // Orbit drag pan for overview & stage views
+        lookCurrentRef.current.yaw = THREE.MathUtils.lerp(lookCurrentRef.current.yaw, lookTargetRef.current.yaw, 0.15);
+        lookCurrentRef.current.pitch = THREE.MathUtils.lerp(lookCurrentRef.current.pitch, lookTargetRef.current.pitch, 0.15);
+
+        const { pos: basePos, quat: baseQuat } = getPerspectiveConfig(cameraModeRef.current as PerspectiveMode, currentSeat);
+        camera.position.copy(basePos);
+
+        const yawQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), lookCurrentRef.current.yaw);
+        const pitchQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), lookCurrentRef.current.pitch);
+        camera.quaternion.copy(baseQuat).multiply(yawQuat).multiply(pitchQuat);
+      }
+
+      // Apply zoom level to camera FOV
+      const targetFov = 75 / zoomLevelRef.current;
+      if (Math.abs(camera.fov - targetFov) > 0.1) {
+        camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, 0.12);
+        camera.updateProjectionMatrix();
       }
 
       renderer.render(scene, camera);
@@ -817,46 +952,111 @@ export default function SeatPerspective3D({
 
     animate();
 
-    // 11. Mouse & Touch Event Handlers for Looking Around
+    // 11. Mouse & Touch Raycasting & Drag Interaction
+    const domElement = renderer.domElement;
+
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
-      if (cameraModeRef.current !== "seat") return;
       mouseRef.current.isDragging = true;
+      mouseRef.current.hasMoved = false;
+
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+      mouseRef.current.startX = clientX;
+      mouseRef.current.startY = clientY;
       mouseRef.current.lastX = clientX;
       mouseRef.current.lastY = clientY;
     };
 
     const handlePointerMove = (e: MouseEvent | TouchEvent) => {
-      if (!mouseRef.current.isDragging || cameraModeRef.current !== "seat") return;
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
-      const deltaX = clientX - mouseRef.current.lastX;
-      const deltaY = clientY - mouseRef.current.lastY;
+      if (mouseRef.current.isDragging) {
+        const deltaX = clientX - mouseRef.current.lastX;
+        const deltaY = clientY - mouseRef.current.lastY;
 
-      mouseRef.current.lastX = clientX;
-      mouseRef.current.lastY = clientY;
+        if (Math.abs(clientX - mouseRef.current.startX) > 5 || Math.abs(clientY - mouseRef.current.startY) > 5) {
+          mouseRef.current.hasMoved = true;
+        }
 
-      const sensitivity = 0.0035;
-      lookTargetRef.current.yaw = THREE.MathUtils.clamp(
-        lookTargetRef.current.yaw - deltaX * sensitivity,
-        -Math.PI / 2.5,
-        Math.PI / 2.5
-      );
-      lookTargetRef.current.pitch = THREE.MathUtils.clamp(
-        lookTargetRef.current.pitch + deltaY * sensitivity,
-        -Math.PI / 4,
-        Math.PI / 4
-      );
+        mouseRef.current.lastX = clientX;
+        mouseRef.current.lastY = clientY;
+
+        const sensitivity = cameraModeRef.current === "from_seat" ? 0.0035 : 0.004;
+        lookTargetRef.current.yaw = THREE.MathUtils.clamp(
+          lookTargetRef.current.yaw - deltaX * sensitivity,
+          -Math.PI / 2.2,
+          Math.PI / 2.2
+        );
+        lookTargetRef.current.pitch = THREE.MathUtils.clamp(
+          lookTargetRef.current.pitch + deltaY * sensitivity,
+          -Math.PI / 3.5,
+          Math.PI / 3.5
+        );
+      } else if (!("touches" in e)) {
+        // Hover raycast for desktop tooltip
+        const rect = domElement.getBoundingClientRect();
+        mouseVec.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        mouseVec.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouseVec, camera);
+        const hits = raycaster.intersectObjects(raycastMeshes, false);
+        if (hits.length > 0 && hits[0].object.userData?.seat) {
+          setHoveredSeat(hits[0].object.userData.seat);
+        } else {
+          setHoveredSeat(null);
+        }
+      }
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (e: MouseEvent | TouchEvent) => {
+      if (!mouseRef.current.isDragging) return;
       mouseRef.current.isDragging = false;
+
+      // If user clicked/tapped without dragging, perform Raycast Seat Selection
+      if (!mouseRef.current.hasMoved) {
+        const clientX = "changedTouches" in e ? (e as TouchEvent).changedTouches[0].clientX : (e as MouseEvent).clientX;
+        const clientY = "changedTouches" in e ? (e as TouchEvent).changedTouches[0].clientY : (e as MouseEvent).clientY;
+
+        const rect = domElement.getBoundingClientRect();
+        mouseVec.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        mouseVec.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouseVec, camera);
+        const hits = raycaster.intersectObjects(raycastMeshes, false);
+
+        if (hits.length > 0) {
+          const hitSeat: SeatPerspectiveItem = hits[0].object.userData?.seat;
+          const isAvail: boolean = hits[0].object.userData?.isAvailable;
+
+          if (hitSeat && isAvail) {
+            const isAlreadySelected = selectedSeatIds.includes(hitSeat.id) || (hitSeat.seatRef && selectedSeatIds.includes(hitSeat.seatRef));
+
+            if (isAlreadySelected) {
+              if (onDeselectSeat) onDeselectSeat(hitSeat.id);
+            } else {
+              if (onSelectSeat) onSelectSeat(hitSeat.id);
+            }
+
+            // In "from_seat" view mode, click anchors camera to that seat
+            if (cameraModeRef.current === "from_seat") {
+              setCurrentSeat(hitSeat);
+            }
+          }
+        }
+      }
     };
 
-    const domElement = renderer.domElement;
+    // Zoom on wheel
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomDelta = e.deltaY * -0.0012;
+      zoomLevelRef.current = THREE.MathUtils.clamp(zoomLevelRef.current + zoomDelta, 0.65, 1.8);
+    };
+
     domElement.addEventListener("mousedown", handlePointerDown);
+    domElement.addEventListener("wheel", handleWheel, { passive: false });
     window.addEventListener("mousemove", handlePointerMove);
     window.addEventListener("mouseup", handlePointerUp);
 
@@ -867,20 +1067,21 @@ export default function SeatPerspective3D({
     // 12. Resize Listener
     const handleResize = () => {
       if (!container) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 550;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
     window.addEventListener("resize", handleResize);
 
-    // Cleanup on unmount
+    // Cleanup
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener("resize", handleResize);
 
       domElement.removeEventListener("mousedown", handlePointerDown);
+      domElement.removeEventListener("wheel", handleWheel);
       window.removeEventListener("mousemove", handlePointerMove);
       window.removeEventListener("mouseup", handlePointerUp);
 
@@ -893,6 +1094,8 @@ export default function SeatPerspective3D({
       screenMat.dispose();
       frameGeo.dispose();
       frameMat.dispose();
+      stageGeo.dispose();
+      stageMat.dispose();
     };
   }, [
     bannerUrl,
@@ -903,584 +1106,328 @@ export default function SeatPerspective3D({
     selectedSeatIds,
     allSeats,
     currentSeat,
-    currentRowIndex,
-    currentColIndex,
     getSeatChairX,
     getSeatEyePosition,
-    getOverviewPosition,
+    getPerspectiveConfig,
+    onSelectSeat,
+    onDeselectSeat,
   ]);
 
-  // Keyboard navigation shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      } else if (e.key === "ArrowLeft") {
-        handlePrevSeat();
-      } else if (e.key === "ArrowRight") {
-        handleNextSeat();
-      } else if (e.key === "c" || e.key === "C") {
-        setCurtainsOpen((prev) => !prev);
-      } else if (e.key === "l" || e.key === "L") {
-        setHouseLights((prev) => !prev);
-      } else if (e.key === "v" || e.key === "V") {
-        handleToggleViewMode();
-      } else if (e.key === " ") {
-        handleToggleSelect();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentSeat, seatsByRow, rowLabels, viewMode]);
-
-  // Previous seat navigation
-  const handlePrevSeat = () => {
-    const rowSeats = seatsByRow.get(currentSeat.rowLabel) || [];
-    const currentIdx = rowSeats.findIndex((s) => s.id === currentSeat.id);
-    if (currentIdx > 0) {
-      setCurrentSeat(rowSeats[currentIdx - 1]);
-    } else {
-      const prevRowIdx = rowLabels.indexOf(currentSeat.rowLabel) - 1;
-      if (prevRowIdx >= 0) {
-        const prevRowSeats = seatsByRow.get(rowLabels[prevRowIdx]) || [];
-        if (prevRowSeats.length > 0) {
-          setCurrentSeat(prevRowSeats[prevRowSeats.length - 1]);
-        }
-      }
-    }
-  };
-
-  // Next seat navigation
-  const handleNextSeat = () => {
-    const rowSeats = seatsByRow.get(currentSeat.rowLabel) || [];
-    const currentIdx = rowSeats.findIndex((s) => s.id === currentSeat.id);
-    if (currentIdx < rowSeats.length - 1) {
-      setCurrentSeat(rowSeats[currentIdx + 1]);
-    } else {
-      const nextRowIdx = rowLabels.indexOf(currentSeat.rowLabel) + 1;
-      if (nextRowIdx < rowLabels.length) {
-        const nextRowSeats = seatsByRow.get(rowLabels[nextRowIdx]) || [];
-        if (nextRowSeats.length > 0) {
-          setCurrentSeat(nextRowSeats[0]);
-        }
-      }
-    }
-  };
-
-  // Toggle selection for current seat
-  const isSelected = selectedSeatIds.includes(currentSeat.id);
-  const handleToggleSelect = () => {
-    if (isSelected) {
-      onDeselectSeat?.(currentSeat.id);
-    } else {
-      onSelectSeat?.(currentSeat.id);
-    }
-  };
+  const isCurrentSeatSelected = currentSeat
+    ? selectedSeatIds.includes(currentSeat.id) || (currentSeat.seatRef && selectedSeatIds.includes(currentSeat.seatRef))
+    : false;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col select-none overflow-hidden font-sans">
-      {/* 3D Canvas Viewport */}
-      <div
-        ref={containerRef}
-        className="relative flex-1 w-full h-full overflow-hidden bg-[#0c0a0e] cursor-grab active:cursor-grabbing"
-      >
-        <canvas ref={canvasRef} className="w-full h-full block" />
-
-        {/* Responsive Header Bar */}
-        <div className="absolute top-0 inset-x-0 p-2.5 sm:p-4 flex items-center justify-between bg-gradient-to-b from-black/90 via-black/50 to-transparent pointer-events-none z-30">
-          {/* Mobile Header Left */}
-          <div className="flex sm:hidden items-center gap-2 pointer-events-auto min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-white truncate">
-                  Seat {currentSeat.label}
-                </span>
-                <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30 shrink-0">
-                  {viewMode === "seat" ? "Seat" : "Hall"}
-                </span>
+    <div
+      ref={containerRef}
+      className={`relative w-full ${
+        isEmbedded
+          ? "h-full min-h-[600px] overflow-hidden bg-[#0b0c10] flex flex-col"
+          : "fixed inset-0 z-50 flex flex-col bg-[#0b0c10] text-white"
+      } font-sans select-none`}
+    >
+      {/* Top Header Bar (When in fullscreen or modal overlay mode) */}
+      {!isEmbedded && (
+        <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/90 via-black/60 to-transparent pointer-events-none">
+          <div className="flex items-center gap-2 pointer-events-auto">
+            {onSwitchTo2D && (
+              <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-xl p-0.5 shadow-lg backdrop-blur-md">
+                <button
+                  type="button"
+                  onClick={onSwitchTo2D}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>Seat Overview</span>
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 shadow-xs flex items-center gap-1.5 cursor-default"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>3D Model</span>
+                </button>
               </div>
-              <p className="text-[10px] text-white/50 truncate max-w-[110px]">
-                {movieTitle}
-              </p>
-            </div>
+            )}
+
+            {!onSwitchTo2D && (
+              <div>
+                <h2 className="text-sm sm:text-base font-extrabold text-white leading-tight flex items-center gap-2">
+                  <span>{movieTitle}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    3D Auditorium
+                  </span>
+                </h2>
+                <p className="text-[11px] text-white/60">
+                  {cinemaName} • {screenName}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Desktop Header Left */}
-          <div className="hidden sm:flex items-center gap-3 pointer-events-auto">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/30 to-amber-600/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-lg shadow-amber-500/10">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white tracking-wide">
-                  Vantage 3D Perspective
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
-                  {viewMode === "seat" ? "Seat Eye View" : "Auditorium Mode"}
-                </span>
-              </div>
-              <p className="text-[11px] text-white/60">
-                {cinemaName} • {screenName} • {movieTitle}
-              </p>
-            </div>
-          </div>
-
-          {/* Mobile Header Right (Icon-only, compact & never overflows) */}
-          <div className="flex sm:hidden items-center gap-1.5 pointer-events-auto shrink-0">
+          {/* Top Right Quick Actions */}
+          <div className="flex items-center gap-1.5 pointer-events-auto">
             <button
               type="button"
-              onClick={handleToggleViewMode}
-              className="p-2 rounded-lg bg-black/50 text-white/90 border border-white/15 active:scale-95 transition"
-              title={viewMode === "seat" ? "Hall Overview" : "Sit in Seat"}
-            >
-              <Eye className="w-4 h-4 text-amber-400" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurtainsOpen((prev) => !prev)}
-              className={`p-2 rounded-lg border active:scale-95 transition ${
-                curtainsOpen
-                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                  : "bg-black/50 text-white/70 border-white/15"
-              }`}
-              title="Toggle Curtains"
-            >
-              <span className="text-[11px] font-bold">C</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleResetHead}
-              className="p-2 rounded-lg bg-black/50 text-white/80 border border-white/15 active:scale-95 transition"
-              title="Center View"
+              onClick={handleResetView}
+              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+              title="Reset View"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
             <button
               type="button"
-              onClick={() => setMobileInfoOpen((prev) => !prev)}
-              className="p-2 rounded-lg bg-black/50 text-white/80 border border-white/15 active:scale-95 transition"
-              title="Sightline Info"
-            >
-              <Info className="w-4 h-4 text-amber-300" />
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-lg bg-white/15 hover:bg-red-500/80 active:bg-red-600 text-white transition ml-1"
-              title="Exit (Esc)"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Desktop Header Right */}
-          <div className="hidden sm:flex items-center gap-2 pointer-events-auto">
-            <button
-              type="button"
-              onClick={handleToggleViewMode}
-              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-xs font-semibold text-white border border-white/15 transition cursor-pointer flex items-center gap-1.5"
-              title="Toggle between Seat View and Overview"
-            >
-              <Eye className="w-3.5 h-3.5 text-amber-400" />
-              <span>{viewMode === "seat" ? "Hall Overview" : "Sit in Seat"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurtainsOpen((prev) => !prev)}
-              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-                curtainsOpen
-                  ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                  : "bg-white/10 text-white/70 border-white/15 hover:text-white"
-              }`}
-              title="Toggle Curtains (C)"
-            >
-              <span>Curtains: {curtainsOpen ? "Open" : "Closed"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setHouseLights((prev) => !prev)}
-              className="p-2 rounded-xl bg-black/40 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition cursor-pointer"
-              title="Toggle House Lights (L)"
-            >
-              {houseLights ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4" />}
-            </button>
-            <button
-              type="button"
-              onClick={handleResetHead}
-              className="p-2 rounded-xl bg-black/40 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition cursor-pointer flex items-center gap-1.5 text-xs font-medium"
-              title="Center View to Screen"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Center</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowInfo((prev) => !prev)}
-              className="p-2 rounded-xl bg-black/40 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition cursor-pointer"
-              title="Toggle HUD Info"
-            >
-              <Info className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsFullscreen((prev) => !prev)}
-              className="p-2 rounded-xl bg-black/40 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition cursor-pointer"
-              title="Toggle Fullscreen"
+              onClick={handleToggleFullscreen}
+              className="p-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-2 rounded-xl bg-white/10 hover:bg-red-500/80 active:bg-red-600 text-white transition cursor-pointer"
-              title="Exit 3D View (Esc)"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-2 rounded-xl bg-slate-900/80 hover:bg-rose-900/50 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer ml-1"
+                title="Close 3D View"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
+      )}
 
-        {/* Mobile Mini Floating Sightline Chip (Unobtrusive & Sleek) */}
-        <div className="sm:hidden absolute top-14 left-2.5 z-20 pointer-events-auto">
+      {/* Embedded Quick Action Reset & Fullscreen Buttons */}
+      {isEmbedded && (
+        <div className="absolute top-3 right-3 sm:right-4 z-30 flex items-center gap-1.5 pointer-events-auto">
           <button
             type="button"
-            onClick={() => setMobileInfoOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-white/20 text-[11px] text-white shadow-lg active:scale-95 transition"
+            onClick={handleResetView}
+            className="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+            title="Reset View"
           >
-            <Sparkles className="w-3 h-3 text-amber-400" />
-            <span className="font-extrabold text-amber-400">{viewMetrics.score}%</span>
-            <span className="text-white/40">•</span>
-            <span className="font-semibold text-emerald-300">{viewMetrics.label}</span>
-            <span className="text-white/40">•</span>
-            <span className="text-white/70 font-mono">{viewMetrics.distanceM}m</span>
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleToggleFullscreen}
+            className="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-white/80 hover:text-white border border-slate-700/70 transition shadow-md cursor-pointer"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
           </button>
         </div>
+      )}
 
-        {/* Mobile Expandable Full Sightline Sheet */}
-        {mobileInfoOpen && (
-          <div className="sm:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
-            <div className="w-full max-w-xs bg-slate-950/95 border border-white/20 rounded-2xl p-4 text-white shadow-2xl space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    <span>Sightline Rating</span>
-                  </div>
-                  <div className="text-sm font-extrabold text-white mt-0.5">
-                    Seat {currentSeat.label} {currentSeat.isCouple && "• Couple Lounger"}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-black text-amber-400">{viewMetrics.score}%</div>
-                  <div className="text-[9px] text-white/50">Score</div>
-                </div>
-              </div>
+      {/* 1. View Selector: Horizontal 5-Perspective Bar directly above the auditorium visual */}
+      <div className={`absolute ${isEmbedded ? "top-3 sm:top-4" : "top-14 sm:top-16"} inset-x-0 z-30 flex justify-center px-2 pointer-events-none`}>
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-950/85 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
+          {/* Overview */}
+          <button
+            type="button"
+            onClick={() => handlePerspectiveSelect("overview")}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              viewMode === "overview"
+                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Overview</span>
+          </button>
 
-              <div className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold text-center ${viewMetrics.badgeColor}`}>
-                {viewMetrics.label}
-              </div>
+          {/* From my seat */}
+          <button
+            type="button"
+            onClick={() => handlePerspectiveSelect("from_seat")}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              viewMode === "from_seat"
+                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>From my seat</span>
+          </button>
 
-              <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="bg-white/5 p-2 rounded-xl">
-                  <span className="text-[9px] text-white/50 block">Distance</span>
-                  <span className="font-bold font-mono">{viewMetrics.distanceM}m</span>
-                </div>
-                <div className="bg-white/5 p-2 rounded-xl">
-                  <span className="text-[9px] text-white/50 block">Off-Center</span>
-                  <span className="font-bold font-mono">{viewMetrics.hAngle}°</span>
-                </div>
-                <div className="bg-white/5 p-2 rounded-xl">
-                  <span className="text-[9px] text-white/50 block">Elevation</span>
-                  <span className="font-bold font-mono">{viewMetrics.vAngle}°</span>
-                </div>
-              </div>
+          {/* From stage */}
+          <button
+            type="button"
+            onClick={() => handlePerspectiveSelect("from_stage")}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              viewMode === "from_stage"
+                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+            }`}
+          >
+            <Airplay className="w-3.5 h-3.5" />
+            <span>From stage</span>
+          </button>
 
-              <div className="text-[11px] text-amber-300 font-semibold text-center bg-white/5 py-1.5 rounded-xl">
-                ★★★★★ Dolby Atmos Sweet Spot
-              </div>
+          {/* Balcony */}
+          <button
+            type="button"
+            onClick={() => handlePerspectiveSelect("balcony")}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              viewMode === "balcony"
+                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Balcony</span>
+          </button>
 
-              <button
-                type="button"
-                onClick={() => setMobileInfoOpen(false)}
-                className="w-full py-2 bg-white/10 hover:bg-white/20 active:scale-95 rounded-xl font-bold text-xs text-white transition"
-              >
-                Close Details
-              </button>
-            </div>
-          </div>
-        )}
+          {/* Bird's eye */}
+          <button
+            type="button"
+            onClick={() => handlePerspectiveSelect("birds_eye")}
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+              viewMode === "birds_eye"
+                ? "bg-amber-400 text-slate-950 shadow-md font-extrabold"
+                : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+            }`}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>Bird's eye</span>
+          </button>
+        </div>
+      </div>
 
-        {/* Desktop Floating Vantage Sightline HUD */}
-        {showInfo && (
-          <div className="hidden sm:block absolute top-20 left-4 z-10 pointer-events-none max-w-sm">
-            <div className="p-3.5 rounded-2xl bg-black/75 backdrop-blur-md border border-white/15 text-white shadow-2xl space-y-3 pointer-events-auto">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider text-amber-400 font-bold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    <span>Vantage Sightline Rating</span>
-                  </div>
-                  <div className="text-base font-extrabold text-white flex items-center gap-2 mt-0.5">
-                    <span>Seat {currentSeat.label}</span>
-                    {currentSeat.isCouple && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 font-semibold">
-                        Couple Lounger
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-2xl font-black text-amber-400 leading-none">
-                    {viewMetrics.score}%
-                  </div>
-                  <div className="text-[10px] text-white/60 mt-0.5">Score</div>
-                </div>
-              </div>
-
-              <div
-                className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold text-center tracking-wide ${viewMetrics.badgeColor}`}
-              >
-                {viewMetrics.label}
-              </div>
-
-              <div className="grid grid-cols-3 gap-2 pt-1 border-t border-white/10 text-center">
-                <div className="bg-white/5 p-2 rounded-xl">
-                  <span className="text-[10px] text-white/50 block font-medium">Distance</span>
-                  <span className="text-xs font-bold text-white font-mono">
-                    {viewMetrics.distanceM}m
-                  </span>
-                </div>
-                <div className="bg-white/5 p-2 rounded-xl">
-                  <span className="text-[10px] text-white/50 block font-medium">Off-Center</span>
-                  <span className="text-xs font-bold text-white font-mono">
-                    {viewMetrics.hAngle}°
-                  </span>
-                </div>
-                <div className="bg-white/5 p-2 rounded-xl">
-                  <span className="text-[10px] text-white/50 block font-medium">Elevation</span>
-                  <span className="text-xs font-bold text-white font-mono">
-                    {viewMetrics.vAngle}°
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] text-white/60 bg-white/5 px-2.5 py-1.5 rounded-xl">
-                <span>Sound Field</span>
-                <span className="text-amber-300 font-semibold">★★★★★ Atmos Sweet Spot</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* On-Screen D-Pad Navigation Overlay */}
-        {viewMode === "seat" && (
-          <div className="absolute right-4 bottom-20 z-10 pointer-events-auto hidden sm:flex flex-col items-center p-2 rounded-2xl bg-black/60 backdrop-blur-md border border-white/15 shadow-xl">
-            <button
-              type="button"
-              onClick={() => handleNudgeGaze(0, -0.1)}
-              className="p-1.5 rounded-lg hover:bg-white/15 active:bg-white/25 text-white/80 hover:text-white transition cursor-pointer"
-              title="Look Up"
-            >
-              <ChevronUp className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => handleNudgeGaze(0.12, 0)}
-                className="p-1.5 rounded-lg hover:bg-white/15 active:bg-white/25 text-white/80 hover:text-white transition cursor-pointer"
-                title="Look Left"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={handleResetHead}
-                className="w-7 h-7 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 active:scale-95 text-amber-300 flex items-center justify-center font-bold text-[10px] transition cursor-pointer border border-amber-500/40"
-                title="Center Gaze"
-              >
-                ●
-              </button>
-              <button
-                type="button"
-                onClick={() => handleNudgeGaze(-0.12, 0)}
-                className="p-1.5 rounded-lg hover:bg-white/15 active:bg-white/25 text-white/80 hover:text-white transition cursor-pointer"
-                title="Look Right"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleNudgeGaze(0, 0.1)}
-              className="p-1.5 rounded-lg hover:bg-white/15 active:bg-white/25 text-white/80 hover:text-white transition cursor-pointer"
-              title="Look Down"
-            >
-              <ChevronDown className="w-5 h-5" />
-            </button>
-          </div>
-        )}
-
-        {/* Bottom Interactive Navigation & Booking Bar */}
-        <div className="absolute bottom-0 inset-x-0 p-2 sm:p-4 pb-[max(0.6rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-black/95 via-black/70 to-transparent pointer-events-none z-30">
-          {/* Mobile Bottom Bar: Single Unified Compact Row */}
-          <div className="sm:hidden flex items-center gap-1.5 pointer-events-auto bg-black/85 backdrop-blur-md p-2 rounded-2xl border border-white/15 shadow-2xl">
-            <button
-              onClick={handlePrevSeat}
-              className="p-2 rounded-xl bg-white/10 active:bg-white/25 text-white shrink-0"
-              title="Previous Seat"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            {/* Row Selector & Seat Number */}
-            <div className="flex items-center gap-1 bg-white/5 border border-white/10 rounded-xl px-2 py-1 shrink-0">
-              <select
-                value={currentSeat.rowLabel}
-                onChange={(e) => {
-                  const targetRow = seatsByRow.get(e.target.value);
-                  if (targetRow && targetRow.length > 0) {
-                    setCurrentSeat(targetRow[0]);
-                  }
-                }}
-                className="bg-transparent text-amber-400 font-bold text-xs outline-none cursor-pointer"
-              >
-                {rowLabels.map((r) => (
-                  <option key={r} value={r} className="bg-slate-900 text-white">
-                    {r}
-                  </option>
-                ))}
-              </select>
-              <span className="text-white/40 text-[10px]">•</span>
-              <span className="text-white font-mono font-black text-xs">
-                {currentSeat.seatNumber}
+      {/* Floating Sightline Badge (When in "From my seat" view) */}
+      {viewMode === "from_seat" && currentSeat && (
+        <div className="absolute top-28 left-4 z-20 pointer-events-none hidden sm:block animate-in fade-in duration-200">
+          <div className="bg-slate-950/80 backdrop-blur-md border border-slate-800 rounded-2xl p-3 shadow-xl text-white space-y-1.5 pointer-events-auto max-w-[240px]">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-amber-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Sightline View
               </span>
+              <span className="text-xs font-black text-amber-400">{viewMetrics.score}%</span>
             </div>
-
-            <button
-              onClick={handleNextSeat}
-              className="p-2 rounded-xl bg-white/10 active:bg-white/25 text-white shrink-0"
-              title="Next Seat"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
-            {/* Select / Book Button */}
-            <button
-              type="button"
-              onClick={handleToggleSelect}
-              className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 truncate shadow-lg ${
-                isSelected
-                  ? "bg-emerald-600 active:bg-emerald-700 text-white border border-emerald-400/40"
-                  : "bg-[#7B1E3D] active:bg-[#5C0F2A] text-white border border-[#7B1E3D]/50"
-              }`}
-            >
-              {isSelected ? (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200 shrink-0" />
-                  <span className="truncate">Selected</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Select {currentSeat.label}</span>
-                </>
-              )}
-            </button>
+            <div className="text-sm font-black text-white">
+              Seat {currentSeat.label}
+              {currentSeat.tierName && <span className="text-white/60 font-medium text-xs ml-1.5">({currentSeat.tierName})</span>}
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-white/70 pt-1 border-t border-slate-800">
+              <span>Distance to screen</span>
+              <span className="font-mono font-bold text-white">~{viewMetrics.distanceM}m</span>
+            </div>
           </div>
+        </div>
+      )}
 
-          {/* Desktop Bottom Bar */}
-          <div className="hidden sm:flex max-w-3xl mx-auto flex-row items-center justify-between gap-3 pointer-events-auto bg-black/75 backdrop-blur-md p-3.5 rounded-2xl border border-white/15 shadow-2xl">
-            <div className="flex items-center gap-2">
+      {/* Floating Hover Tooltip */}
+      {hoveredSeat && (
+        <div className="absolute top-28 right-4 z-20 pointer-events-none animate-in fade-in duration-150">
+          <div className="bg-slate-950/90 backdrop-blur-md border border-slate-700/80 rounded-xl px-3 py-1.5 shadow-xl text-white text-xs">
+            <span className="font-bold text-amber-400">Seat {hoveredSeat.label}</span>
+            {hoveredSeat.tierName && <span className="text-white/70 ml-1">({hoveredSeat.tierName})</span>}
+            {hoveredSeat.price && hoveredSeat.price > 0 && (
+              <span className="text-emerald-400 font-mono font-bold ml-1.5">• ₹{hoveredSeat.price}</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Canvas for 3D View */}
+      <div className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing">
+        <canvas ref={canvasRef} className="w-full h-full block outline-none" />
+
+        {/* Hint Pill */}
+        <div className="absolute left-4 bottom-24 z-20 pointer-events-none hidden sm:flex items-center gap-2 text-[11px] text-white/50 bg-black/50 backdrop-blur-xs px-3 py-1.5 rounded-full border border-white/10">
+          <span>Click any seat to select/deselect • Drag to look around</span>
+        </div>
+      </div>
+
+      {/* Multi-seat switcher in "From my seat" mode */}
+      {viewMode === "from_seat" && selectedSeats.length > 1 && (
+        <div className="absolute bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+          <div className="flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-800 shadow-xl pointer-events-auto max-w-full overflow-x-auto">
+            <span className="text-[10px] text-white/50 uppercase font-bold mr-1 shrink-0">Viewing from:</span>
+            {selectedSeats.map((s) => (
               <button
-                onClick={handlePrevSeat}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/15 active:bg-white/20 text-white transition cursor-pointer border border-white/10"
-                title="Previous Seat (Left Arrow)"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-center">
-                  <span className="text-[10px] text-amber-300/70 uppercase block font-semibold">
-                    Row
-                  </span>
-                  <span className="text-base font-black text-amber-400 font-mono">
-                    {currentSeat.rowLabel}
-                  </span>
-                </div>
-
-                <div className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-center">
-                  <span className="text-[10px] text-amber-300/70 uppercase block font-semibold">
-                    Seat
-                  </span>
-                  <span className="text-base font-black text-amber-400 font-mono">
-                    {currentSeat.seatNumber}
-                  </span>
-                </div>
-
-                <div className="pl-2 text-left">
-                  <span className="text-xs font-bold text-white block">
-                    Seat {currentSeat.label}
-                  </span>
-                  <span className="text-[11px] text-white/50">
-                    {currentSeat.tierName || "Prime"}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={handleNextSeat}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/15 active:bg-white/20 text-white transition cursor-pointer border border-white/10"
-                title="Next Seat (Right Arrow)"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <select
-                value={currentSeat.rowLabel}
-                onChange={(e) => {
-                  const targetRow = seatsByRow.get(e.target.value);
-                  if (targetRow && targetRow.length > 0) {
-                    setCurrentSeat(targetRow[0]);
-                  }
-                }}
-                className="bg-white/10 hover:bg-white/15 text-white text-xs font-semibold px-2.5 py-2.5 rounded-xl border border-white/15 cursor-pointer outline-none"
-              >
-                {rowLabels.map((r) => (
-                  <option key={r} value={r} className="bg-slate-900 text-white">
-                    Row {r}
-                  </option>
-                ))}
-              </select>
-
-              <button
+                key={s.id}
                 type="button"
-                onClick={handleToggleSelect}
-                className={`px-6 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-2 shadow-lg ${
-                  isSelected
-                    ? "bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/40"
-                    : "bg-[#7B1E3D] hover:bg-[#922549] active:bg-[#5C0F2A] text-white border border-[#7B1E3D]/50"
+                onClick={() => handleSelectSeatPreview(s)}
+                className={`px-2.5 py-1 rounded-full text-xs font-bold transition cursor-pointer shrink-0 ${
+                  currentSeat?.id === s.id
+                    ? "bg-amber-400 text-slate-950 shadow-xs"
+                    : "bg-slate-800 hover:bg-slate-700 text-slate-200"
                 }`}
               >
-                {isSelected ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-                    <span>Selected (Tap to Remove)</span>
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-4 h-4" />
-                    <span>Select Seat {currentSeat.label}</span>
-                  </>
-                )}
+                Seat {s.label}
               </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* "From my seat" Empty Prompt if no seat is selected */}
+      {viewMode === "from_seat" && selectedSeats.length === 0 && (
+        <div className="absolute bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+          <div className="bg-slate-950/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-amber-500/40 text-center shadow-xl pointer-events-auto">
+            <p className="text-xs text-amber-300 font-medium">
+              Click any seat in 3D to preview your view from that seat
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Bottom Interactive Navigation, Legend & Booking Summary Bar */}
+      <div className="absolute bottom-0 inset-x-0 z-30 p-2.5 sm:p-4 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent pointer-events-none">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-auto bg-slate-900/90 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl border border-slate-800 shadow-2xl">
+          {/* Legend */}
+          <div className="flex items-center gap-3 sm:gap-4 text-xs font-semibold text-slate-300">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-md bg-[#10b981]" />
+              <span>Available</span>
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-md bg-[#f59e0b]" />
+              <span>Balcony</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-md bg-[#facc15] ring-2 ring-yellow-400/50" />
+              <span>Selected</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-md bg-[#475569]" />
+              <span>Unavailable</span>
+            </div>
+          </div>
+
+          {/* Booking Summary & Proceed CTA */}
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="text-left sm:text-right">
+              {selectedSeats.length > 0 ? (
+                <>
+                  <div className="text-sm font-extrabold text-white">
+                    ₹{totalAmount > 0 ? totalAmount.toLocaleString("en-IN") : "0"}
+                  </div>
+                  <div className="text-[11px] text-white/60">
+                    {selectedSeats.length} {selectedSeats.length === 1 ? "seat" : "seats"} selected
+                  </div>
+                </>
+              ) : (
+                <div className="text-xs text-white/60">
+                  Select {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              disabled={selectedSeats.length === 0}
+              onClick={onProceed}
+              className={`px-6 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg active:scale-95 ${
+                selectedSeats.length > 0
+                  ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-black cursor-pointer shadow-amber-500/20"
+                  : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+              }`}
+            >
+              <span>Proceed</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
