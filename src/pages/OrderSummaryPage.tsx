@@ -215,38 +215,22 @@ export default function OrderSummaryPage() {
           </div>
 
           <div className="p-4 pt-0 space-y-2">
-            {isProvider ? (
-              <>
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-3">
-                  Payment for this showtime is handled at the venue. Your seats are held. Pay at the box office before the show.
-                </p>
-                <button
-                  onClick={release}
-                  className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg text-sm cursor-pointer"
-                >
-                  Release seats
-                </button>
-              </>
-            ) : (
-              <>
-                <p className="text-[10px] text-gray-500">
-                  By proceeding, I express my consent to complete this transaction.
-                </p>
-                <button
-                  onClick={pay}
-                  disabled={paying}
-                  className="w-full bg-[#D6445B] hover:bg-[#c33a4f] disabled:opacity-60 text-white font-bold py-3 rounded-lg text-sm flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {paying ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Processing...
-                    </>
-                  ) : (
-                    <>Proceed to pay {formatRupees(b.total_paise)}</>
-                  )}
-                </button>
-              </>
-            )}
+            <p className="text-[10px] text-gray-500">
+              By proceeding, I express my consent to complete this transaction.
+            </p>
+            <button
+              onClick={pay}
+              disabled={paying}
+              className="w-full bg-[#D6445B] hover:bg-[#c33a4f] disabled:opacity-60 text-white font-bold py-3 rounded-lg text-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {paying ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Processing...
+                </>
+              ) : (
+                <>Proceed to pay {formatRupees(b.total_paise)}</>
+              )}
+            </button>
           </div>
         </div>
       </div>

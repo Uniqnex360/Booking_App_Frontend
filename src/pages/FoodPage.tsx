@@ -210,9 +210,6 @@ export default function FoodPage() {
           "Not enough hold time left to pay. Please select seats again.",
         );
         goBackToSeatMap();
-      } else if (e?.code === "PAYMENT_NOT_AVAILABLE_HERE") {
-        toast.info("Payment for this show is at the venue. Your seats are held.");
-        navigate(`/confirmation?id=${bookingId}`, { replace: true });
       } else {
         toast.error(e?.message || "Payment failed.");
       }
@@ -228,7 +225,6 @@ export default function FoodPage() {
 
   const mm = Math.floor(leftSeconds / 60);
   const ss = String(leftSeconds % 60).padStart(2, "0");
-  const isProvider = booking?.payment_mode === "PROVIDER";
 
   return (
     <>
@@ -409,52 +405,33 @@ export default function FoodPage() {
 
               {/* Action buttons */}
               <div className="p-4 pt-0 space-y-2">
-                {isProvider ? (
-                  <>
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 leading-relaxed">
-                      Payment for this showtime is handled directly at the cinema
-                      counter. Your seats are held. Pay at the box office before
-                      the show.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={goBackToSeatMap}
-                      className="w-full border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg text-sm cursor-pointer hover:bg-gray-50 transition"
-                    >
-                      Release seats
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-[10px] text-gray-500 leading-tight">
-                      By proceeding, you agree to our Terms of Service and
-                      Cancellation Policy.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={startPay}
-                      disabled={saving}
-                      className="w-full bg-[#7B1E3D] hover:bg-[#922549] active:bg-[#5C0F2A] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer shadow-md transition"
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" /> Processing...
-                        </>
-                      ) : (
-                        <>
-                          Proceed to Pay{" "}
-                          {formatRupees(
-                            (booking.total_paise || booking.ticket_paise || 0) +
-                              Object.entries(cart).reduce((acc, [id, q]) => {
-                                const item = menu.find((m) => m.id === id);
-                                return acc + (item ? item.price_paise * q : 0);
-                              }, 0),
-                          )}
-                        </>
+                <p className="text-[10px] text-gray-500 leading-tight">
+                  By proceeding, you agree to our Terms of Service and
+                  Cancellation Policy.
+                </p>
+                <button
+                  type="button"
+                  onClick={startPay}
+                  disabled={saving}
+                  className="w-full bg-[#7B1E3D] hover:bg-[#922549] active:bg-[#5C0F2A] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer shadow-md transition"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Processing...
+                    </>
+                  ) : (
+                    <>
+                      Proceed to Pay{" "}
+                      {formatRupees(
+                        (booking.total_paise || booking.ticket_paise || 0) +
+                          Object.entries(cart).reduce((acc, [id, q]) => {
+                            const item = menu.find((m) => m.id === id);
+                            return acc + (item ? item.price_paise * q : 0);
+                          }, 0),
                       )}
-                    </button>
-                  </>
-                )}
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </main>
