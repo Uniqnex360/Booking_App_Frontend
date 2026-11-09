@@ -291,106 +291,6 @@ export default function SeatMapPage() {
     }
   }, [displayMode, selectedSeats.length]);
 
-  if (waitingRoom.inQueue) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#7B1E3D] selection:text-white">
-        {/* Top Header */}
-        <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-                navigate(-1);
-              }}
-              className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
-              title="Go Back"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div>
-              <h1 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                <span>Virtual Waiting Room</span>
-                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-1.5 py-0.5 rounded font-semibold">
-                  Flash Sale
-                </span>
-              </h1>
-              <p className="text-[11px] text-slate-400">High-concurrency traffic protection</p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-              navigate(-1);
-            }}
-            className="text-xs text-slate-400 hover:text-white transition cursor-pointer"
-          >
-            Leave Queue
-          </button>
-        </header>
-
-        {/* Center Card */}
-        <main className="flex-1 flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center shadow-2xl backdrop-blur-lg">
-            {/* Animated Radar Pulse */}
-            <div className="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-2 border-[#7B1E3D]/50 animate-ping opacity-75" />
-              <div className="absolute inset-2 rounded-full border-2 border-amber-500/50 animate-pulse" />
-              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#7B1E3D] to-amber-600 flex items-center justify-center text-white shadow-xl shadow-[#7B1E3D]/30">
-                <Users className="h-7 w-7" />
-              </div>
-            </div>
-
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              You are in line
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-xs mx-auto leading-relaxed">
-              This show is currently experiencing peak demand. We’ve saved your spot to ensure guaranteed fast seat selection.
-            </p>
-
-            {/* Metrics Grid */}
-            <div className="grid grid-cols-2 gap-3 mt-6">
-              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 text-center shadow-inner">
-                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Queue Position
-                </p>
-                <p className="text-2xl sm:text-3xl font-black text-amber-400 mt-1 tracking-tight">
-                  #{waitingRoom.position}
-                </p>
-              </div>
-
-              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 text-center shadow-inner">
-                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Est. Wait Time
-                </p>
-                <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 tracking-tight">
-                  ~{waitingRoom.estimatedWaitSeconds}s
-                </p>
-              </div>
-            </div>
-
-            {/* Polling Activity */}
-            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
-              <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
-              <span>Advancing queue in real-time...</span>
-            </div>
-
-            {/* Helpful Notice */}
-            <div className="mt-5 p-3.5 rounded-2xl bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400 leading-normal">
-              💡 <span className="font-semibold text-slate-300">Tip:</span> Please do not refresh or close this tab. You will be automatically admitted to select your seats the moment your turn arrives.
-            </div>
-          </div>
-        </main>
-
-        <footer className="text-center py-4 text-[11px] text-slate-500 border-t border-slate-900">
-          Vybhz Scalability Engine • Powered by Redis Flash Queue
-        </footer>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return <LoadingPage showFooter={false} />;
-  }
   const isSourceUnavailable =
     mapData?.code === "SOURCE_UNAVAILABLE" || !mapData;
   const isStale =
@@ -905,6 +805,108 @@ export default function SeatMapPage() {
         hour12: true,
       })
     : "";
+
+  if (waitingRoom.inQueue) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between selection:bg-[#7B1E3D] selection:text-white">
+        {/* Top Header */}
+        <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+                navigate(-1);
+              }}
+              className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+              title="Go Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <h1 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <span>Virtual Waiting Room</span>
+                <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] px-1.5 py-0.5 rounded font-semibold">
+                  Flash Sale
+                </span>
+              </h1>
+              <p className="text-[11px] text-slate-400">High-concurrency traffic protection</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+              navigate(-1);
+            }}
+            className="text-xs text-slate-400 hover:text-white transition cursor-pointer"
+          >
+            Leave Queue
+          </button>
+        </header>
+
+        {/* Center Card */}
+        <main className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 text-center shadow-2xl backdrop-blur-lg">
+            {/* Animated Radar Pulse */}
+            <div className="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-2 border-[#7B1E3D]/50 animate-ping opacity-75" />
+              <div className="absolute inset-2 rounded-full border-2 border-amber-500/50 animate-pulse" />
+              <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#7B1E3D] to-amber-600 flex items-center justify-center text-white shadow-xl shadow-[#7B1E3D]/30">
+                <Users className="h-7 w-7" />
+              </div>
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              You are in line
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300 mt-2 max-w-xs mx-auto leading-relaxed">
+              This show is currently experiencing peak demand. We’ve saved your spot to ensure guaranteed fast seat selection.
+            </p>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 gap-3 mt-6">
+              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 text-center shadow-inner">
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Queue Position
+                </p>
+                <p className="text-2xl sm:text-3xl font-black text-amber-400 mt-1 tracking-tight">
+                  #{waitingRoom.position}
+                </p>
+              </div>
+
+              <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5 text-center shadow-inner">
+                <p className="text-[10px] sm:text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Est. Wait Time
+                </p>
+                <p className="text-2xl sm:text-3xl font-black text-emerald-400 mt-1 tracking-tight">
+                  ~{waitingRoom.estimatedWaitSeconds}s
+                </p>
+              </div>
+            </div>
+
+            {/* Polling Activity */}
+            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400 font-medium">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-amber-400" />
+              <span>Advancing queue in real-time...</span>
+            </div>
+
+            {/* Helpful Notice */}
+            <div className="mt-5 p-3.5 rounded-2xl bg-slate-950/40 border border-slate-800 text-[11px] text-slate-400 leading-normal">
+              💡 <span className="font-semibold text-slate-300">Tip:</span> Please do not refresh or close this tab. You will be automatically admitted to select your seats the moment your turn arrives.
+            </div>
+          </div>
+        </main>
+
+        <footer className="text-center py-4 text-[11px] text-slate-500 border-t border-slate-900">
+          Vybhz Scalability Engine • Powered by Redis Flash Queue
+        </footer>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return <LoadingPage showFooter={false} />;
+  }
+
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
       <header className="bg-white border-b border-gray-200 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] pb-2.5 sticky top-0 z-30 shadow-xs">
