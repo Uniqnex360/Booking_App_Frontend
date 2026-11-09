@@ -56,7 +56,16 @@ workflows:
         script: |
           xcode-project build-ipa \
             --workspace "ios/App/$XCODE_WORKSPACE" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" || {
+              echo "=== XCODEBUILD ERROR LOGS ==="
+              for logfile in /tmp/xcodebuild_logs/*.log; do
+                if [ -f "$logfile" ]; then
+                  echo "--- $logfile ---"
+                  tail -n 80 "$logfile"
+                fi
+              done
+              exit 1
+            }
 
       - name: Build iOS Simulator Zip for Appetize
         script: |
