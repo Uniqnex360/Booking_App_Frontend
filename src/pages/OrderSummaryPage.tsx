@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRupees } from "@/utils/currencyFormatter";
-import { payForBooking } from "@/lib/razorpayCheckout";
+import { payForBooking, preloadRazorpayScript } from "@/lib/razorpayCheckout";
 import { LoadingPage } from "./LoadingPage";
 
 export default function OrderSummaryPage() {
@@ -22,6 +22,7 @@ export default function OrderSummaryPage() {
   const seatMapUrl = b ? `/showtimes/${b.showtime_id}/seat-map` : "/";
 
   useEffect(() => {
+    preloadRazorpayScript();
     (async () => {
       try {
         const data = await unwrap<any>(api.get(`/bookings/${bookingId}`));

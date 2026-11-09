@@ -343,6 +343,10 @@ export default function BookingPage() {
         setCalendarMonth(new Date());
       }
     }
+    // Eagerly preload Razorpay checkout script when booking modal is opened
+    if (!Capacitor.isNativePlatform()) {
+      loadScript('https://checkout.razorpay.com/v1/checkout.js').catch(() => {});
+    }
     setBookingModalOpen(true);
   };
 

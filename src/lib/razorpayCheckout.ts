@@ -8,6 +8,15 @@ export type PayResult =
   | { kind: "NOT_REQUIRED" }
   | { kind: "DISMISSED" };
 
+/**
+ * Preload the Razorpay checkout script in the background so that
+ * when the user clicks 'Pay', it opens instantly without network delay.
+ */
+export function preloadRazorpayScript(): void {
+  if (typeof window === "undefined" || Capacitor.isNativePlatform()) return;
+  loadScript("https://checkout.razorpay.com/v1/checkout.js").catch(() => {});
+}
+
 export async function payForBooking(opts: {
   bookingId: string;
   description: string;

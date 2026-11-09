@@ -232,6 +232,20 @@ export default function SeatMapPage() {
     autoRetryCountRef.current = 0;
     fetchSeatMap();
   }, [id]);
+
+  // Eagerly preload 3D cinema bundle in the background while user is viewing and selecting seats
+  useEffect(() => {
+    const preload3D = () => {
+      import("./SeatPerspective3D").catch(() => {});
+    };
+    if (typeof window !== "undefined") {
+      if ("requestIdleCallback" in window) {
+        (window as any).requestIdleCallback(preload3D);
+      } else {
+        setTimeout(preload3D, 200);
+      }
+    }
+  }, []);
   useEffect(() => {
     setTempTicketCount(requiredSeatCount);
   }, [requiredSeatCount]);
@@ -1082,7 +1096,22 @@ export default function SeatMapPage() {
       )}
       {displayMode === "3d" ? (
         <div className="flex-grow w-full h-[calc(100vh-105px)] min-h-[580px] relative bg-[#2b080c] overflow-hidden">
-          <Suspense fallback={<LoadingPage />}>
+          <Suspense
+            fallback={
+              <div className="absolute inset-0 bg-[#2b080c] flex flex-col items-center justify-center text-white z-10 select-none">
+                <div className="relative mb-4 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-full border-4 border-rose-500/20 border-t-rose-500 animate-spin" />
+                  <Compass className="w-7 h-7 text-rose-300 absolute inset-0 m-auto animate-pulse" />
+                </div>
+                <p className="text-sm font-bold tracking-wide text-rose-100">
+                  Loading 3D Cinema Experience...
+                </p>
+                <p className="text-xs text-rose-300/70 mt-1">
+                  Rendering 3D auditorium & viewpoint
+                </p>
+              </div>
+            }
+          >
             <SeatPerspective3D
               movieTitle={mapData?.movie_title || "Movie"}
               posterUrl={moviePoster}

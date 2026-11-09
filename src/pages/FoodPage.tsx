@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRupees } from "@/utils/currencyFormatter";
-import { payForBooking } from "@/lib/razorpayCheckout";
+import { payForBooking, preloadRazorpayScript } from "@/lib/razorpayCheckout";
 import { FoodStep } from "./FoodStep";
 import type { FnbItem } from "./FoodStep";
 import { TermsModal } from "./TermsModal";
@@ -38,8 +38,9 @@ export default function FoodPage() {
     ? `/showtimes/${booking.showtime_id}/seat-map`
     : "/";
 
-  // Initial load: booking + optional FnB menu
+  // Initial load: booking + optional FnB menu + preload payment gateway
   useEffect(() => {
+    preloadRazorpayScript();
     (async () => {
       try {
         const b = await unwrap<any>(api.get(`/bookings/${bookingId}`));
@@ -131,37 +132,34 @@ export default function FoodPage() {
     if (saving) return;
     setSaving(true);
     try {
-      // Sync FnB cart if items exist
+      // Sync FnB cart and contact details in parallel to eliminate sequential network latency
+      const syncTasks: Promise<any>[] = [];
       if (Object.keys(cart).length > 0) {
-        try {
-          await api.put(`/bookings/${bookingId}/fnb`, {
+        syncTasks.push(
+          api.put(`/bookings/${bookingId}/fnb`, {
             items: Object.entries(cart)
               .filter(([, q]) => q > 0)
               .map(([item_id, quantity]) => ({ item_id, quantity })),
-          });
-        } catch {
-          // Non-critical
-        }
+          }).catch(() => {})
+        );
       }
-
-      // Sync contact details
-      try {
-        await api.patch(`/bookings/${bookingId}/contact`, {
+      syncTasks.push(
+        api.patch(`/bookings/${bookingId}/contact`, {
           contact_email: contact.email,
           contact_phone: contact.phone,
-        });
-      } catch {
-        // Non-critical
+        }).catch(() => {})
+      );
+
+      if (syncTasks.length > 0) {
+        await Promise.all(syncTasks);
       }
 
-      const fresh = await unwrap<any>(api.get(`/bookings/${bookingId}`));
-      setBooking(fresh);
+      const movieTitle = booking?.movie_title || booking?.title || "Movie";
+      const seatCodes = (booking?.seat_codes || []).join(", ");
 
       const res = await payForBooking({
         bookingId: bookingId!,
-        description: `${fresh.movie_title || fresh.title} - Seats: ${(
-          fresh.seat_codes || []
-        ).join(", ")}`,
+        description: `${movieTitle}${seatCodes ? ` - Seats: ${seatCodes}` : ""}`,
         prefill: {
           name: user?.full_name,
           email: contact.email,

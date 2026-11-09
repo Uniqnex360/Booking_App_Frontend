@@ -188,6 +188,43 @@ export default function SeatPerspective3D({
     onComplete?: () => void;
   } | null>(null);
 
+  // Live state refs to avoid tearing down the WebGL scene on prop updates
+  const currentSeatRef = useRef(currentSeat);
+  currentSeatRef.current = currentSeat;
+
+  const selectedSeatIdsRef = useRef(selectedSeatIds);
+  selectedSeatIdsRef.current = selectedSeatIds;
+
+  const onSelectSeatRef = useRef(onSelectSeat);
+  onSelectSeatRef.current = onSelectSeat;
+
+  const onDeselectSeatRef = useRef(onDeselectSeat);
+  onDeselectSeatRef.current = onDeselectSeat;
+
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+
+  const seatMeshesRef = useRef<
+    Array<{
+      id: string;
+      seatRef?: string;
+      back: THREE.Mesh;
+      cushion: THREE.Mesh;
+      isBalcony?: boolean;
+      isUnavailable?: boolean;
+    }>
+  >([]);
+
+  const materialsRef = useRef<{
+    availableCushion: THREE.Material;
+    availableBack: THREE.Material;
+    balconyCushion: THREE.Material;
+    balconyBack: THREE.Material;
+    selectedCushion: THREE.Material;
+    selectedBack: THREE.Material;
+    unavailableCushion: THREE.Material;
+    unavailableBack: THREE.Material;
+  } | null>(null);
+
   // Calculate chair X position including central aisle gap and block corridor aisle shifts
   const getSeatChairX = useCallback(
     (colIdx: number, seat?: SeatPerspectiveItem) => {
@@ -227,7 +264,7 @@ export default function SeatPerspective3D({
   // Camera target calculators for all 5 perspectives
   const getPerspectiveConfig = useCallback(
     (mode: PerspectiveMode, seat?: SeatPerspectiveItem) => {
-      const activeS = seat || currentSeat;
+      const activeS = seat || currentSeatRef.current;
       const rIdx = activeS ? rowLabels.indexOf(activeS.rowLabel) : 0;
       const cIdx = activeS ? activeS.seatNumber - 1 : 0;
 
@@ -271,7 +308,7 @@ export default function SeatPerspective3D({
 
       return { pos, quat, lookAt };
     },
-    [currentSeat, rowLabels, totalRows, getSeatEyePosition]
+    [rowLabels, totalRows, getSeatEyePosition]
   );
 
   // Sightline metrics formula for "From my seat"
@@ -331,11 +368,21 @@ export default function SeatPerspective3D({
   // Smooth camera flight transition helper
   const triggerCameraFlight = useCallback(
     (targetMode: PerspectiveMode, seat?: SeatPerspectiveItem, duration = 750) => {
-      const { pos: endPos, quat: endQuat } = getPerspectiveConfig(targetMode, seat);
+      const activeSeatTarget = seat || currentSeatRef.current;
+      const { pos: endPos, quat: endQuat } = getPerspectiveConfig(targetMode, activeSeatTarget);
 
-      // Start position from current flight or from previous mode
-      const startPos = flightRef.current ? flightRef.current.endPos.clone() : getPerspectiveConfig(viewMode, currentSeat).pos;
-      const startQuat = flightRef.current ? flightRef.current.endQuat.clone() : getPerspectiveConfig(viewMode, currentSeat).quat;
+      // Start position from current flight or from live camera
+      const cam = cameraRef.current;
+      const startPos = flightRef.current
+        ? flightRef.current.endPos.clone()
+        : cam
+        ? cam.position.clone()
+        : getPerspectiveConfig(viewMode, currentSeatRef.current).pos;
+      const startQuat = flightRef.current
+        ? flightRef.current.endQuat.clone()
+        : cam
+        ? cam.quaternion.clone()
+        : getPerspectiveConfig(viewMode, currentSeatRef.current).quat;
 
       flightRef.current = {
         startTime: performance.now(),
@@ -355,8 +402,37 @@ export default function SeatPerspective3D({
       lookCurrentRef.current = { yaw: 0, pitch: 0 };
       setViewMode(targetMode);
     },
-    [getPerspectiveConfig, viewMode, currentSeat]
+    [getPerspectiveConfig, viewMode]
   );
+
+  // When currentSeat changes and we are in "from_seat" view, smoothly fly to new viewpoint
+  useEffect(() => {
+    if (viewMode === "from_seat" && currentSeat) {
+      triggerCameraFlight("from_seat", currentSeat, 500);
+    }
+  }, [currentSeat, viewMode, triggerCameraFlight]);
+
+  // Instantly update seat highlight materials in-place without rebuilding the WebGL scene
+  useEffect(() => {
+    if (!materialsRef.current || !seatMeshesRef.current.length) return;
+    const mats = materialsRef.current;
+    seatMeshesRef.current.forEach((item) => {
+      if (item.isUnavailable) return;
+      const isSelected =
+        selectedSeatIds.includes(item.id) ||
+        (item.seatRef && selectedSeatIds.includes(item.seatRef));
+      if (isSelected) {
+        item.cushion.material = mats.selectedCushion;
+        item.back.material = mats.selectedBack;
+      } else if (item.isBalcony) {
+        item.cushion.material = mats.balconyCushion;
+        item.back.material = mats.balconyBack;
+      } else {
+        item.cushion.material = mats.availableCushion;
+        item.back.material = mats.availableBack;
+      }
+    });
+  }, [selectedSeatIds]);
 
   // Switch perspective mode
   const handlePerspectiveSelect = (newMode: PerspectiveMode) => {
@@ -451,7 +527,8 @@ export default function SeatPerspective3D({
 
     // 3. Perspective Camera
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.15, 160);
-    const { pos: initialPos, quat: initialQuat } = getPerspectiveConfig(viewMode, currentSeat);
+    cameraRef.current = camera;
+    const { pos: initialPos, quat: initialQuat } = getPerspectiveConfig(viewMode, currentSeatRef.current);
     camera.position.copy(initialPos);
     camera.quaternion.copy(initialQuat);
 
@@ -498,29 +575,33 @@ export default function SeatPerspective3D({
       screenAngle
     );
 
-    let screenMat: THREE.Material;
+    // Display glowing cinema screen immediately; apply movie artwork asynchronously without blocking
+    const screenMat = new THREE.MeshStandardMaterial({
+      color: "#181820",
+      emissive: "#3b82f6",
+      emissiveIntensity: 0.45,
+      roughness: 0.25,
+      side: THREE.BackSide,
+    });
     const textureUrl = bannerUrl || posterUrl;
     if (textureUrl) {
       const loader = new THREE.TextureLoader();
-      const texture = loader.load(textureUrl);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      screenMat = new THREE.MeshStandardMaterial({
-        map: texture,
-        emissiveMap: texture,
-        emissive: new THREE.Color("#ffffff"),
-        emissiveIntensity: 0.75,
-        roughness: 0.25,
-        metalness: 0.0,
-        side: THREE.BackSide,
-      });
-    } else {
-      screenMat = new THREE.MeshStandardMaterial({
-        color: "#ffffff",
-        emissive: "#3b82f6",
-        emissiveIntensity: 0.5,
-        roughness: 0.25,
-        side: THREE.BackSide,
-      });
+      loader.setCrossOrigin("anonymous");
+      loader.load(
+        textureUrl,
+        (loadedTex) => {
+          loadedTex.colorSpace = THREE.SRGBColorSpace;
+          screenMat.map = loadedTex;
+          screenMat.emissiveMap = loadedTex;
+          screenMat.emissive = new THREE.Color("#ffffff");
+          screenMat.emissiveIntensity = 0.75;
+          screenMat.needsUpdate = true;
+        },
+        undefined,
+        () => {
+          // Graceful fallback to glowing cinema screen
+        }
+      );
     }
 
     const screenMesh = new THREE.Mesh(screenGeo, screenMat);
@@ -694,6 +775,17 @@ export default function SeatPerspective3D({
     const armMat = new THREE.MeshStandardMaterial({ color: "#1f2937", roughness: 0.6 });
     const baseMat = new THREE.MeshStandardMaterial({ color: "#111827", metalness: 0.6, roughness: 0.3 });
 
+    materialsRef.current = {
+      availableCushion: availableCushionMat,
+      availableBack: availableBackMat,
+      balconyCushion: balconyCushionMat,
+      balconyBack: balconyBackMat,
+      selectedCushion: selectedCushionMat,
+      selectedBack: selectedBackMat,
+      unavailableCushion: unavailableCushionMat,
+      unavailableBack: unavailableBackMat,
+    };
+
     // Chair Geometries
     const coupleBackGeo = new THREE.BoxGeometry(1.65, 0.88, 0.16);
     const coupleCushionGeo = new THREE.BoxGeometry(1.60, 0.18, 0.56);
@@ -705,6 +797,7 @@ export default function SeatPerspective3D({
     // 8. Build Seats Group with Raycastable Interactivity
     const seatsGroup = new THREE.Group();
     const raycastMeshes: THREE.Mesh[] = [];
+    seatMeshesRef.current = [];
     const processedCouplePairs = new Set<string>();
 
     allSeats.forEach((seat) => {
@@ -761,6 +854,15 @@ export default function SeatPerspective3D({
         coupleChair.add(cushion);
         raycastMeshes.push(cushion);
 
+        seatMeshesRef.current.push({
+          id: seat.id,
+          seatRef: seat.seatRef,
+          back,
+          cushion,
+          isBalcony,
+          isUnavailable,
+        });
+
         const leftArm = new THREE.Mesh(armGeo, armMat);
         leftArm.position.set(-0.82, 0.46, -0.06);
         coupleChair.add(leftArm);
@@ -796,6 +898,15 @@ export default function SeatPerspective3D({
         cushion.userData = { seat, isAvailable: !isUnavailable };
         chair.add(cushion);
         raycastMeshes.push(cushion);
+
+        seatMeshesRef.current.push({
+          id: seat.id,
+          seatRef: seat.seatRef,
+          back,
+          cushion,
+          isBalcony,
+          isUnavailable,
+        });
 
         const leftArm = new THREE.Mesh(armGeo, armMat);
         leftArm.position.set(-0.4, 0.46, -0.06);
@@ -1031,12 +1142,14 @@ export default function SeatPerspective3D({
           const isAvail: boolean = hits[0].object.userData?.isAvailable;
 
           if (hitSeat && isAvail) {
-            const isAlreadySelected = selectedSeatIds.includes(hitSeat.id) || (hitSeat.seatRef && selectedSeatIds.includes(hitSeat.seatRef));
+            const isAlreadySelected =
+              selectedSeatIdsRef.current.includes(hitSeat.id) ||
+              (hitSeat.seatRef && selectedSeatIdsRef.current.includes(hitSeat.seatRef));
 
             if (isAlreadySelected) {
-              if (onDeselectSeat) onDeselectSeat(hitSeat.id);
+              if (onDeselectSeatRef.current) onDeselectSeatRef.current(hitSeat.id);
             } else {
-              if (onSelectSeat) onSelectSeat(hitSeat.id);
+              if (onSelectSeatRef.current) onSelectSeatRef.current(hitSeat.id);
             }
 
             // In "from_seat" view mode, click anchors camera to that seat
@@ -1096,21 +1209,18 @@ export default function SeatPerspective3D({
       frameMat.dispose();
       stageGeo.dispose();
       stageMat.dispose();
+      seatMeshesRef.current = [];
+      materialsRef.current = null;
+      cameraRef.current = null;
     };
   }, [
-    bannerUrl,
-    posterUrl,
     rowLabels,
     totalRows,
     totalCols,
-    selectedSeatIds,
     allSeats,
-    currentSeat,
     getSeatChairX,
     getSeatEyePosition,
     getPerspectiveConfig,
-    onSelectSeat,
-    onDeselectSeat,
   ]);
 
   const isCurrentSeatSelected = currentSeat
