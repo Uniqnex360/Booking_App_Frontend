@@ -1063,7 +1063,7 @@ export default function SeatMapPage() {
         </div>
       )}
       {displayMode === "3d" ? (
-        <div className="flex-grow w-full h-[calc(100vh-105px)] min-h-[580px] relative bg-white overflow-hidden">
+        <div className="flex-grow w-full h-[calc(100vh-105px)] min-h-[580px] relative bg-[#2b080c] overflow-hidden">
           <Suspense fallback={<LoadingPage />}>
             <SeatPerspective3D
               movieTitle={mapData?.movie_title || "Movie"}
