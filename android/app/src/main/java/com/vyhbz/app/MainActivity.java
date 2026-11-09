@@ -25,6 +25,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        androidx.activity.EdgeToEdge.enable(this);
         registerPlugin(RazorpayCheckoutPlugin.class);
         super.onCreate(savedInstanceState);
 
