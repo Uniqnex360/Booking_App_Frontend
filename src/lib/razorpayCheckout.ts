@@ -38,13 +38,24 @@ export async function payForBooking(opts: {
           theme: { color: "#7B1E3D" },
         } as any),
       });
-      // result.response contains { razorpay_payment_id, razorpay_order_id, razorpay_signature }
-      r = result?.response ?? result;
+      // result.response may be a JSON string or an object depending on platform/SDK version
+      const raw = result?.response ?? result;
+      if (typeof raw === "string") {
+        try {
+          r = JSON.parse(raw);
+        } catch {
+          r = { razorpay_payment_id: raw };
+        }
+      } else {
+        r = raw || {};
+      }
+
       opts.onConfirming?.();
+      const orderId = r.razorpay_order_id || order.order_id;
       const verified = await unwrap<any>(
         api.post("/payments/verify", {
           booking_id: opts.bookingId,
-          razorpay_order_id: r.razorpay_order_id,
+          razorpay_order_id: orderId,
           razorpay_payment_id: r.razorpay_payment_id,
           razorpay_signature: r.razorpay_signature,
         }),
