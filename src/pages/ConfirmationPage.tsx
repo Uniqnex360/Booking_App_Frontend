@@ -70,7 +70,7 @@ export default function ConfirmationPage() {
 
           {loading ? (
             <div className="bg-white rounded-2xl shadow-lg p-8 py-14 flex items-center justify-center">
-              <PageLoader />
+              <PageLoader fullScreen={false} />
             </div>
           ) : !adapted ? (
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">

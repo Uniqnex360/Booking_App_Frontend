@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 
-export function PageLoader() {
+export function PageLoader({
+  fullScreen = true,
+  className = "",
+}: {
+  fullScreen?: boolean;
+  className?: string;
+} = {}) {
   const [dots, setDots] = useState("");
 
   // Animate loading dots
@@ -12,7 +18,11 @@ export function PageLoader() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-6">
+    <div
+      className={`flex flex-col items-center justify-center gap-6 ${
+        fullScreen ? "min-h-[80vh] w-full flex-1 my-auto px-4" : "w-full py-8"
+      } ${className}`}
+    >
       {/* Film Reel Animation */}
       <div className="relative">
         <div className="w-16 h-16 border-4 border-[#7B1E3D]/30 rounded-full animate-spin" />

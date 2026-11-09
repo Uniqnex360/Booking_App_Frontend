@@ -15,7 +15,7 @@ export function LoadingPage({ showFooter = false }: LoadingPageProps) {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
       <Header />
         <div className="flex-grow flex justify-center items-center py-20">
-        <PageLoader />
+        <PageLoader fullScreen={false} />
       </div>
       {showFooter && <Footer />}
     </div>
