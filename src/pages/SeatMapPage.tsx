@@ -927,55 +927,6 @@ export default function SeatMapPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
               {allSeats.length} seats
             </div>
-            {/* Mode Selector Toggle: [Seat Overview] [3D Model] */}
-            <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setDisplayMode("2d");
-                  setView3DSeat(null);
-                }}
-                className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                  displayMode === "2d"
-                    ? "bg-white text-gray-900 shadow-xs"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Seat Overview</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (selectedSeats.length === 0) {
-                    toast.warning("Please select a seat first to view the 3D model and your seat view.");
-                    return;
-                  }
-                  setDisplayMode("3d");
-                  setView3DInitialMode("from_seat");
-                  const target = getSeatPerspective(selectedSeats[selectedSeats.length - 1]);
-                  if (target) setView3DSeat(target);
-                }}
-                className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                  displayMode === "3d"
-                    ? "bg-[#7B1E3D] text-white shadow-xs font-black"
-                    : selectedSeats.length === 0
-                    ? "text-gray-400 hover:text-gray-600"
-                    : "text-gray-700 hover:text-gray-900"
-                }`}
-                title={selectedSeats.length === 0 ? "Select a seat first to view 3D" : "View in 3D"}
-              >
-                <Compass className={`w-3.5 h-3.5 ${displayMode === "3d" ? "text-white" : "text-amber-700"}`} />
-                <span>3D Model</span>
-              </button>
-            </div>
-
-            {selectedSeats.length > 0 && (
-              <div className="hidden md:flex text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-md shrink-0">
-                {selectedSeats.length} of {requiredSeatCount} selected
-              </div>
-            )}
-
             {/* Change Ticket Count Button */}
             <button
               onClick={() => setShowTicketModal(true)}
@@ -991,6 +942,73 @@ export default function SeatMapPage() {
           </div>
         </div>
       </header>
+
+      {/* 2nd Row: Prominent View Mode Switcher [Seat Overview] [3D Model] */}
+      <div className="bg-white border-b border-gray-200 py-2 px-4 shadow-2xs sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-20">
+        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[11px] uppercase tracking-wider font-extrabold text-gray-500 hidden sm:inline">
+              View Mode:
+            </span>
+            <div className="inline-flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setDisplayMode("2d");
+                  setView3DSeat(null);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  displayMode === "2d"
+                    ? "bg-white text-gray-900 shadow-xs font-black"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5 text-gray-700" />
+                <span>Seat Overview</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (selectedSeats.length === 0) {
+                    toast.warning("Please select a seat first to view the 3D model and your seat view.");
+                    return;
+                  }
+                  setDisplayMode("3d");
+                  setView3DInitialMode("from_seat");
+                  const target = getSeatPerspective(selectedSeats[selectedSeats.length - 1]);
+                  if (target) setView3DSeat(target);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  displayMode === "3d"
+                    ? "bg-[#7B1E3D] text-white shadow-xs font-black"
+                    : selectedSeats.length === 0
+                    ? "text-gray-400 hover:text-gray-600"
+                    : "text-gray-700 hover:text-gray-900"
+                }`}
+                title={selectedSeats.length === 0 ? "Select a seat first to view 3D" : "View in 3D"}
+              >
+                <Compass className={`w-3.5 h-3.5 ${displayMode === "3d" ? "text-white" : "text-amber-700"}`} />
+                <span>3D Model</span>
+                {selectedSeats.length > 0 && displayMode !== "3d" && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs">
+            {selectedSeats.length > 0 ? (
+              <span className="font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2.5 py-1 rounded-md border border-[#7B1E3D]/20">
+                {selectedSeats.length} of {requiredSeatCount} selected
+              </span>
+            ) : (
+              <span className="text-gray-500 text-[11px] font-medium">
+                Pick {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"} to preview in 3D
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
       {allShowtimes.length > 1 && (
         <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
