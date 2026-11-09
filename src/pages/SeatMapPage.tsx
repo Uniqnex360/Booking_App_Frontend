@@ -879,119 +879,57 @@ export default function SeatMapPage() {
     : "";
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
-      <div className="sticky top-0 z-30 shadow-xs">
-        <header className="bg-white border-b border-gray-200 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] pb-2.5">
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
-                title="Back"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <div className="min-w-0">
-                <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
-                  {mapData?.movie_title}
-                </p>
-                <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
-                  {mapData?.cinema_name || mapData?.venue_name}
-                  {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {isStale && !isSourceUnavailable && (
-                <button
-                  onClick={() => fetchSeatMap(true)}
-                  className="text-[#7B1E3D] hover:bg-[#7B1E3D]/10 border border-[#7B1E3D]/30 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
-                </button>
-              )}
-              {holdId && countdown > 0 && (
-                <div className="bg-[#7B1E3D] text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse">
-                  <Clock className="h-3 w-3" /> {Math.floor(countdown / 60)}:
-                  {(countdown % 60).toString().padStart(2, "0")}
-                </div>
-              )}
-              <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-gray-500 font-semibold shrink-0 px-2.5 py-1 border border-gray-200 rounded">
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                {allSeats.length} seats
-              </div>
-              {/* Mode Selector Toggle: [Seat Overview] [3D Model] (Desktop) */}
-              <div className="hidden md:flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDisplayMode("2d");
-                    setView3DSeat(null);
-                  }}
-                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                    displayMode === "2d"
-                      ? "bg-white text-gray-900 shadow-xs"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  <span>Seat Overview</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDisplayMode("3d");
-                    setView3DInitialMode("overview");
-                    const target =
-                      selectedSeats.length > 0
-                        ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
-                        : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
-                          allAuditoriumPerspectives[0];
-                    if (target) setView3DSeat(target);
-                  }}
-                  className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                    displayMode === "3d"
-                      ? "bg-amber-500 text-slate-950 shadow-xs font-black"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  <Compass className="w-3.5 h-3.5 text-amber-950" />
-                  <span>3D Model</span>
-                </button>
-              </div>
-
-              {/* Change Ticket Count Button */}
-              <button
-                onClick={() => setShowTicketModal(true)}
-                className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
-                title="Change seat count"
-              >
-                <Edit2 className="h-3 w-3" />
-                <span>
-                  {requiredSeatCount}{" "}
-                  {requiredSeatCount === 1 ? "Ticket" : "Tickets"}
-                </span>
-              </button>
+      <header className="bg-white border-b border-gray-200 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] pb-2.5 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1 text-gray-700 hover:text-black hover:bg-gray-100 rounded-full transition cursor-pointer shrink-0"
+              title="Back"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <div className="min-w-0">
+              <p className="text-sm sm:text-base text-gray-900 font-bold truncate leading-tight">
+                {mapData?.movie_title}
+              </p>
+              <p className="text-[11px] sm:text-xs text-gray-500 font-normal mt-0.5 truncate leading-tight">
+                {mapData?.cinema_name || mapData?.venue_name}
+                {city ? `: ${city}` : ""} | {formattedDate} | {formattedTime}
+              </p>
             </div>
           </div>
-        </header>
-
-        {/* Prominent Sticky Seat Selection Mode Bar (Always visible at top without scrolling) */}
-        <div className="bg-slate-900 border-b border-slate-800 text-white py-2 px-4 shadow-sm">
-          <div className="max-w-[1280px] mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-[11px] uppercase tracking-wider font-extrabold text-slate-400 hidden sm:inline">
-                SEAT SELECTION
-              </span>
-              <div className="flex items-center bg-slate-800/90 p-0.5 rounded-xl border border-slate-700/80 shadow-xs">
-                <button
-                  type="button"
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {isStale && !isSourceUnavailable && (
+              <button
+                onClick={() => fetchSeatMap(true)}
+                className="text-[#7B1E3D] hover:bg-[#7B1E3D]/10 border border-[#7B1E3D]/30 px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Refresh
+              </button>
+            )}
+            {holdId && countdown > 0 && (
+              <div className="bg-[#7B1E3D] text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse">
+                <Clock className="h-3 w-3" /> {Math.floor(countdown / 60)}:
+                {(countdown % 60).toString().padStart(2, "0")}
+              </div>
+            )}
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-gray-500 font-semibold shrink-0 px-2.5 py-1 border border-gray-200 rounded">
+              <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+              {allSeats.length} seats
+            </div>
+            {/* Mode Selector Toggle: [Seat Overview] [3D Model] */}
+            <div className="flex items-center bg-gray-100 p-0.5 rounded-lg border border-gray-200 shrink-0">
+              <button
+                type="button"
                 onClick={() => {
                   setDisplayMode("2d");
                   setView3DSeat(null);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                   displayMode === "2d"
-                    ? "bg-white text-slate-950 shadow-xs font-extrabold"
-                    : "text-slate-300 hover:text-white"
+                    ? "bg-white text-gray-900 shadow-xs"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
@@ -1009,32 +947,38 @@ export default function SeatMapPage() {
                         allAuditoriumPerspectives[0];
                   if (target) setView3DSeat(target);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                className={`px-2.5 sm:px-3 py-1 rounded-md text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                   displayMode === "3d"
-                    ? "bg-amber-400 text-slate-950 shadow-sm font-black"
-                    : "text-slate-300 hover:text-white"
+                    ? "bg-amber-500 text-slate-950 shadow-xs font-black"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
-                <Sparkles className="w-3.5 h-3.5" />
+                <Compass className="w-3.5 h-3.5 text-amber-950" />
                 <span>3D Model</span>
               </button>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            {selectedSeats.length > 0 ? (
-              <span className="text-amber-400 font-bold">
+            {selectedSeats.length > 0 && (
+              <div className="hidden md:flex text-xs font-bold text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-md shrink-0">
                 {selectedSeats.length} of {requiredSeatCount} selected
-              </span>
-            ) : (
-              <span className="text-slate-400 text-[11px]">
-                Pick {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"}
-              </span>
+              </div>
             )}
+
+            {/* Change Ticket Count Button */}
+            <button
+              onClick={() => setShowTicketModal(true)}
+              className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="Change seat count"
+            >
+              <Edit2 className="h-3 w-3" />
+              <span>
+                {requiredSeatCount}{" "}
+                {requiredSeatCount === 1 ? "Ticket" : "Tickets"}
+              </span>
+            </button>
           </div>
         </div>
-      </div>
-      </div>
+      </header>
       {allShowtimes.length > 1 && (
         <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
