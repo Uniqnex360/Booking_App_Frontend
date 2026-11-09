@@ -113,8 +113,8 @@ export default function OrderSummaryPage() {
 
   return (
     <div className="min-h-screen bg-[#F5F5FA]">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-[900px] mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3">
+        <div className="max-w-[900px] mx-auto px-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => navigate(`/bookings/${bookingId}/food`)}

@@ -1126,7 +1126,7 @@ export default function BookingPage() {
       {bookingModalOpen && (
         <div className="fixed inset-0 z-[100] bg-[#F5F5F5] overflow-y-auto flex flex-col min-h-screen text-gray-900 font-sans">
           {/* Top Header Bar */}
-          <header className="bg-white border-b border-gray-200 h-16 flex items-center px-4 sm:px-8 sticky top-0 z-50 shrink-0">
+          <header className="bg-white border-b border-gray-200 min-h-16 pt-[env(safe-area-inset-top,0px)] flex items-center px-4 sm:px-8 sticky top-0 z-50 shrink-0">
             <div className="flex items-center gap-6 sm:gap-10 w-full max-w-6xl mx-auto">
               <button
                 type="button"

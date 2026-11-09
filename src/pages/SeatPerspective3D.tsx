@@ -1128,7 +1128,7 @@ export default function SeatPerspective3D({
     >
       {/* Top Header Bar (When in fullscreen or modal overlay mode) */}
       {!isEmbedded && (
-        <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-black/90 via-black/60 to-transparent pointer-events-none">
+        <div className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-4 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] pb-3 sm:pb-4 bg-gradient-to-b from-black/90 via-black/60 to-transparent pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             {onSwitchTo2D && (
               <div className="flex items-center bg-slate-900/90 border border-slate-700/80 rounded-xl p-0.5 shadow-lg backdrop-blur-md">
@@ -1220,7 +1220,7 @@ export default function SeatPerspective3D({
       )}
 
       {/* 1. View Selector: Horizontal 5-Perspective Bar directly above the auditorium visual */}
-      <div className={`absolute ${isEmbedded ? "top-3 sm:top-4" : "top-14 sm:top-16"} inset-x-0 z-30 flex justify-center px-2 pointer-events-none`}>
+      <div className={`absolute ${isEmbedded ? "top-3 sm:top-4" : "top-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))]"} inset-x-0 z-30 flex justify-center px-2 pointer-events-none`}>
         <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-950/85 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-slate-800 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
           {/* Overview */}
           <button
@@ -1318,7 +1318,7 @@ export default function SeatPerspective3D({
 
       {/* Floating Hover Tooltip */}
       {hoveredSeat && (
-        <div className="absolute top-28 right-4 z-20 pointer-events-none animate-in fade-in duration-150">
+        <div className="absolute top-[calc(7rem+env(safe-area-inset-top,0px))] right-4 z-20 pointer-events-none animate-in fade-in duration-150">
           <div className="bg-slate-950/90 backdrop-blur-md border border-slate-700/80 rounded-xl px-3 py-1.5 shadow-xl text-white text-xs">
             <span className="font-bold text-amber-400">Seat {hoveredSeat.label}</span>
             {hoveredSeat.tierName && <span className="text-white/70 ml-1">({hoveredSeat.tierName})</span>}
