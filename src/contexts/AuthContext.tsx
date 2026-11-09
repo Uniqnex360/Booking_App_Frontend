@@ -64,11 +64,38 @@ const getErrorMessage = (err: any): string => {
 
   return err.message || "An unexpected error occurred";
 };
+const CACHED_USER_KEY = "vyhbz_cached_user";
+
+function getCachedUser(): User | null {
+  if (typeof window === "undefined") return null;
+  const token = getAccessToken();
+  if (!token) return null;
+  try {
+    const raw = localStorage.getItem(CACHED_USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedUser(u: User | null): void {
+  try {
+    if (u) {
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(u));
+    } else {
+      localStorage.removeItem(CACHED_USER_KEY);
+    }
+  } catch {}
+}
+
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialCachedUser = getCachedUser();
+  const [user, setUser] = useState<User | null>(initialCachedUser);
+  const [loading, setLoading] = useState<boolean>(
+    () => !initialCachedUser && Boolean(getAccessToken())
+  );
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalInitialView, setAuthModalInitialView] = useState<
     "get-started" | "email" | "mobile-otp" | "email-otp"
@@ -88,17 +115,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  const fetchUser = useCallback(async (): Promise<boolean> => {
   const token = getAccessToken();
   if (!token) {
+    setCachedUser(null);
+    setUser(null);
     setLoading(false);
     return false;
   }
   try {
     const data = await getCurrentUser();
+    setCachedUser(data);
     setUser(data);
     return true;
   } catch (err: any) {
     const status = err?.statusCode ?? err?.response?.status;
     if (status === 401 || status === 403) {
       clearTokens();
+      setCachedUser(null);
       setUser(null);
     }
     return false;
@@ -109,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setAuthFailureHandler(() => {
+      setCachedUser(null);
       setUser(null);
     });
     fetchUser();
@@ -118,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await loginApi(payload);
       const data = await getCurrentUser();
+      setCachedUser(data);
       setUser(data);
       return { error: null, user: data };
     } catch (err: unknown) {
@@ -205,6 +238,7 @@ const verifySignUp = async (userId: string, code: string) => {
         console.warn("Logout cleanup failed on server");
     } finally {
         clearTokens();
+        setCachedUser(null);
         setUser(null);
     }
   };

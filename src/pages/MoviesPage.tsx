@@ -145,41 +145,70 @@ export default function MoviesPage() {
     fetchMoviesAndFilters();
   }, [city, sortBy]);
 
+  // Normalized filter states for robust case-insensitive comparisons
+  const normalizedSelectedLangs = useMemo(
+    () => selectedLanguages.map((l) => l.trim().toLowerCase()).filter(Boolean),
+    [selectedLanguages]
+  );
+  const normalizedSelectedGenres = useMemo(
+    () => selectedGenres.map((g) => g.trim().toLowerCase()).filter(Boolean),
+    [selectedGenres]
+  );
+  const normalizedSelectedCerts = useMemo(
+    () => selectedCertificates.map((c) => c.trim().toUpperCase()).filter(Boolean),
+    [selectedCertificates]
+  );
+
   // Matcher helpers for each filter dimension
-  const matchesSearch = useCallback((m: MovieItem) => {
-    if (!search) return true;
-    const query = search.toLowerCase().trim();
-    const matchesTitle = m.title.toLowerCase().includes(query);
-    const matchesOrig = m.original_title ? m.original_title.toLowerCase().includes(query) : false;
-    const matchesGenre = m.genre ? m.genre.toLowerCase().includes(query) : false;
-    return matchesTitle || matchesOrig || matchesGenre;
-  }, [search]);
+  const matchesSearch = useCallback(
+    (m: MovieItem) => {
+      if (!search) return true;
+      const query = search.toLowerCase().trim();
+      const matchesTitle = m.title.toLowerCase().includes(query);
+      const matchesOrig = m.original_title ? m.original_title.toLowerCase().includes(query) : false;
+      const matchesGenre = m.genre ? m.genre.toLowerCase().includes(query) : false;
+      return matchesTitle || matchesOrig || matchesGenre;
+    },
+    [search]
+  );
 
-  const matchesTag = useCallback((m: MovieItem) => {
-    if (selectedTag === "all") return true;
-    if (selectedTag === "new") return !isReRelease(m);
-    if (selectedTag === "re-release") return isReRelease(m);
-    return true;
-  }, [selectedTag]);
+  const matchesTag = useCallback(
+    (m: MovieItem) => {
+      if (selectedTag === "all") return true;
+      if (selectedTag === "new") return !isReRelease(m);
+      if (selectedTag === "re-release") return isReRelease(m);
+      return true;
+    },
+    [selectedTag]
+  );
 
-  const matchesLanguage = useCallback((m: MovieItem) => {
-    if (selectedLanguages.length === 0) return true;
-    const langs = splitLangs(m.language);
-    return langs.some((l) => selectedLanguages.includes(l));
-  }, [selectedLanguages]);
+  const matchesLanguage = useCallback(
+    (m: MovieItem) => {
+      if (normalizedSelectedLangs.length === 0) return true;
+      const langs = splitLangs(m.language).map((l) => l.toLowerCase());
+      return normalizedSelectedLangs.some((sel) => langs.includes(sel));
+    },
+    [normalizedSelectedLangs]
+  );
 
-  const matchesGenre = useCallback((m: MovieItem) => {
-    if (selectedGenres.length === 0) return true;
-    if (!m.genre) return false;
-    const movieGenres = m.genre.split(/[,/&]/).map((g) => g.trim().toLowerCase());
-    return selectedGenres.some((g) => movieGenres.includes(g.toLowerCase()));
-  }, [selectedGenres]);
+  const matchesGenre = useCallback(
+    (m: MovieItem) => {
+      if (normalizedSelectedGenres.length === 0) return true;
+      if (!m.genre) return false;
+      const movieGenres = m.genre.split(/[,/&]/).map((g) => g.trim().toLowerCase());
+      return normalizedSelectedGenres.some((g) => movieGenres.includes(g));
+    },
+    [normalizedSelectedGenres]
+  );
 
-  const matchesCertificate = useCallback((m: MovieItem) => {
-    if (selectedCertificates.length === 0) return true;
-    const movieCert = m.certificate?.trim().toUpperCase();
-    return Boolean(movieCert && selectedCertificates.includes(movieCert));
-  }, [selectedCertificates]);
+  const matchesCertificate = useCallback(
+    (m: MovieItem) => {
+      if (normalizedSelectedCerts.length === 0) return true;
+      const movieCert = m.certificate?.trim().toUpperCase();
+      return Boolean(movieCert && normalizedSelectedCerts.includes(movieCert));
+    },
+    [normalizedSelectedCerts]
+  );
 
   // Dynamic Languages: candidate movies match Search, Tag, Genre, Certificate
   const dynamicLanguages = useMemo(() => {
@@ -187,7 +216,12 @@ export default function MoviesPage() {
     movies.forEach((m) => {
       if (matchesSearch(m) && matchesTag(m) && matchesGenre(m) && matchesCertificate(m)) {
         splitLangs(m.language).forEach((l) => {
-          counts.set(l, (counts.get(l) || 0) + 1);
+          const clean = l.trim();
+          if (clean) {
+            // Find or insert title-cased key
+            const formatted = clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+            counts.set(formatted, (counts.get(formatted) || 0) + 1);
+          }
         });
       }
     });
@@ -197,7 +231,7 @@ export default function MoviesPage() {
   }, [movies, matchesSearch, matchesTag, matchesGenre, matchesCertificate]);
 
   // Dynamic Genres: candidate movies match Search, Tag, Language, Certificate
-  // e.g. selecting Malayalam narrows genres strictly to Malayalam movies!
+  // When 'Tamil' is selected, genres narrow strictly to only the Tamil movies!
   const dynamicGenres = useMemo(() => {
     const counts = new Map<string, number>();
     movies.forEach((m) => {
@@ -207,7 +241,14 @@ export default function MoviesPage() {
             const clean = g.trim();
             if (clean) {
               const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
-              counts.set(formatted, (counts.get(formatted) || 0) + 1);
+              let canonicalKey = formatted;
+              for (const existing of counts.keys()) {
+                if (existing.toLowerCase() === clean.toLowerCase()) {
+                  canonicalKey = existing;
+                  break;
+                }
+              }
+              counts.set(canonicalKey, (counts.get(canonicalKey) || 0) + 1);
             }
           });
         }
@@ -283,14 +324,20 @@ export default function MoviesPage() {
   }, [movies, matchesSearch, matchesTag, matchesLanguage, matchesGenre, matchesCertificate]);
 
   const toggleLanguageFilter = (lang: string) => {
+    const clean = lang.trim();
     setSelectedLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang],
+      prev.some((l) => l.toLowerCase() === clean.toLowerCase())
+        ? prev.filter((l) => l.toLowerCase() !== clean.toLowerCase())
+        : [...prev, clean]
     );
   };
 
   const toggleGenreFilter = (genre: string) => {
+    const clean = genre.trim();
     setSelectedGenres((prev) =>
-      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre],
+      prev.some((g) => g.toLowerCase() === clean.toLowerCase())
+        ? prev.filter((g) => g.toLowerCase() !== clean.toLowerCase())
+        : [...prev, clean]
     );
   };
 
@@ -477,7 +524,7 @@ export default function MoviesPage() {
                 {openSections.languages && (
                   <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2">
                     {dynamicLanguages.map(({ lang, count }) => {
-                      const isSelected = selectedLanguages.includes(lang);
+                      const isSelected = normalizedSelectedLangs.includes(lang.trim().toLowerCase());
                       return (
                         <button
                           key={lang}
@@ -531,7 +578,7 @@ export default function MoviesPage() {
                 {openSections.genres && (
                   <div className="px-4 pb-4 pt-1 flex flex-wrap gap-2">
                     {dynamicGenres.map(({ genre, count }) => {
-                      const isSelected = selectedGenres.includes(genre);
+                      const isSelected = normalizedSelectedGenres.includes(genre.trim().toLowerCase());
                       return (
                         <button
                           key={genre}
@@ -715,7 +762,7 @@ export default function MoviesPage() {
                     All
                   </button>
                   {dynamicLanguages.map(({ lang, count }) => {
-                    const isSelected = selectedLanguages.includes(lang);
+                    const isSelected = normalizedSelectedLangs.includes(lang.trim().toLowerCase());
                     return (
                       <button
                         key={lang}
@@ -753,7 +800,7 @@ export default function MoviesPage() {
                     All
                   </button>
                   {dynamicGenres.map(({ genre, count }) => {
-                    const isSelected = selectedGenres.includes(genre);
+                    const isSelected = normalizedSelectedGenres.includes(genre.trim().toLowerCase());
                     return (
                       <button
                         key={genre}
@@ -989,7 +1036,7 @@ export default function MoviesPage() {
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {dynamicLanguages.map(({ lang, count }) => {
-                      const isSelected = selectedLanguages.includes(lang);
+                      const isSelected = normalizedSelectedLangs.includes(lang.trim().toLowerCase());
                       return (
                         <button
                           key={lang}
@@ -1019,7 +1066,7 @@ export default function MoviesPage() {
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {dynamicGenres.map(({ genre, count }) => {
-                      const isSelected = selectedGenres.includes(genre);
+                      const isSelected = normalizedSelectedGenres.includes(genre.trim().toLowerCase());
                       return (
                         <button
                           key={genre}

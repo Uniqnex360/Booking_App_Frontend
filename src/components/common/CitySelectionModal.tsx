@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, X, Crosshair, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { detectUserLocation } from "@/utils/geolocation";
+import { detectUserLocation, getLastDetectedLocality } from "@/utils/geolocation";
 
 export interface CitySelectionModalProps {
   isOpen: boolean;
@@ -35,7 +35,12 @@ const CITIES: CityData[] = [
     name: "Chennai",
     icon: "/cities/chen.png",
     selectedIcon: "/cities/chen-selected.png",
-    aliases: ["chennai", "madras", "maa", "tamil nadu"],
+    aliases: [
+      "chennai", "madras", "maa", "tamil nadu", "kumbakonam", "thanjavur",
+      "trichy", "tiruchirappalli", "madurai", "salem", "vellore", "tirunelveli",
+      "coimbatore", "erode", "tiruppur", "pondicherry", "puducherry", "cuddalore",
+      "dindigul", "karur", "nagapattinam", "mayiladuthurai", "thiruvarur", "kanchipuram"
+    ],
     lat: 13.0827,
     lng: 80.2707,
   },
@@ -101,8 +106,13 @@ export function CitySelectionModal({
           (c) => c.id.toLowerCase() === detectedCityId.toLowerCase()
         );
         const displayName = matched ? matched.name : detectedCityId;
+        const locality = getLastDetectedLocality();
+        const toastMsg = locality && locality.toLowerCase() !== displayName.toLowerCase()
+          ? `Location detected: ${locality} (Region: ${displayName})`
+          : `Location detected: ${displayName}`;
+
         onSelectCity(detectedCityId);
-        toast.success(`Location detected: ${displayName}`);
+        toast.success(toastMsg);
         onClose();
         return;
       }

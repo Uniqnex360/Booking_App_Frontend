@@ -23,8 +23,10 @@ export const CITY_COORDINATES: Record<SupportedCityId, CityCoordinate> = {
     lat: 13.0827,
     lng: 80.2707,
     aliases: [
-      'chennai', 'madras', 'tamil nadu', 'coimbatore', 'madurai', 'salem',
-      'trichy', 'tiruchirappalli', 'vellore', 'tirunelveli', 'pondicherry', 'puducherry'
+      'chennai', 'madras', 'tamil nadu', 'kumbakonam', 'thanjavur', 'trichy',
+      'tiruchirappalli', 'madurai', 'salem', 'vellore', 'tirunelveli', 'coimbatore',
+      'erode', 'tiruppur', 'pondicherry', 'puducherry', 'cuddalore', 'dindigul',
+      'karur', 'nagapattinam', 'mayiladuthurai', 'thiruvarur', 'kanchipuram'
     ],
   },
   Bangalore: {
@@ -177,26 +179,89 @@ export async function detectCityFromIp(): Promise<SupportedCityId | null> {
 }
 
 /**
- * Detects user location via browser navigator.geolocation first (with short timeout),
- * then falls back automatically to IP geolocation so it never hangs or fails.
+ * Reverse geocodes coordinates to town/city and state name using free client endpoint
+ */
+export async function reverseGeocodeCoordinates(
+  lat: number,
+  lng: number
+): Promise<{ locality?: string; city?: string; state?: string } | null> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+      { signal: controller.signal }
+    );
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        locality: data.locality || data.city,
+        city: data.city || data.locality,
+        state: data.principalSubdivision || data.countrySubdivisionName,
+      };
+    }
+  } catch (err) {
+    console.warn("Reverse geocode failed", err);
+  }
+  return null;
+}
+
+export function getLastDetectedLocality(): string | null {
+  try {
+    return sessionStorage.getItem("vyhbz_detected_locality");
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Detects user location via browser navigator.geolocation first (with high accuracy & generous timeout),
+ * reverse-geocodes the exact locality (e.g. Kumbakonam), then maps to the correct regional hub.
+ * Smoothly falls back to IP geolocation if permissions are denied.
  */
 export async function detectUserLocation(): Promise<SupportedCityId | null> {
-  if (typeof window !== 'undefined' && 'geolocation' in navigator) {
+  if (typeof window !== "undefined" && "geolocation" in navigator) {
     try {
-      const browserCity = await new Promise<SupportedCityId>((resolve, reject) => {
+      const browserResult = await new Promise<{ city: SupportedCityId; locality?: string }>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const city = findClosestCity(
-              position.coords.latitude,
-              position.coords.longitude
-            );
-            resolve(city);
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            let resolvedCity: SupportedCityId = findClosestCity(latitude, longitude);
+            let localityName: string | undefined = undefined;
+
+            try {
+              const geo = await reverseGeocodeCoordinates(latitude, longitude);
+              if (geo) {
+                localityName = geo.locality || geo.city;
+                if (localityName) {
+                  try {
+                    sessionStorage.setItem("vyhbz_detected_locality", localityName);
+                  } catch {}
+                }
+
+                // If reverse geocoding confirms Tamil Nadu / Chennai aliases
+                const matchedFromText =
+                  matchCityFromText(geo.locality) ||
+                  matchCityFromText(geo.city) ||
+                  matchCityFromText(geo.state);
+
+                if (matchedFromText) {
+                  resolvedCity = matchedFromText;
+                }
+              }
+            } catch {}
+
+            resolve({ city: resolvedCity, locality: localityName });
           },
           (err) => reject(err),
-          { timeout: 4000, enableHighAccuracy: false, maximumAge: 300000 }
+          { timeout: 10000, enableHighAccuracy: true, maximumAge: 120000 }
         );
       });
-      if (browserCity) return browserCity;
+
+      if (browserResult?.city) {
+        return browserResult.city;
+      }
     } catch {
       // Permission denied, timeout, or location unavailable -> smoothly fallback to IP
     }

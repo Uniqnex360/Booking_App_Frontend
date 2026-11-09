@@ -177,25 +177,23 @@ export default function TheatreBookingsPage() {
     const counts: Record<string, number> = {};
     const dataset = allBookings.length > 0 ? allBookings : bookings;
     dataset.forEach((b) => {
-      const dt = b.showtime || b.created_at;
-      if (dt) {
-        try {
-          const k = format(parseISO(dt), "yyyy-MM-dd");
-          if (k <= todayStr) {
+      [b.created_at, b.showtime].forEach((dt) => {
+        if (dt) {
+          try {
+            const k = format(parseISO(dt), "yyyy-MM-dd");
             counts[k] = (counts[k] || 0) + 1;
-          }
-        } catch {}
-      }
+          } catch {}
+        }
+      });
     });
     return counts;
-  }, [allBookings, bookings, todayStr]);
+  }, [allBookings, bookings]);
 
   const recentActiveDates = useMemo(() => {
     const dates = Object.keys(dateCounts)
-      .filter((d) => d <= todayStr)
       .sort((a, b) => b.localeCompare(a));
-    return dates.slice(0, 6);
-  }, [dateCounts, todayStr]);
+    return dates.slice(0, 7);
+  }, [dateCounts]);
 
   // Client-side filtering by state/city/movie/date if selected
   const filteredBookings = useMemo(() => {
@@ -214,26 +212,34 @@ export default function TheatreBookingsPage() {
         if (!b.screen_name || b.screen_name.toLowerCase() !== selectedScreen.toLowerCase()) return false;
       }
       if (exactDate) {
-        if (exactDate > todayStr) return false;
         try {
-          const bDateStr = format(parseISO(b.showtime || b.created_at), "yyyy-MM-dd");
-          if (bDateStr !== exactDate) return false;
+          const createdDateStr = b.created_at ? format(parseISO(b.created_at), "yyyy-MM-dd") : "";
+          const showDateStr = b.showtime ? format(parseISO(b.showtime), "yyyy-MM-dd") : "";
+          if (createdDateStr !== exactDate && showDateStr !== exactDate) return false;
         } catch {
           return false;
         }
       } else if (dateRange !== "ALL") {
         try {
-          const bDate = parseISO(b.showtime || b.created_at);
-          const bDateStr = format(bDate, "yyyy-MM-dd");
+          const createdDateStr = b.created_at ? format(parseISO(b.created_at), "yyyy-MM-dd") : "";
+          const showDateStr = b.showtime ? format(parseISO(b.showtime), "yyyy-MM-dd") : "";
+          const createdDate = b.created_at ? parseISO(b.created_at) : null;
+          const showDate = b.showtime ? parseISO(b.showtime) : null;
           const now = new Date();
           if (dateRange === "TODAY") {
-            if (bDateStr !== todayStr) return false;
+            if (createdDateStr !== todayStr && showDateStr !== todayStr) return false;
           } else if (dateRange === "YESTERDAY") {
-            if (bDateStr !== yesterdayStr) return false;
+            if (createdDateStr !== yesterdayStr && showDateStr !== yesterdayStr) return false;
           } else if (dateRange === "7D") {
-            if (!isAfter(bDate, subDays(startOfDay(now), 7))) return false;
+            const cut = subDays(startOfDay(now), 7);
+            const createdOk = createdDate ? isAfter(createdDate, cut) : false;
+            const showOk = showDate ? isAfter(showDate, cut) : false;
+            if (!createdOk && !showOk) return false;
           } else if (dateRange === "30D") {
-            if (!isAfter(bDate, subDays(startOfDay(now), 30))) return false;
+            const cut = subDays(startOfDay(now), 30);
+            const createdOk = createdDate ? isAfter(createdDate, cut) : false;
+            const showOk = showDate ? isAfter(showDate, cut) : false;
+            if (!createdOk && !showOk) return false;
           }
         } catch {
           return true;

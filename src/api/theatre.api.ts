@@ -236,6 +236,7 @@ export async function getTheatreBookings(params?: {
   city?: string;
   date_from?: string;
   date_to?: string;
+  date_type?: "booking_date" | "show_date" | "either";
   search?: string;
   limit?: number;
   offset?: number;
