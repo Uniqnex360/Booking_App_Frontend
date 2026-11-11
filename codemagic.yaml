@@ -67,20 +67,8 @@ workflows:
               exit 1
             }
 
-      - name: Build iOS Simulator Zip for Appetize
-        script: |
-          xcodebuild -workspace "ios/App/$XCODE_WORKSPACE" \
-            -scheme "$XCODE_SCHEME" \
-            -sdk iphonesimulator \
-            -configuration Debug \
-            -derivedDataPath build/simulator
-          
-          cd build/simulator/Build/Products/Debug-iphonesimulator
-          zip -r ../../../../vybhz-ios-simulator.zip App.app
-
     artifacts:
       - build/ios/ipa/*.ipa
-      - vybhz-ios-simulator.zip
       - /tmp/xcodebuild_logs/*.log
 
     publishing:
