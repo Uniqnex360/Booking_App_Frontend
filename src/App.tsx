@@ -1,16 +1,48 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AppRoutes } from './routes';
 import { QuickAuthModal } from '@/components/auth/QuickAuthModal';
+import { WelcomeFirstOpenModal } from '@/components/auth/WelcomeFirstOpenModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
+import { useAuth } from '@/hooks/useAuth';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+
+const FIRST_OPEN_DISMISSED_KEY = 'vyhbz_first_open_dismissed';
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, loading } = useAuth();
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  useEffect(() => {
+    // Check if user has already seen or dismissed the first-open prompt, or is already logged in
+    if (loading) return;
+    if (user) return;
+
+    try {
+      const dismissed = localStorage.getItem(FIRST_OPEN_DISMISSED_KEY);
+      if (!dismissed) {
+        // Show after a subtle delay (700ms) for smooth page render
+        const timer = setTimeout(() => {
+          setShowWelcomeModal(true);
+        }, 700);
+        return () => clearTimeout(timer);
+      }
+    } catch {
+      // ignore localStorage errors
+    }
+  }, [user, loading]);
+
+  const handleCloseWelcomeModal = () => {
+    setShowWelcomeModal(false);
+    try {
+      localStorage.setItem(FIRST_OPEN_DISMISSED_KEY, 'true');
+    } catch {}
+  };
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -47,6 +79,10 @@ export default function App() {
       <AppRoutes />
       <MobileBottomNav />
       <QuickAuthModal />
+      <WelcomeFirstOpenModal
+        isOpen={showWelcomeModal}
+        onClose={handleCloseWelcomeModal}
+      />
     </>
   );
 }

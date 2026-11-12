@@ -15,6 +15,9 @@ export async function createBooking(
 export async function cancelBooking(id: string): Promise<void> {
   await api.patch(`/bookings/${id}/cancel`);
 }
+export async function linkGuestBookings(): Promise<{ linked_count: number }> {
+  return unwrap<{ linked_count: number }>(api.post('/bookings/link-guest'));
+}
 export const forgotPassword = async (email: string): Promise<ForgotPasswordResponse> => {
   const res = await api.post<ForgotPasswordResponse>('/auth/forgot-password', { email });
   return res.data;

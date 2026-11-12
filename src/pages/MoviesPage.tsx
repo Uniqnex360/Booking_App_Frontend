@@ -352,6 +352,7 @@ export default function MoviesPage() {
     setSelectedLanguages([]);
     setSelectedGenres([]);
     setSelectedCertificates([]);
+    setSortBy("popularity");
     setSearch("");
   };
 
@@ -360,6 +361,7 @@ export default function MoviesPage() {
     selectedLanguages.length > 0 ||
     selectedGenres.length > 0 ||
     selectedCertificates.length > 0 ||
+    sortBy !== "popularity" ||
     search !== "";
 
   return (
@@ -664,202 +666,6 @@ export default function MoviesPage() {
 
           {/* ─── Right Movie Grid Section ─── */}
           <div className="flex-1 min-w-0">
-            {/* ─── Direct Filter Strip for Mobile (Release Tags + Languages + Genres) ─── */}
-            <div className="lg:hidden space-y-2.5 mb-5">
-              {/* Release Type Tags */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
-                  Type:
-                </span>
-                <button
-                  onClick={() => setSelectedTag("all")}
-                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
-                    selectedTag === "all"
-                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                      : "bg-white text-gray-700 border border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  All ({releaseCounts.all})
-                </button>
-                <button
-                  onClick={() => setSelectedTag(selectedTag === "new" ? "all" : "new")}
-                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
-                    selectedTag === "new"
-                      ? "bg-[#7B1E3D] text-white shadow-sm font-bold"
-                      : "bg-white text-gray-700 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                  }`}
-                >
-                  ✨ New ({releaseCounts.new})
-                </button>
-                <button
-                  onClick={() =>
-                    setSelectedTag(selectedTag === "re-release" ? "all" : "re-release")
-                  }
-                  className={`shrink-0 text-xs px-3 py-1 rounded-full font-medium transition ${
-                    selectedTag === "re-release"
-                      ? "bg-[#7B1E3D] text-white shadow-sm font-bold"
-                      : "bg-white text-gray-700 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                  }`}
-                >
-                  🔁 Re-Release ({releaseCounts.reRelease})
-                </button>
-              </div>
-
-              {/* Discovery Sort By (BookMyShow Style) */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
-                  Sort:
-                </span>
-                <button
-                  onClick={() => setSortBy("popularity")}
-                  className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                    sortBy === "popularity"
-                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <span>🔥</span>
-                  <span>Popular in {city}</span>
-                </button>
-                <button
-                  onClick={() => setSortBy("rating")}
-                  className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                    sortBy === "rating"
-                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <span>⭐</span>
-                  <span>Top Rated</span>
-                </button>
-                <button
-                  onClick={() => setSortBy("latest")}
-                  className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                    sortBy === "latest"
-                      ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                      : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  <span>🕒</span>
-                  <span>Release Date</span>
-                </button>
-              </div>
-
-              {/* Languages Bar */}
-              {dynamicLanguages.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
-                    Lang:
-                  </span>
-                  <button
-                    onClick={() => setSelectedLanguages([])}
-                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition ${
-                      selectedLanguages.length === 0
-                        ? "bg-gray-900 text-white"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {dynamicLanguages.map(({ lang, count }) => {
-                    const isSelected = normalizedSelectedLangs.includes(lang.trim().toLowerCase());
-                    return (
-                      <button
-                        key={lang}
-                        onClick={() => toggleLanguageFilter(lang)}
-                        className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                          isSelected
-                            ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                            : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                        }`}
-                      >
-                        <span>{lang}</span>
-                        <span className={`text-[10px] px-1 py-0.2 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-400"}`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Dynamic Genres Bar */}
-              {dynamicGenres.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-none">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
-                    Genre:
-                  </span>
-                  <button
-                    onClick={() => setSelectedGenres([])}
-                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition ${
-                      selectedGenres.length === 0
-                        ? "bg-gray-900 text-white"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {dynamicGenres.map(({ genre, count }) => {
-                    const isSelected = normalizedSelectedGenres.includes(genre.trim().toLowerCase());
-                    return (
-                      <button
-                        key={genre}
-                        onClick={() => toggleGenreFilter(genre)}
-                        className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                          isSelected
-                            ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                            : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                        }`}
-                      >
-                        <span>{genre}</span>
-                        <span className={`text-[10px] px-1 py-0.2 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-400"}`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Certification Bar */}
-              {dynamicCertificates.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase shrink-0 mr-1">
-                    Cert:
-                  </span>
-                  <button
-                    onClick={() => setSelectedCertificates([])}
-                    className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition ${
-                      selectedCertificates.length === 0
-                        ? "bg-gray-900 text-white"
-                        : "bg-white text-gray-600 border border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {dynamicCertificates.map(({ cert, count }) => {
-                    const isSelected = selectedCertificates.includes(cert);
-                    return (
-                      <button
-                        key={cert}
-                        onClick={() => toggleCertificateFilter(cert)}
-                        className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-medium transition flex items-center gap-1 ${
-                          isSelected
-                            ? "bg-[#7B1E3D] text-white shadow-sm font-semibold"
-                            : "bg-white text-gray-600 border border-gray-200 hover:border-[#7B1E3D] hover:text-[#7B1E3D]"
-                        }`}
-                      >
-                        <span>{cert}</span>
-                        <span className={`text-[10px] px-1 py-0.2 rounded-full ${isSelected ? "bg-white/20" : "bg-gray-100 text-gray-400"}`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
             {/* Movies List */}
             {loading ? (
               <div className="flex justify-center items-center py-28">
@@ -978,6 +784,45 @@ export default function MoviesPage() {
             </div>
 
             <div className="py-4 space-y-5">
+              {/* Sort By */}
+              <div>
+                <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
+                  Sort By
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setSortBy("popularity")}
+                    className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
+                      sortBy === "popularity"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                  >
+                    <span>🔥 Popular in {city}</span>
+                  </button>
+                  <button
+                    onClick={() => setSortBy("rating")}
+                    className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
+                      sortBy === "rating"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                  >
+                    <span>⭐ Top Rated</span>
+                  </button>
+                  <button
+                    onClick={() => setSortBy("latest")}
+                    className={`text-xs px-3 py-1.5 rounded-md border flex items-center gap-1.5 ${
+                      sortBy === "latest"
+                        ? "bg-[#7B1E3D] border-[#7B1E3D] text-white font-medium"
+                        : "bg-white border-gray-200 text-gray-700"
+                    }`}
+                  >
+                    <span>🕒 Release Date</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Release Type (New Releases, Re-Release) */}
               <div>
                 <h4 className="text-xs font-bold text-gray-700 uppercase mb-2">
