@@ -25,9 +25,11 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    const savedContact = JSON.parse(
-      localStorage.getItem('vyhbz_contact_details') || '{}'
-    );
+    let savedContact: any = {};
+    try {
+      const raw = localStorage.getItem('vyhbz_contact_details');
+      if (raw) savedContact = JSON.parse(raw) || {};
+    } catch {}
     setEmail(initialEmail || savedContact.email || '');
     setPhone(sanitizePhone(initialPhone || savedContact.phone || ''));
   }, [isOpen, initialEmail, initialPhone]);

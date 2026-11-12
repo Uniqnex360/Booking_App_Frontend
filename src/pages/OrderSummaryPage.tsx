@@ -27,7 +27,11 @@ export default function OrderSummaryPage() {
       try {
         const data = await unwrap<any>(api.get(`/bookings/${bookingId}`));
         setB(data);
-        const saved = JSON.parse(localStorage.getItem("vyhbz_contact_details") || "{}");
+        let saved: any = {};
+        try {
+          const raw = localStorage.getItem("vyhbz_contact_details");
+          if (raw) saved = JSON.parse(raw) || {};
+        } catch {}
         setEmail(data.contact_email || saved.email || user?.email || "");
         setPhone(data.contact_phone || saved.phone || (user as any)?.phone || "");
       } catch {

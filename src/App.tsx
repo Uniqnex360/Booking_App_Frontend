@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AppRoutes } from './routes';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { QuickAuthModal } from '@/components/auth/QuickAuthModal';
 import { WelcomeFirstOpenModal } from '@/components/auth/WelcomeFirstOpenModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
@@ -80,7 +81,7 @@ export default function App() {
   }, [location.pathname, navigate]);
 
   return (
-    <>
+    <ErrorBoundary>
       <ScrollToTop />
       <Toaster richColors position="top-right" duration={3000} />
       <AppRoutes />
@@ -90,6 +91,6 @@ export default function App() {
         isOpen={showWelcomeModal}
         onClose={handleCloseWelcomeModal}
       />
-    </>
+    </ErrorBoundary>
   );
 }

@@ -29,7 +29,7 @@ import {
   SeatMapDetail,
   VenueShowtimeItem,
 } from "@/types/movie.types";
-import { ensureHoldToken } from "@/lib/holdToken";
+import { ensureHoldToken, safeUUID } from "@/lib/holdToken";
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -74,7 +74,7 @@ export default function SeatMapPage() {
   const [zoom, setZoom] = useState<number>(
     typeof window !== "undefined" && window.innerWidth < 640 ? 0.92 : 1.0,
   );
-  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+  const idempotencyKeyRef = useRef<string>(safeUUID());
   const [isRetrying, setIsRetrying] = useState(false);
   const autoRetryCountRef = useRef(0);
 
@@ -164,7 +164,7 @@ export default function SeatMapPage() {
 
     // Check waiting room admission first
     const storedToken = sessionStorage.getItem(`wr_token_${id}`);
-    const storedSess = sessionStorage.getItem(`wr_sess_${id}`) || crypto.randomUUID();
+    const storedSess = sessionStorage.getItem(`wr_sess_${id}`) || safeUUID();
     sessionStorage.setItem(`wr_sess_${id}`, storedSess);
 
     if (!storedToken) {
@@ -350,7 +350,7 @@ export default function SeatMapPage() {
               (!partnerSeat || !isSameSeat(s, partnerSeat)),
           ),
         );
-        idempotencyKeyRef.current = crypto.randomUUID();
+        idempotencyKeyRef.current = safeUUID();
         return;
       }
       // Ensure requiredSeatCount is an even number >= 2
@@ -372,7 +372,7 @@ export default function SeatMapPage() {
       if (selectedSeats.length > 0 && selectedSeats.length < effectiveQty) {
         const next = [...selectedSeats, clickedSeat, partnerSeat];
         setSelectedSeats(next);
-        idempotencyKeyRef.current = crypto.randomUUID();
+        idempotencyKeyRef.current = safeUUID();
         return;
       }
       const pairsNeeded = Math.floor(effectiveQty / 2);
@@ -403,14 +403,14 @@ export default function SeatMapPage() {
           );
           if (allAvailable) {
             setSelectedSeats(candidatePairs.flat());
-            idempotencyKeyRef.current = crypto.randomUUID();
+            idempotencyKeyRef.current = safeUUID();
             return;
           }
         }
       }
       // Fallback: select just the clicked pair
       setSelectedSeats([clickedSeat, partnerSeat]);
-      idempotencyKeyRef.current = crypto.randomUUID();
+      idempotencyKeyRef.current = safeUUID();
       return;
     }
     // Normal seat click
@@ -421,7 +421,7 @@ export default function SeatMapPage() {
       setSelectedSeats((prev) =>
         prev.filter((s) => !isSameSeat(s, clickedSeat)),
       );
-      idempotencyKeyRef.current = crypto.randomUUID();
+      idempotencyKeyRef.current = safeUUID();
       return;
     }
     // If user currently has fewer seats than requiredSeatCount, add this seat!
@@ -432,7 +432,7 @@ export default function SeatMapPage() {
         return a.number - b.number;
       });
       setSelectedSeats(nextSeats);
-      idempotencyKeyRef.current = crypto.randomUUID();
+      idempotencyKeyRef.current = safeUUID();
       return;
     }
     const sortedRow = [...rowSeats].sort((a, b) => a.number - b.number);
@@ -464,7 +464,7 @@ export default function SeatMapPage() {
             win.every((s, i) => i === 0 || s.number === win[i - 1].number + 1);
           if (ok) {
             setSelectedSeats(win);
-            idempotencyKeyRef.current = crypto.randomUUID();
+            idempotencyKeyRef.current = safeUUID();
             return;
           }
         }
@@ -482,13 +482,13 @@ export default function SeatMapPage() {
         });
         if (allAvailable && isContiguous) {
           setSelectedSeats(candidateWindow);
-          idempotencyKeyRef.current = crypto.randomUUID();
+          idempotencyKeyRef.current = safeUUID();
           return;
         }
       }
     }
     setSelectedSeats([clickedSeat]);
-    idempotencyKeyRef.current = crypto.randomUUID();
+    idempotencyKeyRef.current = safeUUID();
   };
   const handleUnselectSeat = (seat: SeatItem) => {
     if (isCoupleScreen || seat.is_couple) {
@@ -510,7 +510,7 @@ export default function SeatMapPage() {
         prev.filter((s) => !isSameSeat(s, seat)),
       );
     }
-    idempotencyKeyRef.current = crypto.randomUUID();
+    idempotencyKeyRef.current = safeUUID();
   };
   const handlePayClick = () => {
     if (selectedSeats.length !== requiredSeatCount) {
@@ -522,9 +522,11 @@ export default function SeatMapPage() {
     handleProceed(); // hold seats, go to food page
   };
   const handleProceed = async () => {
-    const saved = JSON.parse(
-      localStorage.getItem("vyhbz_contact_details") || "{}",
-    );
+    let saved: any = {};
+    try {
+      const raw = localStorage.getItem("vyhbz_contact_details");
+      if (raw) saved = JSON.parse(raw) || {};
+    } catch {}
     const headers: Record<string, string> = {
       "Idempotency-Key": idempotencyKeyRef.current,
     };
@@ -1556,7 +1558,7 @@ export default function SeatMapPage() {
               type="button"
               onClick={() => {
                 setSelectedSeats([]);
-                idempotencyKeyRef.current = crypto.randomUUID();
+                idempotencyKeyRef.current = safeUUID();
               }}
               className="text-[11px] text-red-600 hover:text-red-700 font-semibold hover:underline cursor-pointer shrink-0 ml-2"
             >

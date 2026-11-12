@@ -14,6 +14,31 @@ import { LoadingPage } from "./LoadingPage";
 
 type Contact = { email: string; phone: string };
 
+function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function safeFormatDateTime(dateStr?: string | null): string {
+  if (!dateStr) return "";
+  try {
+    const normalized = typeof dateStr === "string" ? dateStr.replace(" ", "T") : dateStr;
+    const d = new Date(normalized);
+    if (isNaN(d.getTime())) return String(dateStr);
+    return d.toLocaleString("en-IN", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return String(dateStr || "");
+  }
+}
+
 export default function FoodPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
@@ -46,8 +71,9 @@ export default function FoodPage() {
         const b = await unwrap<any>(api.get(`/bookings/${bookingId}`));
         setBooking(b);
 
-        const saved = JSON.parse(
-          localStorage.getItem("vyhbz_contact_details") || "{}",
+        const saved = safeJsonParse(
+          localStorage.getItem("vyhbz_contact_details"),
+          {} as any,
         );
         setContactEmail(b.contact_email || saved.email || user?.email || "");
         setContactPhone(
@@ -109,8 +135,9 @@ export default function FoodPage() {
   };
 
   const knownContact = (): Contact => {
-    const saved = JSON.parse(
-      localStorage.getItem("vyhbz_contact_details") || "{}",
+    const saved = safeJsonParse(
+      localStorage.getItem("vyhbz_contact_details"),
+      {} as any,
     );
     return {
       email: contactEmail || booking?.contact_email || saved.email || user?.email || "",
@@ -233,7 +260,7 @@ export default function FoodPage() {
           title={booking.movie_title || booking.title}
           subtitle={`${
             booking.cinema_name || booking.venue_name || booking.screen_name || "Cinema"
-          } | ${new Date(booking.starts_at).toLocaleString("en-IN")}`}
+          } | ${safeFormatDateTime(booking.starts_at)}`}
           ticketPaise={booking.ticket_paise}
           menu={menu}
           cart={cart}
@@ -274,7 +301,7 @@ export default function FoodPage() {
                       booking.venue_name ||
                       booking.screen_name ||
                       "Cinema"}{" "}
-                    | {new Date(booking.starts_at).toLocaleString("en-IN")}
+                    | {safeFormatDateTime(booking.starts_at)}
                   </p>
                 </div>
               </div>
@@ -350,7 +377,7 @@ export default function FoodPage() {
                     Tickets ({(booking.seat_codes || []).join(", ")})
                   </span>
                   <span className="font-semibold">
-                    {formatRupees(booking.ticket_paise)}
+                    {formatRupees(booking.ticket_paise || 0)}
                   </span>
                 </div>
 
@@ -372,12 +399,12 @@ export default function FoodPage() {
                   })}
 
                 {/* Convenience fee */}
-                {booking.convenience_fee_paise > 0 && (
+                {(booking.convenience_fee_paise || 0) > 0 && (
                   <div className="space-y-1 pt-2 border-t border-gray-100 text-gray-600">
                     <div className="flex justify-between">
                       <span>Convenience Fees &amp; Taxes</span>
                       <span className="font-semibold text-gray-900">
-                        {formatRupees(booking.convenience_fee_paise)}
+                        {formatRupees(booking.convenience_fee_paise || 0)}
                       </span>
                     </div>
                   </div>
