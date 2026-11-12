@@ -7,6 +7,7 @@ import { WelcomeFirstOpenModal } from '@/components/auth/WelcomeFirstOpenModal';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { useAuth } from '@/hooks/useAuth';
+import { linkGuestBookings } from '@/api/booking.api';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
@@ -43,6 +44,12 @@ export default function App() {
       localStorage.setItem(FIRST_OPEN_DISMISSED_KEY, 'true');
     } catch {}
   };
+
+  useEffect(() => {
+    if (user) {
+      linkGuestBookings().catch(() => {});
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;

@@ -9,7 +9,7 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/common/Loader";
 import { useAuth } from "@/hooks/useAuth";
-import { getBookings } from "@/api/booking.api";
+import { getBookings, linkGuestBookings } from "@/api/booking.api";
 import { getExtendedProfile, updateProfile } from "@/api/profile.api";
 import type { Booking } from "@/types/booking.types";
 import type {
@@ -184,6 +184,7 @@ export default function ProfilePage() {
 
   const fetchBookings = useCallback(async () => {
     try {
+      await linkGuestBookings().catch(() => {});
       const data = await getBookings();
       setBookings(data);
     } catch {
