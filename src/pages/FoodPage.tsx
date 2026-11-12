@@ -278,9 +278,6 @@ export default function FoodPage() {
                   </p>
                 </div>
               </div>
-              <div className="bg-[#7B1E3D] text-white px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1 shrink-0 animate-pulse">
-                <Clock className="h-3 w-3" /> {mm}:{ss}
-              </div>
             </div>
           </header>
 
