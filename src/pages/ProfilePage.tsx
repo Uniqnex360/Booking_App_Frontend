@@ -367,7 +367,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[#F5F5FA] font-sans">
       <Header />
 
-      <main className="mx-auto max-w-[1200px] w-full px-4 pt-24 lg:pt-[120px] pb-16 flex flex-col lg:flex-row gap-6">
+      <main className="mx-auto max-w-[1200px] w-full px-4 pt-[calc(80px+env(safe-area-inset-top,0px))] lg:pt-[calc(136px+env(safe-area-inset-top,0px))] pb-16 flex flex-col lg:flex-row gap-6">
         <aside className="w-full lg:w-72 shrink-0 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden h-fit">
           <div className="p-5 flex items-center justify-between border-b border-gray-100">
             <h2 className="text-xl font-bold text-gray-900">My Account</h2>

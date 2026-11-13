@@ -799,7 +799,7 @@ export default function BuyTicketsPage() {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">
       {" "}
       <Header />
-      <div className="bg-white border-b border-gray-200 pt-[calc(74px+env(safe-area-inset-top,0px))] sm:pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-[calc(144px+env(safe-area-inset-top,0px))] pb-2.5 sm:pb-5 lg:pb-6">
+      <div className="bg-white border-b border-gray-200 pt-[calc(84px+env(safe-area-inset-top,0px))] sm:pt-[calc(100px+env(safe-area-inset-top,0px))] lg:pt-[calc(144px+env(safe-area-inset-top,0px))] pb-3 sm:pb-5 lg:pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
           <div className="hidden sm:block mb-2 sm:mb-3">
             <button
@@ -893,7 +893,7 @@ export default function BuyTicketsPage() {
         </div>
       ) : (
         <>
-          <div className="sticky top-[72px] sm:top-[88px] lg:top-[112px] z-40 bg-white border-b border-gray-200 shadow-xs lg:h-[74px]">
+          <div className="sticky top-[calc(72px+env(safe-area-inset-top,0px))] sm:top-[calc(88px+env(safe-area-inset-top,0px))] lg:top-[calc(128px+env(safe-area-inset-top,0px))] z-40 bg-white border-b border-gray-200 shadow-xs lg:h-[74px]">
             <div className="max-w-[1400px] mx-auto px-3 sm:px-4 flex flex-col lg:flex-row lg:items-center lg:justify-between h-full">
               <div className="flex items-stretch h-[56px] sm:h-[64px] lg:h-full lg:border-r border-gray-200 lg:pr-8 lg:mr-6 min-w-0 w-full lg:flex-1 gap-1.5 sm:gap-2">
                 <button

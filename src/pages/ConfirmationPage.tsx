@@ -58,7 +58,7 @@ export default function ConfirmationPage() {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col">
       <Header />
 
-      <main className="flex-grow flex items-start justify-center px-3 sm:px-6 py-4 sm:py-6 pt-[88px] sm:pt-[110px] lg:pt-[144px]">
+      <main className="flex-grow flex items-start justify-center px-3 sm:px-6 py-4 sm:py-6 pt-[calc(84px+env(safe-area-inset-top,0px))] sm:pt-[calc(104px+env(safe-area-inset-top,0px))] lg:pt-[calc(144px+env(safe-area-inset-top,0px))]">
         <div className="max-w-[420px] w-full">
           <div className="text-center mb-6">
             <CheckCircle2 className="w-16 h-16 text-[#1EA83C] mx-auto mb-4" />
