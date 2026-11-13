@@ -67,18 +67,12 @@ workflows:
               exit 1
             }
 
-      - name: Upload to App Store Connect
-        script: |
-          xcrun altool --upload-package build/ios/ipa/App.ipa \
-            --type ios \
-            --apple-id 6821933527 \
-            --bundle-id com.vyhbz.app \
-            --bundle-version $BUILD_NUMBER \
-            --bundle-short-version-string 1.0 \
-            --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" \
-            --verbose
-
+      
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+    
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
