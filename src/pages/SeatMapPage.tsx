@@ -937,7 +937,7 @@ export default function SeatMapPage() {
           : "min-h-screen overflow-x-hidden"
       } bg-white text-gray-900 flex flex-col font-sans select-none`}
     >
-      <header className="bg-white border-b border-gray-200 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] pb-2.5 sticky top-0 z-30 shadow-xs">
+      <header className="bg-white border-b border-gray-200 pt-[max(env(safe-area-inset-top,0px),2.75rem)] pb-2.5 sm:pt-4 sm:pb-3 sticky top-0 z-30 shadow-xs">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
             <button
@@ -973,7 +973,7 @@ export default function SeatMapPage() {
             {/* Change Ticket Count Button */}
             <button
               onClick={() => setShowTicketModal(true)}
-              className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              className="border border-[#7B1E3D] text-[#7B1E3D] hover:bg-[#7B1E3D]/5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
               title="Change seat count"
             >
               <Edit2 className="h-3 w-3" />
@@ -986,78 +986,76 @@ export default function SeatMapPage() {
         </div>
       </header>
 
-      {/* 2nd Row: Prominent View Mode Switcher [Seat Overview] [3D Hall View] */}
-      <div className="bg-white border-b border-gray-200 py-2 px-3 sm:px-4 shadow-2xs sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-20">
-        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] uppercase tracking-wider font-extrabold text-gray-500 hidden sm:inline">
-              View Mode:
-            </span>
-            <div className="inline-flex items-center bg-gray-100 p-0.5 sm:p-1 rounded-xl border border-gray-200 shadow-2xs">
-              <button
-                type="button"
-                onClick={() => {
-                  setDisplayMode("2d");
-                  setView3DSeat(null);
-                }}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                  displayMode === "2d"
-                    ? "bg-white text-gray-900 shadow-xs font-black"
-                    : "text-gray-500 hover:text-gray-900"
-                }`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5 text-gray-700" />
-                <span>Seat Overview</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setDisplayMode("3d");
-                  setView3DInitialMode("overview");
-                  const target =
-                    selectedSeats.length > 0
-                      ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
-                      : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
-                        allAuditoriumPerspectives[0];
-                  if (target) setView3DSeat(target);
-                }}
-                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                  displayMode === "3d" && view3DInitialMode === "overview"
-                    ? "bg-[#7B1E3D] text-white shadow-xs font-black"
-                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-200/60"
-                }`}
-                title="Switch to 3D Auditorium View (5 Perspectives)"
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${displayMode === "3d" && view3DInitialMode === "overview" ? "text-amber-300" : "text-amber-600"}`} />
-                <span>3D Hall View</span>
-              </button>
+      {/* 2nd Row: Prominent View Mode Switcher [Seat Overview] [3D Hall View] - Only in 2D Mode */}
+      {displayMode === "2d" && (
+        <div className="bg-white border-b border-gray-200 py-2 px-3 sm:px-4 shadow-2xs sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-20">
+          <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] uppercase tracking-wider font-extrabold text-gray-500 hidden sm:inline">
+                View Mode:
+              </span>
+              <div className="inline-flex items-center bg-gray-100 p-0.5 sm:p-1 rounded-xl border border-gray-200 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDisplayMode("2d");
+                    setView3DSeat(null);
+                  }}
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                    displayMode === "2d"
+                      ? "bg-white text-gray-900 shadow-xs font-black"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5 text-gray-700" />
+                  <span>Seat Overview</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDisplayMode("3d");
+                    setView3DInitialMode("overview");
+                    const target =
+                      selectedSeats.length > 0
+                        ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
+                        : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
+                          allAuditoriumPerspectives[0];
+                    if (target) setView3DSeat(target);
+                  }}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 text-gray-700 hover:text-gray-900 hover:bg-gray-200/60"
+                  title="Switch to 3D Auditorium View (5 Perspectives)"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                  <span>3D Hall View</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs shrink-0">
+              {selectedSeats.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDisplayMode("3d");
+                    setView3DInitialMode("from_seat");
+                    const target = getSeatPerspective(selectedSeats[selectedSeats.length - 1]);
+                    if (target) setView3DSeat(target);
+                  }}
+                  className="font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 hover:bg-[#7B1E3D]/20 px-2.5 py-1.5 rounded-lg border border-[#7B1E3D]/30 transition cursor-pointer flex items-center gap-1"
+                  title="Preview in 3D from selected seat"
+                >
+                  <span>{selectedSeats.length} of {requiredSeatCount} selected</span>
+                  <span className="hidden sm:inline text-[10px] text-[#7B1E3D]/80 font-normal">• View Seat 3D &rarr;</span>
+                </button>
+              ) : (
+                <span className="text-gray-500 text-[11px] font-medium hidden xs:inline truncate">
+                  Pick {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"} to preview
+                </span>
+              )}
             </div>
           </div>
-
-          <div className="flex items-center gap-2 text-xs shrink-0">
-            {selectedSeats.length > 0 ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setDisplayMode("3d");
-                  setView3DInitialMode("from_seat");
-                  const target = getSeatPerspective(selectedSeats[selectedSeats.length - 1]);
-                  if (target) setView3DSeat(target);
-                }}
-                className="font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 hover:bg-[#7B1E3D]/20 px-2.5 py-1.5 rounded-lg border border-[#7B1E3D]/30 transition cursor-pointer flex items-center gap-1"
-                title="Preview in 3D from selected seat"
-              >
-                <span>{selectedSeats.length} of {requiredSeatCount} selected</span>
-                <span className="hidden sm:inline text-[10px] text-[#7B1E3D]/80 font-normal">• View Seat 3D &rarr;</span>
-              </button>
-            ) : (
-              <span className="text-gray-500 text-[11px] font-medium hidden xs:inline truncate">
-                Pick {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"} to preview
-              </span>
-            )}
-          </div>
         </div>
-      </div>
+      )}
       {displayMode !== "3d" && allShowtimes.length > 1 && (
         <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">

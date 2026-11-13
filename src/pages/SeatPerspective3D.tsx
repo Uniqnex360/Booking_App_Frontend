@@ -1412,28 +1412,27 @@ export default function SeatPerspective3D({
         </div>
       )}
 
-      {/* Embedded Quick Action Fullscreen Button */}
-      {isEmbedded && (
-        <div className="absolute top-2.5 right-2.5 sm:right-4 z-30 flex items-center gap-1.5 pointer-events-auto">
-          <button
-            type="button"
-            onClick={handleToggleFullscreen}
-            className="p-1.5 sm:p-2 rounded-xl bg-[#1a0407]/90 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/50 transition shadow-md cursor-pointer active:scale-95"
-            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-          >
-            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-      )}
-
       {/* 1. View Selector: Horizontal 5-Perspective Bar directly above the auditorium visual */}
-      <div className={`absolute ${isEmbedded ? "top-2.5 sm:top-4" : "top-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))]"} inset-x-0 z-20 flex justify-center px-2 sm:px-12 pointer-events-none`}>
-        <div className="flex items-center gap-1 sm:gap-1.5 bg-[#1a0407]/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-rose-900/50 shadow-2xl pointer-events-auto max-w-[calc(100vw-4.5rem)] sm:max-w-full overflow-x-auto scrollbar-none">
+      <div className={`absolute ${isEmbedded ? "top-2 sm:top-3.5" : "top-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))]"} inset-x-0 z-20 flex justify-center px-1.5 sm:px-4 pointer-events-none`}>
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-[#1a0407]/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-rose-900/50 shadow-2xl pointer-events-auto max-w-[calc(100vw-1rem)] sm:max-w-fit overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {/* In embedded mode, direct 1-tap return to 2D Map */}
+          {isEmbedded && onSwitchTo2D && (
+            <button
+              type="button"
+              onClick={onSwitchTo2D}
+              className="px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center gap-1 shrink-0 cursor-pointer bg-white/10 hover:bg-white/20 text-rose-100 hover:text-white border border-white/15 active:scale-95"
+              title="Return to 2D Seat Map"
+            >
+              <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+              <span>2D Map</span>
+            </button>
+          )}
+
           {/* Overview */}
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("overview")}
-            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "overview"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
@@ -1447,7 +1446,7 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("from_seat")}
-            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "from_seat"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
@@ -1462,7 +1461,7 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("from_stage")}
-            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "from_stage"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
@@ -1477,7 +1476,7 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("balcony")}
-            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "balcony"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
@@ -1491,14 +1490,14 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("birds_eye")}
-            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "birds_eye"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
-            <span className="sm:hidden">Top View</span>
+            <span className="sm:hidden">Top</span>
             <span className="hidden sm:inline">Bird's eye</span>
           </button>
         </div>
@@ -1506,7 +1505,7 @@ export default function SeatPerspective3D({
 
       {/* Floating Sightline Badge (When in "From my seat" view) - Responsive for both Mobile and Desktop */}
       {viewMode === "from_seat" && currentSeat && (
-        <div className="absolute top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-28 left-2.5 sm:left-4 z-20 pointer-events-none animate-in fade-in duration-200">
+        <div className={`absolute ${isEmbedded ? "top-12 sm:top-14" : "top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-28"} left-2.5 sm:left-4 z-20 pointer-events-none animate-in fade-in duration-200`}>
           {/* Mobile compact sightline chip */}
           <div className="sm:hidden flex items-center gap-1.5 bg-[#1a0407]/95 backdrop-blur-md border border-rose-900/50 rounded-xl px-2.5 py-1 shadow-xl text-white pointer-events-auto">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -1558,8 +1557,18 @@ export default function SeatPerspective3D({
         </div>
       </div>
 
-      {/* Floating Action Controls on Right Side (Zoom In, Zoom Out, Reset Angle) */}
+      {/* Floating Action Controls on Right Side (Fullscreen, Zoom In, Zoom Out, Reset Angle) */}
       <div className="absolute right-2.5 sm:right-4 bottom-28 sm:bottom-28 z-30 flex flex-col gap-1.5 pointer-events-auto">
+        {isEmbedded && (
+          <button
+            type="button"
+            onClick={handleToggleFullscreen}
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1a0407]/90 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/50 shadow-lg flex items-center justify-center transition cursor-pointer active:scale-95"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        )}
         <button
           type="button"
           onClick={handleZoomIn}
