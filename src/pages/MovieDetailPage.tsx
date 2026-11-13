@@ -409,7 +409,7 @@ export default function MovieDetailPage() {
 
       <div
         ref={heroRef}
-        className="relative pt-[72px] sm:pt-[88px] lg:pt-[128px] bg-[#1A1A2E] overflow-hidden"
+        className="relative pt-[calc(72px+env(safe-area-inset-top,0px))] sm:pt-[calc(88px+env(safe-area-inset-top,0px))] lg:pt-[calc(128px+env(safe-area-inset-top,0px))] bg-[#1A1A2E] overflow-hidden"
         style={{
           backgroundImage: movie.banner_url
             ? `linear-gradient(90deg, #1A1A2E 0%, rgba(26,26,46,0.85) 45%, rgba(26,26,46,0.5) 100%), url(${movie.banner_url})`
@@ -427,27 +427,27 @@ export default function MovieDetailPage() {
           />
         )}
 
-        <div className="relative max-w-[1240px] mx-auto px-4 py-5 sm:py-8 lg:py-10">
-          <div className="flex items-center justify-between mb-4 sm:mb-5">
+        <div className="relative max-w-[1240px] mx-auto px-4 py-4 sm:py-8 lg:py-10">
+          <div className="flex items-center justify-between mb-3.5 sm:mb-5">
             <button
               type="button"
               onClick={() => navigate(withCity("/movies", city))}
-              className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition group cursor-pointer"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 sm:px-0 sm:py-0 rounded-lg text-xs sm:text-sm font-medium text-white/80 hover:text-white transition group cursor-pointer bg-white/10 sm:bg-transparent backdrop-blur-xs sm:backdrop-blur-none"
             >
               <ArrowLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition" />
-              Back to Movies
+              <span>Back to Movies</span>
             </button>
 
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/15 text-white text-sm font-medium transition cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/15 text-white text-xs sm:text-sm font-medium transition cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98]"
               title="Share movie"
             >
               {copied ? (
-                <Check className="h-4 w-4 text-green-400" />
+                <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-400" />
               ) : (
-                <Share2 className="h-4 w-4" />
+                <Share2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               )}
               <span>{copied ? "Copied!" : "Share"}</span>
             </button>

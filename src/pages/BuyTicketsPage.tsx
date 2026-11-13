@@ -799,7 +799,7 @@ export default function BuyTicketsPage() {
     <div className="min-h-screen bg-[#F5F5FA] flex flex-col font-sans overflow-x-clip">
       {" "}
       <Header />
-      <div className="bg-white border-b border-gray-200 pt-[74px] sm:pt-[96px] lg:pt-[144px] pb-2.5 sm:pb-5 lg:pb-6">
+      <div className="bg-white border-b border-gray-200 pt-[calc(74px+env(safe-area-inset-top,0px))] sm:pt-[calc(96px+env(safe-area-inset-top,0px))] lg:pt-[calc(144px+env(safe-area-inset-top,0px))] pb-2.5 sm:pb-5 lg:pb-6">
         <div className="max-w-[1240px] mx-auto px-4">
           <div className="hidden sm:block mb-2 sm:mb-3">
             <button
