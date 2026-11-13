@@ -25,9 +25,26 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
+        setTheme(R.style.AppTheme_NoActionBar);
         androidx.activity.EdgeToEdge.enable(this);
         registerPlugin(RazorpayCheckoutPlugin.class);
         super.onCreate(savedInstanceState);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
+
+        View contentView = findViewById(android.R.id.content);
+        if (contentView != null) {
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(contentView, (v, windowInsets) -> {
+                androidx.core.graphics.Insets insets = windowInsets.getInsets(
+                    androidx.core.view.WindowInsetsCompat.Type.systemBars()
+                );
+                v.setPadding(0, insets.top, 0, 0);
+                return windowInsets;
+            });
+        }
 
         if (getBridge() != null && getBridge().getWebView() != null) {
             WebView mainWebView = getBridge().getWebView();
