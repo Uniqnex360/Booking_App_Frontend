@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Clock, Loader2, ShieldCheck, Ticket } from "lucide-react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { ChevronLeft, Loader2, ShieldCheck, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,9 +42,11 @@ function safeFormatDateTime(dateStr?: string | null): string {
 export default function FoodPage() {
   const { bookingId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
 
-  const [booking, setBooking] = useState<any>(null);
+  const initialBooking = location.state?.booking || null;
+  const [booking, setBooking] = useState<any>(initialBooking);
   const [menu, setMenu] = useState<FnbItem[]>([]);
   const [noMenu, setNoMenu] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -56,20 +58,47 @@ export default function FoodPage() {
   const [leftSeconds, setLeftSeconds] = useState(0);
 
   // Contact inputs on Summary view
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
+  const savedInitContact = safeJsonParse(
+    localStorage.getItem("vyhbz_contact_details"),
+    {} as any,
+  );
+  const [contactEmail, setContactEmail] = useState(
+    initialBooking?.contact_email || savedInitContact.email || user?.email || "",
+  );
+  const [contactPhone, setContactPhone] = useState(
+    initialBooking?.contact_phone || savedInitContact.phone || (user as any)?.phone || "",
+  );
 
   const seatMapUrl = booking
     ? `/showtimes/${booking.showtime_id}/seat-map`
     : "/";
 
-  // Initial load: booking + optional FnB menu + preload payment gateway
+  // Initial load: fetch booking & FnB menu in parallel with instant state hydration
   useEffect(() => {
     preloadRazorpayScript();
+    let isCancelled = false;
+
     (async () => {
       try {
-        const b = await unwrap<any>(api.get(`/bookings/${bookingId}`));
-        setBooking(b);
+        const bookingPromise = unwrap<any>(api.get(`/bookings/${bookingId}`));
+        const knownShowtimeId = initialBooking?.showtime_id;
+        const menuPromise = knownShowtimeId
+          ? unwrap<{ items: FnbItem[] }>(api.get(`/showtimes/${knownShowtimeId}/fnb-menu`)).catch(() => ({ items: [] }))
+          : null;
+
+        const [b, menuData] = await Promise.all([
+          bookingPromise,
+          menuPromise ||
+            bookingPromise.then((latestBooking) =>
+              unwrap<{ items: FnbItem[] }>(
+                api.get(`/showtimes/${latestBooking.showtime_id}/fnb-menu`),
+              ).catch(() => ({ items: [] })),
+            ),
+        ]);
+
+        if (isCancelled) return;
+
+        setBooking((prev: any) => ({ ...prev, ...b }));
 
         const saved = safeJsonParse(
           localStorage.getItem("vyhbz_contact_details"),
@@ -86,28 +115,24 @@ export default function FoodPage() {
         });
         setCart(pre);
 
-        // Fetch FnB menu with graceful fallback
-        try {
-          const res = await unwrap<{ items: FnbItem[] }>(
-            api.get(`/showtimes/${b.showtime_id}/fnb-menu`),
-          );
-          const m = res?.items ?? [];
-          if (!Array.isArray(m) || m.length === 0) {
-            setNoMenu(true);
-            setShowSummary(true);
-          } else {
-            setMenu(m);
-          }
-        } catch {
-          // If FnB fails, do not abort booking; proceed directly to summary
+        const m = (menuData as any)?.items ?? [];
+        if (!Array.isArray(m) || m.length === 0) {
           setNoMenu(true);
           setShowSummary(true);
+        } else {
+          setMenu(m);
         }
       } catch {
-        toast.error("Booking not found or expired.");
-        navigate("/", { replace: true });
+        if (!isCancelled) {
+          toast.error("Booking not found or expired.");
+          navigate("/", { replace: true });
+        }
       }
     })();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [bookingId]);
 
   // Hold countdown ticker
@@ -247,9 +272,6 @@ export default function FoodPage() {
   if (!booking) {
     return <LoadingPage showFooter={false} />;
   }
-
-  const mm = Math.floor(leftSeconds / 60);
-  const ss = String(leftSeconds % 60).padStart(2, "0");
 
   return (
     <>

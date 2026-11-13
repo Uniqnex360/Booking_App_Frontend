@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Clock, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -112,9 +112,6 @@ export default function OrderSummaryPage() {
   };
 
   if (!b) return <LoadingPage showFooter={false} />;
-
-  const mm = Math.floor(left / 60);
-  const ss = String(left % 60).padStart(2, "0");
 
   return (
     <div className="min-h-screen bg-[#F5F5FA]">

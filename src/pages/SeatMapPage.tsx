@@ -10,7 +10,6 @@ import {
   Edit2,
   RefreshCw,
   AlertCircle,
-  Clock,
   ZoomIn,
   ZoomOut,
   Info,
@@ -66,7 +65,6 @@ export default function SeatMapPage() {
   const [movieBanner, setMovieBanner] = useState<string | null>(null);
   const [holdId, setHoldId] = useState<string | null>(null);
   const [heldUntil, setHeldUntil] = useState<Date | null>(null);
-  const [countdown, setCountdown] = useState<number>(0);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [tempTicketCount, setTempTicketCount] =
@@ -265,7 +263,6 @@ export default function SeatMapPage() {
         0,
         Math.floor((heldUntil.getTime() - Date.now()) / 1000),
       );
-      setCountdown(remaining);
       if (remaining === 0) {
         clearInterval(interval);
         toast.error("Hold expired! Please select seats again.");
@@ -554,8 +551,30 @@ export default function SeatMapPage() {
           { headers },
         ),
       );
+      const ticketPaise =
+        res.total_paise ||
+        selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
       navigate(
         `/bookings/${res.id}/food${city ? `?city=${encodeURIComponent(city)}` : ""}`,
+        {
+          state: {
+            booking: {
+              id: res.id,
+              showtime_id: id,
+              movie_title: mapData?.movie_title || "",
+              cinema_name: mapData?.cinema_name || mapData?.venue_name || "",
+              venue_name: mapData?.cinema_name || mapData?.venue_name || "",
+              screen_name: mapData?.screen_name || "",
+              starts_at: mapData?.starts_at || "",
+              ticket_paise: ticketPaise,
+              total_paise: ticketPaise,
+              held_until: res.held_until,
+              seats: selectedSeats.map((s) => s.code || `${s.row_label}${s.number}`),
+              contact_email: saved.email ?? user?.email ?? "",
+              contact_phone: saved.phone ?? (user as any)?.phone ?? "",
+            },
+          },
+        },
       );
     } catch (err: any) {
       if (err.code === "SEAT_UNAVAILABLE_REMOTE") {
