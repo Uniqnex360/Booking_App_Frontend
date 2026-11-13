@@ -29,7 +29,7 @@ import {
   VenueShowtimeItem,
 } from "@/types/movie.types";
 import { ensureHoldToken, safeUUID } from "@/lib/holdToken";
-import { filterCustomerEmail, sanitizeMobileNumber } from "@/utils/validators";
+import { getSavedContactDetails, sanitizeMobileNumber } from "@/utils/validators";
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -520,11 +520,7 @@ export default function SeatMapPage() {
     handleProceed(); // hold seats, go to food page
   };
   const handleProceed = async () => {
-    let saved: any = {};
-    try {
-      const raw = localStorage.getItem("vyhbz_contact_details");
-      if (raw) saved = JSON.parse(raw) || {};
-    } catch {}
+    const saved = getSavedContactDetails();
     const headers: Record<string, string> = {
       "Idempotency-Key": idempotencyKeyRef.current,
     };
@@ -535,8 +531,7 @@ export default function SeatMapPage() {
     if (wrToken) {
       headers["X-Waiting-Room-Token"] = wrToken;
     }
-    const resolvedEmail =
-      filterCustomerEmail(saved.email) || filterCustomerEmail(user?.email) || null;
+    const resolvedEmail = saved.email || user?.email || null;
     const resolvedPhone =
       sanitizeMobileNumber(saved.phone || (user as any)?.phone || "") || null;
 

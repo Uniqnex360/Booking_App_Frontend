@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   isValidIndianMobile,
   sanitizeMobileNumber,
-  filterCustomerEmail,
+  getSavedContactDetails,
 } from '@/utils/validators';
 
 interface ContactDetailsModalProps {
@@ -28,12 +28,8 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    let savedContact: any = {};
-    try {
-      const raw = localStorage.getItem('vyhbz_contact_details');
-      if (raw) savedContact = JSON.parse(raw) || {};
-    } catch {}
-    setEmail(filterCustomerEmail(initialEmail) || filterCustomerEmail(savedContact.email) || '');
+    const savedContact = getSavedContactDetails();
+    setEmail(initialEmail || savedContact.email || '');
     setPhone(sanitizeMobileNumber(initialPhone || savedContact.phone || ''));
   }, [isOpen, initialEmail, initialPhone]);
 

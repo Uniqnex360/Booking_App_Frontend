@@ -9,7 +9,7 @@ import { payForBooking, preloadRazorpayScript } from "@/lib/razorpayCheckout";
 import {
   isValidIndianMobile,
   sanitizeMobileNumber,
-  filterCustomerEmail,
+  getSavedContactDetails,
 } from "@/utils/validators";
 import { LoadingPage } from "./LoadingPage";
 
@@ -32,15 +32,11 @@ export default function OrderSummaryPage() {
       try {
         const data = await unwrap<any>(api.get(`/bookings/${bookingId}`));
         setB(data);
-        let saved: any = {};
-        try {
-          const raw = localStorage.getItem("vyhbz_contact_details");
-          if (raw) saved = JSON.parse(raw) || {};
-        } catch {}
+        const saved = getSavedContactDetails();
         setEmail(
-          filterCustomerEmail(data.contact_email) ||
-            filterCustomerEmail(saved.email) ||
-            filterCustomerEmail(user?.email) ||
+          data.contact_email ||
+            saved.email ||
+            user?.email ||
             "",
         );
         setPhone(

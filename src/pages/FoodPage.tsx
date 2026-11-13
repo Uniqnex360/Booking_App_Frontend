@@ -9,7 +9,7 @@ import { payForBooking, preloadRazorpayScript } from "@/lib/razorpayCheckout";
 import {
   isValidIndianMobile,
   sanitizeMobileNumber,
-  filterCustomerEmail,
+  getSavedContactDetails,
 } from "@/utils/validators";
 import { FoodStep } from "./FoodStep";
 import type { FnbItem } from "./FoodStep";
@@ -62,15 +62,12 @@ export default function FoodPage() {
   const [showContact, setShowContact] = useState(false);
   const [leftSeconds, setLeftSeconds] = useState(0);
 
-  // Contact inputs on Summary view (Strictly filters out techteam/internal testing emails)
-  const savedInitContact = safeJsonParse(
-    localStorage.getItem("vyhbz_contact_details"),
-    {} as any,
-  );
+  // Contact inputs on Summary view
+  const savedInitContact = getSavedContactDetails();
   const [contactEmail, setContactEmail] = useState(
-    filterCustomerEmail(initialBooking?.contact_email) ||
-      filterCustomerEmail(savedInitContact.email) ||
-      filterCustomerEmail(user?.email) ||
+    initialBooking?.contact_email ||
+      savedInitContact.email ||
+      user?.email ||
       "",
   );
   const [contactPhone, setContactPhone] = useState(
@@ -113,21 +110,15 @@ export default function FoodPage() {
 
         setBooking((prev: any) => ({ ...prev, ...b }));
 
-        const saved = safeJsonParse(
-          localStorage.getItem("vyhbz_contact_details"),
-          {} as any,
-        );
+        const saved = getSavedContactDetails();
         const resolvedEmail =
-          filterCustomerEmail(b.contact_email) ||
-          filterCustomerEmail(saved.email) ||
-          filterCustomerEmail(user?.email) ||
-          "";
+          b.contact_email || saved.email || user?.email || "";
         const resolvedPhone = sanitizeMobileNumber(
           b.contact_phone || saved.phone || (user as any)?.phone || "",
         );
 
-        setContactEmail((prev) => prev || resolvedEmail);
-        setContactPhone((prev) => prev || resolvedPhone);
+        setContactEmail((prev: string) => prev || resolvedEmail);
+        setContactPhone((prev: string) => prev || resolvedPhone);
 
         const pre: Record<string, number> = {};
         (b.fnb_lines || []).forEach((l: any) => {
@@ -180,16 +171,13 @@ export default function FoodPage() {
   };
 
   const knownContact = (): Contact => {
-    const saved = safeJsonParse(
-      localStorage.getItem("vyhbz_contact_details"),
-      {} as any,
-    );
+    const saved = getSavedContactDetails();
     return {
       email:
-        filterCustomerEmail(contactEmail) ||
-        filterCustomerEmail(booking?.contact_email) ||
-        filterCustomerEmail(saved.email) ||
-        filterCustomerEmail(user?.email) ||
+        contactEmail ||
+        booking?.contact_email ||
+        saved.email ||
+        user?.email ||
         "",
       phone:
         sanitizeMobileNumber(contactPhone) ||

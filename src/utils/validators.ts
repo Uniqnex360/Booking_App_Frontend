@@ -55,28 +55,24 @@ export function sanitizeMobileNumber(phone?: string | null): string {
 }
 
 /**
- * Checks whether an email is an internal/techteam testing email
- * that should NEVER be prefilled as default in the customer booking flow.
+ * Retrieves saved contact details from localStorage.
+ * If techteam email was previously stored on the device during testing, purges it from localStorage.
  */
-export function isInternalOrTechEmail(email?: string | null): boolean {
-  if (!email) return false;
-  const lower = email.toLowerCase().trim();
-  return (
-    lower.includes('techteam') ||
-    lower.includes('uniqnex360') ||
-    lower.includes('example.com') ||
-    lower.endsWith('@admin.com') ||
-    lower.startsWith('test@') ||
-    lower.startsWith('tester@')
-  );
-}
-
-/**
- * Filters out internal/techteam emails, returning an empty string if matched.
- */
-export function filterCustomerEmail(email?: string | null): string {
-  if (!email || isInternalOrTechEmail(email)) return '';
-  return email.trim();
+export function getSavedContactDetails(): { email: string; phone: string } {
+  try {
+    const raw = localStorage.getItem('vyhbz_contact_details');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        if (parsed.email && parsed.email.toLowerCase().includes('techteam')) {
+          localStorage.removeItem('vyhbz_contact_details');
+          return { email: '', phone: parsed.phone || '' };
+        }
+        return { email: parsed.email || '', phone: parsed.phone || '' };
+      }
+    }
+  } catch {}
+  return { email: '', phone: '' };
 }
 
 export const validatePassword = (password: string) => {
