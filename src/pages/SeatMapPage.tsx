@@ -910,7 +910,13 @@ export default function SeatMapPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col font-sans select-none overflow-x-hidden">
+    <div
+      className={`${
+        displayMode === "3d"
+          ? "h-[100dvh] overflow-hidden"
+          : "min-h-screen overflow-x-hidden"
+      } bg-white text-gray-900 flex flex-col font-sans select-none`}
+    >
       <header className="bg-white border-b border-gray-200 pt-[calc(0.625rem+env(safe-area-inset-top,0px))] pb-2.5 sticky top-0 z-30 shadow-xs">
         <div className="max-w-[1280px] mx-auto px-4 sm:px-6 flex items-center justify-between">
           <div className="flex items-center gap-3 min-w-0">
@@ -1026,7 +1032,7 @@ export default function SeatMapPage() {
           </div>
         </div>
       </div>
-      {allShowtimes.length > 1 && (
+      {displayMode !== "3d" && allShowtimes.length > 1 && (
         <div className="bg-gray-50 border-b border-gray-100 shadow-2xs">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-2.5 overflow-x-auto no-scrollbar">
             {allShowtimes.map((s) => {
@@ -1098,7 +1104,7 @@ export default function SeatMapPage() {
         </div>
       )}
       {displayMode === "3d" ? (
-        <div className="flex-grow w-full h-[calc(100vh-105px)] min-h-[580px] relative bg-[#2b080c] overflow-hidden">
+        <div className="flex-grow flex-1 w-full h-[calc(100dvh-105px)] sm:h-[calc(100vh-105px)] relative bg-[#2b080c] overflow-hidden">
           <Suspense
             fallback={
               <div className="absolute inset-0 bg-[#2b080c] flex flex-col items-center justify-center text-white z-10 select-none">
@@ -1663,7 +1669,7 @@ export default function SeatMapPage() {
         </div>
       </footer>
       {/* Floating 3D Quick-Launch Pill in 2D mode (visible immediately without scrolling) */}
-      <div className="fixed top-[calc(7.5rem+env(safe-area-inset-top,0px))] right-4 sm:right-6 z-30 animate-in fade-in duration-200">
+      <div className="fixed top-[calc(7.25rem+env(safe-area-inset-top,0px))] right-3 sm:right-6 z-30 animate-in fade-in duration-200">
         <button
           type="button"
           onClick={() => {
@@ -1676,11 +1682,11 @@ export default function SeatMapPage() {
                   allAuditoriumPerspectives[0];
             if (target) setView3DSeat(target);
           }}
-          className="bg-slate-900/90 hover:bg-slate-900 text-amber-400 hover:text-amber-300 border border-amber-500/40 px-3.5 py-2 rounded-full text-xs font-bold shadow-xl backdrop-blur-md flex items-center gap-2 cursor-pointer transition hover:scale-105 active:scale-95"
+          className="bg-slate-900/95 hover:bg-slate-900 text-amber-400 hover:text-amber-300 border border-amber-500/40 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold shadow-xl backdrop-blur-md flex items-center gap-1.5 sm:gap-2 cursor-pointer transition hover:scale-105 active:scale-95"
           title="Switch to 3D Auditorium View"
         >
-          <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
-          <span>3D Hall View (5 Views)</span>
+          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse" />
+          <span>3D Hall View<span className="hidden sm:inline"> (5 Views)</span></span>
         </button>
       </div>
     </>

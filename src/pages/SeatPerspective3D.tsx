@@ -184,7 +184,8 @@ export default function SeatPerspective3D({
 
   const lookTargetRef = useRef({ yaw: 0, pitch: 0 });
   const lookCurrentRef = useRef({ yaw: 0, pitch: 0 });
-  const zoomLevelRef = useRef(1.0); // 1 = default, clamped 0.65 to 1.6
+  const zoomLevelRef = useRef(1.0); // 1 = default, clamped 0.65 to 2.2
+  const touchPinchRef = useRef<{ startDist: number; startZoom: number } | null>(null);
 
   // Curtain & lights animated values refs
   const curtainCurRef = useRef(1.0);
@@ -289,11 +290,21 @@ export default function SeatPerspective3D({
       let pos = new THREE.Vector3();
       let lookAt = new THREE.Vector3();
 
+      const isMobile =
+        typeof window !== "undefined" &&
+        window.innerWidth < 640 &&
+        window.innerWidth < window.innerHeight;
+
       switch (mode) {
         case "overview":
           // Default wide view of full auditorium, screen, seating tiers & aisles
-          pos.set(0, totalRows * ROW_RISE + 4.2, totalRows * SEAT_SPACING_Z + 5.2);
-          lookAt.set(0, SCREEN_Y * 0.65, SCREEN_Z + 2.0);
+          if (isMobile) {
+            pos.set(0, totalRows * ROW_RISE + 5.2, totalRows * SEAT_SPACING_Z + 8.2);
+            lookAt.set(0, SCREEN_Y * 0.72, SCREEN_Z + 1.2);
+          } else {
+            pos.set(0, totalRows * ROW_RISE + 4.2, totalRows * SEAT_SPACING_Z + 5.2);
+            lookAt.set(0, SCREEN_Y * 0.65, SCREEN_Z + 2.0);
+          }
           break;
 
         case "from_seat":
@@ -304,20 +315,35 @@ export default function SeatPerspective3D({
 
         case "from_stage":
           // Looking outward from the stage toward the audience and seating arrangement
-          pos.set(0, 2.2, SCREEN_Z + 2.6);
-          lookAt.set(0, totalRows * ROW_RISE * 0.45 + 1.4, (totalRows * SEAT_SPACING_Z) * 0.48);
+          if (isMobile) {
+            pos.set(0, 2.0, SCREEN_Z + 1.6);
+            lookAt.set(0, totalRows * ROW_RISE * 0.45 + 1.6, (totalRows * SEAT_SPACING_Z) * 0.5);
+          } else {
+            pos.set(0, 2.2, SCREEN_Z + 2.6);
+            lookAt.set(0, totalRows * ROW_RISE * 0.45 + 1.4, (totalRows * SEAT_SPACING_Z) * 0.48);
+          }
           break;
 
         case "balcony":
           // Elevated balcony-level perspective communicating steep viewing angle
-          pos.set(0, totalRows * ROW_RISE + 8.8, totalRows * SEAT_SPACING_Z + 9.5);
-          lookAt.set(0, SCREEN_Y * 0.48, SCREEN_Z + 1.0);
+          if (isMobile) {
+            pos.set(0, totalRows * ROW_RISE + 10.2, totalRows * SEAT_SPACING_Z + 11.2);
+            lookAt.set(0, SCREEN_Y * 0.5, SCREEN_Z + 1.0);
+          } else {
+            pos.set(0, totalRows * ROW_RISE + 8.8, totalRows * SEAT_SPACING_Z + 9.5);
+            lookAt.set(0, SCREEN_Y * 0.48, SCREEN_Z + 1.0);
+          }
           break;
 
         case "birds_eye":
           // Top-down view of complete seating plan, rows, aisles, and blocks
-          pos.set(0, 23.5, (totalRows * SEAT_SPACING_Z) * 0.46);
-          lookAt.set(0, 0, (totalRows * SEAT_SPACING_Z) * 0.46);
+          if (isMobile) {
+            pos.set(0, Math.max(28.0, totalRows * 2.6), (totalRows * SEAT_SPACING_Z) * 0.46);
+            lookAt.set(0, 0, (totalRows * SEAT_SPACING_Z) * 0.46);
+          } else {
+            pos.set(0, 23.5, (totalRows * SEAT_SPACING_Z) * 0.46);
+            lookAt.set(0, 0, (totalRows * SEAT_SPACING_Z) * 0.46);
+          }
           break;
       }
 
@@ -478,6 +504,15 @@ export default function SeatPerspective3D({
     lookTargetRef.current = { yaw: 0, pitch: 0 };
     zoomLevelRef.current = 1.0;
     triggerCameraFlight(viewMode, currentSeat, 500);
+  };
+
+  // Zoom Controls
+  const handleZoomIn = () => {
+    zoomLevelRef.current = THREE.MathUtils.clamp(zoomLevelRef.current + 0.25, 0.65, 2.2);
+  };
+
+  const handleZoomOut = () => {
+    zoomLevelRef.current = THREE.MathUtils.clamp(zoomLevelRef.current - 0.25, 0.65, 2.2);
   };
 
   // Fullscreen toggle
@@ -1076,8 +1111,12 @@ export default function SeatPerspective3D({
         camera.quaternion.copy(baseQuat).multiply(yawQuat).multiply(pitchQuat);
       }
 
-      // Apply zoom level to camera FOV
-      const targetFov = 75 / zoomLevelRef.current;
+      // Apply zoom level to camera FOV with responsive mobile aspect correction
+      const currentWidth = container.clientWidth || 800;
+      const currentHeight = container.clientHeight || 600;
+      const currentAspect = currentWidth / currentHeight;
+      const baseFov = currentAspect < 1.0 ? Math.min(94, 75 / Math.sqrt(currentAspect)) : 75;
+      const targetFov = baseFov / zoomLevelRef.current;
       if (Math.abs(camera.fov - targetFov) > 0.1) {
         camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, 0.12);
         camera.updateProjectionMatrix();
@@ -1095,6 +1134,19 @@ export default function SeatPerspective3D({
       mouseRef.current.isDragging = true;
       mouseRef.current.hasMoved = false;
 
+      // Multi-touch pinch zoom detection for mobile
+      if ("touches" in e) {
+        if (e.touches.length === 2) {
+          const dx = e.touches[0].clientX - e.touches[1].clientX;
+          const dy = e.touches[0].clientY - e.touches[1].clientY;
+          touchPinchRef.current = {
+            startDist: Math.hypot(dx, dy),
+            startZoom: zoomLevelRef.current,
+          };
+          return;
+        }
+      }
+
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
@@ -1105,6 +1157,22 @@ export default function SeatPerspective3D({
     };
 
     const handlePointerMove = (e: MouseEvent | TouchEvent) => {
+      // Handle pinch zoom update
+      if ("touches" in e && e.touches.length === 2 && touchPinchRef.current) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const currentDist = Math.hypot(dx, dy);
+        if (touchPinchRef.current.startDist > 0) {
+          const scale = currentDist / touchPinchRef.current.startDist;
+          zoomLevelRef.current = THREE.MathUtils.clamp(
+            touchPinchRef.current.startZoom * scale,
+            0.65,
+            2.2
+          );
+        }
+        return;
+      }
+
       const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
       const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
@@ -1112,7 +1180,11 @@ export default function SeatPerspective3D({
         const deltaX = clientX - mouseRef.current.lastX;
         const deltaY = clientY - mouseRef.current.lastY;
 
-        if (Math.abs(clientX - mouseRef.current.startX) > 5 || Math.abs(clientY - mouseRef.current.startY) > 5) {
+        const moveThreshold = "touches" in e ? 14 : 5;
+        if (
+          Math.abs(clientX - mouseRef.current.startX) > moveThreshold ||
+          Math.abs(clientY - mouseRef.current.startY) > moveThreshold
+        ) {
           mouseRef.current.hasMoved = true;
         }
 
@@ -1147,6 +1219,7 @@ export default function SeatPerspective3D({
     };
 
     const handlePointerUp = (e: MouseEvent | TouchEvent) => {
+      touchPinchRef.current = null;
       if (!mouseRef.current.isDragging) return;
       mouseRef.current.isDragging = false;
 
@@ -1264,9 +1337,9 @@ export default function SeatPerspective3D({
       ref={containerRef}
       className={`relative w-full ${
         isEmbedded
-          ? "h-full min-h-[600px] overflow-hidden bg-[#2b080c] flex flex-col"
+          ? "h-full w-full overflow-hidden bg-[#2b080c] flex flex-col"
           : "fixed inset-0 z-50 flex flex-col bg-[#2b080c] text-white"
-      } font-sans select-none`}
+      } font-sans select-none touch-none`}
     >
       {/* Top Header Bar (When in fullscreen or modal overlay mode) */}
       {!isEmbedded && (
@@ -1277,14 +1350,14 @@ export default function SeatPerspective3D({
                 <button
                   type="button"
                   onClick={onSwitchTo2D}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-200 hover:text-white transition cursor-pointer flex items-center gap-1.5"
+                  className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-rose-200 hover:text-white transition cursor-pointer flex items-center gap-1.5"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                   <span>Seat Overview</span>
                 </button>
                 <button
                   type="button"
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 text-white shadow-xs flex items-center gap-1.5 cursor-default"
+                  className="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-rose-600 text-white shadow-xs flex items-center gap-1.5 cursor-default"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>3D Model</span>
@@ -1312,7 +1385,7 @@ export default function SeatPerspective3D({
             <button
               type="button"
               onClick={handleResetView}
-              className="p-2 rounded-xl bg-[#1a0407]/80 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-[#1a0407]/80 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer"
               title="Reset View"
             >
               <RotateCcw className="w-4 h-4" />
@@ -1320,7 +1393,7 @@ export default function SeatPerspective3D({
             <button
               type="button"
               onClick={handleToggleFullscreen}
-              className="p-2 rounded-xl bg-[#1a0407]/80 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer"
+              className="p-1.5 sm:p-2 rounded-xl bg-[#1a0407]/80 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer"
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1329,7 +1402,7 @@ export default function SeatPerspective3D({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl bg-[#1a0407]/80 hover:bg-rose-900/60 text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer ml-1"
+                className="p-1.5 sm:p-2 rounded-xl bg-[#1a0407]/80 hover:bg-rose-900/60 text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer ml-1"
                 title="Close 3D View"
               >
                 <X className="w-4 h-4" />
@@ -1339,21 +1412,13 @@ export default function SeatPerspective3D({
         </div>
       )}
 
-      {/* Embedded Quick Action Reset & Fullscreen Buttons */}
+      {/* Embedded Quick Action Fullscreen Button */}
       {isEmbedded && (
-        <div className="absolute top-3 right-3 sm:right-4 z-30 flex items-center gap-1.5 pointer-events-auto">
-          <button
-            type="button"
-            onClick={handleResetView}
-            className="p-1.5 rounded-lg bg-[#1a0407]/85 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer"
-            title="Reset View"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-          </button>
+        <div className="absolute top-2.5 right-2.5 sm:right-4 z-30 flex items-center gap-1.5 pointer-events-auto">
           <button
             type="button"
             onClick={handleToggleFullscreen}
-            className="p-1.5 rounded-lg bg-[#1a0407]/85 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/40 transition shadow-md cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-xl bg-[#1a0407]/90 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/50 transition shadow-md cursor-pointer active:scale-95"
             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -1362,19 +1427,19 @@ export default function SeatPerspective3D({
       )}
 
       {/* 1. View Selector: Horizontal 5-Perspective Bar directly above the auditorium visual */}
-      <div className={`absolute ${isEmbedded ? "top-3 sm:top-4" : "top-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))]"} inset-x-0 z-30 flex justify-center px-2 pointer-events-none`}>
-        <div className="flex items-center gap-1 sm:gap-1.5 bg-[#1a0407]/90 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-rose-900/40 shadow-2xl pointer-events-auto max-w-full overflow-x-auto scrollbar-none">
+      <div className={`absolute ${isEmbedded ? "top-2.5 sm:top-4" : "top-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:top-[calc(4rem+env(safe-area-inset-top,0px))]"} inset-x-0 z-20 flex justify-center px-2 sm:px-12 pointer-events-none`}>
+        <div className="flex items-center gap-1 sm:gap-1.5 bg-[#1a0407]/95 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-rose-900/50 shadow-2xl pointer-events-auto max-w-[calc(100vw-4.5rem)] sm:max-w-full overflow-x-auto scrollbar-none">
           {/* Overview */}
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("overview")}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "overview"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
             }`}
           >
-            <Compass className="w-3.5 h-3.5" />
+            <Compass className="w-3.5 h-3.5 shrink-0" />
             <span>Overview</span>
           </button>
 
@@ -1382,41 +1447,43 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("from_seat")}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "from_seat"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
             }`}
           >
-            <Eye className="w-3.5 h-3.5" />
-            <span>From my seat</span>
+            <Eye className="w-3.5 h-3.5 shrink-0" />
+            <span className="sm:hidden">My Seat</span>
+            <span className="hidden sm:inline">From my seat</span>
           </button>
 
           {/* From stage */}
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("from_stage")}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "from_stage"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
             }`}
           >
-            <Airplay className="w-3.5 h-3.5" />
-            <span>From stage</span>
+            <Airplay className="w-3.5 h-3.5 shrink-0" />
+            <span className="sm:hidden">Stage</span>
+            <span className="hidden sm:inline">From stage</span>
           </button>
 
           {/* Balcony */}
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("balcony")}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "balcony"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5 shrink-0" />
             <span>Balcony</span>
           </button>
 
@@ -1424,22 +1491,32 @@ export default function SeatPerspective3D({
           <button
             type="button"
             onClick={() => handlePerspectiveSelect("birds_eye")}
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer ${
+            className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[11px] sm:text-xs font-bold transition flex items-center gap-1 sm:gap-1.5 shrink-0 cursor-pointer ${
               viewMode === "birds_eye"
                 ? "bg-rose-600 text-white shadow-md font-extrabold"
                 : "text-rose-100/70 hover:text-white hover:bg-white/10"
             }`}
           >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Bird's eye</span>
+            <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
+            <span className="sm:hidden">Top View</span>
+            <span className="hidden sm:inline">Bird's eye</span>
           </button>
         </div>
       </div>
 
-      {/* Floating Sightline Badge (When in "From my seat" view) */}
+      {/* Floating Sightline Badge (When in "From my seat" view) - Responsive for both Mobile and Desktop */}
       {viewMode === "from_seat" && currentSeat && (
-        <div className="absolute top-28 left-4 z-20 pointer-events-none hidden sm:block animate-in fade-in duration-200">
-          <div className="bg-[#1a0407]/90 backdrop-blur-md border border-rose-900/40 rounded-2xl p-3 shadow-xl text-white space-y-1.5 pointer-events-auto max-w-[240px]">
+        <div className="absolute top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-28 left-2.5 sm:left-4 z-20 pointer-events-none animate-in fade-in duration-200">
+          {/* Mobile compact sightline chip */}
+          <div className="sm:hidden flex items-center gap-1.5 bg-[#1a0407]/95 backdrop-blur-md border border-rose-900/50 rounded-xl px-2.5 py-1 shadow-xl text-white pointer-events-auto">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] font-bold text-rose-200">Seat {currentSeat.label}</span>
+            <span className="text-[10px] font-black text-rose-300">• {viewMetrics.score}% View</span>
+            <span className="text-[9px] text-rose-200/70 font-mono">~{viewMetrics.distanceM}m</span>
+          </div>
+
+          {/* Desktop detailed sightline card */}
+          <div className="hidden sm:block bg-[#1a0407]/90 backdrop-blur-md border border-rose-900/40 rounded-2xl p-3 shadow-xl text-white space-y-1.5 pointer-events-auto max-w-[240px]">
             <div className="flex items-center justify-between">
               <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> Sightline View
@@ -1472,20 +1549,48 @@ export default function SeatPerspective3D({
       )}
 
       {/* Canvas for 3D View */}
-      <div className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing">
-        <canvas ref={canvasRef} className="w-full h-full block outline-none" />
+      <div className="flex-1 w-full h-full relative cursor-grab active:cursor-grabbing touch-none">
+        <canvas ref={canvasRef} className="w-full h-full block outline-none touch-none" />
 
         {/* Hint Pill */}
-        <div className="absolute left-4 bottom-24 z-20 pointer-events-none hidden sm:flex items-center gap-2 text-[11px] text-rose-200/70 bg-[#1a0407]/80 backdrop-blur-xs px-3 py-1.5 rounded-full border border-rose-900/40 shadow-sm">
-          <span>Click any seat to select/deselect • Drag to look around</span>
+        <div className="absolute left-2.5 sm:left-4 bottom-28 sm:bottom-28 z-20 pointer-events-none flex items-center gap-1.5 text-[10px] sm:text-[11px] text-rose-200/80 bg-[#1a0407]/90 backdrop-blur-xs px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full border border-rose-900/40 shadow-sm">
+          <span>Tap seat to preview • Drag/pinch to look around</span>
         </div>
+      </div>
+
+      {/* Floating Action Controls on Right Side (Zoom In, Zoom Out, Reset Angle) */}
+      <div className="absolute right-2.5 sm:right-4 bottom-28 sm:bottom-28 z-30 flex flex-col gap-1.5 pointer-events-auto">
+        <button
+          type="button"
+          onClick={handleZoomIn}
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1a0407]/90 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/50 shadow-lg flex items-center justify-center transition cursor-pointer active:scale-95"
+          title="Zoom In"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={handleZoomOut}
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1a0407]/90 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/50 shadow-lg flex items-center justify-center transition cursor-pointer active:scale-95"
+          title="Zoom Out"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={handleResetView}
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1a0407]/90 hover:bg-[#2d070d] text-rose-100 hover:text-white border border-rose-900/50 shadow-lg flex items-center justify-center transition cursor-pointer active:scale-95"
+          title="Reset Angle & Zoom"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       {/* Multi-seat switcher in "From my seat" mode */}
       {viewMode === "from_seat" && selectedSeats.length > 1 && (
-        <div className="absolute bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
-          <div className="flex items-center gap-1.5 bg-[#1a0407]/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-rose-900/40 shadow-xl pointer-events-auto max-w-full overflow-x-auto">
-            <span className="text-[10px] text-rose-200/60 uppercase font-bold mr-1 shrink-0">Viewing from:</span>
+        <div className="absolute bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:bottom-24 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+          <div className="flex items-center gap-1.5 bg-[#1a0407]/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-rose-900/50 shadow-xl pointer-events-auto max-w-[calc(100vw-2rem)] overflow-x-auto scrollbar-none">
+            <span className="text-[10px] text-rose-200/60 uppercase font-bold mr-1 shrink-0">Viewing:</span>
             {selectedSeats.map((s) => {
               const isCurrent =
                 (currentSeat?.id && (currentSeat.id === s.id || currentSeat.id === s.seatRef)) ||
@@ -1511,52 +1616,52 @@ export default function SeatPerspective3D({
 
       {/* "From my seat" Empty Prompt if no seat is selected */}
       {viewMode === "from_seat" && selectedSeats.length === 0 && (
-        <div className="absolute bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
-          <div className="bg-[#1a0407]/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-rose-800/40 text-center shadow-xl pointer-events-auto">
-            <p className="text-xs text-rose-300 font-medium">
-              Click any seat in 3D to preview your view from that seat
+        <div className="absolute bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:bottom-24 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+          <div className="bg-[#1a0407]/95 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-rose-800/40 text-center shadow-xl pointer-events-auto max-w-[calc(100vw-2rem)]">
+            <p className="text-[11px] sm:text-xs text-rose-300 font-medium">
+              Tap any seat in 3D to preview your view from that seat
             </p>
           </div>
         </div>
       )}
 
       {/* 2. Bottom Interactive Navigation, Legend & Booking Summary Bar */}
-      <div className="absolute bottom-0 inset-x-0 z-30 p-2.5 sm:p-4 bg-gradient-to-t from-[#140205] via-[#1a0407]/95 to-transparent pointer-events-none">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 pointer-events-auto bg-[#1a0407]/95 backdrop-blur-md p-3 sm:p-3.5 rounded-2xl border border-rose-900/40 shadow-2xl">
+      <div className="absolute bottom-0 inset-x-0 z-30 p-2 sm:p-4 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] bg-gradient-to-t from-[#140205] via-[#1a0407]/95 to-transparent pointer-events-none">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 pointer-events-auto bg-[#1a0407]/95 backdrop-blur-md p-2.5 sm:p-3.5 rounded-2xl border border-rose-900/40 shadow-2xl">
           {/* Legend */}
-          <div className="flex items-center gap-3 sm:gap-4 text-xs font-semibold text-rose-100/80">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#10b981]" />
+          <div className="flex items-center justify-between sm:justify-start w-full sm:w-auto gap-2 sm:gap-4 text-[10px] sm:text-xs font-semibold text-rose-100/80 overflow-x-auto scrollbar-none py-0.5">
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-md bg-[#10b981]" />
               <span>Available</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#f59e0b]" />
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-md bg-[#f59e0b]" />
               <span>Balcony</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#facc15] ring-2 ring-yellow-400/50" />
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-md bg-[#facc15] ring-1.5 ring-yellow-400/50" />
               <span>Selected</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md bg-[#475569]" />
+            <div className="flex items-center gap-1 shrink-0">
+              <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-md bg-[#475569]" />
               <span>Unavailable</span>
             </div>
           </div>
 
           {/* Booking Summary & Proceed CTA */}
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0 border-t border-rose-950/60 sm:border-t-0">
             <div className="text-left sm:text-right">
               {selectedSeats.length > 0 ? (
                 <>
-                  <div className="text-sm font-extrabold text-white">
+                  <div className="text-sm sm:text-base font-extrabold text-white">
                     ₹{totalAmount > 0 ? totalAmount.toLocaleString("en-IN") : "0"}
                   </div>
-                  <div className="text-[11px] text-rose-200/60">
+                  <div className="text-[10px] sm:text-[11px] text-rose-200/60">
                     {selectedSeats.length} {selectedSeats.length === 1 ? "seat" : "seats"} selected
                   </div>
                 </>
               ) : (
-                <div className="text-xs text-rose-200/60">
+                <div className="text-[11px] sm:text-xs text-rose-200/60">
                   Select {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"}
                 </div>
               )}
@@ -1566,7 +1671,7 @@ export default function SeatPerspective3D({
               type="button"
               disabled={selectedSeats.length === 0}
               onClick={onProceed}
-              className={`px-6 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-lg active:scale-95 ${
+              className={`px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer flex items-center gap-1.5 shadow-lg active:scale-95 ${
                 selectedSeats.length > 0
                   ? "bg-rose-600 hover:bg-rose-500 text-white font-extrabold cursor-pointer shadow-rose-900/40"
                   : "bg-rose-950/40 text-rose-300/40 cursor-not-allowed border border-rose-900/30"
