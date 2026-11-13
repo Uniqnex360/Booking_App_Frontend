@@ -51,6 +51,7 @@ export interface SeatMapDetail {
   language?: string;
   first_row_distance_m?: number;
   row_pitch_m?: number;
+  terms_and_conditions?: string[];
 }
 
 export interface VenueShowtimeItem {

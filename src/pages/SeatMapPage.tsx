@@ -30,6 +30,7 @@ import {
 } from "@/types/movie.types";
 import { ensureHoldToken, safeUUID } from "@/lib/holdToken";
 import { getSavedContactDetails, sanitizeMobileNumber } from "@/utils/validators";
+import { TermsModal } from "./TermsModal";
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function SeatMapPage() {
     Math.max(1, parseInt(searchParams.get("qty") || "2", 10) || 2),
   );
   const [mapData, setMapData] = useState<SeatMapDetail | null>(null);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const isCoupleScreen = useMemo(() => {
     const sName = (mapData?.screen_name || "").toLowerCase();
     const fmt = (mapData?.format || "").toLowerCase();
@@ -517,7 +519,14 @@ export default function SeatMapPage() {
       );
       return;
     }
-    handleProceed(); // hold seats, go to food page
+    // BookMyShow Flow: Show Terms & Conditions popup modal first
+    setShowTermsModal(true);
+  };
+
+  const handleAcceptTerms = async () => {
+    setShowTermsModal(false);
+    sessionStorage.setItem(`terms_accepted_${id}`, "true");
+    await handleProceed();
   };
   const handleProceed = async () => {
     const saved = getSavedContactDetails();
@@ -555,10 +564,12 @@ export default function SeatMapPage() {
       const ticketPaise =
         res.total_paise ||
         selectedSeats.reduce((acc, s) => acc + (s.price_paise || 0), 0);
+      sessionStorage.setItem(`terms_accepted_${res.id}`, "true");
       navigate(
         `/bookings/${res.id}/food${city ? `?city=${encodeURIComponent(city)}` : ""}`,
         {
           state: {
+            terms_accepted: true,
             booking: {
               id: res.id,
               showtime_id: id,
@@ -1775,6 +1786,16 @@ export default function SeatMapPage() {
           </div>
         </div>
       )}
+
+      {/* BookMyShow Style Terms & Conditions Modal */}
+      <TermsModal
+        isOpen={showTermsModal}
+        terms={mapData?.terms_and_conditions}
+        confirmLabel="Accept"
+        isLoading={isCommitLoading}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={handleAcceptTerms}
+      />
     </div>
   );
 }

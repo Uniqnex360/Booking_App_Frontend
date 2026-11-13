@@ -60,7 +60,6 @@ export default function FoodPage() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showContact, setShowContact] = useState(false);
-  const [leftSeconds, setLeftSeconds] = useState(0);
 
   // Contact inputs on Summary view
   const savedInitContact = getSavedContactDetails();
@@ -146,25 +145,6 @@ export default function FoodPage() {
     };
   }, [bookingId]);
 
-  // Hold countdown ticker
-  useEffect(() => {
-    if (!booking?.held_until) return;
-    const check = () => {
-      const remaining = Math.max(
-        0,
-        Math.floor((new Date(booking.held_until).getTime() - Date.now()) / 1000),
-      );
-      setLeftSeconds(remaining);
-      if (remaining === 0) {
-        toast.error("Hold expired. Please select seats again.");
-        navigate(seatMapUrl, { replace: true });
-      }
-    };
-    check();
-    const t = setInterval(check, 1000);
-    return () => clearInterval(t);
-  }, [booking]);
-
   const goBackToSeatMap = () => {
     api.delete(`/bookings/hold/${bookingId}`).catch(() => {});
     navigate(seatMapUrl, { replace: true });
@@ -206,6 +186,16 @@ export default function FoodPage() {
       "vyhbz_contact_details",
       JSON.stringify({ email: c.email, phone: cleanPhone }),
     );
+
+    const isTermsAccepted =
+      sessionStorage.getItem(`terms_accepted_${bookingId}`) === "true" ||
+      (location.state as any)?.terms_accepted === true;
+
+    if (!isTermsAccepted) {
+      setShowTerms(true);
+      return;
+    }
+
     goPay({ email: c.email, phone: cleanPhone });
   };
 
@@ -423,18 +413,6 @@ export default function FoodPage() {
                   these details.
                 </p>
               </div>
-
-              {/* Terms card */}
-              <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => setShowTerms(true)}
-                  className="text-xs text-[#7B1E3D] font-semibold hover:underline flex items-center justify-between w-full"
-                >
-                  <span>Review Booking Terms &amp; Cancellation Policy</span>
-                  <span>&rarr;</span>
-                </button>
-              </div>
             </div>
 
             {/* Right Column: Order Breakdown & Payment Button */}
@@ -500,15 +478,30 @@ export default function FoodPage() {
 
               {/* Action buttons */}
               <div className="p-4 pt-0 space-y-2">
-                <p className="text-[10px] text-gray-500 leading-tight">
-                  By proceeding, you agree to our Terms of Service and
-                  Cancellation Policy.
+                <p className="text-[11px] text-gray-500 leading-tight">
+                  By proceeding, you agree to our{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowTerms(true)}
+                    className="text-[#7B1E3D] underline font-medium hover:text-[#5C0F2A] cursor-pointer"
+                  >
+                    Terms of Service
+                  </button>{" "}
+                  and{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowTerms(true)}
+                    className="text-[#7B1E3D] underline font-medium hover:text-[#5C0F2A] cursor-pointer"
+                  >
+                    Cancellation Policy
+                  </button>
+                  .
                 </p>
                 <button
                   type="button"
                   onClick={startPay}
                   disabled={saving}
-                  className="w-full bg-[#7B1E3D] hover:bg-[#922549] active:bg-[#5C0F2A] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer shadow-md transition"
+                  className="w-full bg-[#7B1E3D] hover:bg-[#5C0F2A] active:bg-[#43071c] disabled:opacity-60 text-white font-bold py-3.5 rounded-xl text-sm flex items-center justify-center gap-2 cursor-pointer shadow-md transition"
                 >
                   {saving ? (
                     <>
@@ -536,10 +529,20 @@ export default function FoodPage() {
       {/* ── Modals ── */}
       <TermsModal
         isOpen={showTerms}
+        amountLabel={formatRupees(
+          (booking.total_paise || booking.ticket_paise || 0) +
+            Object.entries(cart).reduce((acc, [id, q]) => {
+              const item = menu.find((m) => m.id === id);
+              return acc + (item ? item.price_paise * q : 0);
+            }, 0),
+        )}
         onClose={() => setShowTerms(false)}
         onAccept={() => {
           setShowTerms(false);
-          startPay();
+          sessionStorage.setItem(`terms_accepted_${bookingId}`, "true");
+          const c = knownContact();
+          const cleanPhone = sanitizeMobileNumber(c.phone);
+          goPay({ email: c.email, phone: cleanPhone });
         }}
       />
 

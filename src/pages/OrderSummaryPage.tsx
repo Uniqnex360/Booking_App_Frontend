@@ -21,7 +21,6 @@ export default function OrderSummaryPage() {
   const [b, setB] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [left, setLeft] = useState(0);
   const [paying, setPaying] = useState(false);
 
   const seatMapUrl = b ? `/showtimes/${b.showtime_id}/seat-map` : "/";
@@ -50,22 +49,6 @@ export default function OrderSummaryPage() {
       }
     })();
   }, [bookingId]);
-
-  // hold countdown
-  useEffect(() => {
-    if (!b?.held_until) return;
-    const tick = () => {
-      const s = Math.max(0, Math.floor((new Date(b.held_until).getTime() - Date.now()) / 1000));
-      setLeft(s);
-      if (s === 0) {
-        toast.error("Hold expired. Please select seats again.");
-        navigate(seatMapUrl, { replace: true });
-      }
-    };
-    tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, [b]);
 
   const release = () => {
     api.delete(`/bookings/hold/${bookingId}`).catch(() => {});

@@ -64,11 +64,12 @@ export function getSavedContactDetails(): { email: string; phone: string } {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
+        const phone = sanitizeMobileNumber(parsed.phone || '');
         if (parsed.email && parsed.email.toLowerCase().includes('techteam')) {
           localStorage.removeItem('vyhbz_contact_details');
-          return { email: '', phone: parsed.phone || '' };
+          return { email: '', phone };
         }
-        return { email: parsed.email || '', phone: parsed.phone || '' };
+        return { email: parsed.email || '', phone };
       }
     }
   } catch {}
