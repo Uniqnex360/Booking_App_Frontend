@@ -986,21 +986,21 @@ export default function SeatMapPage() {
         </div>
       </header>
 
-      {/* 2nd Row: Prominent View Mode Switcher [Seat Overview] [3D Model] */}
-      <div className="bg-white border-b border-gray-200 py-2 px-4 shadow-2xs sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-20">
-        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
+      {/* 2nd Row: Prominent View Mode Switcher [Seat Overview] [3D Hall View] */}
+      <div className="bg-white border-b border-gray-200 py-2 px-3 sm:px-4 shadow-2xs sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] z-20">
+        <div className="max-w-[1280px] mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
             <span className="text-[11px] uppercase tracking-wider font-extrabold text-gray-500 hidden sm:inline">
               View Mode:
             </span>
-            <div className="inline-flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-2xs">
+            <div className="inline-flex items-center bg-gray-100 p-0.5 sm:p-1 rounded-xl border border-gray-200 shadow-2xs">
               <button
                 type="button"
                 onClick={() => {
                   setDisplayMode("2d");
                   setView3DSeat(null);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
                   displayMode === "2d"
                     ? "bg-white text-gray-900 shadow-xs font-black"
                     : "text-gray-500 hover:text-gray-900"
@@ -1012,41 +1012,47 @@ export default function SeatMapPage() {
               <button
                 type="button"
                 onClick={() => {
-                  if (selectedSeats.length === 0) {
-                    toast.warning("Please select a seat first to view the 3D model and your seat view.");
-                    return;
-                  }
+                  setDisplayMode("3d");
+                  setView3DInitialMode("overview");
+                  const target =
+                    selectedSeats.length > 0
+                      ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
+                      : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
+                        allAuditoriumPerspectives[0];
+                  if (target) setView3DSeat(target);
+                }}
+                className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                  displayMode === "3d" && view3DInitialMode === "overview"
+                    ? "bg-[#7B1E3D] text-white shadow-xs font-black"
+                    : "text-gray-700 hover:text-gray-900 hover:bg-gray-200/60"
+                }`}
+                title="Switch to 3D Auditorium View (5 Perspectives)"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${displayMode === "3d" && view3DInitialMode === "overview" ? "text-amber-300" : "text-amber-600"}`} />
+                <span>3D Hall View</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs shrink-0">
+            {selectedSeats.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => {
                   setDisplayMode("3d");
                   setView3DInitialMode("from_seat");
                   const target = getSeatPerspective(selectedSeats[selectedSeats.length - 1]);
                   if (target) setView3DSeat(target);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                  displayMode === "3d"
-                    ? "bg-[#7B1E3D] text-white shadow-xs font-black"
-                    : selectedSeats.length === 0
-                    ? "text-gray-400 hover:text-gray-600"
-                    : "text-gray-700 hover:text-gray-900"
-                }`}
-                title={selectedSeats.length === 0 ? "Select a seat first to view 3D" : "View in 3D"}
+                className="font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 hover:bg-[#7B1E3D]/20 px-2.5 py-1.5 rounded-lg border border-[#7B1E3D]/30 transition cursor-pointer flex items-center gap-1"
+                title="Preview in 3D from selected seat"
               >
-                <Compass className={`w-3.5 h-3.5 ${displayMode === "3d" ? "text-white" : "text-amber-700"}`} />
-                <span>3D Model</span>
-                {selectedSeats.length > 0 && displayMode !== "3d" && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                )}
+                <span>{selectedSeats.length} of {requiredSeatCount} selected</span>
+                <span className="hidden sm:inline text-[10px] text-[#7B1E3D]/80 font-normal">• View Seat 3D &rarr;</span>
               </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs">
-            {selectedSeats.length > 0 ? (
-              <span className="font-bold text-[#7B1E3D] bg-[#7B1E3D]/10 px-2.5 py-1 rounded-md border border-[#7B1E3D]/20">
-                {selectedSeats.length} of {requiredSeatCount} selected
-              </span>
             ) : (
-              <span className="text-gray-500 text-[11px] font-medium">
-                Pick {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"} to preview in 3D
+              <span className="text-gray-500 text-[11px] font-medium hidden xs:inline truncate">
+                Pick {requiredSeatCount} {requiredSeatCount === 1 ? "seat" : "seats"} to preview
               </span>
             )}
           </div>
@@ -1688,27 +1694,6 @@ export default function SeatMapPage() {
           </span>
         </div>
       </footer>
-      {/* Floating 3D Quick-Launch Pill in 2D mode (visible immediately without scrolling) */}
-      <div className="fixed top-[calc(7.25rem+env(safe-area-inset-top,0px))] right-3 sm:right-6 z-30 animate-in fade-in duration-200">
-        <button
-          type="button"
-          onClick={() => {
-            setDisplayMode("3d");
-            setView3DInitialMode("overview");
-            const target =
-              selectedSeats.length > 0
-                ? getSeatPerspective(selectedSeats[selectedSeats.length - 1])
-                : allAuditoriumPerspectives[Math.floor(allAuditoriumPerspectives.length / 2)] ||
-                  allAuditoriumPerspectives[0];
-            if (target) setView3DSeat(target);
-          }}
-          className="bg-slate-900/95 hover:bg-slate-900 text-amber-400 hover:text-amber-300 border border-amber-500/40 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-bold shadow-xl backdrop-blur-md flex items-center gap-1.5 sm:gap-2 cursor-pointer transition hover:scale-105 active:scale-95"
-          title="Switch to 3D Auditorium View"
-        >
-          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-pulse" />
-          <span>3D Hall View<span className="hidden sm:inline"> (5 Views)</span></span>
-        </button>
-      </div>
     </>
   )}
       {showTicketModal && (
