@@ -532,7 +532,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
             <img
               src="/logo.png"
               alt="Vyhbz"
-              className="h-12 sm:h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform"
+              className="h-[52px] sm:h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform"
             />
           </Link>
 
