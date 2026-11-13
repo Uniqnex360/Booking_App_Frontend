@@ -125,7 +125,7 @@ export default function SeatMapPage() {
 
   const venueShowtimes = useMemo<VenueShowtimeItem[]>(() => {
     try {
-      const cached = sessionStorage.getItem("vyhbz_venue_showtimes");
+      const cached = sessionStorage.getItem("vybhz_venue_showtimes");
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed.showtimes)) {

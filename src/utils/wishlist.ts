@@ -9,11 +9,13 @@ export interface WishlistItem {
   addedAt: string;
 }
 
-const WISHLIST_STORAGE_KEY = "vyhbz_wishlist";
+const WISHLIST_STORAGE_KEY = "vybhz_wishlist";
 
 export function getWishlist(): WishlistItem[] {
   try {
-    const raw = localStorage.getItem(WISHLIST_STORAGE_KEY);
+    const raw =
+      localStorage.getItem(WISHLIST_STORAGE_KEY) ||
+      localStorage.getItem("vyhbz_wishlist");
     if (!raw) return [];
     return JSON.parse(raw);
   } catch {

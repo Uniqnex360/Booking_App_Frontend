@@ -414,7 +414,7 @@ export default function BecomePartnerPage() {
             Become a Partner
           </h1>
           <p className="mx-auto mt-3 max-w-xl text-white-100/70">
-            Join Vyhbz App and reach thousands of guests. List your business,
+            Join Vybhz App and reach thousands of guests. List your business,
             manage bookings, and grow with us.
           </p>
         </div>

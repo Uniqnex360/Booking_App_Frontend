@@ -1,7 +1,7 @@
 export const SUPPORTED_CITIES = ['Kochi', 'Chennai', 'Bangalore'] as const;
 export type SupportedCityId = (typeof SUPPORTED_CITIES)[number];
 
-const CITY_STORAGE_KEY = "vyhbz_selected_city";
+const CITY_STORAGE_KEY = "vybhz_selected_city";
 
 export interface CityCoordinate {
   lat: number;
@@ -62,7 +62,10 @@ export function resolveRegionalHubFromState(stateOrCode?: string | null): Suppor
 
 export function getStoredCity(): string | null {
   try {
-    return localStorage.getItem(CITY_STORAGE_KEY);
+    return (
+      localStorage.getItem(CITY_STORAGE_KEY) ||
+      localStorage.getItem("vyhbz_selected_city")
+    );
   } catch {
     return null;
   }
@@ -201,7 +204,7 @@ export async function reverseGeocodeCoordinates(
 
 export function getLastDetectedLocality(): string | null {
   try {
-    return sessionStorage.getItem("vyhbz_detected_locality");
+    return sessionStorage.getItem("vybhz_detected_locality");
   } catch {
     return null;
   }
@@ -388,7 +391,7 @@ export async function detectUserLocation(): Promise<SupportedCityId | null> {
                 localityName = geo.locality || geo.city;
                 if (localityName) {
                   try {
-                    sessionStorage.setItem("vyhbz_detected_locality", localityName);
+                    sessionStorage.setItem("vybhz_detected_locality", localityName);
                   } catch {}
                 }
               }

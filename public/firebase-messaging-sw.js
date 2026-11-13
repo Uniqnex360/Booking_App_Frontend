@@ -12,11 +12,11 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch {
-    payload = { notification: { title: "Vyhbz Alert", body: event.data?.text() || "" } };
+    payload = { notification: { title: "Vybhz Alert", body: event.data?.text() || "" } };
   }
 
   const notif = payload.notification || payload.data || {};
-  const title = notif.title || "Vyhbz";
+  const title = notif.title || "Vybhz";
   const body = notif.body || "";
   const link = payload.data?.link || notif.link || "/profile?tab=orders";
 

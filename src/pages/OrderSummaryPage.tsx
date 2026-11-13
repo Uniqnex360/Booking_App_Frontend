@@ -70,7 +70,7 @@ export default function OrderSummaryPage() {
       return;
     }
     localStorage.setItem(
-      "vyhbz_contact_details",
+      "vybhz_contact_details",
       JSON.stringify({ email: cleanEmail, phone: cleanPhone }),
     );
     setPaying(true);

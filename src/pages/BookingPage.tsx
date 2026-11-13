@@ -378,7 +378,7 @@ export default function BookingPage() {
             ...({
               order_id: order.order_id,
               currency: order.currency || 'INR',
-              name: 'Vyhbz',
+              name: 'Vybhz',
               description: `${eventData?.title || 'Event'} - ${selectedTier?.name || 'Tickets'} x ${ticketQuantity}`,
               prefill: {
                 name: user?.full_name || '',
@@ -436,7 +436,7 @@ export default function BookingPage() {
         order_id: order.order_id,
         amount: order.amount_paise,
         currency: order.currency || 'INR',
-        name: 'Vyhbz',
+        name: 'Vybhz',
         description: `${eventData?.title || 'Event'} - ${selectedTier?.name || 'Tickets'} x ${ticketQuantity}`,
         handler: async (response: any) => {
           setIsConfirming(true);
@@ -1139,7 +1139,7 @@ export default function BookingPage() {
               >
                 <img
                   src="/logo.png"
-                  alt="Vyhbz"
+                  alt="Vybhz"
                   className="h-10 sm:h-12 w-auto object-contain"
                 />
               </button>

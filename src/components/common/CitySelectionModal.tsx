@@ -131,7 +131,7 @@ export function CitySelectionModal({
   const handleSelect = (cityId: string, customLocalityName?: string) => {
     if (customLocalityName) {
       try {
-        sessionStorage.setItem("vyhbz_detected_locality", customLocalityName);
+        sessionStorage.setItem("vybhz_detected_locality", customLocalityName);
       } catch {}
     }
     onSelectCity(cityId);

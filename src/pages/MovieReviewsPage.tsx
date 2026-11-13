@@ -155,7 +155,7 @@ const MovieReviewsPage: React.FC = () => {
                           <div>
                             <p className="font-medium text-gray-800">{review.user_name || 'Verified User'}</p>
                             <p className="text-xs text-gray-500 flex items-center gap-1">
-                              Booked on <span className="font-semibold text-gray-700">vyhbz</span>
+                              Booked on <span className="font-semibold text-gray-700">vybhz</span>
                             </p>
                           </div>
                         </div>

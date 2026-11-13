@@ -41,7 +41,7 @@ export async function payForBooking(opts: {
         ...({
           order_id: order.order_id,
           currency: order.currency || "INR",
-          name: "Vyhbz Cinemas",
+          name: "Vybhz Cinemas",
           description: opts.description,
           prefill: opts.prefill,
           theme: { color: "#7B1E3D" },
@@ -93,7 +93,7 @@ export async function payForBooking(opts: {
       order_id: order.order_id,
       amount: order.amount_paise,
       currency: order.currency || "INR",
-      name: "Vyhbz Cinemas",
+      name: "Vybhz Cinemas",
       description: opts.description,
       prefill: opts.prefill,
       theme: { color: "#7B1E3D" },

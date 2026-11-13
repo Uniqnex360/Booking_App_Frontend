@@ -1,4 +1,4 @@
-const PENDING = "vyhbz_hold_pending";
+const PENDING = "vybhz_hold_pending";
 
 export function safeUUID(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -19,7 +19,7 @@ export const makeHoldToken = (): string => {
 // 64 chars — safely above the 43-char backend minimum
 
 export const getPendingHoldToken = (): string | null =>
-  sessionStorage.getItem(PENDING);
+  sessionStorage.getItem(PENDING) || sessionStorage.getItem("vyhbz_hold_pending");
 
 export const setPendingHoldToken = (t: string) =>
   sessionStorage.setItem(PENDING, t);

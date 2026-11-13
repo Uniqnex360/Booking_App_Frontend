@@ -104,11 +104,14 @@ const CATEGORIES = [
   { icon: Utensils, title: 'Restaurants', link: '/restaurants' },
 ];
 
-const CITY_STORAGE_KEY = 'vyhbz_selected_city';
+const CITY_STORAGE_KEY = 'vybhz_selected_city';
 
 function getStoredCity(): string | null {
   try {
-    return localStorage.getItem(CITY_STORAGE_KEY);
+    return (
+      localStorage.getItem(CITY_STORAGE_KEY) ||
+      localStorage.getItem('vyhbz_selected_city')
+    );
   } catch {
     return null;
   }

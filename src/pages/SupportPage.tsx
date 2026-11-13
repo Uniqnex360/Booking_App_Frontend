@@ -54,7 +54,7 @@ const TOPIC_FOLDERS: TopicFolder[] = [
           'Log in to your account and navigate to Profile > Purchase History / Your Orders.',
           'Select the booking you wish to cancel and click on "Cancel Booking".',
           'Review the cancellation fee and net refundable amount displayed on the screen.',
-          'Click "Confirm Cancellation". The refund will be initiated instantly to your original payment mode or Vyhbz Cash.',
+          'Click "Confirm Cancellation". The refund will be initiated instantly to your original payment mode or Vybhz Cash.',
           'Note: Cancellation cut-off is typically 2 hours before showtime (subject to cinema/venue policy).',
         ],
       },
@@ -92,15 +92,15 @@ const TOPIC_FOLDERS: TopicFolder[] = [
   },
   {
     id: 'stream',
-    title: 'Vyhbz Stream & Live',
+    title: 'Vybhz Stream & Live',
     count: 20,
     articles: [
       {
         id: 'stream-grievance',
         topicId: 'stream',
-        title: 'How do I report Vyhbz Stream content grievances?',
+        title: 'How do I report Vybhz Stream content grievances?',
         solution: [
-          'For any content classification, rating, or subtitle grievances, please write to grievance@vyhbz.com.',
+          'For any content classification, rating, or subtitle grievances, please write to grievance@vybhz.com.',
           'Include your registered user email and the title of the streamed movie.',
           'Our Grievance Redressal Officer will acknowledge within 24 hours and resolve within 15 days.',
         ],
@@ -127,9 +127,9 @@ const TOPIC_FOLDERS: TopicFolder[] = [
       {
         id: 'stream-firetv',
         topicId: 'stream',
-        title: 'How can I stream the movie on Vyhbz Stream App using Fire TV Stick?',
+        title: 'How can I stream the movie on Vybhz Stream App using Fire TV Stick?',
         solution: [
-          'Download and open the Vyhbz app from the Amazon Fire TV Appstore.',
+          'Download and open the Vybhz app from the Amazon Fire TV Appstore.',
           'Go to Settings > Login via Code and pair with your mobile phone.',
           'All your rented or purchased titles will appear ready for HD playback.',
         ],
@@ -137,7 +137,7 @@ const TOPIC_FOLDERS: TopicFolder[] = [
       {
         id: 'stream-cancel',
         topicId: 'stream',
-        title: 'Can I cancel my Vyhbz Stream transaction and get a refund?',
+        title: 'Can I cancel my Vybhz Stream transaction and get a refund?',
         solution: [
           'Digital stream purchases and rentals are digital consumables and cannot be cancelled or refunded once confirmed.',
         ],
@@ -193,22 +193,22 @@ const TOPIC_FOLDERS: TopicFolder[] = [
   },
   {
     id: 'giftcard',
-    title: 'Vyhbz Gift Card',
+    title: 'Vybhz Gift Card',
     count: 7,
     articles: [
       {
         id: 'gc-whatis',
         topicId: 'giftcard',
-        title: 'What is a Vyhbz Gift Card?',
+        title: 'What is a Vybhz Gift Card?',
         solution: [
-          'A Vyhbz Gift Card is a preloaded digital card that can be used to book movie tickets, food & beverages, and live event experiences on Vyhbz.',
+          'A Vybhz Gift Card is a preloaded digital card that can be used to book movie tickets, food & beverages, and live event experiences on Vybhz.',
           'Gift cards can be shared with friends and family for birthdays, festivals, and corporate gifts.',
         ],
       },
       {
         id: 'gc-balance',
         topicId: 'giftcard',
-        title: 'How do I check the validity/balance of my Vyhbz Gift card?',
+        title: 'How do I check the validity/balance of my Vybhz Gift card?',
         solution: [
           'Go to the payment checkout screen and select "Gift Voucher / Card".',
           'Enter the 16-digit card number and 6-digit PIN and click "Check Balance".',
@@ -218,7 +218,7 @@ const TOPIC_FOLDERS: TopicFolder[] = [
       {
         id: 'gc-delivery',
         topicId: 'giftcard',
-        title: 'How are Vyhbz Gift Cards delivered? How long does it take?',
+        title: 'How are Vybhz Gift Cards delivered? How long does it take?',
         solution: [
           'Digital Gift Cards are delivered instantly via Email and WhatsApp to the recipient within 5 minutes of purchase.',
         ],
@@ -228,7 +228,7 @@ const TOPIC_FOLDERS: TopicFolder[] = [
         topicId: 'giftcard',
         title: 'Can I use multiple Gift Cards in a transaction?',
         solution: [
-          'Yes, you can apply up to three Gift Cards in a single transaction on Vyhbz.',
+          'Yes, you can apply up to three Gift Cards in a single transaction on Vybhz.',
         ],
       },
       {
@@ -252,7 +252,7 @@ const TOPIC_FOLDERS: TopicFolder[] = [
         title: 'Availing Offers & Promo Codes',
         solution: [
           'Select your showtime and seats, then proceed to the Payment screen.',
-          'Under the "Unlock Offers or Apply Promocodes" section, enter code VYHBZ20 or select your eligible bank card offer.',
+          'Under the "Unlock Offers or Apply Promocodes" section, enter code VYBHZ20 or select your eligible bank card offer.',
           'Click "Apply" to reduce the ticket total instantly.',
         ],
       },
@@ -312,7 +312,7 @@ const TOPIC_FOLDERS: TopicFolder[] = [
         topicId: 'confirmation',
         title: 'Did you just lose the confirmation SMS/WhatsApp/Email you received?',
         solution: [
-          'Log in to Vyhbz and open Profile > Purchase History.',
+          'Log in to Vybhz and open Profile > Purchase History.',
           'Click "Resend Confirmation" to immediately receive a fresh SMS and Email.',
         ],
       },
@@ -386,19 +386,19 @@ export default function SupportPage() {
               <Link to="/">
                 <img
                   src="/logo.png"
-                  alt="Vyhbz"
+                  alt="Vybhz"
                   className="h-9 sm:h-11 w-auto object-contain"
                 />
               </Link>
               <h1 className="text-xl sm:text-2xl font-bold text-[#333333] tracking-tight">
-                Vyhbz Support Centre
+                Vybhz Support Centre
               </h1>
             </div>
             <Link
               to="/"
               className="text-xs text-[#049cdb] hover:underline font-semibold hidden sm:inline-block"
             >
-              &larr; Back to Vyhbz Home
+              &larr; Back to Vybhz Home
             </Link>
           </div>
 
@@ -566,7 +566,7 @@ export default function SupportPage() {
                 <li className="flex items-start gap-2">
                   <span className="text-[#7B1E3D] font-bold text-sm shrink-0">&bull;</span>
                   <span>
-                    Opt refund to <strong className="text-[#222222]">&quot;Vyhbz Cash&quot;</strong> to get{' '}
+                    Opt refund to <strong className="text-[#222222]">&quot;Vybhz Cash&quot;</strong> to get{' '}
                     <strong className="text-[#222222]">Instant credit</strong> for future purchases.{' '}
                     <button onClick={() => setActiveArticle(TOPIC_FOLDERS[2].articles[0])} className="text-[#049cdb] hover:underline">
                       Know more &gt;&gt;

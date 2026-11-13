@@ -665,7 +665,7 @@ export default function BuyTicketsPage() {
         );
         if (parentVenue) {
           sessionStorage.setItem(
-            "vyhbz_venue_showtimes",
+            "vybhz_venue_showtimes",
             JSON.stringify({
               venue_name: parentVenue.venue_name,
               movie_title: movie?.title,
@@ -1773,7 +1773,7 @@ export default function BuyTicketsPage() {
                     </span>
                     <span className="text-xs text-gray-300">
                       Got a show, event, activity or a great experience? Partner
-                      with us &amp; get listed on Vyhbhz
+                      with us &amp; get listed on Vybhz
                     </span>
                   </div>
                 </div>

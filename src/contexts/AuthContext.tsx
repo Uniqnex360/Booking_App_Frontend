@@ -64,7 +64,7 @@ const getErrorMessage = (err: any): string => {
 
   return err.message || "An unexpected error occurred";
 };
-const CACHED_USER_KEY = "vyhbz_cached_user";
+const CACHED_USER_KEY = "vybhz_cached_user";
 
 function getCachedUser(): User | null {
   if (typeof window === "undefined") return null;

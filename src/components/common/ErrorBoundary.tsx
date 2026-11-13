@@ -11,7 +11,7 @@ interface State {
   error: Error | null;
 }
 
-const CHUNK_RELOAD_KEY = "vyhbz_chunk_reload_ts";
+const CHUNK_RELOAD_KEY = "vybhz_chunk_reload_ts";
 
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {

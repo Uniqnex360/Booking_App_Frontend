@@ -328,7 +328,7 @@ export default function TheatreVenuesPage() {
                       <span className="font-semibold text-slate-900">
                         {v.customer_payment_model === "THEATRE_DIRECT"
                           ? "Model A (Theatre Direct)"
-                          : "Model B (Vyhbz Escrow)"}
+                          : "Model B (Vybhz Escrow)"}
                       </span>
                     </div>
 

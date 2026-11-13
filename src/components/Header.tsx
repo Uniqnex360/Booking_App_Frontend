@@ -54,7 +54,7 @@ import { CitySelectionModal } from "@/components/common/CitySelectionModal";
 import { GlobalSearchModal } from "@/components/common/GlobalSearchModal";
 import { toast } from "sonner";
 
-const CITY_STORAGE_KEY = "vyhbz_selected_city";
+const CITY_STORAGE_KEY = "vybhz_selected_city";
 
 const navLinks = [
   { href: "/movies", label: "Movies" },
@@ -102,14 +102,17 @@ const FAQ_ITEMS = [
   },
   {
     category: "payment",
-    q: "What payment methods are supported on Vyhbz?",
+    q: "What payment methods are supported on Vybhz?",
     a: "We accept all major Credit/Debit Cards (Visa, Mastercard, RuPay), UPI (Google Pay, PhonePe, Paytm), Net Banking, and digital wallets.",
   },
 ];
 
 function getStoredCity(): string | null {
   try {
-    return localStorage.getItem(CITY_STORAGE_KEY);
+    return (
+      localStorage.getItem(CITY_STORAGE_KEY) ||
+      localStorage.getItem("vyhbz_selected_city")
+    );
   } catch {
     return null;
   }
@@ -194,7 +197,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
   const [bookingNotifEnabled, setBookingNotifEnabled] = useState<boolean>(() => {
     try {
-      const saved = localStorage.getItem("vyhbz_booking_notifications_enabled");
+      const saved = localStorage.getItem("vybhz_booking_notifications_enabled");
       return saved !== null ? JSON.parse(saved) : true;
     } catch {
       return true;
@@ -204,7 +207,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
   const handleToggleBookingNotif = (enabled: boolean) => {
     setBookingNotifEnabled(enabled);
     try {
-      localStorage.setItem("vyhbz_booking_notifications_enabled", JSON.stringify(enabled));
+      localStorage.setItem("vybhz_booking_notifications_enabled", JSON.stringify(enabled));
     } catch {}
     if (enabled && user) {
       registerDevicePushNotifications().catch(() => {});
@@ -218,7 +221,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
   const [notifications, setNotifications] = useState<DrawerNotification[]>(() => {
     try {
-      const saved = localStorage.getItem("vyhbz_notifications");
+      const saved = localStorage.getItem("vybhz_notifications");
       if (saved) {
         const parsed: DrawerNotification[] = JSON.parse(saved);
         return parsed.filter((n) => n.id !== "notif-1");
@@ -248,7 +251,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
           const localPromos = prev.filter((n) => n.id.startsWith("notif-"));
           const merged = [...remoteList, ...localPromos];
           try {
-            localStorage.setItem("vyhbz_notifications", JSON.stringify(merged));
+            localStorage.setItem("vybhz_notifications", JSON.stringify(merged));
           } catch {}
           return merged;
         });
@@ -281,7 +284,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
           if (prev.some((n) => n.id === incoming.id)) return prev;
           const updated = [incoming, ...prev];
           try {
-            localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+            localStorage.setItem("vybhz_notifications", JSON.stringify(updated));
           } catch {}
           return updated;
         });
@@ -310,7 +313,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
     const updated = notifications.map((n) => ({ ...n, read: true }));
     setNotifications(updated);
     try {
-      localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+      localStorage.setItem("vybhz_notifications", JSON.stringify(updated));
     } catch {}
     if (user) {
       api.post("/notifications/read-all").catch(() => {});
@@ -321,7 +324,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
   const handleClearNotifications = () => {
     setNotifications([]);
     try {
-      localStorage.setItem("vyhbz_notifications", JSON.stringify([]));
+      localStorage.setItem("vybhz_notifications", JSON.stringify([]));
     } catch {}
     if (user) {
       api.delete("/notifications").catch(() => {});
@@ -335,7 +338,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
     );
     setNotifications(updated);
     try {
-      localStorage.setItem("vyhbz_notifications", JSON.stringify(updated));
+      localStorage.setItem("vybhz_notifications", JSON.stringify(updated));
     } catch {}
 
     if (user && !notif.id.startsWith("notif-")) {
@@ -531,7 +534,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
           >
             <img
               src="/logo.png"
-              alt="Vyhbz"
+              alt="Vybhz"
               className="h-[52px] sm:h-16 md:h-20 w-auto object-contain hover:scale-105 transition-transform"
             />
           </Link>
@@ -1236,7 +1239,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
                   <div className="grid grid-cols-2 gap-2 pt-1">
                     <a
-                      href="mailto:support@vyhbz.com"
+                      href="mailto:support@vybhz.com"
                       className="flex items-center justify-center gap-1.5 p-2 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:border-[#7B1E3D] hover:text-[#7B1E3D] transition"
                     >
                       <Mail className="h-3.5 w-3.5 text-[#7B1E3D]" />
@@ -1245,7 +1248,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
                     <button
                       onClick={() =>
                         toast.info(
-                          "Live Chat: Connecting you with a Vyhbz support agent...",
+                          "Live Chat: Connecting you with a Vybhz support agent...",
                           { description: "Average wait time is under 1 minute." },
                         )
                       }
@@ -1357,7 +1360,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
                 </div>
 
                 <div className="text-center text-[11px] text-gray-400 pt-4">
-                  <p>Vyhbz Entertainment v1.2.0</p>
+                  <p>Vybhz Entertainment v1.2.0</p>
                   <p className="mt-0.5">Made with Wine branding</p>
                 </div>
               </div>
@@ -1394,10 +1397,10 @@ export function Header({ hideLocation }: HeaderProps = {}) {
                       New User Special
                     </span>
                     <button
-                      onClick={() => handleCopyVoucher("VYHBZ20")}
+                      onClick={() => handleCopyVoucher("VYBHZ20")}
                       className="flex items-center gap-1 text-xs font-semibold text-[#7B1E3D] hover:underline"
                     >
-                      {copiedCode === "VYHBZ20" ? (
+                      {copiedCode === "VYBHZ20" ? (
                         <>
                           <Check className="h-3.5 w-3.5" /> Copied
                         </>
@@ -1412,7 +1415,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
                     Flat 20% OFF on first event booking
                   </h3>
                   <p className="text-[11px] text-gray-600">
-                    Use coupon code <strong className="text-[#7B1E3D]">VYHBZ20</strong> at checkout on any live event or concert.
+                    Use coupon code <strong className="text-[#7B1E3D]">VYBHZ20</strong> at checkout on any live event or concert.
                   </p>
                 </div>
 

@@ -4,7 +4,7 @@ import { Search, X, Loader2, Film, Calendar, ClipboardList, ChevronRight, Trendi
 import api, { unwrap } from "@/api/client";
 import { withCity } from "@/lib/cityLink";
 
-const RECENT_SEARCHES_STORAGE_KEY = "vyhbz_recent_searches";
+const RECENT_SEARCHES_STORAGE_KEY = "vybhz_recent_searches";
 
 export type SearchCategoryTab =
   | "All"

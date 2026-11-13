@@ -184,7 +184,7 @@ export function TheatreConfigModal({
                           onChange={(e) => setConfig({ ...config, customer_payment_model: e.target.value })}
                         >
                           <option value="THEATRE_DIRECT">Model A: Theatre Direct (Default)</option>
-                          <option value="VYHBZ_COLLECTS_SETTLES">Model B: Vybhz Collects & Settles</option>
+                          <option value="VYBHZ_COLLECTS_SETTLES">Model B: Vybhz Collects & Settles</option>
                           <option value="OTHER">Model C: Custom Partner Flow</option>
                         </select>
                       </div>

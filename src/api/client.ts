@@ -66,7 +66,9 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     // NEW: attach guest hold token when present
-    const holdToken = sessionStorage.getItem("vyhbz_hold_pending");
+    const holdToken =
+      sessionStorage.getItem("vybhz_hold_pending") ||
+      sessionStorage.getItem("vyhbz_hold_pending");
     if (holdToken && config.headers && !config.headers["X-Hold-Token"]) {
       config.headers["X-Hold-Token"] = holdToken;
     }

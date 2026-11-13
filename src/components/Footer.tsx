@@ -59,7 +59,7 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 pb-10">
           <div className="lg:col-span-1">
             <p className="mb-4 text-xs font-bold uppercase tracking-wider text-white">
-              Vyhbz App
+              Vybhz App
             </p>
             <p className="max-w-xs text-xs leading-relaxed text-[#888888] mb-5">
               Your gateway to premium cinema experiences, IMAX shows, live concerts, and fine dining reservations.
@@ -116,7 +116,7 @@ export function Footer() {
   <div className="relative bg-[#313035] px-6 flex items-center gap-2">
     <img 
       src="/logo.png" 
-      alt="Vyhbz Logo" 
+      alt="Vybhz Logo" 
       className="h-16 md:h-20 w-auto object-contain bg-white rounded-lg p-1.5 shadow-sm"
     />
   </div>
@@ -136,7 +136,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-center text-[11px] text-[#888888] text-center">
           <p className="mb-2">
-            Copyright {new Date().getFullYear()} © Vyhbz Entertainment Pvt. Ltd. All Rights Reserved.
+            Copyright {new Date().getFullYear()} © Vybhz Entertainment Pvt. Ltd. All Rights Reserved.
           </p>
           <p className="max-w-4xl mx-auto leading-relaxed">
             The content and images used on this site are copyright protected and copyrights vests with the respective owners. 

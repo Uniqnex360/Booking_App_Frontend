@@ -12,7 +12,7 @@ import { linkGuestBookings } from '@/api/booking.api';
 import { App as CapApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
-const FIRST_OPEN_DISMISSED_KEY = 'vyhbz_first_open_dismissed';
+const FIRST_OPEN_DISMISSED_KEY = 'vybhz_first_open_dismissed';
 
 export default function App() {
   const navigate = useNavigate();

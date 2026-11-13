@@ -60,12 +60,15 @@ export function sanitizeMobileNumber(phone?: string | null): string {
  */
 export function getSavedContactDetails(): { email: string; phone: string } {
   try {
-    const raw = localStorage.getItem('vyhbz_contact_details');
+    const raw =
+      localStorage.getItem('vybhz_contact_details') ||
+      localStorage.getItem('vyhbz_contact_details');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
         const phone = sanitizeMobileNumber(parsed.phone || '');
         if (parsed.email && parsed.email.toLowerCase().includes('techteam')) {
+          localStorage.removeItem('vybhz_contact_details');
           localStorage.removeItem('vyhbz_contact_details');
           return { email: '', phone };
         }

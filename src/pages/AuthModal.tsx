@@ -55,7 +55,7 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
 
     const formattedPhone = `+91${cleanPhone}`;
     const contactData = { email: cleanEmail, phone: formattedPhone };
-    localStorage.setItem('vyhbz_contact_details', JSON.stringify(contactData));
+    localStorage.setItem('vybhz_contact_details', JSON.stringify(contactData));
 
     onSubmit(contactData);
   };

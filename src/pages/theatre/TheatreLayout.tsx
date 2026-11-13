@@ -174,7 +174,7 @@ export function TheatreLayout() {
           <Link to="/theatre/dashboard" className="flex items-center gap-2.5">
             <img
               src="/logo.png"
-              alt="Vyhbz"
+              alt="Vybhz"
               className="h-10 sm:h-12 w-auto object-contain hover:scale-105 transition-transform shrink-0"
             />
             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#7B1E3D]/10 text-[#7B1E3D] uppercase tracking-wider shrink-0 hidden xs:inline-block">
@@ -391,7 +391,7 @@ export function TheatreLayout() {
           </div>
 
           <div className="pt-4 border-t border-slate-100 text-[11px] text-slate-400">
-            <div>Vyhbz Theatre Admin Portal</div>
+            <div>Vybhz Theatre Admin Portal</div>
             <div className="text-[10px] text-slate-400">v2.4 • Isolated Brand Workspace</div>
           </div>
         </aside>

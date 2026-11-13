@@ -111,7 +111,7 @@ export default function MovieDetailPage() {
     Record<string, "like" | "dislike" | null>
   >(() => {
     try {
-      const saved = localStorage.getItem("vyhbz_review_reactions");
+      const saved = localStorage.getItem("vybhz_review_reactions");
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
@@ -124,7 +124,7 @@ export default function MovieDetailPage() {
       const nextType = current === type ? null : type;
       const updated = { ...prev, [reviewId]: nextType };
       try {
-        localStorage.setItem("vyhbz_review_reactions", JSON.stringify(updated));
+        localStorage.setItem("vybhz_review_reactions", JSON.stringify(updated));
       } catch {}
       return updated;
     });
@@ -340,7 +340,7 @@ export default function MovieDetailPage() {
   const handleShare = async () => {
     const url = getShareUrl();
     const title = movie?.title ?? "Movie";
-    const text = `Watch ${title} on Vyhbz`;
+    const text = `Watch ${title} on Vybhz`;
 
     try {
       if (navigator.share) {
@@ -714,12 +714,12 @@ export default function MovieDetailPage() {
                             </div>
                             <div>
                               <p className="text-xs sm:text-sm font-bold text-gray-900 leading-tight">
-                                {r.user_name || "Vyhbz User"}
+                                {r.user_name || "Vybhz User"}
                               </p>
                               <p className="text-[10px] text-gray-400 mt-0.5">
                                 Booked on{" "}
                                 <span className="font-semibold text-gray-600">
-                                  vyhbz
+                                  vybhz
                                 </span>
                               </p>
                             </div>
@@ -949,7 +949,7 @@ export default function MovieDetailPage() {
                   </span>
                   <span className="text-xs text-gray-300">
                     Got a show, event, activity or a great experience? Partner
-                    with us &amp; get listed on Vyhbhz
+                    with us &amp; get listed on Vybhz
                   </span>
                 </div>
               </div>

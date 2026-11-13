@@ -183,7 +183,7 @@ export default function FoodPage() {
     }
     // Save sanitized contact details safely to storage
     localStorage.setItem(
-      "vyhbz_contact_details",
+      "vybhz_contact_details",
       JSON.stringify({ email: c.email, phone: cleanPhone }),
     );
 
@@ -555,7 +555,7 @@ export default function FoodPage() {
           setShowContact(false);
           setContactEmail(d.email);
           setContactPhone(d.phone);
-          localStorage.setItem("vyhbz_contact_details", JSON.stringify(d));
+          localStorage.setItem("vybhz_contact_details", JSON.stringify(d));
           goPay(d);
         }}
       />

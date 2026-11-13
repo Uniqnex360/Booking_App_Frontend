@@ -8,7 +8,7 @@ export const DEFAULT_TERMS = [
   "Outside food and beverages are strictly not allowed inside the cinema premises.",
   "Children aged 3 years and above require a separate ticket.",
   "Audio or video recording inside the auditorium is strictly prohibited and punishable under law.",
-  "Vyhbz acts solely as a ticketing platform. Show timings, seating availability, and operational management are determined by the cinema partner.",
+  "Vybhz acts solely as a ticketing platform. Show timings, seating availability, and operational management are determined by the cinema partner.",
 ];
 
 export function TermsModal({

@@ -23,7 +23,7 @@ export async function showSystemNotification(
   link?: string
 ): Promise<void> {
   try {
-    const enabled = localStorage.getItem("vyhbz_booking_notifications_enabled");
+    const enabled = localStorage.getItem("vybhz_booking_notifications_enabled");
     if (enabled === "false") return;
   } catch {}
 

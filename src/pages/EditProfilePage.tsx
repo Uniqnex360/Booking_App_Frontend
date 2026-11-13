@@ -610,7 +610,7 @@ export default function EditProfilePage() {
                           Delete Account
                         </h4>
                         <p className="text-xs text-red-700/80 mt-1 max-w-xl">
-                          Permanently delete your VybHz account and personal data. This action is immediate and cannot be undone.
+                          Permanently delete your Vybhz account and personal data. This action is immediate and cannot be undone.
                         </p>
                       </div>
                       <Button
@@ -986,8 +986,8 @@ export default function EditProfilePage() {
             <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-amber-900 text-xs">
               <span className="font-semibold">Partner & Admin Accounts: </span>
               Organiser, Partner, and Admin accounts cannot be deleted in-app. Please contact{" "}
-              <a href="mailto:support@vyhbz.com" className="font-semibold underline text-amber-950">
-                support@vyhbz.com
+              <a href="mailto:support@vybhz.com" className="font-semibold underline text-amber-950">
+                support@vybhz.com
               </a>{" "}
               for assistance.
             </div>

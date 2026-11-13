@@ -33,7 +33,7 @@ export default function DeleteAccountPage() {
                 Request Account Deletion
               </h1>
               <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                VybHz by Uniqnex360 • Compliance with Google Play & Apple Data Safety Policies
+                Vybhz by Uniqnex360 • Compliance with Google Play & Apple Data Safety Policies
               </p>
             </div>
             <Link
@@ -52,7 +52,7 @@ export default function DeleteAccountPage() {
                 Permanent Deletion Notice
               </h2>
               <p className="text-xs leading-relaxed text-amber-800">
-                Deleting your VybHz account permanently removes your profile information, authentication credentials, loyalty points, and personal preferences from our active systems. Past financial invoices and GST transaction receipts are retained strictly as required by applicable statutory taxation laws.
+                Deleting your Vybhz account permanently removes your profile information, authentication credentials, loyalty points, and personal preferences from our active systems. Past financial invoices and GST transaction receipts are retained strictly as required by applicable statutory taxation laws.
               </p>
             </div>
 
@@ -63,10 +63,10 @@ export default function DeleteAccountPage() {
                 Method 1: Direct In-App Instant Deletion
               </h3>
               <p className="text-xs text-slate-600">
-                If you have the VybHz app installed, you can delete your account instantly without waiting:
+                If you have the Vybhz app installed, you can delete your account instantly without waiting:
               </p>
               <ol className="list-decimal pl-5 text-xs text-slate-600 space-y-1">
-                <li>Open the <strong>VybHz</strong> mobile app or website.</li>
+                <li>Open the <strong>Vybhz</strong> mobile app or website.</li>
                 <li>Tap your <strong>Profile</strong> icon in the navigation bar.</li>
                 <li>Go to <strong>Edit Profile</strong> &rarr; scroll to <strong>Danger Zone</strong>.</li>
                 <li>Tap <strong>Delete Account Permanently</strong> and confirm your passcode/OTP.</li>
@@ -135,7 +135,7 @@ export default function DeleteAccountPage() {
             {/* Direct Email Support */}
             <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
               <span>
-                Questions regarding data privacy? Contact: <strong>privacy@vyhbz.com</strong>
+                Questions regarding data privacy? Contact: <strong>privacy@vybhz.com</strong>
               </span>
               <Link to="/privacy" className="text-[#7B1E3D] font-bold hover:underline inline-flex items-center gap-1">
                 View Privacy Policy <ExternalLink className="h-3 w-3" />

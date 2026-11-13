@@ -1044,7 +1044,7 @@ export default function PartnerDashboard() {
             </h3>
             <p className="mt-2 text-sm text-slate-500 max-w-md mx-auto">
               We'll notify you once an admin approves your account. You'll then
-              be able to start listing on Vyhbz.
+              be able to start listing on Vybhz.
             </p>
           </div>
         ) : (
