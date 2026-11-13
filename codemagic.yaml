@@ -67,11 +67,10 @@ workflows:
               exit 1
             }
 
-      
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-    
+
     publishing:
       app_store_connect:
         auth: integration
