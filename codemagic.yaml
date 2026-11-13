@@ -17,7 +17,6 @@ workflows:
         BUNDLE_ID: "com.vyhbz.app"
         XCODE_WORKSPACE: "App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_STORE_APPLE_ID: 6821933527
       node: 20
       xcode: latest
       cocoapods: default
@@ -68,27 +67,11 @@ workflows:
               exit 1
             }
 
-      - name: Debug and Upload to App Store Connect
-        script: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          KEY_FILE=~/.appstoreconnect/private_keys/AuthKey_${APP_STORE_CONNECT_KEY_IDENTIFIER}.p8
-          echo -n "$APP_STORE_CONNECT_PRIVATE_KEY" > "$KEY_FILE"
-          echo "=== API KEY DEBUG ==="
-          echo "Key bytes: $(wc -c < "$KEY_FILE" | tr -d ' ')"
-          echo "First line: $(head -n 1 "$KEY_FILE")"
-          echo "Line count: $(wc -l < "$KEY_FILE" | tr -d ' ')"
-          echo "Key ID: ${APP_STORE_CONNECT_KEY_IDENTIFIER}"
-          echo "Issuer ID: ${APP_STORE_CONNECT_ISSUER_ID}"
-          echo "====================="
-          xcrun altool --upload-package build/ios/ipa/App.ipa \
-            --type ios \
-            --apple-id 6821933527 \
-            --bundle-id com.vyhbz.app \
-            --bundle-version $BUILD_NUMBER \
-            --bundle-short-version-string 1.0 \
-            --apiKey "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
-            --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID" --verbose
-
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
