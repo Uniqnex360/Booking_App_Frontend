@@ -967,28 +967,35 @@ export default function MovieDetailPage() {
 
       {showTrailerModal && movie.trailer_url && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-6 pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))] animate-in fade-in duration-200"
           onClick={() => setShowTrailerModal(false)}
         >
-          <div
-            className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10"
-            onClick={(e) => e.stopPropagation()}
-          >
+          {/* Top Bar with Clear Dismiss Button */}
+          <div className="w-full max-w-4xl flex items-center justify-between mb-2 sm:mb-3 px-1 text-white">
+            <span className="text-xs sm:text-sm font-semibold truncate max-w-[80%] text-white/90">
+              {movie.title} • Official Trailer
+            </span>
             <button
               onClick={() => setShowTrailerModal(false)}
-              className="absolute top-4 right-4 z-20 p-2 text-white/80 hover:text-white bg-black/60 rounded-full transition"
+              className="p-2 sm:p-2.5 text-white/90 hover:text-white bg-white/10 hover:bg-white/20 active:scale-95 rounded-full transition cursor-pointer backdrop-blur-sm border border-white/10 shadow-lg"
+              aria-label="Close Trailer"
             >
               <X size={20} />
             </button>
+          </div>
 
+          <div
+            className="relative w-full max-w-4xl max-h-[75dvh] sm:max-h-[82dvh] aspect-video bg-black rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
             {embedTrailerUrl &&
             (embedTrailerUrl.includes("youtube.com") ||
               embedTrailerUrl.includes("youtu.be")) ? (
               <iframe
-                src={embedTrailerUrl}
+                src={`${embedTrailerUrl}${embedTrailerUrl.includes("?") ? "&" : "?"}playsinline=1`}
                 title={`${movie.title} Trailer`}
                 className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
               />
             ) : (
@@ -996,7 +1003,8 @@ export default function MovieDetailPage() {
                 src={movie.trailer_url}
                 controls
                 autoPlay
-                className="w-full h-full"
+                playsInline
+                className="w-full h-full object-contain"
               />
             )}
           </div>

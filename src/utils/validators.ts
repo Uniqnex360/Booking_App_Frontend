@@ -32,6 +32,53 @@ export function validateEmail(email: string): boolean {
   return emailSchema.safeParse(email).success;
 }
 
+/**
+ * Strict Indian mobile number validation:
+ * Must be exactly 10 digits starting with 6, 7, 8, or 9.
+ */
+export function isValidIndianMobile(phone?: string | null): boolean {
+  if (!phone) return false;
+  const digits = phone.replace(/\D/g, '').slice(-10);
+  return /^[6-9]\d{9}$/.test(digits);
+}
+
+/**
+ * Strips non-digits, country code +91 prefix, and limits to 10 digits.
+ */
+export function sanitizeMobileNumber(phone?: string | null): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return digits.slice(2);
+  }
+  return digits.slice(-10);
+}
+
+/**
+ * Checks whether an email is an internal/techteam testing email
+ * that should NEVER be prefilled as default in the customer booking flow.
+ */
+export function isInternalOrTechEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const lower = email.toLowerCase().trim();
+  return (
+    lower.includes('techteam') ||
+    lower.includes('uniqnex360') ||
+    lower.includes('example.com') ||
+    lower.endsWith('@admin.com') ||
+    lower.startsWith('test@') ||
+    lower.startsWith('tester@')
+  );
+}
+
+/**
+ * Filters out internal/techteam emails, returning an empty string if matched.
+ */
+export function filterCustomerEmail(email?: string | null): string {
+  if (!email || isInternalOrTechEmail(email)) return '';
+  return email.trim();
+}
+
 export const validatePassword = (password: string) => {
   const checks = [
     { label: '8+ characters', met: password.length >= 8 },

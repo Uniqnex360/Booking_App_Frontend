@@ -29,6 +29,7 @@ import {
   VenueShowtimeItem,
 } from "@/types/movie.types";
 import { ensureHoldToken, safeUUID } from "@/lib/holdToken";
+import { filterCustomerEmail, sanitizeMobileNumber } from "@/utils/validators";
 export default function SeatMapPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -534,6 +535,11 @@ export default function SeatMapPage() {
     if (wrToken) {
       headers["X-Waiting-Room-Token"] = wrToken;
     }
+    const resolvedEmail =
+      filterCustomerEmail(saved.email) || filterCustomerEmail(user?.email) || null;
+    const resolvedPhone =
+      sanitizeMobileNumber(saved.phone || (user as any)?.phone || "") || null;
+
     setIsCommitLoading(true);
     try {
       const res = await unwrap<any>(
@@ -545,8 +551,8 @@ export default function SeatMapPage() {
             seat_codes: selectedSeats.map(
               (s) => s.code || `${s.row_label}${s.number}`,
             ),
-            contact_email: saved.email ?? user?.email ?? null,
-            contact_phone: saved.phone ?? (user as any)?.phone ?? null,
+            contact_email: resolvedEmail,
+            contact_phone: resolvedPhone,
           },
           { headers },
         ),
@@ -570,8 +576,8 @@ export default function SeatMapPage() {
               total_paise: ticketPaise,
               held_until: res.held_until,
               seats: selectedSeats.map((s) => s.code || `${s.row_label}${s.number}`),
-              contact_email: saved.email ?? user?.email ?? "",
-              contact_phone: saved.phone ?? (user as any)?.phone ?? "",
+              contact_email: resolvedEmail || "",
+              contact_phone: resolvedPhone || "",
             },
           },
         },

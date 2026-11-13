@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { AlertCircle, ChevronLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRupees } from "@/utils/currencyFormatter";
 import { payForBooking, preloadRazorpayScript } from "@/lib/razorpayCheckout";
+import {
+  isValidIndianMobile,
+  sanitizeMobileNumber,
+  filterCustomerEmail,
+} from "@/utils/validators";
 import { LoadingPage } from "./LoadingPage";
 
 export default function OrderSummaryPage() {
@@ -32,8 +37,17 @@ export default function OrderSummaryPage() {
           const raw = localStorage.getItem("vyhbz_contact_details");
           if (raw) saved = JSON.parse(raw) || {};
         } catch {}
-        setEmail(data.contact_email || saved.email || user?.email || "");
-        setPhone(data.contact_phone || saved.phone || (user as any)?.phone || "");
+        setEmail(
+          filterCustomerEmail(data.contact_email) ||
+            filterCustomerEmail(saved.email) ||
+            filterCustomerEmail(user?.email) ||
+            "",
+        );
+        setPhone(
+          sanitizeMobileNumber(
+            data.contact_phone || saved.phone || (user as any)?.phone || "",
+          ),
+        );
       } catch {
         toast.error("Booking not found or expired.");
         navigate("/", { replace: true });
@@ -65,18 +79,28 @@ export default function OrderSummaryPage() {
   const isProvider = b?.payment_mode === "PROVIDER";
 
   const pay = async () => {
-    if (!/^\S+@\S+\.\S+$/.test(email) || phone.replace(/\D/g, "").length < 10) {
-      toast.error("Enter a valid email and 10 digit phone.");
+    const cleanEmail = email.trim();
+    const cleanPhone = sanitizeMobileNumber(phone);
+
+    if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+      toast.error("Please enter a valid email address.");
       return;
     }
-    localStorage.setItem("vyhbz_contact_details", JSON.stringify({ email, phone }));
+    if (!isValidIndianMobile(cleanPhone)) {
+      toast.error("Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.");
+      return;
+    }
+    localStorage.setItem(
+      "vyhbz_contact_details",
+      JSON.stringify({ email: cleanEmail, phone: cleanPhone }),
+    );
     setPaying(true);
     try {
       const seats = (b.seat_codes || []).join(", ");
       const res = await payForBooking({
         bookingId: bookingId!,
         description: `${b.movie_title} - Seats: ${seats}`,
-        prefill: { name: user?.full_name, email, contact: phone },
+        prefill: { name: user?.full_name, email: cleanEmail, contact: cleanPhone },
       });
 
       if (res.kind === "DISMISSED") {
@@ -139,20 +163,46 @@ export default function OrderSummaryPage() {
         {/* left: contact */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3 h-fit">
           <h2 className="text-sm font-bold">Your details</h2>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            type="email"
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none focus:border-[#7B1E3D]"
-          />
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Mobile number"
-            inputMode="tel"
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none focus:border-[#7B1E3D]"
-          />
+          <div>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value.trim())}
+              placeholder="Email"
+              type="email"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none focus:border-[#7B1E3D]"
+            />
+            {email.length > 0 && !/^\S+@\S+\.\S+$/.test(email) && (
+              <p className="text-[11px] text-rose-500 mt-1 font-medium flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                Please enter a valid email address
+              </p>
+            )}
+          </div>
+          <div>
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-xs font-bold text-gray-500 border-r border-gray-200 pr-2">
+                +91
+              </span>
+              <input
+                value={phone}
+                onChange={(e) =>
+                  setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                }
+                placeholder="10-digit mobile number"
+                inputMode="tel"
+                maxLength={10}
+                className="w-full pl-14 pr-3 py-2 text-sm border border-gray-300 rounded outline-none focus:border-[#7B1E3D]"
+              />
+            </div>
+            {phone.length > 0 && !isValidIndianMobile(phone) && (
+              <p className="text-[11px] text-rose-500 mt-1 font-medium flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                {phone.length < 10
+                  ? `10-digit mobile number required (${10 - phone.length} more digit${10 - phone.length === 1 ? "" : "s"})`
+                  : "Mobile number must start with 6, 7, 8, or 9"}
+              </p>
+            )}
+          </div>
           <p className="text-[11px] text-gray-500">
             Your e-ticket will be sent to these details.
           </p>

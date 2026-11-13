@@ -743,13 +743,25 @@ export function Header({ hideLocation }: HeaderProps = {}) {
       }}>
         <SheetContent
           side="right"
-          className="w-full sm:w-[420px] p-0 flex flex-col bg-white border-l border-gray-200 z-[100] outline-none"
+          hideDefaultClose
+          className="w-full sm:w-[420px] p-0 flex flex-col bg-white border-l border-gray-200 z-[100] outline-none pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]"
         >
           {drawerTab === "main" && (
             <div className="flex flex-col h-full animate-in fade-in duration-200">
+              {/* Dedicated Safe Top Header Bar with Close Button */}
+              <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                  Menu
+                </span>
+                <SheetClose className="p-2 -mr-1.5 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition flex items-center justify-center cursor-pointer">
+                  <X className="h-5 w-5" />
+                  <span className="sr-only">Close</span>
+                </SheetClose>
+              </div>
+
               {user ? (
                 <div
-                  className="p-6 flex items-center justify-between border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition mt-6"
+                  className="p-6 flex items-center justify-between border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition"
                   onClick={() => handleProfileNavigation(withCity("/profile/edit", city))}
                 >
                   <div>
@@ -767,7 +779,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
                   </Avatar>
                 </div>
               ) : (
-                <div className="p-6 border-b border-gray-100 bg-[#F9F9FA] mt-6">
+                <div className="p-6 border-b border-gray-100 bg-[#F9F9FA]">
                   <div className="flex items-center justify-between mb-2">
                     <h2 className="text-xl font-bold text-gray-900">Hey!</h2>
                     <div className="h-10 w-10 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
@@ -941,7 +953,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
           {drawerTab === "notifications" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setDrawerTab("main")}
@@ -1055,7 +1067,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
           {drawerTab === "bookAChange" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setDrawerTab("main")}
@@ -1107,7 +1119,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
           {drawerTab === "help" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setDrawerTab("main")}
@@ -1250,7 +1262,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
           {drawerTab === "settings" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setDrawerTab("main")}
@@ -1354,7 +1366,7 @@ export function Header({ hideLocation }: HeaderProps = {}) {
 
           {drawerTab === "rewards" && (
             <div className="flex flex-col h-full animate-in slide-in-from-right duration-200">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between mt-6 bg-white">
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white">
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setDrawerTab("main")}

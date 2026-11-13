@@ -1,6 +1,12 @@
 // src/components/AuthModal.tsx
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Smartphone, ShieldCheck, Check } from 'lucide-react';
+import { X, Mail, Smartphone, ShieldCheck, Check, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  isValidIndianMobile,
+  sanitizeMobileNumber,
+  filterCustomerEmail,
+} from '@/utils/validators';
 
 interface ContactDetailsModalProps {
   isOpen: boolean;
@@ -17,9 +23,6 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
   initialEmail = '',
   initialPhone = '',
 }) => {
-  const sanitizePhone = (raw: string) =>
-    raw.replace(/^\+?91/, '').replace(/\D/g, '').slice(-10);
-
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
@@ -30,21 +33,32 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
       const raw = localStorage.getItem('vyhbz_contact_details');
       if (raw) savedContact = JSON.parse(raw) || {};
     } catch {}
-    setEmail(initialEmail || savedContact.email || '');
-    setPhone(sanitizePhone(initialPhone || savedContact.phone || ''));
+    setEmail(filterCustomerEmail(initialEmail) || filterCustomerEmail(savedContact.email) || '');
+    setPhone(sanitizeMobileNumber(initialPhone || savedContact.phone || ''));
   }, [isOpen, initialEmail, initialPhone]);
 
   if (!isOpen) return null;
 
-  const isPhoneVerified = Boolean(initialPhone && sanitizePhone(initialPhone).length === 10);
-  const isEmailVerified = Boolean(initialEmail && initialEmail.includes('@'));
+  const isPhoneVerified = Boolean(initialPhone && isValidIndianMobile(initialPhone));
+  const isEmailVerified = Boolean(initialEmail && /^\S+@\S+\.\S+$/.test(initialEmail));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !phone) return;
+    const cleanEmail = email.trim();
+    const cleanPhone = sanitizeMobileNumber(phone);
 
-    const formattedPhone = phone.startsWith('+91') ? phone : `+91${phone}`;
-    const contactData = { email: email.trim(), phone: formattedPhone };
+    if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+
+    if (!isValidIndianMobile(cleanPhone)) {
+      toast.error('Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.');
+      return;
+    }
+
+    const formattedPhone = `+91${cleanPhone}`;
+    const contactData = { email: cleanEmail, phone: formattedPhone };
     localStorage.setItem('vyhbz_contact_details', JSON.stringify(contactData));
 
     onSubmit(contactData);
@@ -120,13 +134,21 @@ export const AuthModal: React.FC<ContactDetailsModalProps> = ({
                 type="tel"
                 maxLength={10}
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 placeholder="9876543210"
                 className="w-full pl-20 pr-4 py-3 text-sm text-slate-800 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#7B1E3D] focus:border-[#7B1E3D]"
                 required
                 autoFocus={Boolean(email && !phone)}
               />
             </div>
+            {phone.length > 0 && !isValidIndianMobile(phone) && (
+              <p className="text-[10px] text-rose-500 font-medium mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                {phone.length < 10
+                  ? `10-digit mobile number required (${10 - phone.length} more digit${10 - phone.length === 1 ? '' : 's'})`
+                  : 'Mobile number must start with 6, 7, 8, or 9'}
+              </p>
+            )}
             <p className="text-[10px] text-slate-400 mt-1">
               For WhatsApp ticket updates & booking SMS
             </p>

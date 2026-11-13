@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Loader2, ShieldCheck, Ticket } from "lucide-react";
+import { AlertCircle, ChevronLeft, Loader2, ShieldCheck, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { api, unwrap } from "@/api/client";
 import { useAuth } from "@/hooks/useAuth";
 import { formatRupees } from "@/utils/currencyFormatter";
 import { payForBooking, preloadRazorpayScript } from "@/lib/razorpayCheckout";
+import {
+  isValidIndianMobile,
+  sanitizeMobileNumber,
+  filterCustomerEmail,
+} from "@/utils/validators";
 import { FoodStep } from "./FoodStep";
 import type { FnbItem } from "./FoodStep";
 import { TermsModal } from "./TermsModal";
@@ -57,16 +62,24 @@ export default function FoodPage() {
   const [showContact, setShowContact] = useState(false);
   const [leftSeconds, setLeftSeconds] = useState(0);
 
-  // Contact inputs on Summary view
+  // Contact inputs on Summary view (Strictly filters out techteam/internal testing emails)
   const savedInitContact = safeJsonParse(
     localStorage.getItem("vyhbz_contact_details"),
     {} as any,
   );
   const [contactEmail, setContactEmail] = useState(
-    initialBooking?.contact_email || savedInitContact.email || user?.email || "",
+    filterCustomerEmail(initialBooking?.contact_email) ||
+      filterCustomerEmail(savedInitContact.email) ||
+      filterCustomerEmail(user?.email) ||
+      "",
   );
   const [contactPhone, setContactPhone] = useState(
-    initialBooking?.contact_phone || savedInitContact.phone || (user as any)?.phone || "",
+    sanitizeMobileNumber(
+      initialBooking?.contact_phone ||
+        savedInitContact.phone ||
+        (user as any)?.phone ||
+        "",
+    ),
   );
 
   const seatMapUrl = booking
@@ -104,10 +117,17 @@ export default function FoodPage() {
           localStorage.getItem("vyhbz_contact_details"),
           {} as any,
         );
-        setContactEmail(b.contact_email || saved.email || user?.email || "");
-        setContactPhone(
+        const resolvedEmail =
+          filterCustomerEmail(b.contact_email) ||
+          filterCustomerEmail(saved.email) ||
+          filterCustomerEmail(user?.email) ||
+          "";
+        const resolvedPhone = sanitizeMobileNumber(
           b.contact_phone || saved.phone || (user as any)?.phone || "",
         );
+
+        setContactEmail((prev) => prev || resolvedEmail);
+        setContactPhone((prev) => prev || resolvedPhone);
 
         const pre: Record<string, number> = {};
         (b.fnb_lines || []).forEach((l: any) => {
@@ -165,19 +185,40 @@ export default function FoodPage() {
       {} as any,
     );
     return {
-      email: contactEmail || booking?.contact_email || saved.email || user?.email || "",
-      phone: contactPhone || booking?.contact_phone || saved.phone || (user as any)?.phone || "",
+      email:
+        filterCustomerEmail(contactEmail) ||
+        filterCustomerEmail(booking?.contact_email) ||
+        filterCustomerEmail(saved.email) ||
+        filterCustomerEmail(user?.email) ||
+        "",
+      phone:
+        sanitizeMobileNumber(contactPhone) ||
+        sanitizeMobileNumber(booking?.contact_phone) ||
+        sanitizeMobileNumber(saved.phone) ||
+        sanitizeMobileNumber((user as any)?.phone) ||
+        "",
     };
   };
 
   const startPay = () => {
     const c = knownContact();
-    const cleanPhone = c.phone.replace(/\D/g, "");
-    if (!/^\S+@\S+\.\S+$/.test(c.email) || cleanPhone.length < 10) {
+    const cleanPhone = sanitizeMobileNumber(c.phone);
+    if (!/^\S+@\S+\.\S+$/.test(c.email)) {
+      toast.error("Please enter a valid email address for receiving your tickets.");
       setShowContact(true);
       return;
     }
-    goPay(c);
+    if (!isValidIndianMobile(cleanPhone)) {
+      toast.error("Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.");
+      setShowContact(true);
+      return;
+    }
+    // Save sanitized contact details safely to storage
+    localStorage.setItem(
+      "vyhbz_contact_details",
+      JSON.stringify({ email: c.email, phone: cleanPhone }),
+    );
+    goPay({ email: c.email, phone: cleanPhone });
   };
 
   const goPay = async (contact: Contact) => {
@@ -349,23 +390,45 @@ export default function FoodPage() {
                   </label>
                   <input
                     value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
+                    onChange={(e) => setContactEmail(e.target.value.trim())}
                     placeholder="name@example.com"
                     type="email"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7B1E3D] focus:ring-1 focus:ring-[#7B1E3D]"
                   />
+                  {contactEmail.length > 0 && !/^\S+@\S+\.\S+$/.test(contactEmail) && (
+                    <p className="text-[11px] text-rose-500 mt-1 font-medium flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      Please enter a valid email address
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-[11px] font-semibold text-gray-600 block mb-1">
                     Mobile Number
                   </label>
-                  <input
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    placeholder="10-digit mobile number"
-                    inputMode="tel"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#7B1E3D] focus:ring-1 focus:ring-[#7B1E3D]"
-                  />
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-xs font-bold text-gray-500 border-r border-gray-200 pr-2">
+                      +91
+                    </span>
+                    <input
+                      value={contactPhone}
+                      onChange={(e) =>
+                        setContactPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                      }
+                      placeholder="10-digit mobile number"
+                      inputMode="tel"
+                      maxLength={10}
+                      className="w-full pl-14 pr-3 py-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#7B1E3D] focus:ring-1 focus:ring-[#7B1E3D]"
+                    />
+                  </div>
+                  {contactPhone.length > 0 && !isValidIndianMobile(contactPhone) && (
+                    <p className="text-[11px] text-rose-500 mt-1 font-medium flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      {contactPhone.length < 10
+                        ? `10-digit mobile number required (${10 - contactPhone.length} more digit${10 - contactPhone.length === 1 ? "" : "s"})`
+                        : "Mobile number must start with 6, 7, 8, or 9"}
+                    </p>
+                  )}
                 </div>
                 <p className="text-[11px] text-gray-500">
                   Your verified e-ticket and booking reference will be sent to
