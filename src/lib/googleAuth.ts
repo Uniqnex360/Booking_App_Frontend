@@ -16,12 +16,10 @@ export async function signInWithGoogleNative(): Promise<string> {
     const webClientId = import.meta.env.VITE_WEBSDK_CLIENT_ID;
 
     // On iOS the GIDSignIn SDK requires the iOS OAuth client ID as `clientId`.
-    // The web client ID goes into `serverClientId` so the SDK can obtain an
-    // ID token / server auth code that Firebase accepts.
+    // The web/server client ID is set via capacitor.config.ts → serverClientId.
     const isIos = Capacitor.getPlatform() === 'ios';
     await GoogleAuth.initialize({
       clientId: isIos ? IOS_CLIENT_ID : webClientId,
-      serverClientId: webClientId,
       scopes: ['profile', 'email'],
       grantOfflineAccess: false,
     });
