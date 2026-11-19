@@ -31,6 +31,8 @@ const config: CapacitorConfig = {
     GoogleAuth: {
       scopes: ['profile', 'email'],
       serverClientId,
+      // iOS needs the iOS OAuth client ID; Android/web use the web client ID
+      iosClientId: '835333652848-q9nosshusfsfmidscimcibesu3mqo8au.apps.googleusercontent.com',
       clientId: serverClientId,
       forceCodeForRefreshToken: false,
     },

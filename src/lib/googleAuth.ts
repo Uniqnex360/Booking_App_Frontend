@@ -7,11 +7,21 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
+// iOS client ID from GoogleService-Info.plist (must match bundle ID in Google Cloud Console)
+const IOS_CLIENT_ID =
+  '835333652848-q9nosshusfsfmidscimcibesu3mqo8au.apps.googleusercontent.com';
+
 export async function signInWithGoogleNative(): Promise<string> {
   if (Capacitor.isNativePlatform()) {
-    const clientId = import.meta.env.VITE_WEBSDK_CLIENT_ID;
+    const webClientId = import.meta.env.VITE_WEBSDK_CLIENT_ID;
+
+    // On iOS the GIDSignIn SDK requires the iOS OAuth client ID as `clientId`.
+    // The web client ID goes into `serverClientId` so the SDK can obtain an
+    // ID token / server auth code that Firebase accepts.
+    const isIos = Capacitor.getPlatform() === 'ios';
     await GoogleAuth.initialize({
-      clientId,
+      clientId: isIos ? IOS_CLIENT_ID : webClientId,
+      serverClientId: webClientId,
       scopes: ['profile', 'email'],
       grantOfflineAccess: false,
     });
