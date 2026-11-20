@@ -23,6 +23,11 @@ export async function signInWithGoogleNative(): Promise<string> {
       scopes: ['profile', 'email'],
       grantOfflineAccess: false,
     });
+
+    // Sign out any previous session so the account picker always appears,
+    // instead of silently reusing the last signed-in account.
+    try { await GoogleAuth.signOut(); } catch (_) { /* no previous session */ }
+
     const googleUser = await GoogleAuth.signIn();
     const idToken = googleUser?.authentication?.idToken;
     if (!idToken) {
