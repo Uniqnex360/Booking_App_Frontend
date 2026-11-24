@@ -2,7 +2,6 @@ import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
 import {
   GoogleAuthProvider,
-  signInWithCredential,
   signInWithPopup,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -34,15 +33,18 @@ export async function signInWithGoogleNative(): Promise<string> {
       throw new Error('No ID token received from Google native sign-in');
     }
 
-    // Exchange native token with Firebase to get a Firebase ID token
-    const credential = GoogleAuthProvider.credential(idToken);
-    const result = await signInWithCredential(auth, credential);
-    return await result.user.getIdToken();
+    // Return the pure Google ID token directly to be verified by backend,
+    // completely bypassing Firebase and its quota limitations.
+    return idToken;
   } else {
-    // Web path — keep popup flow unchanged
+    // Web path: get Google credential from popup
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     const result = await signInWithPopup(auth, provider);
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    if (credential?.idToken) {
+      return credential.idToken;
+    }
     return await result.user.getIdToken();
   }
 }
