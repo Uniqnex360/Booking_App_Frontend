@@ -1544,12 +1544,12 @@ export default function BuyTicketsPage() {
                           let buttonStyle = "border border-[#34A853] border-l-[3px] sm:border-l-[4px] border-l-[#34A853] bg-white hover:bg-[#34A853]/5 shadow-2xs";
                           if (isDisabled) {
                             buttonStyle = "border border-gray-200 text-gray-300 cursor-not-allowed bg-gray-50";
-                          } else if (isCouple) {
-                            buttonStyle = "border border-[#f472b6] border-l-[3px] sm:border-l-[4px] border-l-[#be185d] bg-[#fff5f8] hover:bg-[#ffe4ee] shadow-2xs";
                           } else if (isAlmostFull) {
                             buttonStyle = "border border-rose-300 border-l-[3px] sm:border-l-[4px] border-l-rose-500 bg-rose-50/40 hover:bg-rose-50 shadow-2xs";
                           } else if (isFastFilling) {
                             buttonStyle = "border border-amber-300 border-l-[3px] sm:border-l-[4px] border-l-amber-500 bg-amber-50/40 hover:bg-amber-50 shadow-2xs";
+                          } else if (isCouple) {
+                            buttonStyle = "border border-[#34A853] border-l-[3px] sm:border-l-[4px] border-l-[#34A853] bg-[#f0fdf4] hover:bg-[#dcfce7] shadow-2xs";
                           }
 
                           const fallbackPricing = isCouple
@@ -1611,7 +1611,7 @@ export default function BuyTicketsPage() {
                                 <div className="absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col bg-white rounded-xl shadow-2xl border border-gray-100 p-3 min-w-[210px] z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                                   <div className="text-[10px] font-bold text-center mb-1 pb-1 border-b border-gray-100 flex items-center justify-center gap-1.5">
                                     {isCouple ? (
-                                      <span className="text-[#be185d]">💑 Screen 4 (Couple Recliners) • ₹900 / pair</span>
+                                      <span className="text-purple-700">💑 Screen 4 (Couple Recliners) • ₹900 / pair</span>
                                     ) : isAlmostFull ? (
                                       <span className="text-rose-600">🔴 Almost Full ({slot.available_seats || 0} seats left)</span>
                                     ) : isFastFilling ? (
@@ -1658,25 +1658,23 @@ export default function BuyTicketsPage() {
                                     className={`text-[11px] sm:text-[13px] font-bold leading-none ${
                                       isDisabled
                                         ? "text-gray-300"
-                                        : isCouple
-                                          ? "text-[#831843]"
-                                          : isAlmostFull
-                                            ? "text-rose-900"
-                                            : isFastFilling
-                                              ? "text-amber-950"
-                                              : "text-gray-800"
+                                        : isAlmostFull
+                                          ? "text-rose-900"
+                                          : isFastFilling
+                                            ? "text-amber-950"
+                                            : "text-gray-900"
                                     }`}
                                   >
                                     {istTimeLabel(slot.starts_at)}
                                   </span>
                                   <span
                                     className={`text-[7px] sm:text-[8px] font-semibold border px-0.5 sm:px-1 rounded-xs leading-none font-sans ${
-                                      isCouple
-                                        ? "border-[#f472b6] text-[#be185d]"
-                                        : isAlmostFull
-                                          ? "border-rose-300 text-rose-700"
-                                          : isFastFilling
-                                            ? "border-amber-300 text-amber-700"
+                                      isAlmostFull
+                                        ? "border-rose-300 text-rose-700"
+                                        : isFastFilling
+                                          ? "border-amber-300 text-amber-700"
+                                          : isCouple
+                                            ? "border-purple-200 text-purple-700 bg-purple-50"
                                             : "border-gray-400 text-gray-600"
                                     }`}
                                   >
@@ -1691,13 +1689,13 @@ export default function BuyTicketsPage() {
                                   className={`text-[7.5px] sm:text-[8px] font-bold uppercase tracking-wider leading-none mt-0.5 sm:mt-1 flex items-center justify-center gap-0.5 ${
                                     isDisabled
                                       ? "text-gray-300"
-                                      : isCouple
-                                        ? "text-[#be185d]"
-                                        : isAlmostFull
-                                          ? "text-rose-600 font-extrabold"
-                                          : isFastFilling
-                                            ? "text-amber-600 font-extrabold"
-                                            : "text-gray-400"
+                                      : isAlmostFull
+                                        ? "text-rose-600 font-extrabold"
+                                        : isFastFilling
+                                          ? "text-amber-600 font-extrabold"
+                                          : isCouple
+                                            ? "text-purple-700"
+                                            : "text-gray-500"
                                   }`}
                                 >
                                   {isSoldOut
